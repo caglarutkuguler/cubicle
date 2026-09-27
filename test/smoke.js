@@ -17,9 +17,9 @@ const req = (url, method) => new Promise((resolve, reject) => {
 });
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function withServer(args, fn) {
+async function withServer(args, fn, env = {}) {
   const port = 3400 + Math.floor(Math.random() * 500);
-  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore' });
+  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, ...env } });
   try { await sleep(500); await fn(`http://127.0.0.1:${port}`); } finally { p.kill(); }
 }
 
@@ -84,6 +84,16 @@ async function withServer(args, fn) {
     assert.strictEqual((await get(`${base}/api/companies`)).status, 403);
     assert.strictEqual(await req(`${base}/api/feed`, 'POST'), 405);
   });
+
+  // claude-code source before any hook has run: empty office, not an error
+  {
+    const home = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'cubicle-home-'));
+    await withServer(['--source', 'claude-code'], async (base) => {
+      const r = await get(`${base}/api/feed`);
+      assert.strictEqual(r.status, 200);
+      assert.deepStrictEqual(JSON.parse(r.body), { company: 'Claude Code', agents: [] });
+    }, { HOME: home, USERPROFILE: home });
+  }
 
   // paperclip mode (no Paperclip running)
   await withServer([], async (base) => {

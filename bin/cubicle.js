@@ -72,7 +72,7 @@ const CLAUDE_CODE_FEED = path.join(os.homedir(), '.cubicle', 'claude-code.json')
 const rawSource = arg('source') || process.env.CUBICLE_SOURCE || 'paperclip';
 let source; // { kind: 'paperclip' } | { kind: 'file', file, label } | { kind: 'url', url, label }
 if (rawSource === 'paperclip') source = { kind: 'paperclip' };
-else if (rawSource === 'claude-code') source = { kind: 'file', file: CLAUDE_CODE_FEED, label: 'Claude Code' };
+else if (rawSource === 'claude-code') source = { kind: 'file', file: CLAUDE_CODE_FEED, label: 'Claude Code', emptyIfMissing: true };
 else if (/^https?:\/\//.test(rawSource)) source = { kind: 'url', url: new URL(rawSource), label: rawSource };
 else source = { kind: 'file', file: path.resolve(rawSource), label: path.basename(rawSource) };
 
@@ -101,6 +101,8 @@ function send(res, status, body, type = 'application/json') {
 function serveFeed(res) {
   if (source.kind === 'file') {
     return fs.readFile(source.file, 'utf8', (err, txt) => {
+      // No hook has fired yet: that is an empty office, not an error.
+      if (err && err.code === 'ENOENT' && source.emptyIfMissing) return send(res, 200, JSON.stringify({ company: source.label, agents: [] }));
       if (err) return send(res, err.code === 'ENOENT' ? 404 : 500, JSON.stringify({ error: `cannot read ${source.file}` }));
       try { JSON.parse(txt); } catch (_) { return send(res, 502, '{"error":"feed is not valid JSON"}'); }
       send(res, 200, txt);
