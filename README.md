@@ -99,6 +99,8 @@ systemctl --user enable --now cubicle.service cubicle-claude.service
 **Stay up to date automatically.** `cubicle-update.timer` fast-forwards the clone every 10 minutes and restarts the running Cubicle services when something changed; open browser tabs reload themselves within a minute. It never touches a clone with local edits.
 
 ```bash
+# link instead of copying, so updates to these two units arrive with the clone
+systemctl --user link ~/cubicle/examples/systemd/cubicle-update.service ~/cubicle/examples/systemd/cubicle-update.timer
 systemctl --user enable --now cubicle-update.timer
 journalctl --user -u cubicle-update.service   # what it did
 ```

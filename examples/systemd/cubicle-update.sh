@@ -28,6 +28,9 @@ after="$(git rev-parse HEAD)"
 echo "cubicle-update: $before -> $after"
 git --no-pager log --oneline "$before..$after"
 
+# Unit files symlinked from this clone may have changed too.
+systemctl --user daemon-reload
+
 systemctl --user list-units --type=service --state=active --no-legend --plain 'cubicle*.service' \
   | awk '{print $1}' \
   | grep -v '^cubicle-update\.service$' \
