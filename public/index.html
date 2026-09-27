@@ -22,6 +22,7 @@
   .bub { background:#fff; color:#1d1f2b; border-radius:9px; padding:2px 7px; font-size:11px; font-weight:600; margin-bottom:3px; box-shadow:0 1px 0 rgba(0,0,0,.3); max-width:210px; overflow:hidden; text-overflow:ellipsis; }
   .bub.err { background:#ffdede; color:#8a1111; }
   .bub.ok { background:#dcffe2; color:#145c24; }
+  .bub.wait { background:#fff1c9; color:#6b4d00; }
   .name { background:rgba(15,16,26,.78); color:#fff; font-size:11px; font-weight:600; padding:1px 6px; border-radius:5px; }
   #banner { display:none; margin-bottom:10px; padding:8px 12px; border-radius:8px; background:#2b2f47; border:1px solid var(--line); color:var(--muted); }
   #cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; margin-top:12px; }
@@ -38,6 +39,7 @@
   .p-idle { background:#33374d; color:#c9cbe0; }
   .p-error { background:#5a1f25; color:#ffb3b8; }
   .p-paused { background:#4d4221; color:#f3dc92; }
+  .p-waiting { background:#5a4a12; color:#ffe08a; }
   footer { color:var(--muted); font-size:12px; margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 </style>
 </head>
@@ -69,8 +71,8 @@
     en: {
       connecting: 'Connecting to Paperclip…', unreachable: "Can't reach Paperclip, retrying…",
       noCompany: 'No company yet.', summary: (n, r) => `${n} agents · ${r} working`,
-      running: 'working', idle: 'idle', error: 'error', paused: 'paused', noTask: 'no open task assigned',
-      done: '✓ done', errBubble: '⚠ error',
+      running: 'working', idle: 'idle', error: 'error', paused: 'paused', waiting: 'needs you', noTask: 'no open task assigned',
+      done: '✓ done', errBubble: '⚠ error', waitBubble: '✋ needs you',
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
@@ -79,8 +81,8 @@
     tr: {
       connecting: "Paperclip'e bağlanılıyor…", unreachable: "Paperclip'e ulaşılamıyor, yeniden deneniyor…",
       noCompany: 'Henüz şirket yok.', summary: (n, r) => `${n} ajan · ${r} çalışıyor`,
-      running: 'çalışıyor', idle: 'boşta', error: 'hata', paused: 'duraklatıldı', noTask: 'atanmış açık görev yok',
-      done: '✓ bitirdi', errBubble: '⚠ hata',
+      running: 'çalışıyor', idle: 'boşta', error: 'hata', paused: 'duraklatıldı', waiting: 'sizi bekliyor', noTask: 'atanmış açık görev yok',
+      done: '✓ bitirdi', errBubble: '⚠ hata', waitBubble: '✋ sizi bekliyor',
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
@@ -131,6 +133,37 @@
     async issues(id) { return getJSON(`/api/companies/${id}/issues`); },
   };
 
+  // Generic feed (docs/FEED.md): { company?, agents: [{ id, name, role?, status, task?, error? }] } or a bare array.
+  const STATUS_ALIASES = {
+    running: 'running', working: 'running', busy: 'running', active: 'running',
+    idle: 'idle', done: 'idle', finished: 'idle', ready: 'idle',
+    error: 'error', failed: 'error', crashed: 'error',
+    paused: 'paused', sleeping: 'paused', stopped: 'paused', offline: 'paused',
+    waiting: 'waiting', blocked: 'waiting', needs_input: 'waiting', permission: 'waiting',
+  };
+  const feed = {
+    label: '',
+    async companies() { return [{ id: 'feed', name: feed.label, issuePrefix: '' }]; },
+    async agents() {
+      const raw = await getJSON('/api/feed');
+      const list = Array.isArray(raw) ? raw : Array.isArray(raw?.agents) ? raw.agents : [];
+      if (raw && raw.company) document.getElementById('co').textContent = raw.company;
+      return list.map((a, i) => {
+        const t = a.task;
+        const task = !t ? null : typeof t === 'string'
+          ? { identifier: '', title: t, url: a.taskUrl || '' }
+          : { identifier: String(t.id ?? t.identifier ?? ''), title: t.title ?? '', url: t.url || '' };
+        return {
+          id: String(a.id ?? a.name ?? i), name: String(a.name ?? a.id ?? `agent ${i + 1}`),
+          title: a.role || a.title || '', createdAt: String(a.since ?? a.createdAt ?? i).padStart(20, '0'),
+          status: STATUS_ALIASES[String(a.status || 'idle').toLowerCase()] || 'idle',
+          errorReason: a.error || null, task,
+        };
+      });
+    },
+    async issues() { return []; },
+  };
+
   const demo = (() => {
     const t0 = Date.now();
     const roster = [
@@ -145,7 +178,7 @@
       const s = Math.floor((Date.now() - t0) / 1000);
       agents.forEach((a, i) => {
         const phase = Math.floor((s + i * 7) / (9 + i * 2)) % 5;
-        a.status = phase === 4 && i === 2 ? 'error' : phase % 2 === 0 ? 'running' : 'idle';
+        a.status = phase === 4 && i === 2 ? 'error' : phase === 3 && i === 3 ? 'waiting' : phase % 2 === 0 ? 'running' : 'idle';
         a.errorReason = a.status === 'error' ? 'Example error: connection lost' : null;
       });
     }
@@ -163,8 +196,11 @@
   async function init() {
     const b = document.getElementById('banner');
     if (!DEMO) {
-      try { paperclipUrl = (await getJSON('/config.json')).paperclipUrl || ''; }
-      catch (_) {
+      try {
+        const cfg = await getJSON('/config.json');
+        if (cfg.source === 'feed') { src = feed; feed.label = cfg.label || 'feed'; }
+        else paperclipUrl = cfg.paperclipUrl || '';
+      } catch (_) {
         // No Cubicle server behind this page: show the demo instead of an error.
         DEMO = true;
         b.innerHTML = L.hosted; b.style.display = 'block';
@@ -248,7 +284,7 @@
       s.role = a.title || a.role || '';
       s.status = a.status;
       s.error = a.errorReason || '';
-      s.task = currentTask(a.id, issues);
+      s.task = a.task !== undefined ? a.task : currentTask(a.id, issues);
       if (s.prevStatus === 'running' && s.status === 'idle') setBubble(s, L.done, 'ok', 6);
       s.prevStatus = s.status;
       s.el.querySelector('.name').textContent = s.name;
@@ -262,8 +298,10 @@
   }
 
   function taskLink(t) {
-    if (!paperclipUrl || DEMO) return esc(t.identifier);
-    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="_blank" rel="noopener">${esc(t.identifier)}</a>`;
+    const label = esc(t.identifier);
+    if (t.url) return `<a href="${esc(t.url)}" target="_blank" rel="noopener">${label || '↗'}</a>`;
+    if (!paperclipUrl || DEMO) return label;
+    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="_blank" rel="noopener">${label}</a>`;
   }
 
   function renderCards() {
@@ -280,7 +318,7 @@
 
   // ---------- movement ----------
   function targetFor(s, now) {
-    if (s.status === 'running' || s.status === 'error') return [s.desk[0] * T + 22, s.desk[1] * T + 12, true];
+    if (s.status === 'running' || s.status === 'error' || s.status === 'waiting') return [s.desk[0] * T + 22, s.desk[1] * T + 12, true];
     if (now > s.nextWander) {
       const used = new Set([...sprites.values()].filter((o) => o !== s).map((o) => o.lounge));
       const free = LOUNGE.map((_, i) => i).filter((i) => !used.has(i));
@@ -370,10 +408,11 @@
     const x = d[0] * T, y = d[1] * T;
     const on = s && s.typing;
     const err = s && s.status === 'error' && s.seated;
+    const wait = s && s.status === 'waiting' && s.seated;
     rect('#8b5a2b', x, y + 8, 34, 10); rect('#6e4520', x, y + 18, 34, 3);
     rect('#6e4520', x + 1, y + 21, 2, 6); rect('#6e4520', x + 31, y + 21, 2, 6);
     rect('#22252f', x + 3, y - 2, 14, 10);
-    rect(err ? (Math.floor(t * 2) % 2 ? '#ff6b6b' : '#a33') : on ? '#5cc8f0' : '#3a4050', x + 4, y - 1, 12, 7);
+    rect(err ? (Math.floor(t * 2) % 2 ? '#ff6b6b' : '#a33') : wait ? (Math.floor(t) % 2 ? '#e0a33b' : '#b07d20') : on ? '#5cc8f0' : '#3a4050', x + 4, y - 1, 12, 7);
     if (on) for (let i = 0; i < 3; i++) rect('rgba(255,255,255,.75)', x + 5, y + i * 2, (Math.floor(t * 9 + i * 4) % 9) + 1, 1);
     rect('#22252f', x + 9, y + 8, 2, 1);
     rect('#c9cbd6', x + 17, y + 10, 11, 2);
@@ -395,6 +434,11 @@
       const a = Math.floor(t * 10 + s.seed) % 2;
       rect(s.skin, x - 5, y - 8 - bob - a, 2, 2);
       rect(s.skin, x + 3, y - 8 - bob - (1 - a), 2, 2);
+    } else if (s.status === 'waiting' && s.seated) {
+      // one hand up, waving
+      const w = Math.floor(t * 3 + s.seed) % 2;
+      rect(s.skin, x - 5, y - 10 - bob, 1, 4);
+      rect(s.skin, x + 4 + w, y - 19 - bob, 2, 8);
     } else {
       rect(s.skin, x - 5, y - 10 - bob, 1, 4);
       rect(s.skin, x + 4, y - 10 - bob, 1, 4);
@@ -420,7 +464,8 @@
       let text = null, cls = '';
       if (s.bubble && now < s.bubbleUntil) { text = s.bubble; cls = s.bubbleClass; }
       else if (s.status === 'error' && s.seated) { text = L.errBubble; cls = 'err'; }
-      else if (s.typing && s.task) text = '⌨ ' + s.task.identifier;
+      else if (s.status === 'waiting' && s.seated) { text = L.waitBubble; cls = 'wait'; }
+      else if (s.typing && s.task) text = '⌨ ' + (s.task.identifier || s.task.title);
       else if (s.status === 'paused') text = 'zZ';
       if (text) { b.textContent = text; b.className = 'bub ' + cls; b.style.display = ''; }
       else b.style.display = 'none';

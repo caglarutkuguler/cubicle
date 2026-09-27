@@ -1,0 +1,12 @@
+{
+  "hooks": {
+    "SessionStart":     [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }],
+    "PreToolUse":       [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }],
+    "PostToolUse":      [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }],
+    "Notification":     [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }],
+    "PreCompact":       [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }],
+    "Stop":             [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }],
+    "SessionEnd":       [{ "hooks": [{ "type": "command", "command": "node /path/to/cubicle/bin/cubicle-hook.js" }] }]
+  }
+}

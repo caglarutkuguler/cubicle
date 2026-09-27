@@ -1,0 +1,9 @@
+{
+  "company": "Acme Bots",
+  "agents": [
+    { "id": "writer", "name": "Writer", "role": "Copywriter", "status": "running", "task": { "id": "DOC-12", "title": "Draft launch post", "url": "https://example.com/DOC-12" } },
+    { "id": "qa", "name": "QA", "role": "Release", "status": "waiting", "task": "Approve deploy to staging?" },
+    { "id": "scraper", "name": "Scraper", "role": "Data", "status": "error", "error": "HTTP 429 from target site" },
+    { "id": "intern", "name": "Intern", "status": "idle" }
+  ]
+}
