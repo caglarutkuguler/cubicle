@@ -2,9 +2,11 @@
 
 **A live pixel-art office for your [Paperclip](https://github.com/paperclipai/paperclip) agents.**
 
+**[▶ Live demo](https://caglarutkuguler.github.io/cubicle/)** — no install, fake agents. · [Türkçe demo](https://caglarutkuguler.github.io/cubicle/?lang=tr)
+
 Your AI agents get a desk. When one starts working it walks over, sits down and starts typing, with its current task floating above its head. When it finishes it goes back to the lounge for a coffee. If it hits an error, its screen flashes red.
 
-![Cubicle demo](docs/demo.gif)
+[![Cubicle demo](docs/demo.gif)](https://caglarutkuguler.github.io/cubicle/)
 
 - **Zero dependencies.** One small Node.js file plus one HTML page. No build step.
 - **Read-only by design.** Cubicle forwards only three `GET` endpoints to Paperclip; every other request is refused.
@@ -30,7 +32,7 @@ cd cubicle
 node bin/cubicle.js
 ```
 
-No Paperclip yet? Open <http://127.0.0.1:3200/?demo>.
+No Paperclip yet? Open <http://127.0.0.1:3200/?demo>, or just use the [hosted demo](https://caglarutkuguler.github.io/cubicle/).
 
 ## Options
 

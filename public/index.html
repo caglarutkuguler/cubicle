@@ -74,6 +74,7 @@
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
+      hosted: 'This is the hosted demo with fake agents. To watch your own Paperclip company, run <code>npx github:caglarutkuguler/cubicle</code> and open <code>http://127.0.0.1:3200</code>.',
     },
     tr: {
       connecting: "Paperclip'e bağlanılıyor…", unreachable: "Paperclip'e ulaşılamıyor, yeniden deneniyor…",
@@ -83,13 +84,16 @@
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
+      hosted: "Bu, sahte ajanlarla çalışan barındırılan demo. Kendi Paperclip şirketinizi izlemek için <code>npx github:caglarutkuguler/cubicle</code> çalıştırıp <code>http://127.0.0.1:3200</code> adresini açın.",
     },
   };
   const params = new URLSearchParams(location.search);
   const lang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase() === 'tr' ? 'tr' : 'en';
   const L = STR[lang];
   document.documentElement.lang = lang;
-  const DEMO = params.has('demo');
+  // Becomes true in init() as well when the page is served without the Cubicle
+  // proxy behind it (e.g. the hosted demo on GitHub Pages).
+  let DEMO = params.has('demo');
 
   // ---------- setup ----------
   const T = 16, CW = 352, CH = 208;
@@ -154,15 +158,21 @@
     };
   })();
 
-  const src = DEMO ? demo : live;
+  let src = live;
 
   async function init() {
-    if (DEMO) {
-      const b = document.getElementById('banner');
-      b.innerHTML = L.demo; b.style.display = 'block';
+    const b = document.getElementById('banner');
+    if (!DEMO) {
+      try { paperclipUrl = (await getJSON('/config.json')).paperclipUrl || ''; }
+      catch (_) {
+        // No Cubicle server behind this page: show the demo instead of an error.
+        DEMO = true;
+        b.innerHTML = L.hosted; b.style.display = 'block';
+      }
     } else {
-      try { paperclipUrl = (await getJSON('/config.json')).paperclipUrl || ''; } catch (_) {}
+      b.innerHTML = L.demo; b.style.display = 'block';
     }
+    if (DEMO) src = demo;
     poll();
     setInterval(poll, 4000);
     requestAnimationFrame(frame);
