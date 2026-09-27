@@ -2,8 +2,8 @@
 Description=Check for Cubicle updates every 10 minutes
 
 [Timer]
-OnBootSec=1min
-OnUnitActiveSec=10min
+OnCalendar=*:0/10
+RandomizedDelaySec=60
 Persistent=true
 
 [Install]
