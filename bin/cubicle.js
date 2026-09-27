@@ -25,11 +25,18 @@ if (process.argv[2] === 'hook') {
   require('./cubicle-hook.js').main();
   return;
 }
+// `cubicle install-hooks [--uninstall]` — add/remove the Claude Code hooks in ~/.claude/settings.json.
+if (process.argv[2] === 'install-hooks') {
+  try { require('./cubicle-hook.js').install({ uninstall: process.argv.includes('--uninstall') }); }
+  catch (e) { console.error(e.message); process.exitCode = 1; }
+  return;
+}
 
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`Cubicle — a live pixel-art office for your AI agents
 
 Usage: cubicle [--port 3200] [--host 127.0.0.1] [--source paperclip] [--paperclip http://127.0.0.1:3100]
+       cubicle install-hooks [--uninstall]   add/remove the Claude Code hooks in ~/.claude/settings.json
 
 Sources (--source / CUBICLE_SOURCE):
   paperclip            Paperclip server, default (see --paperclip / PAPERCLIP_URL)
@@ -50,6 +57,15 @@ const PORT = Number(arg('port') || process.env.CUBICLE_PORT || 3200);
 const HOST = arg('host') || process.env.CUBICLE_HOST || '127.0.0.1';
 const PAPERCLIP = new URL(arg('paperclip') || process.env.PAPERCLIP_URL || 'http://127.0.0.1:3100');
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
+const VERSION = require('../package.json').version;
+const STARTED = Date.now();
+// Changes when the server restarts or index.html changes on disk; open pages
+// compare it and reload themselves, so a wall display picks up updates.
+function build() {
+  let mtime = 0;
+  try { mtime = fs.statSync(path.join(PUBLIC_DIR, 'index.html')).mtimeMs; } catch (_) {}
+  return `${VERSION}-${STARTED}-${Math.round(mtime)}`;
+}
 const CLAUDE_CODE_FEED = path.join(os.homedir(), '.cubicle', 'claude-code.json');
 
 // ---------- source ----------
@@ -104,8 +120,8 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname === '/config.json') {
     const cfg = source.kind === 'paperclip'
-      ? { source: 'paperclip', paperclipUrl: PAPERCLIP.origin }
-      : { source: 'feed', label: source.label };
+      ? { source: 'paperclip', paperclipUrl: PAPERCLIP.origin, version: VERSION, build: build() }
+      : { source: 'feed', label: source.label, version: VERSION, build: build() };
     return send(res, 200, JSON.stringify(cfg));
   }
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=Check for Cubicle updates every 10 minutes
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=10min
+Persistent=true
+
+[Install]
+WantedBy=timers.target

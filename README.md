@@ -24,9 +24,10 @@ Requires Node.js 18+.
 npx github:caglarutkuguler/cubicle
 ```
 
-**Claude Code** (one character per session, driven by Claude Code hooks; setup in [`examples/claude-code/`](examples/claude-code/)):
+**Claude Code** (one character per session, driven by Claude Code's own hooks; details in [`examples/claude-code/`](examples/claude-code/)):
 
 ```bash
+npx github:caglarutkuguler/cubicle install-hooks      # once; backs up ~/.claude/settings.json first
 npx github:caglarutkuguler/cubicle --source claude-code
 ```
 
@@ -84,14 +85,22 @@ Each card below the office links to the agent's current task when the source pro
 
 ## Run it as a service (Linux / WSL)
 
-An example systemd user unit is in [`examples/cubicle.service`](examples/cubicle.service):
+systemd user units are in [`examples/systemd/`](examples/systemd/): `cubicle.service` (Paperclip, port 3200), `cubicle-claude.service` (Claude Code, port 3201), and an optional updater.
 
 ```bash
+git clone https://github.com/caglarutkuguler/cubicle.git ~/cubicle
 mkdir -p ~/.config/systemd/user
-cp examples/cubicle.service ~/.config/systemd/user/
-# edit ExecStart to point at your node binary, clone and --source
+cp ~/cubicle/examples/systemd/*.service ~/cubicle/examples/systemd/*.timer ~/.config/systemd/user/
+# edit ExecStart in cubicle*.service to point at your node binary (`command -v node`)
 systemctl --user daemon-reload
-systemctl --user enable --now cubicle.service
+systemctl --user enable --now cubicle.service cubicle-claude.service
+```
+
+**Stay up to date automatically.** `cubicle-update.timer` fast-forwards the clone every 10 minutes and restarts the running Cubicle services when something changed; open browser tabs reload themselves within a minute. It never touches a clone with local edits.
+
+```bash
+systemctl --user enable --now cubicle-update.timer
+journalctl --user -u cubicle-update.service   # what it did
 ```
 
 ## Security notes

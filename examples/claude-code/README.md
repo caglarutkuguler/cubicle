@@ -6,33 +6,33 @@ No daemon, no sockets: Claude Code's own hooks run a small script that rewrites 
 
 ## Setup
 
-1. Clone or install Cubicle:
+```bash
+git clone https://github.com/caglarutkuguler/cubicle.git ~/cubicle
+node ~/cubicle/bin/cubicle.js install-hooks          # adds the hooks to ~/.claude/settings.json (backup first)
+node ~/cubicle/bin/cubicle.js --source claude-code   # then open http://127.0.0.1:3200
+```
 
-   ```bash
-   git clone https://github.com/caglarutkuguler/cubicle.git
-   ```
+`install-hooks` keeps everything else in your settings, can be run again safely, and `install-hooks --uninstall` removes only Cubicle's entries. Restart running Claude Code sessions so they load the hooks.
 
-2. Merge `settings.json` from this folder into `~/.claude/settings.json` (user-wide) or `.claude/settings.json` (one project), replacing `/path/to/cubicle` with the real path. If Cubicle is installed globally with npm, `cubicle hook` works as the command instead.
+Prefer to edit by hand? Merge [`settings.json`](settings.json) from this folder into `~/.claude/settings.json` (user-wide) or `.claude/settings.json` (one project), replacing `/path/to/cubicle`.
 
-3. Start the office:
-
-   ```bash
-   node /path/to/cubicle/bin/cubicle.js --source claude-code
-   ```
-
-   Open <http://127.0.0.1:3200>. Sessions started before the hooks were added appear on their next event.
+To keep it running in the background next to a Paperclip office, see [`../systemd/`](../systemd/): `cubicle-claude.service` serves the Claude Code office on port 3201.
 
 ## What maps to what
 
 | Claude Code event | In the office |
 | --- | --- |
 | `UserPromptSubmit`, `PreToolUse`, `PostToolUse` | Sits at the desk and types; the bubble shows the tool and file/command |
-| `Notification` (permission or input needed) | Stays at the desk with a hand up, amber screen |
+| `PermissionRequest`, `Notification` of type `permission_prompt` / `agent_needs_input` / `elicitation_*` | Stays at the desk with a hand up, amber screen |
 | `Stop` | Says "✓ done" and goes to the lounge |
+| `StopFailure` | Red screen, error on the card |
 | `SessionEnd` | Leaves the office |
+
+Other notifications — the "waiting for your input" reminder after a minute of idling, auth and quota messages — are ignored, so an idle session stays in the lounge.
 
 The character is named after the working directory, so two sessions in different repos are easy to tell apart. Sessions with no events for 12 hours are dropped.
 
-## Privacy
+## Cost and safety
 
-The hook writes only: session id, directory name, status, and a short summary of the current tool call (tool name plus file name or the first ~50 characters of a command or prompt). Nothing leaves the machine.
+- Each hook is one short `node` process (tens of milliseconds) with a 5 s timeout. It never exits with code 2, so it can never block a tool call, and it prints nothing, so it adds nothing to Claude's context.
+- The hook writes only: session id, directory name, status, and a short summary of the current tool call (tool name plus file name or the first ~50 characters of a command or prompt). Nothing leaves the machine.

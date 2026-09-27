@@ -34,14 +34,51 @@ async function withServer(args, fn) {
   assert.strictEqual(feed.agents[0].status, 'waiting');
   feed = apply(feed, { session_id: 's1', hook_event_name: 'Stop' });
   assert.strictEqual(feed.agents[0].status, 'idle');
+  feed = apply(feed, { session_id: 's1', hook_event_name: 'Notification', message: 'Claude is waiting for your input' });
+  assert.strictEqual(feed.agents[0].status, 'idle', 'idle reminder must not raise a hand');
+  feed = apply(feed, { session_id: 's1', hook_event_name: 'Notification', notification_type: 'idle_prompt', message: 'x' });
+  assert.strictEqual(feed.agents[0].status, 'idle');
+  feed = apply(feed, { session_id: 's1', hook_event_name: 'Notification', notification_type: 'auth_success', message: 'ok' });
+  assert.strictEqual(feed.agents[0].status, 'idle');
+  feed = apply(feed, { session_id: 's1', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'rm -rf build' } });
+  assert.strictEqual(feed.agents[0].status, 'waiting');
+  assert.strictEqual(feed.agents[0].task, 'allow Bash: rm -rf build?');
+  feed = apply(feed, { session_id: 's1', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'rm -rf build' } });
+  assert.strictEqual(feed.agents[0].status, 'running');
+  feed = apply(feed, { session_id: 's1', hook_event_name: 'Notification', notification_type: 'permission_prompt', message: 'Claude needs your permission to use Bash' });
+  assert.strictEqual(feed.agents[0].status, 'waiting');
+  feed = apply(feed, { session_id: 's1', hook_event_name: 'Stop' });
   feed = apply(feed, { session_id: 's1', hook_event_name: 'SessionEnd' });
   assert.strictEqual(feed.agents.length, 0);
   assert.strictEqual(summarize({ tool_name: 'Bash', tool_input: { command: 'npm test' } }), 'Bash: npm test');
 
+  // install-hooks keeps user settings, is idempotent, and uninstalls cleanly
+  {
+    const fs = require('fs');
+    const os = require('os');
+    const { install, EVENTS } = require('../bin/cubicle-hook.js');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-'));
+    const f = path.join(dir, 'settings.json');
+    const mine = { type: 'command', command: 'echo mine' };
+    fs.writeFileSync(f, JSON.stringify({ theme: 'dark', hooks: { Stop: [{ hooks: [mine] }] } }));
+    const log = console.log; console.log = () => {};
+    try {
+      install({ settingsFile: f }); install({ settingsFile: f });
+      let s = JSON.parse(fs.readFileSync(f, 'utf8'));
+      assert.strictEqual(s.theme, 'dark');
+      for (const ev of EVENTS) assert.strictEqual(s.hooks[ev].flatMap((g) => g.hooks).filter((h) => /cubicle-hook/.test(h.command)).length, 1, ev);
+      assert.deepStrictEqual(s.hooks.Stop[0].hooks[0], mine);
+      install({ settingsFile: f, uninstall: true });
+      s = JSON.parse(fs.readFileSync(f, 'utf8'));
+      assert.deepStrictEqual(s, { theme: 'dark', hooks: { Stop: [{ hooks: [mine] }] } });
+    } finally { console.log = log; fs.rmSync(dir, { recursive: true, force: true }); }
+  }
+
   // feed mode
   await withServer(['--source', path.join(ROOT, 'examples/feed.json')], async (base) => {
     assert.strictEqual((await get(`${base}/`)).status, 200);
-    assert.deepStrictEqual(JSON.parse((await get(`${base}/config.json`)).body), { source: 'feed', label: 'feed.json' });
+    const cfg = JSON.parse((await get(`${base}/config.json`)).body);
+    assert.strictEqual(cfg.source, 'feed'); assert.strictEqual(cfg.label, 'feed.json'); assert.ok(cfg.build);
     const f = JSON.parse((await get(`${base}/api/feed`)).body);
     assert.strictEqual(f.agents.length, 4);
     assert.strictEqual((await get(`${base}/api/companies`)).status, 403);
@@ -50,7 +87,8 @@ async function withServer(args, fn) {
 
   // paperclip mode (no Paperclip running)
   await withServer([], async (base) => {
-    assert.deepStrictEqual(JSON.parse((await get(`${base}/config.json`)).body), { source: 'paperclip', paperclipUrl: 'http://127.0.0.1:3100' });
+    const cfg = JSON.parse((await get(`${base}/config.json`)).body);
+    assert.strictEqual(cfg.source, 'paperclip'); assert.strictEqual(cfg.paperclipUrl, 'http://127.0.0.1:3100');
     assert.strictEqual((await get(`${base}/api/feed`)).status, 404);
     assert.strictEqual((await get(`${base}/api/companies/x/secrets`)).status, 403);
     assert.strictEqual((await get(`${base}/api/companies`)).status, 502);

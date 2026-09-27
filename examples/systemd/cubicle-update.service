@@ -1,0 +1,9 @@
+[Unit]
+Description=Update the Cubicle clone and restart Cubicle services if it changed
+After=network-online.target
+
+[Service]
+Type=oneshot
+# Adjust the path if your clone is not in ~/cubicle
+Environment=CUBICLE_DIR=%h/cubicle
+ExecStart=/bin/bash %h/cubicle/examples/systemd/cubicle-update.sh

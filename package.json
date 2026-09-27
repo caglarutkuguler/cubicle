@@ -1,5 +1,5 @@
 {
-  "name": "cubicle",
+  "name": "@caglarutkuguler/cubicle",
   "version": "0.2.0",
   "description": "A live pixel-art office for your AI agents — Paperclip, Claude Code, or any JSON feed. Zero dependencies, read-only.",
   "bin": {
@@ -40,5 +40,8 @@
   "homepage": "https://caglarutkuguler.github.io/cubicle/",
   "bugs": {
     "url": "https://github.com/caglarutkuguler/cubicle/issues"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

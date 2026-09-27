@@ -200,6 +200,10 @@
         const cfg = await getJSON('/config.json');
         if (cfg.source === 'feed') { src = feed; feed.label = cfg.label || 'feed'; }
         else paperclipUrl = cfg.paperclipUrl || '';
+        // Reload when the server was updated or restarted.
+        if (cfg.build) setInterval(async () => {
+          try { if ((await getJSON('/config.json')).build !== cfg.build) location.reload(); } catch (_) {}
+        }, 60000);
       } catch (_) {
         // No Cubicle server behind this page: show the demo instead of an error.
         DEMO = true;

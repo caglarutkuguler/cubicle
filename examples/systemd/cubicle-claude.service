@@ -1,0 +1,12 @@
+[Unit]
+Description=Cubicle - live pixel office for Claude Code sessions
+
+[Service]
+# Adjust both paths: your node binary and your Cubicle clone
+ExecStart=/usr/bin/node %h/cubicle/bin/cubicle.js --source claude-code
+Environment=CUBICLE_PORT=3201
+Restart=always
+RestartSec=3
+
+[Install]
+WantedBy=default.target
