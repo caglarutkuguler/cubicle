@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cubicle</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23222536'/%3E%3Crect x='3' y='3' width='10' height='6' fill='%235cc8f0'/%3E%3Crect x='2' y='11' width='12' height='2' fill='%238b5a2b'/%3E%3C/svg%3E">
+<style>
+  :root { --bg:#171926; --panel:#222536; --line:#33374d; --text:#e9e7f2; --muted:#9a9bb3; --link:#9ec5ff; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:13px/1.45 system-ui, "Segoe UI", sans-serif; }
+  .wrap { max-width:1180px; margin:0 auto; padding:14px 16px 28px; }
+  header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
+  h1 { font-size:17px; margin:0; letter-spacing:.2px; }
+  h1 small { color:var(--muted); font-weight:500; margin-left:8px; }
+  .right { display:flex; align-items:center; gap:10px; color:var(--muted); }
+  select { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:3px 6px; font:inherit; }
+  #stage { position:relative; width:100%; aspect-ratio:352/208; border:2px solid var(--line); border-radius:8px; overflow:hidden; background:#2a2d3d; }
+  canvas { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+  #labels { position:absolute; inset:0; pointer-events:none; }
+  .lbl { position:absolute; transform:translate(-50%,-100%); display:flex; flex-direction:column; align-items:center; white-space:nowrap; }
+  .bub { background:#fff; color:#1d1f2b; border-radius:9px; padding:2px 7px; font-size:11px; font-weight:600; margin-bottom:3px; box-shadow:0 1px 0 rgba(0,0,0,.3); max-width:210px; overflow:hidden; text-overflow:ellipsis; }
+  .bub.err { background:#ffdede; color:#8a1111; }
+  .bub.ok { background:#dcffe2; color:#145c24; }
+  .name { background:rgba(15,16,26,.78); color:#fff; font-size:11px; font-weight:600; padding:1px 6px; border-radius:5px; }
+  #banner { display:none; margin-bottom:10px; padding:8px 12px; border-radius:8px; background:#2b2f47; border:1px solid var(--line); color:var(--muted); }
+  #cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; margin-top:12px; }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:9px 11px; }
+  .card .top { display:flex; align-items:center; gap:8px; }
+  .sw { width:12px; height:12px; border-radius:3px; flex:none; }
+  .card b { font-size:13px; }
+  .card .role { color:var(--muted); font-size:12px; }
+  .card .st { margin-top:4px; font-size:12px; }
+  a { color:var(--link); text-decoration:none; }
+  a:hover { text-decoration:underline; }
+  .pill { display:inline-block; font-size:11px; padding:0 6px; border-radius:9px; margin-right:6px; }
+  .p-running { background:#1f5130; color:#9ff0b4; }
+  .p-idle { background:#33374d; color:#c9cbe0; }
+  .p-error { background:#5a1f25; color:#ffb3b8; }
+  .p-paused { background:#4d4221; color:#f3dc92; }
+  footer { color:var(--muted); font-size:12px; margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Cubicle <small id="co"></small></h1>
+    <div class="right">
+      <select id="company" hidden></select>
+      <span id="status"></span>
+    </div>
+  </header>
+  <div id="banner"></div>
+  <div id="stage">
+    <canvas id="c" width="352" height="208"></canvas>
+    <div id="labels"></div>
+  </div>
+  <div id="cards"></div>
+  <footer>
+    <span id="hint"></span>
+    <span><a href="https://github.com/caglarutkuguler/cubicle" target="_blank" rel="noopener">Cubicle</a> · MIT</span>
+  </footer>
+</div>
+
+<script>
+(() => {
+  // ---------- i18n ----------
+  const STR = {
+    en: {
+      connecting: 'Connecting to Paperclip…', unreachable: "Can't reach Paperclip, retrying…",
+      noCompany: 'No company yet.', summary: (n, r) => `${n} agents · ${r} working`,
+      running: 'working', idle: 'idle', error: 'error', paused: 'paused', noTask: 'no open task assigned',
+      done: '✓ done', errBubble: '⚠ error',
+      chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
+      hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
+      demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
+    },
+    tr: {
+      connecting: "Paperclip'e bağlanılıyor…", unreachable: "Paperclip'e ulaşılamıyor, yeniden deneniyor…",
+      noCompany: 'Henüz şirket yok.', summary: (n, r) => `${n} ajan · ${r} çalışıyor`,
+      running: 'çalışıyor', idle: 'boşta', error: 'hata', paused: 'duraklatıldı', noTask: 'atanmış açık görev yok',
+      done: '✓ bitirdi', errBubble: '⚠ hata',
+      chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
+      hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
+      demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
+    },
+  };
+  const params = new URLSearchParams(location.search);
+  const lang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase() === 'tr' ? 'tr' : 'en';
+  const L = STR[lang];
+  document.documentElement.lang = lang;
+  const DEMO = params.has('demo');
+
+  // ---------- setup ----------
+  const T = 16, CW = 352, CH = 208;
+  const cv = document.getElementById('c');
+  const g = cv.getContext('2d');
+  g.imageSmoothingEnabled = false;
+  const labelsEl = document.getElementById('labels');
+  const cardsEl = document.getElementById('cards');
+  const statusEl = document.getElementById('status');
+  const companySel = document.getElementById('company');
+  document.getElementById('hint').textContent = L.hint;
+  statusEl.textContent = L.connecting;
+
+  // Office layout, in tiles
+  const DESKS = [[1,3],[4.5,3],[8,3],[11.5,3],[1,7.5],[4.5,7.5],[8,7.5],[11.5,7.5],[1,10.5],[4.5,10.5],[8,10.5],[11.5,10.5]];
+  const LOUNGE = [[16,4.4],[18,4.4],[20,4.4],[16.2,10],[18.3,10.6],[20.3,10],[15.8,7.4],[21,7.4],[17,12],[19.5,12],[16.4,5.6],[19.6,5.6]];
+  const SHIRTS = ['#e05d5d','#4f9dde','#57b86b','#e0a33b','#a66de0','#3bc4c4','#e07ab8','#9aa0b4','#f07b3f','#6fcf97','#c9b458','#5f7ee0'];
+  const HAIRS  = ['#2b1d14','#111111','#6b3e1f','#c9a04a','#8b4513','#3b2a20','#d9d0c1','#4a2b1a'];
+  const SKINS  = ['#f1c7a3','#d9a47a','#b87b52','#f5d5b8','#c68e62'];
+
+  let paperclipUrl = '';
+  let companies = [];
+  let company = null;
+  const sprites = new Map();
+
+  const hash = (s) => { let h = 0; for (const ch of s) h = (h * 31 + ch.charCodeAt(0)) >>> 0; return h; };
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+  // ---------- data sources ----------
+  async function getJSON(u) { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return r.json(); }
+
+  const live = {
+    async companies() { return getJSON('/api/companies'); },
+    async agents(id) { return getJSON(`/api/companies/${id}/agents`); },
+    async issues(id) { return getJSON(`/api/companies/${id}/issues`); },
+  };
+
+  const demo = (() => {
+    const t0 = Date.now();
+    const roster = [
+      ['CEO', 'Chief Executive'], ['WebDev', 'Web Developer'], ['SEO', 'SEO & Content'],
+      ['Growth', 'Growth Marketer'], ['Analyst', 'Functional Analyst'], ['QA', 'QA & Refactoring'],
+    ];
+    const tasks = ['Audit site health', 'Keyword research', 'Qualified leads shortlist', 'Review checkout flow', 'Refactor module', 'Write test checklist'];
+    const agents = roster.map(([name, title], i) => ({
+      id: `demo-${i}`, name, title, createdAt: `2026-01-01T00:0${i}:00Z`, status: 'idle', errorReason: null,
+    }));
+    function tick() {
+      const s = Math.floor((Date.now() - t0) / 1000);
+      agents.forEach((a, i) => {
+        const phase = Math.floor((s + i * 7) / (9 + i * 2)) % 5;
+        a.status = phase === 4 && i === 2 ? 'error' : phase % 2 === 0 ? 'running' : 'idle';
+        a.errorReason = a.status === 'error' ? 'Example error: connection lost' : null;
+      });
+    }
+    return {
+      async companies() { return [{ id: 'demo', name: 'Demo Co.', issuePrefix: 'DEMO' }]; },
+      async agents() { tick(); return agents.map((a) => ({ ...a })); },
+      async issues() {
+        return agents.map((a, i) => ({ identifier: `DEMO-${i + 1}`, title: tasks[i], status: 'in_progress', assigneeAgentId: a.id }));
+      },
+    };
+  })();
+
+  const src = DEMO ? demo : live;
+
+  async function init() {
+    if (DEMO) {
+      const b = document.getElementById('banner');
+      b.innerHTML = L.demo; b.style.display = 'block';
+    } else {
+      try { paperclipUrl = (await getJSON('/config.json')).paperclipUrl || ''; } catch (_) {}
+    }
+    poll();
+    setInterval(poll, 4000);
+    requestAnimationFrame(frame);
+  }
+
+  async function poll() {
+    try {
+      if (!company) {
+        companies = await src.companies();
+        if (!companies.length) { statusEl.textContent = L.noCompany; return; }
+        const want = params.get('company');
+        company = companies.find((c) => c.issuePrefix === want || c.id === want) || companies[0];
+        if (companies.length > 1) {
+          companySel.hidden = false;
+          companySel.innerHTML = companies.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+          companySel.value = company.id;
+        }
+        document.getElementById('co').textContent = company.name;
+      }
+      const [agents, issues] = await Promise.all([src.agents(company.id), src.issues(company.id)]);
+      sync(agents, issues);
+      const running = agents.filter((a) => a.status === 'running').length;
+      statusEl.textContent = `${L.summary(agents.length, running)} · ${new Date().toLocaleTimeString(lang)}`;
+    } catch (e) {
+      statusEl.textContent = L.unreachable;
+    }
+  }
+
+  companySel.addEventListener('change', () => {
+    company = companies.find((c) => c.id === companySel.value);
+    document.getElementById('co').textContent = company.name;
+    for (const s of sprites.values()) s.el.remove();
+    sprites.clear();
+    const u = new URL(location.href); u.searchParams.set('company', company.issuePrefix); history.replaceState(null, '', u);
+    poll();
+  });
+
+  function currentTask(agentId, issues) {
+    const mine = issues.filter((i) => i.assigneeAgentId === agentId);
+    for (const st of ['in_progress', 'in_review', 'blocked', 'todo', 'backlog']) {
+      const f = mine.find((i) => i.status === st);
+      if (f) return f;
+    }
+    return null;
+  }
+
+  function sync(agents, issues) {
+    const sorted = [...agents].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+    const seen = new Set();
+    sorted.forEach((a, idx) => {
+      seen.add(a.id);
+      let s = sprites.get(a.id);
+      if (!s) {
+        const h = hash(a.id);
+        const spot = LOUNGE[idx % LOUNGE.length];
+        s = {
+          id: a.id, idx, seed: (h % 1000) / 100,
+          shirt: SHIRTS[idx % SHIRTS.length], hair: HAIRS[h % HAIRS.length], skin: SKINS[(h >> 3) % SKINS.length],
+          x: spot[0] * T, y: spot[1] * T,
+          lounge: idx % LOUNGE.length, nextWander: performance.now() / 1000 + 5 + (h % 10),
+          bubble: null, bubbleClass: '', bubbleUntil: 0, prevStatus: a.status,
+        };
+        const el = document.createElement('div');
+        el.className = 'lbl';
+        el.innerHTML = '<div class="bub" style="display:none"></div><div class="name"></div>';
+        labelsEl.appendChild(el);
+        s.el = el;
+        sprites.set(a.id, s);
+      }
+      s.idx = idx;
+      s.desk = DESKS[idx % DESKS.length];
+      s.name = a.name;
+      s.role = a.title || a.role || '';
+      s.status = a.status;
+      s.error = a.errorReason || '';
+      s.task = currentTask(a.id, issues);
+      if (s.prevStatus === 'running' && s.status === 'idle') setBubble(s, L.done, 'ok', 6);
+      s.prevStatus = s.status;
+      s.el.querySelector('.name').textContent = s.name;
+    });
+    for (const [id, s] of sprites) if (!seen.has(id)) { s.el.remove(); sprites.delete(id); }
+    renderCards();
+  }
+
+  function setBubble(s, text, cls = '', secs = 4) {
+    s.bubble = text; s.bubbleClass = cls; s.bubbleUntil = performance.now() / 1000 + secs;
+  }
+
+  function taskLink(t) {
+    if (!paperclipUrl || DEMO) return esc(t.identifier);
+    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="_blank" rel="noopener">${esc(t.identifier)}</a>`;
+  }
+
+  function renderCards() {
+    const list = [...sprites.values()].sort((a, b) => a.idx - b.idx);
+    cardsEl.innerHTML = list.map((s) => {
+      const t = s.task;
+      const taskHtml = t ? `${taskLink(t)} ${esc(t.title)}` : `<span style="color:var(--muted)">${L.noTask}</span>`;
+      const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>` : '';
+      return `<div class="card"><div class="top"><span class="sw" style="background:${s.shirt}"></span><b>${esc(s.name)}</b></div>
+        <div class="role">${esc(s.role)}</div>
+        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}</div>${err}</div>`;
+    }).join('');
+  }
+
+  // ---------- movement ----------
+  function targetFor(s, now) {
+    if (s.status === 'running' || s.status === 'error') return [s.desk[0] * T + 22, s.desk[1] * T + 12, true];
+    if (now > s.nextWander) {
+      const used = new Set([...sprites.values()].filter((o) => o !== s).map((o) => o.lounge));
+      const free = LOUNGE.map((_, i) => i).filter((i) => !used.has(i));
+      if (free.length) s.lounge = free[Math.floor(Math.random() * free.length)];
+      s.nextWander = now + 9 + Math.random() * 14;
+      if (Math.random() < 0.35) setBubble(s, L.chatter[Math.floor(Math.random() * L.chatter.length)], '', 3);
+    }
+    const p = LOUNGE[s.lounge];
+    return [p[0] * T, p[1] * T, false];
+  }
+
+  function step(s, dt, now) {
+    const [tx, ty, atDesk] = targetFor(s, now);
+    // Walk through the doorway between the work area and the lounge
+    const inWork = s.x < 14 * T, toWork = tx < 14 * T;
+    let gx = tx, gy = ty;
+    if (inWork !== toWork) {
+      const doorX = 14 * T + 8, doorY = 7 * T;
+      if (Math.abs(s.x - doorX) > 3 || Math.abs(s.y - doorY) > 3) { gx = doorX; gy = doorY; }
+      else { s.x += inWork ? 6 : -6; }
+    }
+    const dx = gx - s.x, dy = gy - s.y, d = Math.hypot(dx, dy);
+    if (d > 0.8) {
+      const m = Math.min(d, 34 * dt);
+      s.x += (dx / d) * m; s.y += (dy / d) * m;
+      s.walking = true; s.dir = Math.abs(dx) > Math.abs(dy) ? Math.sign(dx) : 0;
+    } else {
+      s.walking = false;
+    }
+    s.seated = !s.walking && atDesk && Math.hypot(tx - s.x, ty - s.y) < 1.5;
+    s.typing = s.seated && s.status === 'running';
+  }
+
+  // ---------- drawing ----------
+  const rect = (c, x, y, w, h) => { g.fillStyle = c; g.fillRect(Math.round(x), Math.round(y), w, h); };
+
+  function drawRoom(t) {
+    const hr = new Date().getHours();
+    const night = hr < 7 || hr >= 20;
+    for (let y = 2; y < 13; y++) for (let x = 0; x < 22; x++) {
+      const lounge = x >= 15;
+      rect((x + y) % 2 ? (lounge ? '#4a3d57' : '#3a3f56') : (lounge ? '#463a52' : '#363b51'), x * T, y * T, T, T);
+    }
+    rect('#5b4a6b', 16.5 * T, 6.3 * T, 4.6 * T, 3 * T);
+    rect('#4b4f6b', 0, 0, CW, 2 * T);
+    rect('#3a3d55', 0, 2 * T - 3, CW, 3);
+    for (const wx of [1.5, 5.5, 9.5, 16.5]) {
+      rect('#2c2f44', wx * T - 1, 5, 34, 18);
+      rect(night ? '#1c2a4a' : '#8fc7ff', wx * T, 6, 32, 16);
+      if (!night) { const cx = (t * 3 + wx * 11) % 44 - 8; rect('rgba(255,255,255,.85)', wx * T + cx, 11, 8, 3); rect('rgba(255,255,255,.85)', wx * T + cx + 2, 9, 4, 2); }
+      else rect('#f5f1c8', wx * T + 24, 9, 3, 3);
+      rect('#2c2f44', wx * T + 15, 6, 2, 16);
+    }
+    // wall clock
+    rect('#e9e7f2', 13 * T, 7, 12, 12); rect('#4b4f6b', 13 * T + 1, 8, 10, 10);
+    const now = new Date();
+    const hand = (a, len) => { g.beginPath(); g.moveTo(13 * T + 6, 13); g.lineTo(13 * T + 6 + Math.sin(a) * len, 13 - Math.cos(a) * len); g.stroke(); };
+    g.strokeStyle = '#e9e7f2'; g.lineWidth = 1;
+    hand(((now.getHours() % 12) + now.getMinutes() / 60) / 12 * Math.PI * 2, 3);
+    hand(now.getMinutes() / 60 * Math.PI * 2, 4);
+    // glass partition with a doorway
+    rect('rgba(160,200,255,.18)', 14 * T + 6, 2 * T, 4, 4 * T);
+    rect('rgba(160,200,255,.18)', 14 * T + 6, 8 * T, 4, 5 * T);
+    rect('#6c7090', 14 * T + 6, 2 * T, 4, 2); rect('#6c7090', 14 * T + 6, 8 * T, 4, 2);
+  }
+
+  function loungeProps(t, list) {
+    list.push({ z: 3.6 * T, f: () => {
+      rect('#6a3f8f', 15.8 * T, 2.4 * T, 5 * T, 12); rect('#7d4fa6', 15.8 * T, 2.4 * T + 12, 5 * T, 8);
+      for (let i = 0; i < 4; i++) rect('#9467bd', 16 * T + i * 19, 2.4 * T + 13, 16, 5);
+    }});
+    list.push({ z: 3.4 * T, f: () => {
+      rect('#3b3e4d', 21.1 * T, 2.2 * T, 12, 20); rect('#23252f', 21.1 * T + 2, 2.2 * T + 8, 8, 6);
+      rect(Math.floor(t * 2) % 2 ? '#ff5a5a' : '#8a2a2a', 21.1 * T + 9, 2.2 * T + 3, 2, 2);
+    }});
+    list.push({ z: 6.9 * T, f: () => {
+      rect('#8b5a2b', 17 * T, 6.9 * T, 3.6 * T, 1.6 * T); rect('#6e4520', 17 * T, 8.5 * T, 3.6 * T, 3);
+      rect('#e9e7f2', 17.4 * T, 7.2 * T, 10, 7); rect('#e9e7f2', 19.4 * T, 7.4 * T, 8, 6);
+    }});
+    for (const [px, py] of [[14.9, 2.3], [21.3, 11.6], [0.2, 12.1]]) list.push({ z: (py + 1) * T, f: () => {
+      rect('#8b5a2b', px * T + 3, py * T + 10, 8, 6);
+      rect('#3f9d55', px * T + 1, py * T, 12, 11); rect('#57b86b', px * T + 3, py * T - 3, 8, 6);
+    }});
+  }
+
+  function drawDesk(d, s, t) {
+    const x = d[0] * T, y = d[1] * T;
+    const on = s && s.typing;
+    const err = s && s.status === 'error' && s.seated;
+    rect('#8b5a2b', x, y + 8, 34, 10); rect('#6e4520', x, y + 18, 34, 3);
+    rect('#6e4520', x + 1, y + 21, 2, 6); rect('#6e4520', x + 31, y + 21, 2, 6);
+    rect('#22252f', x + 3, y - 2, 14, 10);
+    rect(err ? (Math.floor(t * 2) % 2 ? '#ff6b6b' : '#a33') : on ? '#5cc8f0' : '#3a4050', x + 4, y - 1, 12, 7);
+    if (on) for (let i = 0; i < 3; i++) rect('rgba(255,255,255,.75)', x + 5, y + i * 2, (Math.floor(t * 9 + i * 4) % 9) + 1, 1);
+    rect('#22252f', x + 9, y + 8, 2, 1);
+    rect('#c9cbd6', x + 17, y + 10, 11, 2);
+    if (on) rect('#ffffff', x + 17 + (Math.floor(t * 12) % 10), y + 10, 1, 1);
+    rect('#f3f3f3', x + 29, y + 9, 3, 4); rect('#f3f3f3', x + 32, y + 10, 1, 2);
+  }
+
+  function drawChar(s, t) {
+    const x = Math.round(s.x), y = Math.round(s.y);
+    const bob = s.walking ? Math.floor(t * 8 + s.seed) % 2 : 0;
+    rect('rgba(0,0,0,.25)', x - 4, y - 1, 8, 2);
+    if (!s.seated) {
+      const ph = s.walking ? Math.floor(t * 8 + s.seed) % 2 : 0;
+      rect('#2b2f45', x - 3, y - 5, 2, ph ? 4 : 5);
+      rect('#2b2f45', x + 1, y - 5, 2, ph ? 5 : 4);
+    }
+    rect(s.shirt, x - 4, y - 11 - bob, 8, 6);
+    if (s.typing) {
+      const a = Math.floor(t * 10 + s.seed) % 2;
+      rect(s.skin, x - 5, y - 8 - bob - a, 2, 2);
+      rect(s.skin, x + 3, y - 8 - bob - (1 - a), 2, 2);
+    } else {
+      rect(s.skin, x - 5, y - 10 - bob, 1, 4);
+      rect(s.skin, x + 4, y - 10 - bob, 1, 4);
+    }
+    const slump = s.status === 'error' && s.seated ? 1 : 0;
+    rect(s.skin, x - 3, y - 17 - bob + slump, 6, 6);
+    rect(s.hair, x - 3, y - 18 - bob + slump, 6, 2);
+    rect(s.hair, x - 3, y - 17 - bob + slump, 1, 2);
+    rect(s.hair, x + 2, y - 17 - bob + slump, 1, 2);
+    if (((t + s.seed) % 4) >= 0.14) {
+      const ox = s.dir || 0;
+      rect('#1a1a1a', x - 2 + ox, y - 14 - bob + slump, 1, 1);
+      rect('#1a1a1a', x + 1 + ox, y - 14 - bob + slump, 1, 1);
+    }
+  }
+
+  function placeLabels(now) {
+    const k = cv.clientWidth / CW;
+    for (const s of sprites.values()) {
+      s.el.style.left = (s.x * k) + 'px';
+      s.el.style.top = ((s.y - 20) * k) + 'px';
+      const b = s.el.querySelector('.bub');
+      let text = null, cls = '';
+      if (s.bubble && now < s.bubbleUntil) { text = s.bubble; cls = s.bubbleClass; }
+      else if (s.status === 'error' && s.seated) { text = L.errBubble; cls = 'err'; }
+      else if (s.typing && s.task) text = '⌨ ' + s.task.identifier;
+      else if (s.status === 'paused') text = 'zZ';
+      if (text) { b.textContent = text; b.className = 'bub ' + cls; b.style.display = ''; }
+      else b.style.display = 'none';
+    }
+  }
+
+  let last = performance.now() / 1000;
+  function frame() {
+    const now = performance.now() / 1000;
+    const dt = Math.min(0.1, now - last); last = now;
+    g.clearRect(0, 0, CW, CH);
+    drawRoom(now);
+    const list = [];
+    loungeProps(now, list);
+    const byDesk = new Map();
+    for (const s of sprites.values()) { step(s, dt, now); byDesk.set(s.desk, s); }
+    const deskCount = Math.max(4, Math.min(DESKS.length, Math.ceil(sprites.size / 4) * 4));
+    DESKS.slice(0, deskCount).forEach((d) => list.push({ z: d[1] * T + 21, f: () => drawDesk(d, byDesk.get(d), now) }));
+    for (const s of sprites.values()) list.push({ z: s.y, f: () => drawChar(s, now) });
+    list.sort((a, b) => a.z - b.z).forEach((o) => o.f());
+    placeLabels(now);
+    requestAnimationFrame(frame);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>

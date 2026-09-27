@@ -1,0 +1,35 @@
+{
+  "name": "cubicle",
+  "version": "0.1.0",
+  "description": "A live pixel-art office for your Paperclip AI agents",
+  "bin": {
+    "cubicle": "bin/cubicle.js"
+  },
+  "scripts": {
+    "start": "node bin/cubicle.js",
+    "demo": "node bin/cubicle.js & sleep 1 && echo 'Open http://127.0.0.1:3200/?demo'"
+  },
+  "files": [
+    "bin",
+    "public"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "keywords": [
+    "paperclip",
+    "ai-agents",
+    "pixel-art",
+    "dashboard",
+    "claude-code",
+    "cursor",
+    "codex",
+    "agent-orchestration"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/caglarutkuguler/cubicle.git"
+  },
+  "author": "Çağlar Utku Güler",
+  "license": "MIT"
+}
