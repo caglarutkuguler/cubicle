@@ -69,7 +69,8 @@
   // ---------- i18n ----------
   const STR = {
     en: {
-      connecting: 'Connecting…', unreachable: "Can't reach Paperclip, retrying…", feedUnreachable: "Can't read the agent feed, retrying…",
+      connecting: 'Connecting…', unreachable: "Can't reach Paperclip, retrying…",
+      denied: (c) => `Paperclip refused access (${c}). Set PAPERCLIP_TOKEN for an authenticated Paperclip, or check the key.`, feedUnreachable: "Can't read the agent feed, retrying…",
       empty: 'No agents yet.', emptyClaude: 'No Claude Code sessions yet — start <code>claude</code> in any folder and it will walk in.',
       noCompany: 'No company yet.', summary: (n, r) => `${n} agents · ${r} working`,
       running: 'working', idle: 'idle', error: 'error', paused: 'paused', waiting: 'needs you', noTask: 'no open task assigned',
@@ -80,7 +81,8 @@
       hosted: 'This is the hosted demo with fake agents. To watch your own Paperclip company, run <code>npx github:caglarutkuguler/cubicle</code> and open <code>http://127.0.0.1:3200</code>.',
     },
     tr: {
-      connecting: 'Bağlanılıyor…', unreachable: "Paperclip'e ulaşılamıyor, yeniden deneniyor…", feedUnreachable: 'Ajan verisi okunamıyor, yeniden deneniyor…',
+      connecting: 'Bağlanılıyor…', unreachable: "Paperclip'e ulaşılamıyor, yeniden deneniyor…",
+      denied: (c) => `Paperclip erişimi reddetti (${c}). Kimlik doğrulamalı Paperclip için PAPERCLIP_TOKEN tanımlayın veya anahtarı kontrol edin.`, feedUnreachable: 'Ajan verisi okunamıyor, yeniden deneniyor…',
       empty: 'Henüz ajan yok.', emptyClaude: 'Henüz Claude Code oturumu yok. Herhangi bir klasörde <code>claude</code> başlatın, ofise girecek.',
       noCompany: 'Henüz şirket yok.', summary: (n, r) => `${n} ajan · ${r} çalışıyor`,
       running: 'çalışıyor', idle: 'boşta', error: 'hata', paused: 'duraklatıldı', waiting: 'sizi bekliyor', noTask: 'atanmış açık görev yok',
@@ -244,7 +246,9 @@
       const running = agents.filter((a) => a.status === 'running').length;
       statusEl.textContent = `${L.summary(agents.length, running)} · ${new Date().toLocaleTimeString(lang)}`;
     } catch (e) {
-      statusEl.textContent = src === feed ? L.feedUnreachable : L.unreachable;
+      const code = Number(e && e.message);
+      statusEl.textContent = src === feed ? L.feedUnreachable
+        : (code === 401 || code === 403) ? L.denied(code) : L.unreachable;
     }
   }
 

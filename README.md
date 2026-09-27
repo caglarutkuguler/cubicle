@@ -56,6 +56,7 @@ node bin/cubicle.js            # add --source … as above
 | `--host` | `CUBICLE_HOST` | `127.0.0.1` |
 | `--source` | `CUBICLE_SOURCE` | `paperclip` — or `claude-code`, a `.json` file, or an `http(s)://` URL |
 | `--paperclip` | `PAPERCLIP_URL` | `http://127.0.0.1:3100` |
+| `--token-file` | `PAPERCLIP_TOKEN` / `PAPERCLIP_TOKEN_FILE` | none — API key for an authenticated Paperclip |
 
 URL parameters:
 
@@ -77,7 +78,17 @@ Each card below the office links to the agent's current task when the source pro
 
 ## Sources
 
-**Paperclip.** Cubicle proxies three read-only endpoints (`/api/health`, `/api/companies`, `/api/companies/:id/agents|issues`) and maps Paperclip's agent status and open issues onto the office. Any adapter Paperclip supports — Claude Code, Codex, Cursor, HTTP agents — shows up, because the status comes from Paperclip itself. Targets the default `local_trusted` mode; authenticated deployments are not supported yet.
+**Paperclip.** Cubicle proxies three read-only endpoints (`/api/health`, `/api/companies`, `/api/companies/:id/agents|issues`) and maps Paperclip's agent status and open issues onto the office. Any adapter Paperclip supports — Claude Code, Codex, Cursor, HTTP agents — shows up, because the status comes from Paperclip itself.
+
+The default `local_trusted` mode needs no key. For an authenticated or remote Paperclip, give Cubicle an API key; it is sent as `Authorization: Bearer …` on the forwarded requests only:
+
+```bash
+PAPERCLIP_URL=https://paperclip.example.com PAPERCLIP_TOKEN=pcp_… npx github:caglarutkuguler/cubicle
+# or keep it in a file only you can read
+npx github:caglarutkuguler/cubicle --paperclip https://paperclip.example.com --token-file ~/.config/cubicle/paperclip-token
+```
+
+Use a board API key with the narrowest read-only scope Paperclip lets you create; an agent key also works but only sees that agent's company. There is no `--token` flag on purpose, because command-line flags are visible in the process list. With systemd, put `PAPERCLIP_TOKEN=…` in a `chmod 600` file and point `EnvironmentFile=` at it (see `examples/systemd/cubicle.service`).
 
 **Claude Code.** A hook script ([`bin/cubicle-hook.js`](bin/cubicle-hook.js)) runs on Claude Code's own hook events and rewrites `~/.cubicle/claude-code.json`. Tool calls put the character at its desk, permission prompts raise its hand, `Stop` sends it to the lounge. Setup and privacy notes: [`examples/claude-code/README.md`](examples/claude-code/README.md).
 
@@ -109,6 +120,7 @@ journalctl --user -u cubicle-update.service   # what it did
 
 - Cubicle binds to `127.0.0.1` by default. Keep it that way unless you put it behind your own authentication, because anyone who can reach it can see your agent names, statuses and task titles.
 - Only `GET` and `HEAD` are accepted; everything else gets `405`. In Paperclip mode only the three endpoints above are forwarded and any other `/api/` path gets `403`. In feed mode the only upstream request is a `GET` to the configured file or URL.
+- A Paperclip API key is added by the proxy and never sent to the browser. The browser's own cookies and `Authorization` header are never forwarded upstream. If you bind to anything other than loopback while a key is set, Cubicle prints a warning at startup: everyone who can reach the port can read what the key can read.
 - The Claude Code hook never touches the network and stores only session id, directory name, status and a short summary of the current tool call.
 
 ## How it works
@@ -117,7 +129,7 @@ journalctl --user -u cubicle-update.service   # what it did
 
 ## Contributing
 
-Issues and pull requests are welcome. Ideas: adapters for other agent runtimes (write a feed, send a PR with an example), a kiosk mode for wall displays, meeting-room animations when agents hand work to each other, per-agent sprite customisation, replay of a recorded day, and support for authenticated Paperclip deployments.
+Issues and pull requests are welcome. Ideas: adapters for other agent runtimes (write a feed, send a PR with an example), a kiosk mode for wall displays, meeting-room animations when agents hand work to each other, per-agent sprite customisation, replay of a recorded day, and multi-source offices (Paperclip and Claude Code on one floor).
 
 ## Credits
 

@@ -7,6 +7,8 @@ After=paperclipai.service
 ExecStart=/usr/bin/node %h/cubicle/bin/cubicle.js
 Environment=CUBICLE_PORT=3200
 Environment=PAPERCLIP_URL=http://127.0.0.1:3100
+# Authenticated Paperclip: a chmod 600 file containing the line PAPERCLIP_TOKEN=pcp_...
+# EnvironmentFile=%h/.config/cubicle/env
 Restart=always
 RestartSec=3
 

@@ -95,6 +95,36 @@ async function withServer(args, fn, env = {}) {
     }, { HOME: home, USERPROFILE: home });
   }
 
+  // authenticated Paperclip: the proxy adds the key; browser credentials never pass through
+  {
+    const seen = [];
+    const fake = http.createServer((q, r) => {
+      seen.push({ path: q.url, method: q.method, auth: q.headers.authorization, cookie: q.headers.cookie });
+      r.writeHead(200, { 'content-type': 'application/json' }); r.end('[]');
+    });
+    await new Promise((ok) => fake.listen(0, '127.0.0.1', ok));
+    const upstream = `http://127.0.0.1:${fake.address().port}`;
+    const withHeaders = (url, headers) => new Promise((resolve, reject) => {
+      const u = new URL(url);
+      http.get({ hostname: u.hostname, port: u.port, path: u.pathname, headers }, (r) => { r.resume(); r.on('end', () => resolve(r.statusCode)); }).on('error', reject);
+    });
+    try {
+      await withServer(['--paperclip', upstream], async (base) => {
+        assert.strictEqual(await withHeaders(`${base}/api/companies`, { authorization: 'Bearer from-browser', cookie: 'sid=browser' }), 200);
+        assert.strictEqual(await withHeaders(`${base}/api/companies/x/secrets`, {}), 403);
+      }, { PAPERCLIP_TOKEN: 'pcp_test_key' });
+      await withServer(['--paperclip', upstream], async (base) => {
+        assert.strictEqual(await withHeaders(`${base}/api/companies`, { authorization: 'Bearer from-browser' }), 200);
+      }, { PAPERCLIP_TOKEN: '' });
+      assert.deepStrictEqual(seen, [
+        { path: '/api/companies', method: 'GET', auth: 'Bearer pcp_test_key', cookie: undefined },
+        { path: '/api/companies', method: 'GET', auth: undefined, cookie: undefined },
+      ]);
+      const cfg = await new Promise((resolve) => withServer(['--paperclip', upstream], async (base) => resolve((await get(`${base}/config.json`)).body), { PAPERCLIP_TOKEN: 'pcp_test_key' }));
+      assert.ok(!cfg.includes('pcp_test_key'), 'key must never reach the browser');
+    } finally { fake.close(); }
+  }
+
   // paperclip mode (no Paperclip running)
   await withServer([], async (base) => {
     const cfg = JSON.parse((await get(`${base}/config.json`)).body);
