@@ -65,13 +65,14 @@ URL parameters:
 - `?company=PREFIX` opens a specific Paperclip company (for example `?company=MEG`). With several companies, a picker also appears in the header.
 - `?lang=en` or `?lang=tr` sets the language.
 - `?demo` shows fake agents.
+- `?kiosk` fills the screen with the office for a TV or a second monitor: cards and footer hidden, names and bubbles scale with the screen, cursor hidden. Combined with the auto-updater, a wall display picks up new versions by itself.
 
 ## What the office shows
 
 | Status | In the office |
 | --- | --- |
 | `running` | Sits at its desk, monitor on, typing; bubble shows the task |
-| `waiting` | Sits at its desk with a hand up, amber screen — it needs your input or approval |
+| `waiting` | Sits at its desk with a hand up, amber screen — it needs your input or approval. With Paperclip this comes from issues whose review is waiting on the board (for example pending ask-user questions); a busy agent keeps typing but its bubble flashes the issue id, and the header counts how many need you |
 | `idle` | Wanders the lounge; says "✓ done" right after finishing a run |
 | `error` | Slumped at its desk, red screen, error text on its card |
 | `paused` | "zZ" |
