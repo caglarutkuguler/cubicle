@@ -97,6 +97,21 @@ Use a board API key with the narrowest read-only scope Paperclip lets you create
 
 **Feed.** Any process can write `{ "company": "…", "agents": [{ "id", "name", "role", "status", "task", "error" }] }` to a file or serve it over HTTP. Full spec with status aliases: [`docs/FEED.md`](docs/FEED.md). A sample is in [`examples/feed.json`](examples/feed.json).
 
+## How it compares
+
+Cubicle is one of several pixel offices for AI agents, all inspired by [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents). They optimise for different things:
+
+| | Cubicle | [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) | [Agent Pixels](https://github.com/gcampton/Agent-Pixels) | [agents-in-the-office](https://github.com/gukosowa/agents-in-the-office) |
+| --- | --- | --- | --- | --- |
+| Works with | Paperclip, Claude Code, any JSON feed | Claude Code | Paperclip | Claude Code, Gemini CLI |
+| Runs as | Standalone page (`npx`, systemd, kiosk) | VS Code extension or `npx` browser app | Paperclip plugin | Standalone app |
+| Setup | One command, nothing to build | Marketplace install; build from source to hack on it | Build against the Paperclip plugin SDK | See its README |
+| Access to your agents | Read-only by design (GET allowlist) | Watches local Claude Code sessions | Inside Paperclip | Watches local sessions |
+| Shows "needs you" | Yes: permission prompts, board questions | Yes: waiting for approval | Not listed | Yes: approval alerts |
+| Office editor, art | Fixed room, programmer art | Layout editor, furniture and character assets, pets | 80+ characters, multi-room views | Tile map editor, sound packs |
+
+**Pick Cubicle** if you want something you can trust to run next to production agents (it can only read), that starts in seconds with no build, or that shows Paperclip and Claude Code in one place. **Pick another one** if you want to design your office, richer art, or tighter editor integration.
+
 ## Run it as a service (Linux / WSL)
 
 systemd user units are in [`examples/systemd/`](examples/systemd/): `cubicle.service` (Paperclip, port 3200), `cubicle-claude.service` (Claude Code, port 3201), and an optional updater.
@@ -132,7 +147,7 @@ journalctl --user -u cubicle-update.service   # what it did
 
 ## Contributing
 
-Issues and pull requests are welcome. Ideas: adapters for other agent runtimes (write a feed, send a PR with an example), a kiosk mode for wall displays, meeting-room animations when agents hand work to each other, per-agent sprite customisation, replay of a recorded day, and multi-source offices (Paperclip and Claude Code on one floor).
+Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for the few ground rules (zero dependencies, read-only). Look for issues labelled [good first issue](https://github.com/caglarutkuguler/cubicle/labels/good%20first%20issue). Ideas: adapters for other agent runtimes (write a feed, send a PR with an example), a kiosk mode for wall displays, meeting-room animations when agents hand work to each other, per-agent sprite customisation, replay of a recorded day, and multi-source offices (Paperclip and Claude Code on one floor).
 
 ## Releasing
 

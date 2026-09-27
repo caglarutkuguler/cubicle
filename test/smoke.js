@@ -135,6 +135,12 @@ async function withServer(args, fn, env = {}) {
     assert.strictEqual(await req(`${base}/api/companies`, 'DELETE'), 405);
   });
 
+  // --version prints the package version
+  {
+    const out = require('child_process').execFileSync(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--version']).toString().trim();
+    assert.strictEqual(out, require('../package.json').version);
+  }
+
   // page script parses
   const html = require('fs').readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
   new Function(html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>')));

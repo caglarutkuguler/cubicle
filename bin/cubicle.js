@@ -32,6 +32,11 @@ if (process.argv[2] === 'install-hooks') {
   return;
 }
 
+if (process.argv.includes('--version') || process.argv.includes('-v')) {
+  console.log(require('../package.json').version);
+  process.exit(0);
+}
+
 if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`Cubicle — a live pixel-art office for your AI agents
 

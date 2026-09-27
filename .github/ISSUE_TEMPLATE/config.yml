@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Live demo
+    url: https://caglarutkuguler.github.io/cubicle/?lang=en
+    about: Try Cubicle without installing anything.
