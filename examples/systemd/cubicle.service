@@ -5,6 +5,8 @@ After=paperclipai.service
 [Service]
 # Adjust both paths: your node binary and your Cubicle clone
 ExecStart=/usr/bin/node %h/cubicle/bin/cubicle.js
+# Paperclip and Claude Code in one office instead:
+# ExecStart=/usr/bin/node %h/cubicle/bin/cubicle.js --source paperclip,claude-code
 Environment=CUBICLE_PORT=3200
 Environment=PAPERCLIP_URL=http://127.0.0.1:3100
 # Authenticated Paperclip: a chmod 600 file containing the line PAPERCLIP_TOKEN=pcp_...

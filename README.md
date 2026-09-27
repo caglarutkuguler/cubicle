@@ -33,6 +33,12 @@ npx @caglarutkuguler/cubicle install-hooks      # once; backs up ~/.claude/setti
 npx @caglarutkuguler/cubicle --source claude-code
 ```
 
+**Both in one office** — Paperclip agents on the first rows, Claude Code sessions after them:
+
+```bash
+npx @caglarutkuguler/cubicle --source paperclip,claude-code
+```
+
 **Anything else** — a JSON file or URL in the [feed format](docs/FEED.md):
 
 ```bash
@@ -56,7 +62,7 @@ node bin/cubicle.js            # add --source … as above
 | --- | --- | --- |
 | `--port` | `CUBICLE_PORT` | `3200` |
 | `--host` | `CUBICLE_HOST` | `127.0.0.1` |
-| `--source` | `CUBICLE_SOURCE` | `paperclip` — or `claude-code`, a `.json` file, or an `http(s)://` URL |
+| `--source` | `CUBICLE_SOURCE` | `paperclip` — or `claude-code`, a `.json` file, an `http(s)://` URL, or several of these comma-separated |
 | `--paperclip` | `PAPERCLIP_URL` | `http://127.0.0.1:3100` |
 | `--token-file` | `PAPERCLIP_TOKEN` / `PAPERCLIP_TOKEN_FILE` | none — API key for an authenticated Paperclip |
 
@@ -94,6 +100,8 @@ npx @caglarutkuguler/cubicle --paperclip https://paperclip.example.com --token-f
 Use a board API key with the narrowest read-only scope Paperclip lets you create; an agent key also works but only sees that agent's company. There is no `--token` flag on purpose, because command-line flags are visible in the process list. With systemd, put `PAPERCLIP_TOKEN=…` in a `chmod 600` file and point `EnvironmentFile=` at it (see `examples/systemd/cubicle.service`).
 
 **Claude Code.** A hook script ([`bin/cubicle-hook.js`](bin/cubicle-hook.js)) runs on Claude Code's own hook events and rewrites `~/.cubicle/claude-code.json`. Tool calls put the character at its desk, permission prompts raise its hand, `Stop` sends it to the lounge. Setup and privacy notes: [`examples/claude-code/README.md`](examples/claude-code/README.md).
+
+**Several at once.** `--source paperclip,claude-code,./other.json` puts every source in the same office. Each source keeps its own block of desks, so agents don't shuffle when a session starts or ends, and if one source goes down the others keep showing while the header names the one that is unreachable.
 
 **Feed.** Any process can write `{ "company": "…", "agents": [{ "id", "name", "role", "status", "task", "error" }] }` to a file or serve it over HTTP. Full spec with status aliases: [`docs/FEED.md`](docs/FEED.md). A sample is in [`examples/feed.json`](examples/feed.json).
 

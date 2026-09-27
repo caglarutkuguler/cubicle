@@ -95,6 +95,16 @@ async function withServer(args, fn, env = {}) {
     }, { HOME: home, USERPROFILE: home });
   }
 
+  // several sources in one office
+  await withServer(['--source', `paperclip,${path.join(ROOT, 'examples/feed.json')}`], async (base) => {
+    const cfg = JSON.parse((await get(`${base}/config.json`)).body);
+    assert.deepStrictEqual(cfg.sources.map((x) => x.kind), ['paperclip', 'feed']);
+    assert.strictEqual(cfg.sources[1].path, '/api/feed/0');
+    assert.strictEqual(JSON.parse((await get(`${base}/api/feed/0`)).body).agents.length, 4);
+    assert.strictEqual((await get(`${base}/api/feed/1`)).status, 404);
+    assert.strictEqual((await get(`${base}/api/companies/x/secrets`)).status, 403);
+  });
+
   // authenticated Paperclip: the proxy adds the key; browser credentials never pass through
   {
     const seen = [];

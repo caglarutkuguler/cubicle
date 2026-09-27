@@ -145,11 +145,33 @@
   // ---------- data sources ----------
   async function getJSON(u) { const r = await fetch(u, { cache: 'no-store' }); if (!r.ok) throw new Error(r.status); return r.json(); }
 
-  const live = {
-    async companies() { return getJSON('/api/companies'); },
-    async agents(id) { return getJSON(`/api/companies/${id}/agents`); },
-    async issues(id) { return getJSON(`/api/companies/${id}/issues`); },
-  };
+  // Each provider loads { agents, issues, label } from one source. Several providers can
+  // share one office (--source paperclip,claude-code); feed agent ids are namespaced so they
+  // never collide with Paperclip ids.
+  function paperclipProvider() {
+    const p = {
+      kind: 'paperclip', label: 'Paperclip',
+      async load() {
+        if (!company) {
+          companies = await getJSON('/api/companies');
+          if (!companies.length) return { agents: [], issues: [], label: '', note: L.noCompany };
+          const want = params.get('company');
+          company = companies.find((c) => c.issuePrefix === want || c.id === want) || companies[0];
+          if (companies.length > 1) {
+            companySel.hidden = false;
+            companySel.innerHTML = companies.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
+            companySel.value = company.id;
+          }
+        }
+        const [agents, issues] = await Promise.all([
+          getJSON(`/api/companies/${company.id}/agents`), getJSON(`/api/companies/${company.id}/issues`),
+        ]);
+        p.label = company.name;
+        return { agents, issues, label: company.name };
+      },
+    };
+    return p;
+  }
 
   // Generic feed (docs/FEED.md): { company?, agents: [{ id, name, role?, status, task?, error? }] } or a bare array.
   const STATUS_ALIASES = {
@@ -159,30 +181,32 @@
     paused: 'paused', sleeping: 'paused', stopped: 'paused', offline: 'paused',
     waiting: 'waiting', blocked: 'waiting', needs_input: 'waiting', permission: 'waiting',
   };
-  const feed = {
-    label: '',
-    async companies() { return [{ id: 'feed', name: feed.label, issuePrefix: '' }]; },
-    async agents() {
-      const raw = await getJSON('/api/feed');
-      const list = Array.isArray(raw) ? raw : Array.isArray(raw?.agents) ? raw.agents : [];
-      if (raw && raw.company) document.getElementById('co').textContent = raw.company;
-      return list.map((a, i) => {
-        const t = a.task;
-        const task = !t ? null : typeof t === 'string'
-          ? { identifier: '', title: t, url: a.taskUrl || '' }
-          : { identifier: String(t.id ?? t.identifier ?? ''), title: t.title ?? '', url: t.url || '' };
-        return {
-          id: String(a.id ?? a.name ?? i), name: String(a.name ?? a.id ?? `agent ${i + 1}`),
-          title: a.role || a.title || '', createdAt: String(a.since ?? a.createdAt ?? i).padStart(20, '0'),
-          status: STATUS_ALIASES[String(a.status || 'idle').toLowerCase()] || 'idle',
-          errorReason: a.error || null, task,
-        };
-      });
-    },
-    async issues() { return []; },
-  };
+  function feedProvider(path, label) {
+    const p = {
+      kind: 'feed', label, claude: label === 'Claude Code',
+      async load() {
+        const raw = await getJSON(path);
+        const list = Array.isArray(raw) ? raw : Array.isArray(raw?.agents) ? raw.agents : [];
+        if (raw && raw.company) p.label = String(raw.company);
+        const agents = list.map((a, i) => {
+          const t = a.task;
+          const task = !t ? null : typeof t === 'string'
+            ? { identifier: '', title: t, url: a.taskUrl || '' }
+            : { identifier: String(t.id ?? t.identifier ?? ''), title: t.title ?? '', url: t.url || '' };
+          return {
+            id: `${path}#${a.id ?? a.name ?? i}`, name: String(a.name ?? a.id ?? `agent ${i + 1}`),
+            title: a.role || a.title || '', createdAt: String(a.since ?? a.createdAt ?? i).padStart(20, '0'),
+            status: STATUS_ALIASES[String(a.status || 'idle').toLowerCase()] || 'idle',
+            errorReason: a.error || null, task,
+          };
+        });
+        return { agents, issues: [], label: p.label };
+      },
+    };
+    return p;
+  }
 
-  const demo = (() => {
+  function demoProvider() {
     const t0 = Date.now();
     const roster = [
       ['CEO', 'Chief Executive'], ['WebDev', 'Web Developer'], ['SEO', 'SEO & Content'],
@@ -201,23 +225,30 @@
       });
     }
     return {
-      async companies() { return [{ id: 'demo', name: 'Demo Co.', issuePrefix: 'DEMO' }]; },
-      async agents() { tick(); return agents.map((a) => ({ ...a })); },
-      async issues() {
-        return agents.map((a, i) => ({ identifier: `DEMO-${i + 1}`, title: tasks[i], status: 'in_progress', assigneeAgentId: a.id }));
+      kind: 'demo', label: 'Demo Co.',
+      async load() {
+        tick();
+        if (!company) company = { id: 'demo', name: 'Demo Co.', issuePrefix: 'DEMO' };
+        const issues = agents.map((a, i) => ({ identifier: `DEMO-${i + 1}`, title: tasks[i], status: 'in_progress', assigneeAgentId: a.id }));
+        return { agents: agents.map((a) => ({ ...a })), issues, label: 'Demo Co.' };
       },
     };
-  })();
+  }
 
-  let src = live;
+  let providers = [];
 
   async function init() {
     const b = document.getElementById('banner');
     if (!DEMO) {
       try {
         const cfg = await getJSON('/config.json');
-        if (cfg.source === 'feed') { src = feed; feed.label = cfg.label || 'feed'; }
-        else paperclipUrl = cfg.paperclipUrl || '';
+        const list = cfg.sources || [cfg.source === 'feed'
+          ? { kind: 'feed', label: cfg.label, path: '/api/feed' }
+          : { kind: 'paperclip', paperclipUrl: cfg.paperclipUrl }];
+        providers = list.map((x) => {
+          if (x.kind === 'paperclip') { paperclipUrl = x.paperclipUrl || ''; return paperclipProvider(); }
+          return feedProvider(x.path || '/api/feed', x.label || 'feed');
+        });
         // Reload when the server was updated or restarted.
         if (cfg.build) setInterval(async () => {
           try { if ((await getJSON('/config.json')).build !== cfg.build) location.reload(); } catch (_) {}
@@ -230,46 +261,52 @@
     } else {
       b.innerHTML = L.demo; b.style.display = 'block';
     }
-    if (DEMO) src = demo;
+    if (DEMO) providers = [demoProvider()];
     poll();
     setInterval(poll, 4000);
     requestAnimationFrame(frame);
   }
 
+  function failureText(p, e) {
+    const code = Number(e && e.message);
+    if (p.kind === 'feed') return L.feedUnreachable;
+    return (code === 401 || code === 403) ? L.denied(code) : L.unreachable;
+  }
+
   async function poll() {
-    try {
-      if (!company) {
-        companies = await src.companies();
-        if (!companies.length) { statusEl.textContent = L.noCompany; return; }
-        const want = params.get('company');
-        company = companies.find((c) => c.issuePrefix === want || c.id === want) || companies[0];
-        if (companies.length > 1) {
-          companySel.hidden = false;
-          companySel.innerHTML = companies.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
-          companySel.value = company.id;
-        }
-        document.getElementById('co').textContent = company.name;
-      }
-      const [agents, issues] = await Promise.all([src.agents(company.id), src.issues(company.id)]);
-      sync(agents, issues);
-      if (src === feed) {
-        const b = document.getElementById('banner');
-        if (!agents.length) { b.innerHTML = feed.label === 'Claude Code' ? L.emptyClaude : L.empty; b.style.display = 'block'; }
-        else b.style.display = 'none';
-      }
-      const running = agents.filter((a) => a.status === 'running').length;
-      const needYou = [...sprites.values()].filter((x) => x.status === 'waiting' || x.ask).length;
-      statusEl.textContent = `${L.summary(agents.length, running)}${needYou ? ' · ' + L.needYou(needYou) : ''} · ${new Date().toLocaleTimeString(lang)}`;
-    } catch (e) {
-      const code = Number(e && e.message);
-      statusEl.textContent = src === feed ? L.feedUnreachable
-        : (code === 401 || code === 403) ? L.denied(code) : L.unreachable;
+    const results = await Promise.allSettled(providers.map((p) => p.load()));
+    const agents = [], issues = [], labels = [], failed = [], notes = [];
+    results.forEach((r, i) => {
+      if (r.status === 'rejected') { failed.push(i); return; }
+      r.value.agents.forEach((a) => { a._src = i; });
+      agents.push(...r.value.agents);
+      issues.push(...r.value.issues);
+      if (r.value.label) labels.push(r.value.label);
+      if (r.value.note) notes.push(r.value.note);
+    });
+    if (failed.length === providers.length) {
+      statusEl.textContent = failureText(providers[0], results[0].reason);
+      return;
     }
+    document.getElementById('co').textContent = labels.join(' · ');
+    sync(agents, issues);
+    if (!DEMO) {
+      const b = document.getElementById('banner');
+      if (!agents.length && providers.some((p) => p.kind === 'feed')) {
+        b.innerHTML = providers.some((p) => p.claude) ? L.emptyClaude : L.empty; b.style.display = 'block';
+      } else b.style.display = 'none';
+    }
+    const running = agents.filter((a) => a.status === 'running').length;
+    const needYou = [...sprites.values()].filter((x) => x.status === 'waiting' || x.ask).length;
+    const down = failed.map((i) => `⚠ ${providers[i].label}: ${failureText(providers[i], results[i].reason)}`);
+    statusEl.textContent = [
+      notes.length && !agents.length ? notes.join(' ') : L.summary(agents.length, running),
+      needYou ? L.needYou(needYou) : '', ...down, new Date().toLocaleTimeString(lang),
+    ].filter(Boolean).join(' · ');
   }
 
   companySel.addEventListener('change', () => {
     company = companies.find((c) => c.id === companySel.value);
-    document.getElementById('co').textContent = company.name;
     for (const s of sprites.values()) s.el.remove();
     sprites.clear();
     const u = new URL(location.href); u.searchParams.set('company', company.issuePrefix); history.replaceState(null, '', u);
@@ -298,7 +335,7 @@
   }
 
   function sync(agents, issues) {
-    const sorted = [...agents].sort((a, b) => String(a.createdAt).localeCompare(String(b.createdAt)));
+    const sorted = [...agents].sort((a, b) => ((a._src || 0) - (b._src || 0)) || String(a.createdAt).localeCompare(String(b.createdAt)));
     const seen = new Set();
     sorted.forEach((a, idx) => {
       seen.add(a.id);
@@ -345,7 +382,8 @@
   function taskLink(t) {
     const label = esc(t.identifier);
     if (t.url) return `<a href="${esc(t.url)}" target="_blank" rel="noopener">${label || '↗'}</a>`;
-    if (!paperclipUrl || DEMO) return label;
+    // Only Paperclip issues (which carry assigneeAgentId) link into Paperclip.
+    if (!paperclipUrl || DEMO || !company || !('assigneeAgentId' in t)) return label;
     return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="_blank" rel="noopener">${label}</a>`;
   }
 

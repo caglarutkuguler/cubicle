@@ -43,7 +43,7 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
 Usage: cubicle [--port 3200] [--host 127.0.0.1] [--source paperclip] [--paperclip http://127.0.0.1:3100] [--token-file FILE]
        cubicle install-hooks [--uninstall]   add/remove the Claude Code hooks in ~/.claude/settings.json
 
-Sources (--source / CUBICLE_SOURCE):
+Sources (--source / CUBICLE_SOURCE), one or several comma-separated, e.g. paperclip,claude-code:
   paperclip            Paperclip server, default (see --paperclip / PAPERCLIP_URL)
   claude-code          Claude Code sessions, via the hook in examples/claude-code/
   ./agents.json        Any JSON file in the Cubicle feed format (docs/FEED.md)
@@ -92,13 +92,23 @@ if (TOKEN && !/^[\x21-\x7e]+$/.test(TOKEN)) {
   process.exit(1);
 }
 
-// ---------- source ----------
-const rawSource = arg('source') || process.env.CUBICLE_SOURCE || 'paperclip';
-let source; // { kind: 'paperclip' } | { kind: 'file', file, label } | { kind: 'url', url, label }
-if (rawSource === 'paperclip') source = { kind: 'paperclip' };
-else if (rawSource === 'claude-code') source = { kind: 'file', file: CLAUDE_CODE_FEED, label: 'Claude Code', emptyIfMissing: true };
-else if (/^https?:\/\//.test(rawSource)) source = { kind: 'url', url: new URL(rawSource), label: rawSource };
-else source = { kind: 'file', file: path.resolve(rawSource), label: path.basename(rawSource) };
+// ---------- sources ----------
+// --source takes one source or several, comma-separated: "paperclip,claude-code" shows both
+// in one office. At most one Paperclip; any number of feeds (served at /api/feed/<n>).
+function parseSource(raw) {
+  if (raw === 'paperclip') return { kind: 'paperclip' };
+  if (raw === 'claude-code') return { kind: 'file', file: CLAUDE_CODE_FEED, label: 'Claude Code', emptyIfMissing: true };
+  if (/^https?:\/\//.test(raw)) return { kind: 'url', url: new URL(raw), label: raw };
+  return { kind: 'file', file: path.resolve(raw), label: path.basename(raw) };
+}
+const SOURCES = (arg('source') || process.env.CUBICLE_SOURCE || 'paperclip')
+  .split(',').map((x) => x.trim()).filter(Boolean).map(parseSource);
+if (SOURCES.filter((x) => x.kind === 'paperclip').length > 1) {
+  console.error('Only one Paperclip source is supported.');
+  process.exit(1);
+}
+const HAS_PAPERCLIP = SOURCES.some((x) => x.kind === 'paperclip');
+const FEEDS = SOURCES.filter((x) => x.kind !== 'paperclip');
 
 function get(url, cb, extraHeaders = {}) {
   const client = url.protocol === 'https:' ? https : http;
@@ -122,7 +132,7 @@ function send(res, status, body, type = 'application/json') {
   res.end(body);
 }
 
-function serveFeed(res) {
+function serveFeed(res, source) {
   if (source.kind === 'file') {
     return fs.readFile(source.file, 'utf8', (err, txt) => {
       // No hook has fired yet: that is an empty office, not an error.
@@ -145,19 +155,24 @@ const server = http.createServer((req, res) => {
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (url.pathname === '/config.json') {
-    const cfg = source.kind === 'paperclip'
-      ? { source: 'paperclip', paperclipUrl: PAPERCLIP.origin, version: VERSION, build: build() }
-      : { source: 'feed', label: source.label, version: VERSION, build: build() };
-    return send(res, 200, JSON.stringify(cfg));
+    let n = 0;
+    const sources = SOURCES.map((x) => x.kind === 'paperclip'
+      ? { kind: 'paperclip', paperclipUrl: PAPERCLIP.origin }
+      : { kind: 'feed', label: x.label, path: `/api/feed/${n++}` });
+    // `source`/`label`/`paperclipUrl` keep single-source pages from older versions working.
+    const first = sources[0];
+    return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined, version: VERSION, build: build() }));
   }
 
-  if (url.pathname === '/api/feed') {
-    if (source.kind === 'paperclip') return send(res, 404, '{"error":"no feed source configured"}');
-    return serveFeed(res);
+  const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
+  if (feedMatch) {
+    const feed = FEEDS[Number(feedMatch[1] || 0)];
+    if (!feed) return send(res, 404, '{"error":"no such feed source"}');
+    return serveFeed(res, feed);
   }
 
   if (url.pathname.startsWith('/api/')) {
-    if (source.kind !== 'paperclip') return send(res, 403, '{"error":"not allowed"}');
+    if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
     const upstream = get(new URL(url.pathname, PAPERCLIP), (r) => {
       res.writeHead(r.statusCode, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -176,11 +191,11 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, HOST, () => {
-  const reading = source.kind === 'paperclip' ? PAPERCLIP.origin : source.kind === 'file' ? source.file : source.url.href;
-  console.log(`Cubicle is open at http://${HOST}:${PORT}  (reading ${reading}${source.kind === 'paperclip' && TOKEN ? ' with an API key' : ''})`);
+  const reading = SOURCES.map((x) => x.kind === 'paperclip' ? PAPERCLIP.origin + (TOKEN ? ' (with an API key)' : '') : x.kind === 'file' ? x.file : x.url.href);
+  console.log(`Cubicle is open at http://${HOST}:${PORT}  (reading ${reading.join(' + ')})`);
   const loopback = ['127.0.0.1', 'localhost', '::1'].includes(HOST);
-  if (source.kind === 'paperclip' && TOKEN && !loopback) {
+  if (HAS_PAPERCLIP && TOKEN && !loopback) {
     console.warn(`Warning: bound to ${HOST} with a Paperclip API key. Anyone who can reach this port can read what that key can read.`);
   }
-  if (source.kind === 'paperclip') console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
+  if (HAS_PAPERCLIP) console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
 });
