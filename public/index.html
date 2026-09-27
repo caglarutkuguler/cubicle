@@ -75,6 +75,7 @@
       noCompany: 'No company yet.', summary: (n, r) => `${n} agents · ${r} working`,
       running: 'working', idle: 'idle', error: 'error', paused: 'paused', waiting: 'needs you', noTask: 'no open task assigned',
       done: '✓ done', errBubble: '⚠ error', waitBubble: '✋ needs you',
+      asks: 'waiting for your answer on', needYou: (n) => `${n} need${n === 1 ? 's' : ''} you`,
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
@@ -87,6 +88,7 @@
       noCompany: 'Henüz şirket yok.', summary: (n, r) => `${n} ajan · ${r} çalışıyor`,
       running: 'çalışıyor', idle: 'boşta', error: 'hata', paused: 'duraklatıldı', waiting: 'sizi bekliyor', noTask: 'atanmış açık görev yok',
       done: '✓ bitirdi', errBubble: '⚠ hata', waitBubble: '✋ sizi bekliyor',
+      asks: 'cevabınızı bekliyor:', needYou: (n) => `${n} sizi bekliyor`,
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
@@ -244,7 +246,8 @@
         else b.style.display = 'none';
       }
       const running = agents.filter((a) => a.status === 'running').length;
-      statusEl.textContent = `${L.summary(agents.length, running)} · ${new Date().toLocaleTimeString(lang)}`;
+      const needYou = [...sprites.values()].filter((x) => x.status === 'waiting' || x.ask).length;
+      statusEl.textContent = `${L.summary(agents.length, running)}${needYou ? ' · ' + L.needYou(needYou) : ''} · ${new Date().toLocaleTimeString(lang)}`;
     } catch (e) {
       const code = Number(e && e.message);
       statusEl.textContent = src === feed ? L.feedUnreachable
@@ -266,6 +269,18 @@
     for (const st of ['in_progress', 'in_review', 'blocked', 'todo', 'backlog']) {
       const f = mine.find((i) => i.status === st);
       if (f) return f;
+    }
+    return null;
+  }
+
+  // Paperclip: an open issue whose review is waiting on the board (a pending question or
+  // interaction for a human) means the agent needs you, even though Paperclip reports it idle.
+  function askingBoard(agentId, issues) {
+    for (const i of issues) {
+      if (i.assigneeAgentId !== agentId || ['done', 'cancelled'].includes(i.status)) continue;
+      const paths = (i.reviewAttention && i.reviewAttention.paths) || [];
+      const p = paths.find((x) => /board|user|human/i.test(String(x && x.responder || '')));
+      if (p) return { issue: i, reason: String(p.label || '') };
     }
     return null;
   }
@@ -300,6 +315,9 @@
       s.status = a.status;
       s.error = a.errorReason || '';
       s.task = a.task !== undefined ? a.task : currentTask(a.id, issues);
+      s.waitReason = '';
+      s.ask = a.task === undefined && a.status !== 'error' ? askingBoard(a.id, issues) : null;
+      if (s.ask && a.status === 'idle') { s.status = 'waiting'; s.task = s.ask.issue; s.waitReason = s.ask.reason; }
       if (s.prevStatus === 'running' && s.status === 'idle') setBubble(s, L.done, 'ok', 6);
       s.prevStatus = s.status;
       s.el.querySelector('.name').textContent = s.name;
@@ -324,7 +342,9 @@
     cardsEl.innerHTML = list.map((s) => {
       const t = s.task;
       const taskHtml = t ? `${taskLink(t)} ${esc(t.title)}` : `<span style="color:var(--muted)">${L.noTask}</span>`;
-      const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>` : '';
+      const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>`
+        : s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">${esc(s.waitReason)}</div>`
+        : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
       return `<div class="card"><div class="top"><span class="sw" style="background:${s.shirt}"></span><b>${esc(s.name)}</b></div>
         <div class="role">${esc(s.role)}</div>
         <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}</div>${err}</div>`;
@@ -483,6 +503,7 @@
       if (s.bubble && now < s.bubbleUntil) { text = s.bubble; cls = s.bubbleClass; }
       else if (s.status === 'error' && s.seated) { text = L.errBubble; cls = 'err'; }
       else if (s.status === 'waiting' && s.seated) { text = L.waitBubble; cls = 'wait'; }
+      else if (s.typing && s.ask && Math.floor(now / 3) % 2) { text = '✋ ' + (s.ask.issue.identifier || L.waiting); cls = 'wait'; }
       else if (s.typing && s.task) text = '⌨ ' + (s.task.identifier || s.task.title);
       else if (s.status === 'paused') text = 'zZ';
       if (text) { b.textContent = text; b.className = 'bub ' + cls; b.style.display = ''; }
