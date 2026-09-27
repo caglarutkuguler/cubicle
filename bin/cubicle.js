@@ -128,8 +128,21 @@ const ALLOWED = [
 ];
 
 function send(res, status, body, type = 'application/json') {
+  if (res.headersSent) return res.destroy();   // too late for a clean error: just drop the connection
   res.writeHead(status, { 'content-type': type, 'cache-control': 'no-store' });
   res.end(body);
+}
+
+// Stream an upstream GET to the client. Upstream can fail before or after it has sent
+// headers (timeouts, resets mid-body); either way the server must stay up.
+function proxy(res, url, headers, failBody) {
+  const upstream = get(url, (r) => {
+    res.writeHead(r.statusCode, { 'content-type': 'application/json', 'cache-control': 'no-store' });
+    r.on('error', () => res.destroy());
+    r.pipe(res);
+  }, headers);
+  upstream.on('error', () => send(res, 502, failBody));
+  res.on('close', () => { if (!res.writableFinished) upstream.destroy(); });
 }
 
 function serveFeed(res, source) {
@@ -142,11 +155,7 @@ function serveFeed(res, source) {
       send(res, 200, txt);
     });
   }
-  const upstream = get(source.url, (r) => {
-    res.writeHead(r.statusCode, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-    r.pipe(res);
-  });
-  upstream.on('error', () => send(res, 502, '{"error":"feed unreachable"}'));
+  proxy(res, source.url, {}, '{"error":"feed unreachable"}');
 }
 
 const server = http.createServer((req, res) => {
@@ -174,12 +183,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname.startsWith('/api/')) {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
-    const upstream = get(new URL(url.pathname, PAPERCLIP), (r) => {
-      res.writeHead(r.statusCode, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      r.pipe(res);
-    }, TOKEN ? { authorization: `Bearer ${TOKEN}` } : {});
-    upstream.on('error', () => send(res, 502, '{"error":"paperclip unreachable"}'));
-    return;
+    return proxy(res, new URL(url.pathname, PAPERCLIP), TOKEN ? { authorization: `Bearer ${TOKEN}` } : {}, '{"error":"paperclip unreachable"}');
   }
 
   if (url.pathname === '/' || url.pathname === '/index.html') {

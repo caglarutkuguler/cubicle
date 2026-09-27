@@ -9,7 +9,13 @@ const { apply, summarize } = require('../bin/cubicle-hook.js');
 
 const ROOT = path.join(__dirname, '..');
 const get = (url) => new Promise((resolve, reject) => {
-  http.get(url, (r) => { let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve({ status: r.statusCode, body: b })); }).on('error', reject);
+  http.get(url, (r) => {
+    let b = '';
+    r.on('data', (d) => (b += d));
+    r.on('end', () => resolve({ status: r.statusCode, body: b }));
+    r.on('close', () => resolve({ status: r.statusCode, body: b, truncated: !r.complete }));   // cut-off responses
+    r.on('error', () => {});
+  }).on('error', reject);
 });
 const req = (url, method) => new Promise((resolve, reject) => {
   const u = new URL(url);
@@ -22,6 +28,9 @@ async function withServer(args, fn, env = {}) {
   const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, ...env } });
   try { await sleep(500); await fn(`http://127.0.0.1:${port}`); } finally { p.kill(); }
 }
+
+// Fail fast instead of hanging CI if a server stops answering.
+setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45000).unref();
 
 (async () => {
   // hook logic
@@ -133,6 +142,25 @@ async function withServer(args, fn, env = {}) {
       const cfg = await new Promise((resolve) => withServer(['--paperclip', upstream], async (base) => resolve((await get(`${base}/config.json`)).body), { PAPERCLIP_TOKEN: 'pcp_test_key' }));
       assert.ok(!cfg.includes('pcp_test_key'), 'key must never reach the browser');
     } finally { fake.close(); }
+  }
+
+  // an upstream that dies mid-response must not take the server down
+  {
+    const net = require('net');
+    const flaky = net.createServer((sock) => {
+      sock.once('data', () => {
+        sock.write('HTTP/1.1 200 OK\r\ncontent-type: application/json\r\ncontent-length: 1000\r\n\r\n[{"id":');
+        setTimeout(() => sock.destroy(), 50);   // headers sent, body cut off
+      });
+    });
+    await new Promise((ok) => flaky.listen(0, '127.0.0.1', ok));
+    try {
+      await withServer(['--paperclip', `http://127.0.0.1:${flaky.address().port}`], async (base) => {
+        for (let i = 0; i < 3; i++) await get(`${base}/api/companies`).catch(() => {});
+        await sleep(200);
+        assert.strictEqual((await get(`${base}/config.json`)).status, 200, 'server must survive a truncated upstream response');
+      });
+    } finally { flaky.close(); }
   }
 
   // paperclip mode (no Paperclip running)
