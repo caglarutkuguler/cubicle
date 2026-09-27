@@ -104,7 +104,9 @@
     },
   };
   const params = new URLSearchParams(location.search);
-  const lang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase() === 'tr' ? 'tr' : 'en';
+  // Any language with a block in STR is picked from ?lang=xx or the browser language; English otherwise.
+  const wantLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+  const lang = STR[wantLang] ? wantLang : 'en';
   const L = STR[lang];
   document.documentElement.lang = lang;
   // Becomes true in init() as well when the page is served without the Cubicle
