@@ -4,6 +4,8 @@
 
 **[▶ Live demo](https://caglarutkuguler.github.io/cubicle/?lang=en)** — no install, fake agents.
 
+[![npm](https://img.shields.io/npm/v/@caglarutkuguler/cubicle)](https://www.npmjs.com/package/@caglarutkuguler/cubicle) [![CI](https://github.com/caglarutkuguler/cubicle/actions/workflows/ci.yml/badge.svg)](https://github.com/caglarutkuguler/cubicle/actions/workflows/ci.yml) ![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+
 Your agents get a desk. When one starts working it walks over, sits down and starts typing, with its current task floating above its head. When it needs you, it raises a hand. When it finishes it goes back to the lounge for a coffee. If it hits an error, its screen flashes red.
 
 [![Cubicle demo](docs/demo.gif)](https://caglarutkuguler.github.io/cubicle/?lang=en)
@@ -21,21 +23,21 @@ Requires Node.js 18+.
 **Paperclip** (default; expects Paperclip at `http://127.0.0.1:3100`):
 
 ```bash
-npx github:caglarutkuguler/cubicle
+npx @caglarutkuguler/cubicle
 ```
 
 **Claude Code** (one character per session, driven by Claude Code's own hooks; details in [`examples/claude-code/`](examples/claude-code/)):
 
 ```bash
-npx github:caglarutkuguler/cubicle install-hooks      # once; backs up ~/.claude/settings.json first
-npx github:caglarutkuguler/cubicle --source claude-code
+npx @caglarutkuguler/cubicle install-hooks      # once; backs up ~/.claude/settings.json first
+npx @caglarutkuguler/cubicle --source claude-code
 ```
 
 **Anything else** — a JSON file or URL in the [feed format](docs/FEED.md):
 
 ```bash
-npx github:caglarutkuguler/cubicle --source ./agents.json
-npx github:caglarutkuguler/cubicle --source http://localhost:8080/agents
+npx @caglarutkuguler/cubicle --source ./agents.json
+npx @caglarutkuguler/cubicle --source http://localhost:8080/agents
 ```
 
 Then open <http://127.0.0.1:3200>. Nothing running yet? Open <http://127.0.0.1:3200/?demo>, or the [hosted demo](https://caglarutkuguler.github.io/cubicle/?lang=en).
@@ -83,9 +85,9 @@ Each card below the office links to the agent's current task when the source pro
 The default `local_trusted` mode needs no key. For an authenticated or remote Paperclip, give Cubicle an API key; it is sent as `Authorization: Bearer …` on the forwarded requests only:
 
 ```bash
-PAPERCLIP_URL=https://paperclip.example.com PAPERCLIP_TOKEN=pcp_… npx github:caglarutkuguler/cubicle
+PAPERCLIP_URL=https://paperclip.example.com PAPERCLIP_TOKEN=pcp_… npx @caglarutkuguler/cubicle
 # or keep it in a file only you can read
-npx github:caglarutkuguler/cubicle --paperclip https://paperclip.example.com --token-file ~/.config/cubicle/paperclip-token
+npx @caglarutkuguler/cubicle --paperclip https://paperclip.example.com --token-file ~/.config/cubicle/paperclip-token
 ```
 
 Use a board API key with the narrowest read-only scope Paperclip lets you create; an agent key also works but only sees that agent's company. There is no `--token` flag on purpose, because command-line flags are visible in the process list. With systemd, put `PAPERCLIP_TOKEN=…` in a `chmod 600` file and point `EnvironmentFile=` at it (see `examples/systemd/cubicle.service`).
@@ -147,4 +149,4 @@ Cubicle is a community project and is not affiliated with or endorsed by Papercl
 
 **Cubicle**, AI ajanlarınızı canlı bir pixel ofiste gösterir: [Paperclip](https://github.com/paperclipai/paperclip) ve Claude Code hazır gelir; başka sistemler küçük bir [JSON feed](docs/FEED.md) ile bağlanır. Çalışan ajan masasına oturup yazar ve başının üstünde görevi görünür; sizi bekleyen ajan elini kaldırır; işi biten ajan dinlenme alanına döner; hata alan ajanın ekranı kırmızı yanar.
 
-Kurulum: `npx github:caglarutkuguler/cubicle` (Paperclip) veya `npx github:caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir.
+Kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir.
