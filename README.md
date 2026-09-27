@@ -133,6 +133,15 @@ journalctl --user -u cubicle-update.service   # what it did
 
 Issues and pull requests are welcome. Ideas: adapters for other agent runtimes (write a feed, send a PR with an example), a kiosk mode for wall displays, meeting-room animations when agents hand work to each other, per-agent sprite customisation, replay of a recorded day, and multi-source offices (Paperclip and Claude Code on one floor).
 
+## Releasing
+
+Versions are published to npm by [`.github/workflows/release.yml`](.github/workflows/release.yml) with npm trusted publishing, so no npm token exists anywhere and every version carries a provenance attestation.
+
+```bash
+npm version patch            # or minor / major: bumps package.json, commits, tags vX.Y.Z
+git push --follow-tags       # CI tests, publishes to npm, creates the GitHub release
+```
+
 ## Credits
 
 Inspired by the idea behind [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) by Pablo De Lucca. Cubicle is an independent implementation and uses no code or assets from it.
