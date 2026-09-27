@@ -472,10 +472,13 @@
 
   function placeLabels(now) {
     const k = cv.clientWidth / CW;
+    // Keep bubbles narrower than the gap between neighbouring desks so they never overlap.
+    const bubMax = Math.max(80, Math.floor(3.3 * T * k - 6)) + 'px';
     for (const s of sprites.values()) {
       s.el.style.left = (s.x * k) + 'px';
       s.el.style.top = ((s.y - 20) * k) + 'px';
       const b = s.el.querySelector('.bub');
+      b.style.maxWidth = bubMax;
       let text = null, cls = '';
       if (s.bubble && now < s.bubbleUntil) { text = s.bubble; cls = s.bubbleClass; }
       else if (s.status === 'error' && s.seated) { text = L.errBubble; cls = 'err'; }
