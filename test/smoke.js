@@ -93,6 +93,29 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     assert.deepStrictEqual(f.agents.map((x) => x.id), ['s3:b1']);
   }
 
+  // concurrent hook runs don't lose each other's updates, and a stale lock doesn't block
+  {
+    const fs = require('fs');
+    const os = require('os');
+    const { spawn: sp } = require('child_process');
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-lock-'));
+    const run = (ev) => new Promise((ok) => {
+      const c = sp(process.execPath, [path.join(ROOT, 'bin/cubicle-hook.js')], { env: { ...process.env, HOME: home, USERPROFILE: home } });
+      c.on('exit', ok); c.stdin.end(JSON.stringify(ev));
+    });
+    const N = 25;
+    await Promise.all(Array.from({ length: N }, (_, i) => run({ session_id: `c${i}`, cwd: `/w/r${i}`, hook_event_name: 'SessionStart' })));
+    const file = path.join(home, '.cubicle', 'claude-code.json');
+    assert.strictEqual(JSON.parse(fs.readFileSync(file, 'utf8')).agents.length, N, 'no lost updates under concurrency');
+    assert.ok(!fs.existsSync(file + '.lock'), 'lock released');
+    fs.writeFileSync(file + '.lock', ''); const old = (Date.now() - 60000) / 1000; fs.utimesSync(file + '.lock', old, old);
+    const t0 = Date.now();
+    await run({ session_id: 'late', cwd: '/w/late', hook_event_name: 'SessionStart' });
+    assert.ok(Date.now() - t0 < 1500, 'stale lock taken over quickly');
+    assert.strictEqual(JSON.parse(fs.readFileSync(file, 'utf8')).agents.length, N + 1);
+    fs.rmSync(home, { recursive: true, force: true });
+  }
+
   // install-hooks keeps user settings, is idempotent, and uninstalls cleanly
   {
     const fs = require('fs');
@@ -193,6 +216,41 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         assert.strictEqual((await get(`${base}/config.json`)).status, 200, 'server must survive a truncated upstream response');
       });
     } finally { flaky.close(); }
+  }
+
+  // only the fields the page needs leave the server; --redact also drops titles, commands, errors
+  {
+    const secretIssue = { identifier: 'X-1', title: 'rotate AWS key AKIA123', description: 'secret body', status: 'in_progress', assigneeAgentId: 'a1',
+      executionWorkspaceSettings: { env: 'TOKEN=abc' }, reviewAttention: { paths: [{ kind: 'interaction', responder: 'Board', label: 'Pending ask user questions', ref: 'r' }] } };
+    const up = http.createServer((q, r) => {
+      r.writeHead(200, { 'content-type': 'application/json' });
+      if (q.url.endsWith('/issues')) return r.end(JSON.stringify([secretIssue, { ...secretIssue, identifier: 'X-2', status: 'done' }]));
+      if (q.url.endsWith('/agents')) return r.end(JSON.stringify([{ id: 'a1', name: 'Dev', status: 'error', errorReason: 'ssh key /home/me/.ssh/id_rsa denied', adapterConfig: { apiKey: 'sk-live' } }]));
+      r.end(JSON.stringify([{ id: 'c', name: 'Co', issuePrefix: 'X', budgetMonthlyCents: 1 }]));
+    });
+    await new Promise((ok) => up.listen(0, '127.0.0.1', ok));
+    const upstream = `http://127.0.0.1:${up.address().port}`;
+    const fs = require('fs'); const os = require('os');
+    const feedFile = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-red-')), 'f.json');
+    fs.writeFileSync(feedFile, JSON.stringify({ company: 'CC', agents: [{ id: 's', name: 'repo', status: 'running', task: 'Bash: curl -H "Authorization: Bearer sk-live" api', error: 'boom at /secret/path' }] }));
+    try {
+      await withServer(['--source', `paperclip,${feedFile}`, '--paperclip', upstream], async (base) => {
+        const issues = JSON.parse((await get(`${base}/api/companies/c/issues`)).body);
+        assert.deepStrictEqual(issues.map((i) => i.identifier), ['X-1'], 'closed issues are not forwarded');
+        assert.strictEqual(issues[0].title, 'rotate AWS key AKIA123');
+        assert.ok(!('description' in issues[0]) && !('executionWorkspaceSettings' in issues[0]), 'unused fields are dropped');
+        const agents = (await get(`${base}/api/companies/c/agents`)).body;
+        assert.ok(!agents.includes('sk-live'), 'adapter config never forwarded');
+      });
+      await withServer(['--source', `paperclip,${feedFile}`, '--paperclip', upstream, '--redact'], async (base) => {
+        const all = [(await get(`${base}/api/companies/c/issues`)).body, (await get(`${base}/api/companies/c/agents`)).body, (await get(`${base}/api/feed/0`)).body].join('\n');
+        for (const secret of ['AKIA123', 'secret body', 'id_rsa', 'sk-live', 'curl', 'Authorization', '/secret/path']) assert.ok(!all.includes(secret), `redacted output leaks ${secret}`);
+        const issue = JSON.parse((await get(`${base}/api/companies/c/issues`)).body)[0];
+        assert.strictEqual(issue.identifier, 'X-1'); assert.strictEqual(issue.reviewAttention.paths[0].responder, 'Board');
+        assert.strictEqual(JSON.parse((await get(`${base}/api/feed/0`)).body).agents[0].task, 'Bash');
+        assert.strictEqual(JSON.parse((await get(`${base}/config.json`)).body).redact, true);
+      });
+    } finally { up.close(); }
   }
 
   // paperclip mode (no Paperclip running)

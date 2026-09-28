@@ -83,7 +83,7 @@
       noCompany: 'No company yet.', summary: (n, r) => `${n} agents · ${r} working`,
       running: 'working', idle: 'idle', error: 'error', paused: 'paused', waiting: 'needs you', noTask: 'no open task assigned',
       done: '✓ done', errBubble: '⚠ error', waitBubble: '✋ needs you',
-      asks: 'waiting for your answer on', needYou: (n) => `${n} need${n === 1 ? 's' : ''} you`,
+      asks: 'waiting for your answer on', needYou: (n) => `${n} need${n === 1 ? 's' : ''} you`, redacted: '🔒 details hidden',
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
@@ -96,7 +96,7 @@
       noCompany: 'Henüz şirket yok.', summary: (n, r) => `${n} ajan · ${r} çalışıyor`,
       running: 'çalışıyor', idle: 'boşta', error: 'hata', paused: 'duraklatıldı', waiting: 'sizi bekliyor', noTask: 'atanmış açık görev yok',
       done: '✓ bitirdi', errBubble: '⚠ hata', waitBubble: '✋ sizi bekliyor',
-      asks: 'cevabınızı bekliyor:', needYou: (n) => `${n} sizi bekliyor`,
+      asks: 'cevabınızı bekliyor:', needYou: (n) => `${n} sizi bekliyor`, redacted: '🔒 ayrıntılar gizli',
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
@@ -236,12 +236,14 @@
   }
 
   let providers = [];
+  let redacted = false;   // server runs with --redact: titles/commands never reach the page
 
   async function init() {
     const b = document.getElementById('banner');
     if (!DEMO) {
       try {
         const cfg = await getJSON('/config.json');
+        redacted = !!cfg.redact;
         const list = cfg.sources || [cfg.source === 'feed'
           ? { kind: 'feed', label: cfg.label, path: '/api/feed' }
           : { kind: 'paperclip', paperclipUrl: cfg.paperclipUrl }];
@@ -301,7 +303,7 @@
     const down = failed.map((i) => `⚠ ${providers[i].label}: ${failureText(providers[i], results[i].reason)}`);
     statusEl.textContent = [
       notes.length && !agents.length ? notes.join(' ') : L.summary(agents.length, running),
-      needYou ? L.needYou(needYou) : '', ...down, new Date().toLocaleTimeString(lang),
+      needYou ? L.needYou(needYou) : '', ...down, redacted ? L.redacted : '', new Date().toLocaleTimeString(lang),
     ].filter(Boolean).join(' · ');
   }
 

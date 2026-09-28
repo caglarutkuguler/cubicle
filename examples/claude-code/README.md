@@ -36,5 +36,6 @@ The character is named after the working directory, so two sessions in different
 
 ## Cost and safety
 
+- Concurrent sessions and subagents fire hooks at the same moment; the hook takes a short-lived lock around its read-modify-write so no update is lost (it waits at most 1 s, then writes anyway), and it writes to a temp file and renames it, so Cubicle never reads half a file.
 - Each hook is one short `node` process (tens of milliseconds) with a 5 s timeout. It never exits with code 2, so it can never block a tool call, and it prints nothing, so it adds nothing to Claude's context.
 - The hook writes only: session id, directory name, status, and a short summary of the current tool call (tool name plus file name or the first ~50 characters of a command or prompt). Nothing leaves the machine.

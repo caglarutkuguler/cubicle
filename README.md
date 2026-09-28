@@ -65,13 +65,14 @@ node bin/cubicle.js            # add --source … as above
 | `--source` | `CUBICLE_SOURCE` | `paperclip` — or `claude-code`, a `.json` file, an `http(s)://` URL, or several of these comma-separated |
 | `--paperclip` | `PAPERCLIP_URL` | `http://127.0.0.1:3100` |
 | `--token-file` | `PAPERCLIP_TOKEN` / `PAPERCLIP_TOKEN_FILE` | none — API key for an authenticated Paperclip |
+| `--redact` | `CUBICLE_REDACT=1` | off — strip task titles, commands and error text on the server; the office shows only ids, tool names and statuses |
 
 URL parameters:
 
 - `?company=PREFIX` opens a specific Paperclip company (for example `?company=MEG`). With several companies, a picker also appears in the header.
 - `?lang=en` or `?lang=tr` sets the language.
 - `?demo` shows fake agents.
-- `?kiosk` fills the screen with the office for a TV or a second monitor: cards and footer hidden, names and bubbles scale with the screen, cursor hidden. Combined with the auto-updater, a wall display picks up new versions by itself.
+- `?kiosk` fills the screen with the office for a TV or a second monitor (run the server with `--redact` if that screen is shared): cards and footer hidden, names and bubbles scale with the screen, cursor hidden. Combined with the auto-updater, a wall display picks up new versions by itself.
 
 ## What the office shows
 
@@ -146,6 +147,7 @@ journalctl --user -u cubicle-update.service   # what it did
 
 - Cubicle binds to `127.0.0.1` by default. Keep it that way unless you put it behind your own authentication, because anyone who can reach it can see your agent names, statuses and task titles.
 - Only `GET` and `HEAD` are accepted; everything else gets `405`. In Paperclip mode only the three endpoints above are forwarded and any other `/api/` path gets `403`. In feed mode the only upstream request is a `GET` to the configured file or URL.
+- Only the fields the page draws leave the server: Paperclip descriptions, adapter and workspace settings, run ids and closed issues are dropped by the proxy. With `--redact`, task titles, commands and error text are dropped too, so a kiosk on a shared screen (or anyone who can reach its port) sees issue ids, tool names and statuses only.
 - A Paperclip API key is added by the proxy and never sent to the browser. The browser's own cookies and `Authorization` header are never forwarded upstream. If you bind to anything other than loopback while a key is set, Cubicle prints a warning at startup: everyone who can reach the port can read what the key can read.
 - The Claude Code hook never touches the network and stores only session id, directory name, status and a short summary of the current tool call.
 

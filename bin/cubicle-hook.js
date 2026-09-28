@@ -134,6 +134,29 @@ function summarizePrompt(p) {
   return p ? (p.length > 60 ? p.slice(0, 59) + '…' : p) : 'thinking';
 }
 
+// Several Claude Code sessions (and subagents) fire hooks at the same time. Each run reads,
+// changes and rewrites the file, so without a lock one run can overwrite another's update.
+// The lock is a file created with O_EXCL; waiting is capped so Claude is never held up, and
+// a lock left behind by a crashed run is taken over after STALE_LOCK_MS.
+const LOCK = `${FILE}.lock`;
+const LOCK_WAIT_MS = 1000;
+const STALE_LOCK_MS = 2000;
+const pause = (ms) => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
+
+function withLock(fn) {
+  const deadline = Date.now() + LOCK_WAIT_MS;
+  let fd = null;
+  while (fd === null) {
+    try { fd = fs.openSync(LOCK, 'wx'); break; } catch (e) { if (e.code !== 'EEXIST') break; }
+    try { if (Date.now() - fs.statSync(LOCK).mtimeMs > STALE_LOCK_MS) { fs.unlinkSync(LOCK); continue; } } catch (_) {}
+    if (Date.now() > deadline) break;   // give up waiting, write anyway rather than block Claude
+    pause(5 + Math.random() * 10);
+  }
+  try { return fn(); } finally {
+    if (fd !== null) { try { fs.closeSync(fd); fs.unlinkSync(LOCK); } catch (_) {} }
+  }
+}
+
 function main() {
   let input = '';
   process.stdin.setEncoding('utf8');
@@ -143,13 +166,15 @@ function main() {
     try { ev = JSON.parse(input || '{}'); } catch (_) { return; }
     // A visualisation must never get in Claude's way: swallow every error, exit 0.
     try {
-      let feed = { company: 'Claude Code', agents: [] };
-      try { const cur = JSON.parse(fs.readFileSync(FILE, 'utf8')); if (Array.isArray(cur.agents)) feed = cur; } catch (_) {}
-      feed = apply(feed, ev);
       fs.mkdirSync(DIR, { recursive: true });
-      const tmp = `${FILE}.${process.pid}.tmp`;
-      fs.writeFileSync(tmp, JSON.stringify(feed));
-      fs.renameSync(tmp, FILE); // atomic on the same filesystem
+      withLock(() => {
+        let feed = { company: 'Claude Code', agents: [] };
+        try { const cur = JSON.parse(fs.readFileSync(FILE, 'utf8')); if (Array.isArray(cur.agents)) feed = cur; } catch (_) {}
+        feed = apply(feed, ev);
+        const tmp = `${FILE}.${process.pid}.tmp`;
+        fs.writeFileSync(tmp, JSON.stringify(feed));
+        fs.renameSync(tmp, FILE); // atomic on the same filesystem: readers never see half a file
+      });
     } catch (_) {}
   });
 }

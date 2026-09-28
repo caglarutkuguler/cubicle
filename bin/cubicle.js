@@ -54,6 +54,8 @@ Environment variables:
   CUBICLE_HOST     Interface to bind (default 127.0.0.1)
   CUBICLE_SOURCE   Source, as above (default paperclip)
   PAPERCLIP_URL    Paperclip server URL (default http://127.0.0.1:3100)
+  CUBICLE_REDACT   Set to 1 (or pass --redact) to strip task titles, commands and error text
+                   on the server, e.g. for a kiosk on a shared screen
   PAPERCLIP_TOKEN  API key for an authenticated Paperclip, sent as "Authorization: Bearer …"
                    (or put it in a file and pass --token-file / PAPERCLIP_TOKEN_FILE).
                    There is deliberately no --token flag: flags show up in the process list.
@@ -87,6 +89,7 @@ function readToken() {
   return (process.env.PAPERCLIP_TOKEN || '').trim();
 }
 const TOKEN = readToken();
+const REDACT = process.argv.includes('--redact') || /^(1|true|yes)$/i.test(process.env.CUBICLE_REDACT || '');
 if (TOKEN && !/^[\x21-\x7e]+$/.test(TOKEN)) {
   console.error('The Paperclip API key contains spaces or control characters; check PAPERCLIP_TOKEN / the token file.');
   process.exit(1);
@@ -133,13 +136,58 @@ function send(res, status, body, type = 'application/json') {
   res.end(body);
 }
 
-// Stream an upstream GET to the client. Upstream can fail before or after it has sent
-// headers (timeouts, resets mid-body); either way the server must stay up.
-function proxy(res, url, headers, failBody) {
+// ---------- shaping ----------
+// The page needs a handful of fields. Everything else Paperclip returns (descriptions,
+// workspace settings, run ids, ...) never leaves the server, and with --redact neither do
+// task titles, commands or error text: only ids, statuses and tool names.
+const pick = (o, keys) => { const r = {}; for (const k of keys) if (o && o[k] !== undefined && o[k] !== null) r[k] = o[k]; return r; };
+// "Bash: rm -rf build" -> "Bash", "Edit secrets.env" -> "Edit", "allow Bash: git push?" -> "allow Bash"
+const toolOnly = (t) => { const x = String(t); return x.startsWith('allow ') ? x.split(':')[0] : x.split(/[:\s]/)[0]; };
+const CLOSED = new Set(['done', 'cancelled']);
+
+function shapePaperclip(pathname, data) {
+  if (!Array.isArray(data)) return data;
+  if (pathname === '/api/companies') return data.map((c) => pick(c, ['id', 'name', 'issuePrefix']));
+  if (pathname.endsWith('/agents')) return data.map((a) => ({
+    ...pick(a, ['id', 'name', 'role', 'title', 'status', 'createdAt', 'budgetMonthlyCents', 'spentMonthlyCents']),
+    errorReason: a.errorReason ? (REDACT ? 'error' : a.errorReason) : null,
+  }));
+  if (pathname.endsWith('/issues')) return data.filter((i) => !CLOSED.has(i.status)).map((i) => ({
+    ...pick(i, REDACT ? ['identifier', 'status', 'assigneeAgentId'] : ['identifier', 'title', 'status', 'assigneeAgentId']),
+    reviewAttention: { paths: ((i.reviewAttention && i.reviewAttention.paths) || []).map((x) => pick(x, ['kind', 'responder', 'label'])) },
+  }));
+  return data;
+}
+
+function shapeFeed(data) {
+  const list = Array.isArray(data) ? data : Array.isArray(data && data.agents) ? data.agents : [];
+  const agents = list.map((a) => {
+    const r = pick(a, ['id', 'name', 'role', 'title', 'status', 'since', 'createdAt']);
+    if (a.task) {
+      if (typeof a.task === 'string') r.task = REDACT ? toolOnly(a.task) : a.task;
+      else r.task = REDACT ? pick(a.task, ['id', 'identifier']) : pick(a.task, ['id', 'identifier', 'title', 'url']);
+    }
+    if (a.taskUrl && !REDACT) r.taskUrl = a.taskUrl;
+    if (a.error) r.error = REDACT ? 'error' : a.error;
+    return r;
+  });
+  return Array.isArray(data) ? agents : { ...pick(data, ['company']), agents };
+}
+
+// Fetch an upstream JSON document, reshape it, and answer in one piece. Buffering means an
+// upstream that fails halfway can never leave a half-sent response behind.
+const MAX_UPSTREAM_BYTES = 20 * 1024 * 1024;
+function proxyJson(res, url, headers, failBody, shape) {
   const upstream = get(url, (r) => {
-    res.writeHead(r.statusCode, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-    r.on('error', () => res.destroy());
-    r.pipe(res);
+    const chunks = []; let size = 0;
+    r.on('data', (c) => { size += c.length; if (size > MAX_UPSTREAM_BYTES) upstream.destroy(new Error('too large')); else chunks.push(c); });
+    r.on('error', () => send(res, 502, failBody));
+    r.on('end', () => {
+      const body = Buffer.concat(chunks).toString('utf8');
+      if (r.statusCode !== 200) return send(res, r.statusCode, body);
+      let data; try { data = JSON.parse(body); } catch (_) { return send(res, 502, '{"error":"upstream did not return JSON"}'); }
+      send(res, 200, JSON.stringify(shape(data)));
+    });
   }, headers);
   upstream.on('error', () => send(res, 502, failBody));
   res.on('close', () => { if (!res.writableFinished) upstream.destroy(); });
@@ -151,11 +199,11 @@ function serveFeed(res, source) {
       // No hook has fired yet: that is an empty office, not an error.
       if (err && err.code === 'ENOENT' && source.emptyIfMissing) return send(res, 200, JSON.stringify({ company: source.label, agents: [] }));
       if (err) return send(res, err.code === 'ENOENT' ? 404 : 500, JSON.stringify({ error: `cannot read ${source.file}` }));
-      try { JSON.parse(txt); } catch (_) { return send(res, 502, '{"error":"feed is not valid JSON"}'); }
-      send(res, 200, txt);
+      let data; try { data = JSON.parse(txt); } catch (_) { return send(res, 502, '{"error":"feed is not valid JSON"}'); }
+      send(res, 200, JSON.stringify(shapeFeed(data)));
     });
   }
-  proxy(res, source.url, {}, '{"error":"feed unreachable"}');
+  proxyJson(res, source.url, {}, '{"error":"feed unreachable"}', shapeFeed);
 }
 
 const server = http.createServer((req, res) => {
@@ -170,7 +218,7 @@ const server = http.createServer((req, res) => {
       : { kind: 'feed', label: x.label, path: `/api/feed/${n++}` });
     // `source`/`label`/`paperclipUrl` keep single-source pages from older versions working.
     const first = sources[0];
-    return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined, version: VERSION, build: build() }));
+    return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined, redact: REDACT, version: VERSION, build: build() }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -183,7 +231,8 @@ const server = http.createServer((req, res) => {
   if (url.pathname.startsWith('/api/')) {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
-    return proxy(res, new URL(url.pathname, PAPERCLIP), TOKEN ? { authorization: `Bearer ${TOKEN}` } : {}, '{"error":"paperclip unreachable"}');
+    return proxyJson(res, new URL(url.pathname, PAPERCLIP), TOKEN ? { authorization: `Bearer ${TOKEN}` } : {},
+      '{"error":"paperclip unreachable"}', (data) => shapePaperclip(url.pathname, data));
   }
 
   if (url.pathname === '/' || url.pathname === '/index.html') {
@@ -196,7 +245,7 @@ const server = http.createServer((req, res) => {
 
 server.listen(PORT, HOST, () => {
   const reading = SOURCES.map((x) => x.kind === 'paperclip' ? PAPERCLIP.origin + (TOKEN ? ' (with an API key)' : '') : x.kind === 'file' ? x.file : x.url.href);
-  console.log(`Cubicle is open at http://${HOST}:${PORT}  (reading ${reading.join(' + ')})`);
+  console.log(`Cubicle is open at http://${HOST}:${PORT}  (reading ${reading.join(' + ')})${REDACT ? '  [redacted: ids and statuses only]' : ''}`);
   const loopback = ['127.0.0.1', 'localhost', '::1'].includes(HOST);
   if (HAS_PAPERCLIP && TOKEN && !loopback) {
     console.warn(`Warning: bound to ${HOST} with a Paperclip API key. Anyone who can reach this port can read what that key can read.`);
