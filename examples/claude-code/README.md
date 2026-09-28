@@ -26,11 +26,13 @@ To keep it running in the background next to a Paperclip office, see [`../system
 | `PermissionRequest`, `Notification` of type `permission_prompt` / `agent_needs_input` / `elicitation_*` | Stays at the desk with a hand up, amber screen |
 | `Stop` | Says "✓ done" and goes to the lounge |
 | `StopFailure` | Red screen, error on the card |
-| `SessionEnd` | Leaves the office |
+| `SessionEnd` | Leaves the office, together with any of its subagents still at a desk |
+| `SubagentStart`, and tool / permission events carrying an `agent_id` | A separate character for that subagent, named `<directory> › <agent type>` (e.g. `app › Explore`); it types and raises its hand on its own |
+| `SubagentStop` | The subagent's character leaves the office |
 
 Other notifications — the "waiting for your input" reminder after a minute of idling, auth and quota messages — are ignored, so an idle session stays in the lounge.
 
-The character is named after the working directory, so two sessions in different repos are easy to tell apart. Sessions with no events for 12 hours are dropped.
+The character is named after the working directory, so two sessions in different repos are easy to tell apart. Subagents started through the Agent (Task) tool get their own character next to the session that started them, so a session fanning out to four subagents shows five people at work; the session's own bubble keeps showing what it asked them to do. Claude Code versions that don't send `agent_id` on hook events fall back to one character per session. Sessions with no events for 12 hours are dropped.
 
 ## Cost and safety
 
