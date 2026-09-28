@@ -61,6 +61,38 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
   assert.strictEqual(feed.agents.length, 0);
   assert.strictEqual(summarize({ tool_name: 'Bash', tool_input: { command: 'npm test' } }), 'Bash: npm test');
 
+  // subagents: one character each, next to the session that started them
+  {
+    let f = { company: 'Claude Code', agents: [] };
+    const find = (id) => f.agents.find((x) => x.id === id);
+    f = apply(f, { session_id: 's2', cwd: '/x/app', hook_event_name: 'PreToolUse', tool_name: 'Agent', tool_input: { description: 'scan repo' } });
+    f = apply(f, { session_id: 's2', cwd: '/x/app', hook_event_name: 'SubagentStart', agent_id: 'a1', agent_type: 'Explore' });
+    f = apply(f, { session_id: 's2', cwd: '/x/app', hook_event_name: 'SubagentStart', agent_id: 'a2', agent_type: 'Plan' });
+    assert.strictEqual(f.agents.length, 3);
+    assert.strictEqual(find('s2:a1').name, 'app › Explore');
+    assert.strictEqual(find('s2:a1').role, 'Claude Code subagent');
+    assert.strictEqual(find('s2').task, 'Agent: scan repo', 'the session keeps its own task');
+    f = apply(f, { session_id: 's2', hook_event_name: 'PreToolUse', agent_id: 'a1', agent_type: 'Explore', tool_name: 'Read', tool_input: { file_path: '/x/app/b.ts' } });
+    assert.strictEqual(find('s2:a1').task, 'Read b.ts');
+    assert.strictEqual(find('s2').task, 'Agent: scan repo', 'subagent tool calls do not move the session bubble');
+    f = apply(f, { session_id: 's2', hook_event_name: 'PermissionRequest', agent_id: 'a2', agent_type: 'Plan', tool_name: 'Bash', tool_input: { command: 'ls' } });
+    assert.strictEqual(find('s2:a2').status, 'waiting');
+    assert.strictEqual(find('s2').status, 'running');
+    f = apply(f, { session_id: 's2', hook_event_name: 'SubagentStop', agent_id: 'a1', agent_type: 'Explore' });
+    assert.ok(!find('s2:a1'));
+    assert.ok(find('s2:a2'));
+    // a subagent seen first mid-run (hooks installed while it was running) still gets a character
+    f = apply(f, { session_id: 's2', cwd: '/x/app', hook_event_name: 'PostToolUse', agent_id: 'a3', tool_name: 'Grep', tool_input: { pattern: 'TODO' } });
+    assert.strictEqual(find('s2:a3').name, 'app › subagent');
+    // SubagentStop without an agent_id (older Claude Code) is a no-op
+    f = apply(f, { session_id: 's2', hook_event_name: 'SubagentStop' });
+    assert.strictEqual(f.agents.length, 3);
+    // SessionEnd takes the session's remaining subagents with it, and only those
+    f = apply(f, { session_id: 's3', cwd: '/x/other', hook_event_name: 'SubagentStart', agent_id: 'b1', agent_type: 'Explore' });
+    f = apply(f, { session_id: 's2', hook_event_name: 'SessionEnd' });
+    assert.deepStrictEqual(f.agents.map((x) => x.id), ['s3:b1']);
+  }
+
   // install-hooks keeps user settings, is idempotent, and uninstalls cleanly
   {
     const fs = require('fs');
