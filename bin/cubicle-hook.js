@@ -28,16 +28,58 @@ function summarize(ev) {
   return tool || 'working';
 }
 
+// Subagents (Task/Agent tool) share the parent's session_id; Claude Code tells them
+// apart with agent_id / agent_type on their hook events. Each subagent gets its own
+// character, keyed "<session_id>:<agent_id>", and leaves when it stops.
+function applySubagent(feed, agents, ev, now) {
+  const sid = ev.session_id || 'unknown';
+  const id = `${sid}:${ev.agent_id}`;
+  const parent = agents.find((x) => x.id === sid);
+  const base = (parent && parent.name) || path.basename(ev.cwd || '') || 'claude';
+  let a = agents.find((x) => x.id === id);
+  const fresh = () => ({ id, since: now, parent: sid, name: `${base} › ${ev.agent_type || 'subagent'}`, role: 'Claude Code subagent' });
+
+  switch (ev.hook_event_name) {
+    case 'SubagentStop':
+      return { ...feed, agents: agents.filter((x) => x.id !== id) };
+    case 'SubagentStart':
+      a = a || fresh();
+      Object.assign(a, { status: 'running', task: 'starting', error: null });
+      break;
+    case 'PreToolUse':
+    case 'PostToolUse':
+      a = a || fresh();
+      Object.assign(a, { status: 'running', task: summarize(ev), error: null });
+      break;
+    case 'PermissionRequest':
+      a = a || fresh();
+      Object.assign(a, { status: 'waiting', task: ev.tool_name ? `allow ${summarize(ev)}?` : 'needs your permission' });
+      break;
+    default:
+      return null; // not a subagent-specific event: let the session character handle it
+  }
+  a.updated = now;
+  if (!agents.includes(a)) agents.push(a);
+  return { ...feed, agents };
+}
+
 function apply(feed, ev) {
   const id = ev.session_id || 'unknown';
   const now = Date.now();
   const agents = feed.agents.filter((a) => now - (a.updated || 0) < STALE_MS);
+
+  if (ev.agent_id) {
+    const out = applySubagent(feed, agents, ev, now);
+    if (out) return out;
+  }
+
   let a = agents.find((x) => x.id === id);
   const name = path.basename(ev.cwd || '') || 'claude';
 
   switch (ev.hook_event_name) {
     case 'SessionEnd':
-      return { ...feed, agents: agents.filter((x) => x.id !== id) };
+      // The session leaves the office together with any subagents still at their desks.
+      return { ...feed, agents: agents.filter((x) => x.id !== id && x.parent !== id) };
     case 'SessionStart':
       a = a || { id, since: now };
       Object.assign(a, { name, role: 'Claude Code', status: 'idle', task: null, error: null });
@@ -72,7 +114,7 @@ function apply(feed, ev) {
       Object.assign(a, { status: 'idle', task: null });
       break;
     default:
-      return feed; // SubagentStop etc.: nothing to draw
+      return feed; // SubagentStart/SubagentStop without an agent_id etc.: nothing to draw
   }
   a.updated = now;
   if (!agents.includes(a)) agents.push(a);
@@ -114,7 +156,7 @@ function main() {
 
 // ---------- install / uninstall into Claude Code settings ----------
 const EVENTS = ['SessionStart', 'UserPromptSubmit', 'PreToolUse', 'PermissionRequest', 'PostToolUse',
-  'Notification', 'PreCompact', 'Stop', 'StopFailure', 'SessionEnd'];
+  'Notification', 'PreCompact', 'Stop', 'StopFailure', 'SessionEnd', 'SubagentStart', 'SubagentStop'];
 const isOurs = (h) => /cubicle-hook\.js|cubicle"? hook\b/.test(String(h && h.command));
 
 function install({ uninstall = false, settingsFile = path.join(os.homedir(), '.claude', 'settings.json') } = {}) {
