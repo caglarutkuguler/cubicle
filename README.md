@@ -8,7 +8,7 @@
 
 Your agents get a desk. When one starts working it walks over, sits down and starts typing, with its current task floating above its head. When it needs you, it raises a hand. When it finishes it goes back to the lounge for a coffee. If it hits an error, its screen flashes red.
 
-[![Cubicle demo](docs/demo.gif)](https://caglarutkuguler.github.io/cubicle/?lang=en)
+[![Cubicle: the same office in six themes](docs/tour.gif)](https://caglarutkuguler.github.io/cubicle/?lang=en)
 
 - **Zero dependencies.** One small Node.js file plus one HTML page. No build step, no image assets.
 - **Read-only by design.** Cubicle only ever makes `GET` requests, and only to a short allowlist. It cannot change anything in your agent system.
