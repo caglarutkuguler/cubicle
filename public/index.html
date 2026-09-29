@@ -16,7 +16,7 @@
   .right { display:flex; align-items:center; gap:10px; color:var(--muted); }
   select { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:6px; padding:3px 6px; font:inherit; }
   #stage { position:relative; width:100%; aspect-ratio:352/208; border:2px solid var(--line); border-radius:8px; overflow:hidden; background:#2a2d3d; }
-  canvas { position:absolute; inset:0; width:100%; height:100%; image-rendering:pixelated; }
+  canvas { position:absolute; inset:0; width:100%; height:100%; }
   #labels { position:absolute; inset:0; pointer-events:none; font-size:11px; }
   .lbl { position:absolute; transform:translate(-50%,-100%); display:flex; flex-direction:column; align-items:center; white-space:nowrap; }
   .bub { background:#fff; color:#1d1f2b; border-radius:.82em; padding:.18em .64em; font-size:1em; font-weight:600; margin-bottom:.27em; box-shadow:0 1px 0 rgba(0,0,0,.3); max-width:210px; overflow:hidden; text-overflow:ellipsis; }
@@ -30,7 +30,7 @@
   body.kiosk header { position:fixed; top:0; left:0; right:0; z-index:2; margin:0; padding:1vh 1.4vw; background:linear-gradient(rgba(10,11,18,.8), rgba(10,11,18,0)); }
   body.kiosk h1 { font-size:clamp(16px, 1.5vw, 34px); }
   body.kiosk h1 small, body.kiosk #status { font-size:clamp(12px, 1.05vw, 24px); }
-  body.kiosk #stage { width:min(100vw, calc(100vh * 352 / 208)); border:0; border-radius:0; }
+  body.kiosk #stage { width:min(100vw, calc(100vh * var(--ar, 1.6923))); border:0; border-radius:0; }
   body.kiosk #cards, body.kiosk footer, body.kiosk #banner, body.kiosk #company { display:none !important; }
   #banner { display:none; margin-bottom:10px; padding:8px 12px; border-radius:8px; background:#2b2f47; border:1px solid var(--line); color:var(--muted); }
   #cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; margin-top:12px; }
@@ -116,10 +116,11 @@
   if (KIOSK) document.body.classList.add('kiosk');
 
   // ---------- setup ----------
-  const T = 16, CW = 352, CH = 208;
+  const T = 16, CW = 352;
+  let CH = 208;                        // grows with the number of desk rows
   const cv = document.getElementById('c');
   const g = cv.getContext('2d');
-  g.imageSmoothingEnabled = false;
+  const stageEl = document.getElementById('stage');
   const labelsEl = document.getElementById('labels');
   const cardsEl = document.getElementById('cards');
   const statusEl = document.getElementById('status');
@@ -127,9 +128,32 @@
   document.getElementById('hint').textContent = L.hint;
   statusEl.textContent = L.connecting;
 
-  // Office layout, in tiles
-  const DESKS = [[1,3],[4.5,3],[8,3],[11.5,3],[1,7.5],[4.5,7.5],[8,7.5],[11.5,7.5],[1,10.5],[4.5,10.5],[8,10.5],[11.5,10.5]];
-  const LOUNGE = [[16,4.4],[18,4.4],[20,4.4],[16.2,10],[18.3,10.6],[20.3,10],[15.8,7.4],[21,7.4],[17,12],[19.5,12],[16.4,5.6],[19.6,5.6]];
+  // Office layout, in tiles. Three rows of four desks by default; whenever there are more
+  // agents than desks the office grows by another row (and more lounge spots), so nobody
+  // ever has to share a desk.
+  const BASE_DESKS = [[1,3],[4.5,3],[8,3],[11.5,3],[1,7.5],[4.5,7.5],[8,7.5],[11.5,7.5],[1,10.5],[4.5,10.5],[8,10.5],[11.5,10.5]];
+  const BASE_LOUNGE = [[16,4.4],[18,4.4],[20,4.4],[16.2,10],[18.3,10.6],[20.3,10],[15.8,7.4],[21,7.4],[17,12],[19.5,12],[16.4,5.6],[19.6,5.6]];
+  let DESKS = BASE_DESKS, LOUNGE = BASE_LOUNGE, ROWS = 3;
+  function layoutFor(n) {
+    const rows = Math.max(3, Math.ceil(n / 4));
+    if (rows === ROWS) return;
+    ROWS = rows;
+    DESKS = BASE_DESKS.slice(); LOUNGE = BASE_LOUNGE.slice();
+    for (let r = 1; r <= rows - 3; r++) {
+      const y = 10.5 + 3.5 * r;
+      DESKS.push([1, y], [4.5, y], [8, y], [11.5, y]);
+      LOUNGE.push([16, y + 1], [17.8, y + 2], [19.6, y + 1], [21, y + 2]);
+    }
+    CH = (13 + (rows - 3) * 3.5) * T;
+    resizeCanvas();
+  }
+  function resizeCanvas() {
+    const k = theme ? theme.scale : 1;
+    cv.width = CW * k; cv.height = CH * k;
+    cv.style.imageRendering = theme && theme.smooth ? 'auto' : 'pixelated';
+    stageEl.style.aspectRatio = `${CW} / ${CH}`;
+    stageEl.style.setProperty('--ar', String(CW / CH));
+  }
   const SHIRTS = ['#e05d5d','#4f9dde','#57b86b','#e0a33b','#a66de0','#3bc4c4','#e07ab8','#9aa0b4','#f07b3f','#6fcf97','#c9b458','#5f7ee0'];
   const HAIRS  = ['#2b1d14','#111111','#6b3e1f','#c9a04a','#8b4513','#3b2a20','#d9d0c1','#4a2b1a'];
   const SKINS  = ['#f1c7a3','#d9a47a','#b87b52','#f5d5b8','#c68e62'];
@@ -337,6 +361,7 @@
   }
 
   function sync(agents, issues) {
+    layoutFor(agents.length);
     const sorted = [...agents].sort((a, b) => ((a._src || 0) - (b._src || 0)) || String(a.createdAt).localeCompare(String(b.createdAt)));
     const seen = new Set();
     sorted.forEach((a, idx) => {
@@ -347,7 +372,9 @@
         const spot = LOUNGE[idx % LOUNGE.length];
         s = {
           id: a.id, idx, seed: (h % 1000) / 100,
-          shirt: SHIRTS[idx % SHIRTS.length], hair: HAIRS[h % HAIRS.length], skin: SKINS[(h >> 3) % SKINS.length],
+          // Looks come from the id, so an agent keeps its colours when others join or leave.
+          // (>>> keeps the index positive: h is an unsigned 32-bit hash.)
+          shirt: SHIRTS[(h >>> 6) % SHIRTS.length], hair: HAIRS[h % HAIRS.length], skin: SKINS[(h >>> 3) % SKINS.length],
           x: spot[0] * T, y: spot[1] * T,
           lounge: idx % LOUNGE.length, nextWander: performance.now() / 1000 + 5 + (h % 10),
           bubble: null, bubbleClass: '', bubbleUntil: 0, prevStatus: a.status,
@@ -413,7 +440,7 @@
       s.nextWander = now + 9 + Math.random() * 14;
       if (Math.random() < 0.35) setBubble(s, L.chatter[Math.floor(Math.random() * L.chatter.length)], '', 3);
     }
-    const p = LOUNGE[s.lounge];
+    const p = LOUNGE[s.lounge % LOUNGE.length];
     return [p[0] * T, p[1] * T, false];
   }
 
@@ -445,7 +472,7 @@
   function drawRoom(t) {
     const hr = new Date().getHours();
     const night = hr < 7 || hr >= 20;
-    for (let y = 2; y < 13; y++) for (let x = 0; x < 22; x++) {
+    for (let y = 2; y < CH / T; y++) for (let x = 0; x < 22; x++) {
       const lounge = x >= 15;
       rect((x + y) % 2 ? (lounge ? '#4a3d57' : '#3a3f56') : (lounge ? '#463a52' : '#363b51'), x * T, y * T, T, T);
     }
@@ -468,7 +495,7 @@
     hand(now.getMinutes() / 60 * Math.PI * 2, 4);
     // glass partition with a doorway
     rect('rgba(160,200,255,.18)', 14 * T + 6, 2 * T, 4, 4 * T);
-    rect('rgba(160,200,255,.18)', 14 * T + 6, 8 * T, 4, 5 * T);
+    rect('rgba(160,200,255,.18)', 14 * T + 6, 8 * T, 4, CH - 8 * T);
     rect('#6c7090', 14 * T + 6, 2 * T, 4, 2); rect('#6c7090', 14 * T + 6, 8 * T, 4, 2);
   }
 
@@ -485,7 +512,8 @@
       rect('#8b5a2b', 17 * T, 6.9 * T, 3.6 * T, 1.6 * T); rect('#6e4520', 17 * T, 8.5 * T, 3.6 * T, 3);
       rect('#e9e7f2', 17.4 * T, 7.2 * T, 10, 7); rect('#e9e7f2', 19.4 * T, 7.4 * T, 8, 6);
     }});
-    for (const [px, py] of [[14.9, 2.3], [21.3, 11.6], [0.2, 12.1]]) list.push({ z: (py + 1) * T, f: () => {
+    const H = CH / T;
+    for (const [px, py] of [[14.9, 2.3], [21.3, H - 1.4], [0.2, H - 0.9]]) list.push({ z: (py + 1) * T, f: () => {
       rect('#8b5a2b', px * T + 3, py * T + 10, 8, 6);
       rect('#3f9d55', px * T + 1, py * T, 12, 11); rect('#57b86b', px * T + 3, py * T - 3, 8, 6);
     }});
@@ -542,6 +570,24 @@
     }
   }
 
+  // ---------- themes ----------
+  // A theme draws the office; movement, labels and cards are shared. 'pixel' is built in;
+  // others live in public/themes/<id>.js, are loaded only when chosen, and register
+  // themselves with window.CubicleThemes.register(). Coordinates are in office pixels
+  // (22×13+ tiles of 16 px); a theme with scale > 1 gets a sharper canvas to draw on.
+  const themes = {
+    pixel: {
+      id: 'pixel', name: { en: 'Pixel (classic)', tr: 'Piksel (klasik)' }, scale: 1, smooth: false,
+      drawRoom: (c) => drawRoom(c.t),
+      props: (c, list) => loungeProps(c.t, list),
+      drawDesk: (c, d, s) => drawDesk(d, s, c.t),
+      drawChar: (c, s) => drawChar(s, c.t),
+    },
+  };
+  let theme = themes.pixel;
+  let themeOpts = {};
+  window.CubicleThemes = { register(t) { themes[t.id] = t; }, T };
+
   function placeLabels(now) {
     const k = cv.clientWidth / CW;
     // Keep bubbles narrower than the gap between neighbouring desks so they never overlap.
@@ -569,20 +615,27 @@
   function frame() {
     const now = performance.now() / 1000;
     const dt = Math.min(0.1, now - last); last = now;
+    g.setTransform(theme.scale, 0, 0, theme.scale, 0, 0);
+    g.imageSmoothingEnabled = !!theme.smooth;
     g.clearRect(0, 0, CW, CH);
-    drawRoom(now);
+    const hr = new Date().getHours();
+    const c = { g, t: now, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites, desks: DESKS, lounge: LOUNGE,
+      anyError: [...sprites.values()].some((s) => s.status === 'error') };
+    theme.drawRoom(c);
     const list = [];
-    loungeProps(now, list);
+    theme.props(c, list);
     const byDesk = new Map();
     for (const s of sprites.values()) { step(s, dt, now); byDesk.set(s.desk, s); }
     const deskCount = Math.max(4, Math.min(DESKS.length, Math.ceil(sprites.size / 4) * 4));
-    DESKS.slice(0, deskCount).forEach((d) => list.push({ z: d[1] * T + 21, f: () => drawDesk(d, byDesk.get(d), now) }));
-    for (const s of sprites.values()) list.push({ z: s.y, f: () => drawChar(s, now) });
+    DESKS.slice(0, deskCount).forEach((d) => list.push({ z: d[1] * T + 21, f: () => theme.drawDesk(c, d, byDesk.get(d)) }));
+    for (const s of sprites.values()) list.push({ z: s.y, f: () => theme.drawChar(c, s) });
     list.sort((a, b) => a.z - b.z).forEach((o) => o.f());
+    if (theme.overlay) theme.overlay(c);
     placeLabels(now);
     requestAnimationFrame(frame);
   }
 
+  resizeCanvas();
   init();
 })();
 </script>
