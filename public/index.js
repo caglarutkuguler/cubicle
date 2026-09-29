@@ -23,7 +23,8 @@ function pluginId() {
 
 function officeUrl(id, context, extra) {
   const q = new URLSearchParams({ embed: 'paperclip' });
-  if (context && context.companyPrefix) q.set('company', context.companyPrefix);
+  const company = context && (context.companyPrefix || context.companyId);   // the page accepts either
+  if (company) q.set('company', company);
   for (const [k, v] of Object.entries(extra || {})) q.set(k, v);
   return `/_plugins/${encodeURIComponent(id)}/ui/index.html?${q}`;
 }
@@ -53,5 +54,20 @@ export function CubicleOfficePage({ context }) {
     h('iframe', {
       key: src, src, title: 'Cubicle office', allow: 'clipboard-write',
       style: { flex: 1, width: '100%', border: 0, borderRadius: '8px', background: '#1b1b2b' },
+    }));
+}
+
+// A small live office on Paperclip's dashboard; clicking it opens the full page.
+export function CubicleDashboardWidget({ context }) {
+  const [id, setId] = React.useState(null);
+  React.useEffect(() => { let live = true; pluginId().then((v) => { if (live) setId(v); }); return () => { live = false; }; }, []);
+  if (!id) return null;
+  const page = context && context.companyPrefix ? `/${context.companyPrefix}/${ROUTE}` : `/${ROUTE}`;
+  const src = officeUrl(id, context, { kiosk: '', widget: '', fps: '15' });
+  return h('a', { href: page, title: 'Cubicle', style: { display: 'block', position: 'relative', textDecoration: 'none', color: 'inherit' } },
+    h('div', { style: { fontSize: '13px', fontWeight: 600, marginBottom: '6px' } }, 'Cubicle'),
+    h('iframe', {
+      key: src, src, title: 'Cubicle office', tabIndex: -1,
+      style: { width: '100%', aspectRatio: '352 / 208', border: 0, borderRadius: '8px', background: '#1b1b2b', pointerEvents: 'none', display: 'block' },
     }));
 }

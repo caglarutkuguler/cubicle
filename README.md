@@ -15,6 +15,8 @@ Your agents get a desk. When one starts working it walks over, sits down and sta
 - **Not tied to one platform.** Paperclip, Claude Code, Codex CLI and Gemini CLI are built in; anything else plugs in through a [tiny JSON feed](docs/FEED.md).
 - **Runs anywhere Node runs.** `npx`, a clone, a systemd unit, or a browser tab pointed at the hosted demo.
 - **Themes.** The classic pixel office, or HD rooms: a holding HQ, a plaza office, a warehouse, a factory, a space base and a military operations room. Pick one from the ⚙ menu; a theme is one file anyone can add.
+- **Your people, your brand.** Give any agent a real face from a photo (a wizard crops the head), a hairstyle, a skirt or heels; put your logo on the wall.
+- **Tells you when you're needed.** Optional desktop notification and sound when an agent raises its hand, and a 30-second video recording of the office for sharing.
 - **English, Turkish, German, Spanish and French UI**, picked from your browser language or with `?lang=xx`.
 
 ## Quick start
@@ -76,6 +78,7 @@ node bin/cubicle.js            # add --source … as above
 | `--token-file` | `PAPERCLIP_TOKEN` / `PAPERCLIP_TOKEN_FILE` | none — API key for an authenticated Paperclip |
 | `--redact` | `CUBICLE_REDACT=1` | off — strip task titles, commands and error text on the server; the office shows only ids, tool names and statuses |
 | `--record FILE.jsonl` | | off — append everything the office shows to a file, only when it changes |
+| `--appearance FILE` | `CUBICLE_APPEARANCE` | `~/.cubicle/appearance.json` — where agent looks, photo heads and the logo are saved |
 | `--speed N` | `CUBICLE_SPEED` | `60` — replay speed for `--source replay:FILE.jsonl` (60 = an hour a minute) |
 
 URL parameters:
@@ -118,6 +121,26 @@ Each card below the office links to the agent's current task when the source pro
 
 When a Paperclip issue moves from one agent to another, both walk to the lounge table for a few seconds and the one handing over says which issue it passes on.
 
+## Faces, looks and your logo
+
+Every card has a ✎ button. It opens the appearance dialog for that agent:
+
+- **Photo head.** Choose, drop or paste any picture. Drag and zoom it until the face fills the circle (in Chrome with face detection turned on, the circle finds the face by itself). The office then shows that face instead of the drawn head, in every theme.
+- **Looks.** Hairstyle and colour, skin, the agent's colour, trousers or a skirt, flat shoes or heels. The HD themes dress people for the room (suits, hi-vis, flight suits); these choices apply on top.
+
+The ⚙ menu uploads a **company logo**, which each theme hangs where its wall has room, and exports or imports all of it as one file.
+
+Where it is kept: with the standalone server, in `~/.cubicle/appearance.json` on the machine running Cubicle, so every screen of the office (a TV, a laptop) shows the same faces. Only a browser on that machine can change it. Inside Paperclip, in the browser. Photos are resized to 160 px and never sent anywhere else; ask people before putting their face on a shared screen.
+
+## Alerts, frame rate and video
+
+The ⚙ menu also has:
+
+- **Desktop notification** when an agent starts needing you (a permission prompt, a board question), shown when the Cubicle tab is not in front.
+- **Sound**: a short chime when an agent needs you, or also when one finishes or fails. Off by default; browsers only play it after you have clicked the page once.
+- **Frame rate**: automatic (60 fps; 30 on a kiosk with an HD theme; 15 when the system asks for reduced motion), 30 or 15. `?fps=15` sets it in a kiosk link. Drawing an HD office takes about 1.3 to 2.2 ms of script per frame on a laptop; hidden tabs draw nothing.
+- **Record a 30 s video**: an MP4 (or WebM) of the office with names and bubbles, ready for a post. Combine it with a [replay](#sources) to get a whole day in 30 seconds.
+
 ## Sources
 
 **Paperclip.** Cubicle proxies three read-only endpoints (`/api/health`, `/api/companies`, `/api/companies/:id/agents|issues`) and maps Paperclip's agent status and open issues onto the office. Any adapter Paperclip supports — Claude Code, Codex, Cursor, HTTP agents — shows up, because the status comes from Paperclip itself.
@@ -152,10 +175,11 @@ The same npm package is also a Paperclip plugin. Install it once and every compa
 npx paperclipai plugin install @caglarutkuguler/cubicle
 ```
 
-- Nothing else to run: Paperclip serves the office page from the plugin, and the page reads the same three endpoints as the standalone proxy (companies, agents, open issues), on Paperclip's own origin with your own session. It only ever sends `GET` requests. The plugin asks Paperclip for two capabilities, both UI only (`ui.sidebar.register`, `ui.page.register`); its worker answers Paperclip's lifecycle calls and nothing else.
-- Themes, the ⚙ menu and "needs you" work the same. Task ids link to the issue inside Paperclip.
+- Nothing else to run: Paperclip serves the office page from the plugin, and the page reads the same three endpoints as the standalone proxy (companies, agents, open issues), on Paperclip's own origin with your own session. It only ever sends `GET` requests. The plugin asks Paperclip for three capabilities, all UI only (`ui.sidebar.register`, `ui.page.register`, `ui.dashboardWidget.register`); its worker answers Paperclip's lifecycle calls and nothing else.
+- Themes, the ⚙ menu, faces and "needs you" work the same. Task ids link to the issue inside Paperclip.
+- A **dashboard widget** puts a small live office on Paperclip's dashboard; clicking it opens the page.
 - **Kiosk / TV** (top right of the page) opens the office full screen at a Paperclip URL, so a wall display needs only a browser signed in to Paperclip.
-- Update to the latest version with Paperclip's upgrade endpoint (instance admins; no key needed in the default `local_trusted` mode): `curl -X POST http://127.0.0.1:3100/api/plugins/caglarutkuguler.cubicle/upgrade`. Remove with `npx paperclipai plugin uninstall caglarutkuguler.cubicle`.
+- Update to the latest version with Paperclip's upgrade endpoint (instance admins; no key needed in the default `local_trusted` mode): `curl -X POST http://127.0.0.1:3100/api/plugins/caglarutkuguler.cubicle/upgrade`. When a version asks for a new capability (0.11 adds the dashboard widget), Paperclip holds the upgrade until you approve it: `npx paperclipai plugin enable caglarutkuguler.cubicle`. Remove with `npx paperclipai plugin uninstall caglarutkuguler.cubicle`.
 - Hacking on it: `npx paperclipai plugin install /path/to/your/cubicle/clone` installs from a checkout.
 
 Differences from the standalone server: `--redact` and the proxy's field filtering don't apply (the page talks to Paperclip directly, as the signed-in user, who can already see everything it shows), and Claude Code sessions or feeds are not mixed in; run the standalone server for those.
@@ -200,7 +224,7 @@ journalctl --user -u cubicle-update.service   # what it did
 ## Security notes
 
 - Cubicle binds to `127.0.0.1` by default. Keep it that way unless you put it behind your own authentication, because anyone who can reach it can see your agent names, statuses and task titles.
-- Only `GET` and `HEAD` are accepted; everything else gets `405`. In Paperclip mode only the three endpoints above are forwarded and any other `/api/` path gets `403`. In feed mode the only upstream request is a `GET` to the configured file or URL.
+- Only `GET` and `HEAD` are accepted, with one exception: `PUT /api/appearance` saves the office's own appearance file (looks, photo heads, logo). It is accepted only from the machine Cubicle runs on, only as JSON with a Cubicle header and no foreign `Origin`, so another website or another computer on the network cannot change it. Everything else gets `405`; nothing ever writes to your agent system. In Paperclip mode only the three endpoints above are forwarded and any other `/api/` path gets `403`. In feed mode the only upstream request is a `GET` to the configured file or URL.
 - Only the fields the page draws leave the server: Paperclip descriptions, adapter and workspace settings, run ids and closed issues are dropped by the proxy. With `--redact`, task titles, commands and error text are dropped too, so a kiosk on a shared screen (or anyone who can reach its port) sees issue ids, tool names and statuses only.
 - A Paperclip API key is added by the proxy and never sent to the browser. The browser's own cookies and `Authorization` header are never forwarded upstream. If you bind to anything other than loopback while a key is set, Cubicle prints a warning at startup: everyone who can reach the port can read what the key can read.
 - The Claude Code hook never touches the network and stores only session id, directory name, status and a short summary of the current tool call.
@@ -238,4 +262,4 @@ Cubicle is a community project and is not affiliated with or endorsed by Papercl
 
 **Cubicle**, AI ajanlarınızı canlı bir pixel ofiste gösterir: [Paperclip](https://github.com/paperclipai/paperclip) ve Claude Code hazır gelir; başka sistemler küçük bir [JSON feed](docs/FEED.md) ile bağlanır. Çalışan ajan masasına oturup yazar ve başının üstünde görevi görünür; sizi bekleyen ajan elini kaldırır; işi biten ajan dinlenme alanına döner; hata alan ajanın ekranı kırmızı yanar.
 
-Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD temalar seçilebilir: holding, plaza ofisi, depo, fabrika, uzay üssü ve askerî (Kara, Hava, Deniz veya Müşterek Kuvvetler); aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır.
+Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD temalar seçilebilir: holding, plaza ofisi, depo, fabrika, uzay üssü ve askerî (Kara, Hava, Deniz veya Müşterek Kuvvetler); aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır. Her ajan kartındaki ✎ düğmesiyle ajana bir fotoğraftan kesilen gerçek bir yüz, saç modeli, etek ya da topuklu ayakkabı verilebilir; ⚙ menüsünden şirket logosu yüklenir, bir ajan sizi beklediğinde masaüstü bildirimi ve ses açılabilir, ofisin 30 saniyelik videosu kaydedilebilir.

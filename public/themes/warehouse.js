@@ -120,6 +120,7 @@
 
   window.CubicleThemes.register({
     id: 'warehouse', name: { en: 'Warehouse (HD)', tr: 'Depo (HD)' }, scale: 4, smooth: true,
+    logoSpot: [10.7 * T, 2, 26, 14],
     drawRoom, props, drawDesk, drawChar,
   });
 })();

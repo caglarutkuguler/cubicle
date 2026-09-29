@@ -100,7 +100,9 @@ A seated agent stands at `(x*T + 22, y*T + 12)` of its desk, to the right of the
 
 `c` (every function): `g` the 2D context, `t` time in seconds, `T`, `CW`, `CH`, `night`, `opts`, `sprites` (every agent), `desks`, `lounge`, `anyError`, `company` (the company name, may be empty).
 
-An agent `s`: `id`, `name`, `role`, `status` (`running`, `waiting`, `idle`, `error`, `paused`), `ask` (a board question is waiting), `seated`, `typing`, `walking`, `dir`, `x`, `y`, `shirt`, `skin`, `hair` colours.
+An agent `s`: `id`, `name`, `role`, `status` (`running`, `waiting`, `idle`, `error`, `paused`), `ask` (a board question is waiting), `seated`, `typing`, `walking`, `dir`, `x`, `y`, `shirt`, `skin`, `hair` colours, and `look`: what the user chose in the appearance dialog (`hair` style, `bottom` `'trousers'`/`'skirt'`, `shoes` `'flats'`/`'heels'`; colours are already in `shirt`, `skin`, `hair`).
+
+**Faces and the logo.** `K.person` handles both for you: it applies `s.look` over your outfit and draws the agent's photo instead of the head when there is one. If you draw people yourself (like `military.js`), call `window.CubicleThemes.photoHead(g, s, x, headY, radius)` where you would draw the head; it returns `true` when it drew a photo, then skip your face, hair and hat. The company logo the user uploads is hung by the page; tell it where your wall has room with `logoSpot: [x, y, w, h]` (office pixels) in `register`, or a function `(c) => [x, y, w, h]`.
 
 ## The kit (`window.CubicleKit`)
 
@@ -120,7 +122,7 @@ Call `K.begin(c)` at the start of each function. The main helpers:
 ## Rules
 
 - Everything is drawn in code: no image files, fonts, network requests or dependencies.
-- No real logos, brands, flags, emblems or recognisable characters. The company name comes from the data (`K.sign`).
+- No real logos, brands, flags, emblems or recognisable characters. The company name comes from the data (`K.sign`); the user's own logo is placed by the page at your `logoSpot`.
 - Keep states readable: working, needs-you (amber), error (red) and idle should be obvious at a glance on a TV across the room.
 - Looks come from the agent id (`K.rand`, `K.pick`), never from `Math.random()`, so nobody changes clothes between frames.
 - One theme per pull request. Include a screenshot.

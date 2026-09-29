@@ -115,6 +115,7 @@
 
   window.CubicleThemes.register({
     id: 'space', name: { en: 'Space base (HD)', tr: 'Uzay üssü (HD)' }, scale: 4, smooth: true,
+    logoSpot: [14.95 * T, 5, 20, 18],
     setup(opts) { base = opts.base === 'mars' ? 'mars' : 'orbit'; },
     drawRoom, props, drawDesk, drawChar,
   });

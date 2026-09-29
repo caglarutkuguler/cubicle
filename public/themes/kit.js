@@ -296,6 +296,11 @@
      * a coffee cup when resting in the lounge.
      */
     person(c, s, look = {}) {
+      // What the user picked for this agent in the appearance dialog wins over the theme's choice.
+      const my = s.look || {};
+      if (my.hair) look = { ...look, hair: my.hair };
+      if (my.bottom) look = { ...look, skirt: my.bottom === 'skirt' };
+      if (my.shoes) look = { ...look, heels: my.shoes === 'heels' };
       const t = c.t, x = s.x, y = s.y;
       const top = look.top || '#4f6f9c', sleeve = look.sleeve || top, bottom = look.bottom || '#2f3440';
       const shoes = look.shoes || '#1d1f24';
@@ -355,6 +360,13 @@
       // head
       const hy = tp - 3.6 + slump, hair = s.hair || '#2b1d14', style = look.hair || 'short';
       K.rect(s.skin, x - 1, tp - 1.2 + slump, 2, 1.6);
+      // A photo head replaces the drawn face, hair and headwear (a see-through helmet stays).
+      const photo = window.CubicleThemes && window.CubicleThemes.photoHead;
+      if (photo && photo(g, s, x, hy, 4.2)) {
+        if (look.head === 'helmet') { g.strokeStyle = look.headColor || '#f2c230'; g.lineWidth = 0.6; g.beginPath(); g.arc(x, hy, 4.9, 0, Math.PI * 2); g.stroke(); }
+        if (look.after) look.after(x, tp, hy);
+        return;
+      }
       if (style === 'long') K.rr(hair, x - 3.6, hy - 2, 7.2, 7.4, 2.5);            // hair behind the shoulders
       if (style === 'pony') K.ellipse(hair, x + 3.3, hy + 1.2, 1.1, 2.6, -0.3);
       K.circle(s.skin, x, hy, 3.3);

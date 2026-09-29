@@ -222,9 +222,49 @@ function serveFeed(res, source) {
   proxyJson(res, source.url, {}, '{"error":"feed unreachable"}', shapeFeed);
 }
 
+// ---------- appearance (the office's own settings, not agent data) ----------
+// Per-agent looks (hair, clothes, a photo head) and the company logo, saved in one small file
+// so every screen showing this office sees them. The only thing Cubicle ever writes, and only
+// from this machine: agent systems stay read-only.
+const APPEARANCE_FILE = arg('appearance') || process.env.CUBICLE_APPEARANCE || path.join(os.homedir(), '.cubicle', 'appearance.json');
+const MAX_APPEARANCE_BYTES = 4 * 1024 * 1024;
+const isLoopback = (a) => /^(127\.|::1$|::ffff:127\.)/.test(String(a || ''));
+function serveAppearance(req, res) {
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    return fs.readFile(APPEARANCE_FILE, 'utf8', (err, txt) => {
+      if (err) return send(res, 200, '{"agents":{},"names":{}}');
+      send(res, 200, txt);
+    });
+  }
+  if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');
+  // Only a browser on this machine may change it, and only this page: a cross-site page cannot
+  // send a PUT with a JSON body without a CORS preflight, which this server never grants.
+  if (!isLoopback(req.socket.remoteAddress)) return send(res, 403, '{"error":"appearance can only be changed from this machine"}');
+  if (!/^application\/json/.test(req.headers['content-type'] || '') || req.headers['x-cubicle'] !== '1') return send(res, 400, '{"error":"bad request"}');
+  const origin = req.headers.origin;
+  if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, '{"error":"cross-origin"}');
+  const chunks = []; let size = 0;
+  req.on('data', (d) => { size += d.length; if (size <= MAX_APPEARANCE_BYTES) chunks.push(d); });
+  req.on('end', () => {
+    if (size > MAX_APPEARANCE_BYTES) return send(res, 413, '{"error":"too large"}');
+    let data; try { data = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (_) { return send(res, 400, '{"error":"not JSON"}'); }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return send(res, 400, '{"error":"expected an object"}');
+    const clean = { agents: {}, names: {} };
+    for (const k of ['agents', 'names']) for (const [id, look] of Object.entries(data[k] || {})) if (look && typeof look === 'object') clean[k][String(id).slice(0, 300)] = look;
+    if (typeof data.logo === 'string' && /^data:image\/(png|jpeg|webp);base64,/.test(data.logo)) clean.logo = data.logo;
+    try {
+      fs.mkdirSync(path.dirname(APPEARANCE_FILE), { recursive: true });
+      const tmp = `${APPEARANCE_FILE}.${process.pid}.tmp`;
+      fs.writeFileSync(tmp, JSON.stringify(clean)); fs.renameSync(tmp, APPEARANCE_FILE);
+    } catch (e) { return send(res, 500, JSON.stringify({ error: `cannot write ${APPEARANCE_FILE}` })); }
+    send(res, 200, '{"ok":true}');
+  });
+}
+
 const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
 
+  if (url.pathname === '/api/appearance') return serveAppearance(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;

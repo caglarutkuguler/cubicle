@@ -352,6 +352,33 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     fs.rmSync(dir, { recursive: true, force: true });
   }
 
+  // the appearance file: readable by every screen, writable only by this page on this machine
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-look-'));
+    const file = path.join(dir, 'appearance.json');
+    await withServer(['--source', path.join(ROOT, 'examples/feed.json'), '--appearance', file], async (base) => {
+      assert.deepStrictEqual(JSON.parse((await get(`${base}/api/appearance`)).body), { agents: {}, names: {} });
+      const put = (body, headers) => new Promise((resolve, reject) => {
+        const u = new URL(`${base}/api/appearance`);
+        const r = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method: 'PUT', headers }, (res) => { res.resume(); res.on('end', () => resolve(res.statusCode)); });
+        r.on('error', reject); r.end(body);
+      });
+      const good = { 'content-type': 'application/json', 'x-cubicle': '1' };
+      const look = { agents: { a1: { hair: 'bun', photo: 'data:image/jpeg;base64,AAAA' } }, names: { Ada: { hair: 'bun' } }, logo: 'data:image/png;base64,iVBOR', extra: 'dropped' };
+      assert.strictEqual(await put(JSON.stringify(look), { 'content-type': 'text/plain' }), 400, 'a plain form post cannot write it');
+      assert.strictEqual(await put(JSON.stringify(look), { ...good, origin: 'http://evil.example' }), 403, 'another site cannot write it');
+      assert.strictEqual(await put('[1]', good), 400);
+      assert.strictEqual(await put(JSON.stringify(look), good), 200);
+      const saved = JSON.parse((await get(`${base}/api/appearance`)).body);
+      assert.strictEqual(saved.agents.a1.hair, 'bun'); assert.strictEqual(saved.logo, look.logo); assert.ok(!('extra' in saved));
+      assert.strictEqual(await put(JSON.stringify({ ...look, logo: 'javascript:alert(1)' }), good), 200);
+      assert.ok(!('logo' in JSON.parse((await get(`${base}/api/appearance`)).body)), 'only image data URLs are kept as a logo');
+      assert.strictEqual(await req(`${base}/api/feed`, 'PUT'), 405, 'everything else stays read-only');
+    });
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
   // paperclip mode: defaults
   await withServer([], async (base) => {
     const cfg = JSON.parse((await get(`${base}/config.json`)).body);
@@ -393,7 +420,8 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     for (const entry of catalog) {
       assert.match(entry.id, /^[a-z0-9-]+$/); assert.ok(entry.name && entry.name.en, `${entry.id} has an English name`);
       const registered = [];
-      const sandbox = { window: { CubicleThemes: { register: (t) => registered.push(t), T: 16 } }, Math, Date, String, Object, Array, Set, Map, Number };
+      let photos = 0;
+      const sandbox = { window: { CubicleThemes: { register: (t) => registered.push(t), T: 16, photoHead: (g, s) => { if (s.photoSrc) photos++; return !!s.photoSrc; } } }, Math, Date, String, Object, Array, Set, Map, Number };
       vm.createContext(sandbox);
       vm.runInContext(kit, sandbox);
       vm.runInContext(fs.readFileSync(path.join(dir, `${entry.id}.js`), 'utf8'), sandbox);
@@ -408,10 +436,17 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
           const c = { g: ctx(), t: 12345.6, T: 16, CW: 352, CH: 264, night, opts, sprites, desks: [[1, 3], [4, 3]], lounge: [[17, 5]], anyError, company: n ? 'Demo Co.' : '' };
           t.drawRoom(c); const list = []; t.props(c, list); list.forEach((o) => o.f());
           for (const s of people) { t.drawDesk(c, [1, 3], s); t.drawChar(c, s); }
+          // what the appearance dialog can set: hair, skirt, heels, and a photo instead of the head
+          for (const look of [{ hair: 'long', bottom: 'skirt', shoes: 'heels' }, { hair: 'bald', bottom: 'trousers', shoes: 'flats' }]) {
+            t.drawChar(c, { ...people[1], look }); t.drawChar(c, { ...people[3], look, photoSrc: 'data:image/jpeg;base64,x' });
+          }
           t.drawDesk(c, [4, 3], undefined);
           if (t.overlay) t.overlay(c);
+          if (typeof t.logoSpot === 'function') assert.strictEqual(t.logoSpot(c).length, 4);
+          else if (t.logoSpot) assert.strictEqual(t.logoSpot.length, 4, `${entry.id}: logoSpot is [x, y, w, h]`);
         }
       }
+      assert.ok(photos > 0, `${entry.id} draws photo heads through CubicleThemes.photoHead`);
     }
   }
 

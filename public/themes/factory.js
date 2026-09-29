@@ -117,6 +117,7 @@
 
   window.CubicleThemes.register({
     id: 'factory', name: { en: 'Factory (HD)', tr: 'Fabrika (HD)' }, scale: 4, smooth: true,
+    logoSpot: [15.05 * T, 4, 20, 18],
     setup(opts) { line = opts.line === 'food' ? 'food' : 'auto'; },
     drawRoom, props, drawDesk, drawChar,
   });

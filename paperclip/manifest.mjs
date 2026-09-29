@@ -14,12 +14,13 @@ export default {
   description: 'A live office for your agents: they sit down and type while working, raise a hand when they need you, and go to the lounge when done. Read-only.',
   author,
   categories: ['ui'],
-  capabilities: ['ui.sidebar.register', 'ui.page.register'],
+  capabilities: ['ui.sidebar.register', 'ui.page.register', 'ui.dashboardWidget.register'],
   entrypoints: { worker: './paperclip/worker.js', ui: './public' },
   ui: {
     slots: [
       { type: 'sidebar', id: 'cubicle-sidebar', displayName: 'Cubicle', exportName: 'CubicleSidebarLink' },
       { type: 'page', id: 'cubicle-page', displayName: 'Cubicle', exportName: 'CubicleOfficePage', routePath: 'cubicle' },
+      { type: 'dashboardWidget', id: 'cubicle-widget', displayName: 'Cubicle', exportName: 'CubicleDashboardWidget' },
     ],
   },
 };

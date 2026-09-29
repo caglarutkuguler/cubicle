@@ -387,6 +387,7 @@
     // head
     const hy = top - 3.6 + slump;
     rect(s.skin, x - 1, top - 1.2 + slump, 2, 1.6);                          // neck
+    if (window.CubicleThemes.photoHead && window.CubicleThemes.photoHead(g, s, x, hy, 4.2)) return;   // a photo instead of the drawn head
     circle(s.skin, x, hy, 3.3);
     fill(s.hair); g.beginPath(); g.arc(x, hy, 3.35, Math.PI * 1.05, Math.PI * 1.95); g.fill();   // hair under the headwear
     const eyes = ((t + s.seed) % 4) >= 0.14;
@@ -415,6 +416,7 @@
 
   window.CubicleThemes.register({
     id: 'military', name: { en: 'Military (HD)', tr: 'Askerî (HD)' }, scale: 4, smooth: true,
+    logoSpot: () => (branch === 'joint' ? [19.8 * T, 5, 20, 18] : [7.75 * T, 5, 18, 18]),
     setup(opts) { branch = BRANCH[opts.branch] ? opts.branch : 'land'; },
     drawRoom, props, drawDesk, drawChar, overlay,
   });

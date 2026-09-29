@@ -31,6 +31,8 @@
   body.kiosk h1 { font-size:clamp(16px, 1.5vw, 34px); }
   body.kiosk h1 small, body.kiosk #status { font-size:clamp(12px, 1.05vw, 24px); }
   body.kiosk #stage { width:min(100vw, calc(100vh * var(--ar, 1.6923))); border:0; border-radius:0; }
+  body.widget header { display:none !important; }
+  body.widget { cursor:auto; }
   body.kiosk #cards, body.kiosk footer, body.kiosk #banner, body.kiosk #company { display:none !important; }
   #banner { display:none; margin-bottom:10px; padding:8px 12px; border-radius:8px; background:#2b2f47; border:1px solid var(--line); color:var(--muted); }
   #cards { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:8px; margin-top:12px; }
@@ -57,6 +59,33 @@
   #settings .note { font-size:11px; color:var(--muted); margin-top:8px; }
   .right { position:relative; }
   body.kiosk #gear, body.kiosk #settings { display:none !important; }
+  #settings .row { display:flex; gap:6px; margin-top:6px; }
+  #settings .check { display:flex; align-items:center; gap:6px; color:var(--text); font-size:12px; margin:0 0 10px; }
+  #settings hr { border:0; border-top:1px solid var(--line); margin:10px 0; }
+  .card .edit { margin-left:auto; background:none; border:0; color:var(--muted); cursor:pointer; font-size:13px; padding:0 2px; }
+  .card .edit:hover { color:var(--text); }
+  body.kiosk .card .edit { display:none; }
+  dialog#looks { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:16px; width:min(640px, 94vw); box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  dialog#looks::backdrop { background:rgba(8,9,15,.6); }
+  #looks h2 { font-size:15px; margin:0 0 12px; }
+  #looks .cols { display:grid; grid-template-columns:150px 1fr; gap:16px; }
+  #looks canvas { position:static; inset:auto; }
+  #looks .preview { width:150px; height:190px; background:#2a2d3d; border-radius:10px; border:1px solid var(--line); }
+  #looks label { display:block; font-size:12px; color:var(--muted); margin:8px 0 3px; }
+  #looks .grid { display:grid; grid-template-columns:1fr 1fr; gap:0 10px; }
+  #looks select, #looks input[type=color] { width:100%; }
+  #looks input[type=color] { height:28px; background:none; border:1px solid var(--line); border-radius:6px; padding:1px; }
+  #looks button { background:#2f3552; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 10px; font:inherit; cursor:pointer; }
+  #looks button.primary { background:#3d6fd9; border-color:#3d6fd9; color:#fff; }
+  #looks .crop { display:none; margin-top:8px; }
+  #looks .crop.on { display:block; }
+  #looks .crop canvas { position:static; width:240px; height:240px; border-radius:10px; background:#111; cursor:grab; touch-action:none; }
+  #looks .crop canvas:active { cursor:grabbing; }
+  #looks .hint, #looks .note { font-size:11px; color:var(--muted); }
+  #looks .foot { display:flex; gap:8px; justify-content:flex-end; align-items:center; margin-top:14px; flex-wrap:wrap; }
+  #looks .foot .note { margin-right:auto; max-width:300px; }
+  #looks .drop { border:1px dashed var(--line); border-radius:8px; padding:8px; }
+  #looks .drop.over { border-color:#9ec5ff; }
   footer { color:var(--muted); font-size:12px; margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 </style>
 </head>
@@ -77,6 +106,7 @@
     <div id="labels"></div>
   </div>
   <div id="cards"></div>
+  <dialog id="looks"></dialog>
   <footer>
     <span id="hint"></span>
     <span><a href="https://github.com/caglarutkuguler/cubicle" target="_blank" rel="noopener">Cubicle</a> · MIT</span>
@@ -99,6 +129,21 @@
       settingsNote: 'Saved in this browser. The link carries them to another screen (add ?kiosk for a TV).',
       spend: (a, b) => `${a} / ${b} this month`, spendNoBudget: (a) => `${a} this month`, spendTitle: 'Spend this month, as reported by Paperclip',
       handoff: (id, to) => `${id} → ${to}`, replay: 'replay',
+      notify: 'Desktop notification when an agent needs me', notifyBlocked: 'Notifications are blocked for this page in the browser settings.',
+      sound: 'Sound', soundOff: 'Off', soundNeed: 'When an agent needs me', soundAll: 'Needs me, done and errors',
+      fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
+      record: 'Record a 30 s video', recording: (n) => `Recording… ${n} s`, recordSaved: 'Video saved ✓', recordUnsupported: 'This browser cannot record the office.',
+      logo: 'Company logo', logoPick: 'Upload a logo…', logoRemove: 'Remove the logo',
+      exportLooks: 'Export appearance', importLooks: 'Import appearance…',
+      editLook: 'Change appearance', looks: 'Appearance', photo: 'Photo head', photoPick: 'Choose a picture…',
+      photoHint: 'Drag the picture to move it, scroll or use the slider to zoom, until the face fills the circle.', zoom: 'Zoom',
+      findFace: 'Find the face', noFace: 'No face found: place the circle by hand.', photoRemove: 'Remove the photo',
+      hair: 'Hair', hairShort: 'Short', hairLong: 'Long', hairBun: 'Bun', hairPony: 'Ponytail', hairCurly: 'Curly', hairBald: 'Bald',
+      hairColor: 'Hair colour', skin: 'Skin', color: 'Colour', clothes: 'Clothes', trousers: 'Trousers', skirt: 'Skirt', shoes: 'Shoes', flats: 'Flat', heels: 'Heels',
+      save: 'Save', cancel: 'Cancel', resetLook: 'Back to default',
+      lookServer: 'Saved on the machine running Cubicle, so every screen of this office shows it.', lookLocal: 'Saved in this browser. Export it to use it in another one.',
+      lookDenied: 'Only a browser on the machine running Cubicle can change the appearance. Saved in this browser for now.',
+      needsYouTitle: (n) => `${n} needs you`,
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
@@ -116,6 +161,21 @@
       settingsNote: 'Bu tarayıcıda saklanır. Link, ayarları başka bir ekrana taşır (TV için ?kiosk ekleyin).',
       spend: (a, b) => `bu ay ${a} / ${b}`, spendNoBudget: (a) => `bu ay ${a}`, spendTitle: 'Paperclip’in bildirdiği bu ayki harcama',
       handoff: (id, to) => `${id} → ${to}`, replay: 'tekrar',
+      notify: 'Bir ajan beni beklediğinde masaüstü bildirimi', notifyBlocked: 'Bu sayfa için bildirimler tarayıcı ayarlarında engellenmiş.',
+      sound: 'Ses', soundOff: 'Kapalı', soundNeed: 'Bir ajan beni beklediğinde', soundAll: 'Bekleyen, biten ve hata',
+      fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
+      record: '30 saniyelik video kaydet', recording: (n) => `Kaydediliyor… ${n} sn`, recordSaved: 'Video kaydedildi ✓', recordUnsupported: 'Bu tarayıcı ofisi kaydedemiyor.',
+      logo: 'Şirket logosu', logoPick: 'Logo yükle…', logoRemove: 'Logoyu kaldır',
+      exportLooks: 'Görünümü dışa aktar', importLooks: 'Görünümü içe aktar…',
+      editLook: 'Görünümü değiştir', looks: 'Görünüm', photo: 'Fotoğraflı kafa', photoPick: 'Resim seç…',
+      photoHint: 'Yüz daireyi dolduracak şekilde resmi sürükleyerek taşıyın, tekerlek ya da kaydırıcıyla yakınlaştırın.', zoom: 'Yakınlaştır',
+      findFace: 'Yüzü bul', noFace: 'Yüz bulunamadı: daireyi elle yerleştirin.', photoRemove: 'Fotoğrafı kaldır',
+      hair: 'Saç', hairShort: 'Kısa', hairLong: 'Uzun', hairBun: 'Topuz', hairPony: 'At kuyruğu', hairCurly: 'Kıvırcık', hairBald: 'Kel',
+      hairColor: 'Saç rengi', skin: 'Ten', color: 'Renk', clothes: 'Kıyafet', trousers: 'Pantolon', skirt: 'Etek', shoes: 'Ayakkabı', flats: 'Düz', heels: 'Topuklu',
+      save: 'Kaydet', cancel: 'Vazgeç', resetLook: 'Varsayılana dön',
+      lookServer: 'Cubicle’ın çalıştığı makinede saklanır; bu ofisi gösteren her ekran aynı görünümü görür.', lookLocal: 'Bu tarayıcıda saklanır. Başka bir tarayıcıda kullanmak için dışa aktarın.',
+      lookDenied: 'Görünümü yalnızca Cubicle’ın çalıştığı makinedeki bir tarayıcı değiştirebilir. Şimdilik bu tarayıcıda saklandı.',
+      needsYouTitle: (n) => `${n} sizi bekliyor`,
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
@@ -133,6 +193,21 @@
       settingsNote: 'In diesem Browser gespeichert. Der Link nimmt sie auf einen anderen Bildschirm mit (für einen Fernseher ?kiosk anhängen).',
       spend: (a, b) => `${a} / ${b} diesen Monat`, spendNoBudget: (a) => `${a} diesen Monat`, spendTitle: 'Ausgaben diesen Monat, laut Paperclip',
       handoff: (id, to) => `${id} → ${to}`, replay: 'Wiedergabe',
+      notify: 'Desktop-Benachrichtigung, wenn ein Agent mich braucht', notifyBlocked: 'Benachrichtigungen sind für diese Seite in den Browser-Einstellungen blockiert.',
+      sound: 'Ton', soundOff: 'Aus', soundNeed: 'Wenn ein Agent mich braucht', soundAll: 'Braucht mich, fertig und Fehler',
+      fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
+      record: '30-Sekunden-Video aufnehmen', recording: (n) => `Aufnahme… ${n} s`, recordSaved: 'Video gespeichert ✓', recordUnsupported: 'Dieser Browser kann das Büro nicht aufnehmen.',
+      logo: 'Firmenlogo', logoPick: 'Logo hochladen…', logoRemove: 'Logo entfernen',
+      exportLooks: 'Aussehen exportieren', importLooks: 'Aussehen importieren…',
+      editLook: 'Aussehen ändern', looks: 'Aussehen', photo: 'Foto als Kopf', photoPick: 'Bild wählen…',
+      photoHint: 'Bild ziehen zum Verschieben, scrollen oder Regler zum Zoomen, bis das Gesicht den Kreis füllt.', zoom: 'Zoom',
+      findFace: 'Gesicht finden', noFace: 'Kein Gesicht gefunden: Kreis von Hand setzen.', photoRemove: 'Foto entfernen',
+      hair: 'Haare', hairShort: 'Kurz', hairLong: 'Lang', hairBun: 'Dutt', hairPony: 'Pferdeschwanz', hairCurly: 'Lockig', hairBald: 'Glatze',
+      hairColor: 'Haarfarbe', skin: 'Haut', color: 'Farbe', clothes: 'Kleidung', trousers: 'Hose', skirt: 'Rock', shoes: 'Schuhe', flats: 'Flach', heels: 'Absätze',
+      save: 'Speichern', cancel: 'Abbrechen', resetLook: 'Zurücksetzen',
+      lookServer: 'Auf dem Rechner gespeichert, auf dem Cubicle läuft, damit jeder Bildschirm dieses Büros es zeigt.', lookLocal: 'In diesem Browser gespeichert. Exportieren, um es in einem anderen zu nutzen.',
+      lookDenied: 'Nur ein Browser auf dem Rechner, auf dem Cubicle läuft, kann das Aussehen ändern. Vorerst in diesem Browser gespeichert.',
+      needsYouTitle: (n) => `${n} braucht dich`,
       chatter: ['☕', 'Kaffeepause', '…', 'hmm', 'was kommt jetzt?'],
       hint: 'Arbeitende Agenten sitzen am Schreibtisch und tippen, freie hängen in der Lounge ab. Aktualisiert alle 4 s.',
       demo: 'Demo-Modus mit erfundenen Agenten. Entferne <code>?demo</code> aus der Adresse, um deine eigene Paperclip-Firma zu sehen.',
@@ -150,6 +225,21 @@
       settingsNote: 'Se guardan en este navegador. El enlace los lleva a otra pantalla (añade ?kiosk para una TV).',
       spend: (a, b) => `${a} / ${b} este mes`, spendNoBudget: (a) => `${a} este mes`, spendTitle: 'Gasto de este mes según Paperclip',
       handoff: (id, to) => `${id} → ${to}`, replay: 'repetición',
+      notify: 'Notificación de escritorio cuando un agente me necesita', notifyBlocked: 'Las notificaciones están bloqueadas para esta página en los ajustes del navegador.',
+      sound: 'Sonido', soundOff: 'Desactivado', soundNeed: 'Cuando un agente me necesita', soundAll: 'Me necesita, terminado y errores',
+      fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
+      record: 'Grabar un vídeo de 30 s', recording: (n) => `Grabando… ${n} s`, recordSaved: 'Vídeo guardado ✓', recordUnsupported: 'Este navegador no puede grabar la oficina.',
+      logo: 'Logo de la empresa', logoPick: 'Subir un logo…', logoRemove: 'Quitar el logo',
+      exportLooks: 'Exportar apariencia', importLooks: 'Importar apariencia…',
+      editLook: 'Cambiar apariencia', looks: 'Apariencia', photo: 'Cabeza con foto', photoPick: 'Elegir una imagen…',
+      photoHint: 'Arrastra la imagen para moverla y usa la rueda o el control para acercar, hasta que la cara llene el círculo.', zoom: 'Zoom',
+      findFace: 'Buscar la cara', noFace: 'No se encontró una cara: coloca el círculo a mano.', photoRemove: 'Quitar la foto',
+      hair: 'Pelo', hairShort: 'Corto', hairLong: 'Largo', hairBun: 'Moño', hairPony: 'Coleta', hairCurly: 'Rizado', hairBald: 'Calvo',
+      hairColor: 'Color de pelo', skin: 'Piel', color: 'Color', clothes: 'Ropa', trousers: 'Pantalón', skirt: 'Falda', shoes: 'Zapatos', flats: 'Planos', heels: 'Tacones',
+      save: 'Guardar', cancel: 'Cancelar', resetLook: 'Volver al predeterminado',
+      lookServer: 'Guardado en el equipo donde corre Cubicle, así cada pantalla de esta oficina lo muestra.', lookLocal: 'Guardado en este navegador. Expórtalo para usarlo en otro.',
+      lookDenied: 'Solo un navegador en el equipo donde corre Cubicle puede cambiar la apariencia. Guardado en este navegador por ahora.',
+      needsYouTitle: (n) => `${n} te necesita`,
       chatter: ['☕', 'pausa para el café', '…', 'mmm', '¿y ahora qué?'],
       hint: 'Los agentes que trabajan se sientan en su mesa y teclean; los libres pasan el rato en la sala de descanso. Se actualiza cada 4 s.',
       demo: 'Modo demo con agentes ficticios. Quita <code>?demo</code> de la dirección para ver tu propia empresa de Paperclip.',
@@ -167,6 +257,21 @@
       settingsNote: 'Enregistrés dans ce navigateur. Le lien les emporte sur un autre écran (ajoutez ?kiosk pour une télé).',
       spend: (a, b) => `${a} / ${b} ce mois-ci`, spendNoBudget: (a) => `${a} ce mois-ci`, spendTitle: 'Dépenses du mois, selon Paperclip',
       handoff: (id, to) => `${id} → ${to}`, replay: 'relecture',
+      notify: 'Notification de bureau quand un agent a besoin de moi', notifyBlocked: 'Les notifications sont bloquées pour cette page dans les réglages du navigateur.',
+      sound: 'Son', soundOff: 'Désactivé', soundNeed: 'Quand un agent a besoin de moi', soundAll: 'Besoin de moi, terminé et erreurs',
+      fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
+      record: 'Enregistrer une vidéo de 30 s', recording: (n) => `Enregistrement… ${n} s`, recordSaved: 'Vidéo enregistrée ✓', recordUnsupported: 'Ce navigateur ne peut pas enregistrer le bureau.',
+      logo: 'Logo de l’entreprise', logoPick: 'Importer un logo…', logoRemove: 'Retirer le logo',
+      exportLooks: 'Exporter l’apparence', importLooks: 'Importer l’apparence…',
+      editLook: 'Changer l’apparence', looks: 'Apparence', photo: 'Tête en photo', photoPick: 'Choisir une image…',
+      photoHint: 'Faites glisser l’image pour la déplacer, utilisez la molette ou le curseur pour zoomer, jusqu’à ce que le visage remplisse le cercle.', zoom: 'Zoom',
+      findFace: 'Trouver le visage', noFace: 'Aucun visage trouvé : placez le cercle à la main.', photoRemove: 'Retirer la photo',
+      hair: 'Cheveux', hairShort: 'Courts', hairLong: 'Longs', hairBun: 'Chignon', hairPony: 'Queue de cheval', hairCurly: 'Bouclés', hairBald: 'Chauve',
+      hairColor: 'Couleur des cheveux', skin: 'Peau', color: 'Couleur', clothes: 'Tenue', trousers: 'Pantalon', skirt: 'Jupe', shoes: 'Chaussures', flats: 'Plates', heels: 'Talons',
+      save: 'Enregistrer', cancel: 'Annuler', resetLook: 'Revenir au défaut',
+      lookServer: 'Enregistré sur la machine où tourne Cubicle : chaque écran de ce bureau l’affiche.', lookLocal: 'Enregistré dans ce navigateur. Exportez-le pour l’utiliser ailleurs.',
+      lookDenied: 'Seul un navigateur sur la machine où tourne Cubicle peut changer l’apparence. Enregistré dans ce navigateur pour l’instant.',
+      needsYouTitle: (n) => `${n} a besoin de vous`,
       chatter: ['☕', 'pause café', '…', 'hum', 'et maintenant ?'],
       hint: 'Les agents au travail sont assis à leur bureau et tapent ; les agents libres traînent dans le salon. Actualisé toutes les 4 s.',
       demo: 'Mode démo avec des agents fictifs. Retirez <code>?demo</code> de l’adresse pour voir votre propre entreprise Paperclip.',
@@ -187,12 +292,14 @@
   // reads its API directly on the same origin, with the signed-in user's own access.
   const EMBED = params.get('embed') === 'paperclip';
   if (KIOSK) document.body.classList.add('kiosk');
+  // ?widget: a small office inside another page (Paperclip's dashboard): kiosk without the header.
+  if (params.has('widget')) document.body.classList.add('widget');
 
   // ---------- setup ----------
   const T = 16, CW = 352;
   let CH = 208;                        // grows with the number of desk rows
   const cv = document.getElementById('c');
-  const g = cv.getContext('2d');
+  let g = cv.getContext('2d');        // the pixel theme draws on whatever canvas `g` points at (see themes.pixel)
   const stageEl = document.getElementById('stage');
   const labelsEl = document.getElementById('labels');
   const cardsEl = document.getElementById('cards');
@@ -373,6 +480,8 @@
       b.innerHTML = L.demo; b.style.display = 'block';
     }
     if (DEMO) providers = [demoProvider()];
+    await loadLooks();
+    if (!panel.hidden) renderSettings();
     poll();
     setInterval(poll, 4000);
     requestAnimationFrame(frame);
@@ -467,7 +576,7 @@
           id: a.id, idx, seed: (h % 1000) / 100,
           // Looks come from the id, so an agent keeps its colours when others join or leave.
           // (>>> keeps the index positive: h is an unsigned 32-bit hash.)
-          shirt: SHIRTS[(h >>> 6) % SHIRTS.length], hair: HAIRS[h % HAIRS.length], skin: SKINS[(h >>> 3) % SKINS.length],
+          baseShirt: SHIRTS[(h >>> 6) % SHIRTS.length], baseHair: HAIRS[h % HAIRS.length], baseSkin: SKINS[(h >>> 3) % SKINS.length],
           x: spot[0] * T, y: spot[1] * T,
           lounge: idx % LOUNGE.length, nextWander: performance.now() / 1000 + 5 + (h % 10),
           bubble: null, bubbleClass: '', bubbleUntil: 0, prevStatus: a.status,
@@ -490,14 +599,22 @@
       s.waitReason = '';
       s.ask = a.task === undefined && a.status !== 'error' ? askingBoard(a.id, issues) : null;
       if (s.ask && a.status === 'idle') { s.status = 'waiting'; s.task = s.ask.issue; s.waitReason = s.ask.reason; }
-      if (s.prevStatus === 'running' && s.status === 'idle') setBubble(s, L.done, 'ok', 6);
+      if (s.prevStatus === 'running' && s.status === 'idle') { setBubble(s, L.done, 'ok', 6); if (synced) chime('done'); }
+      if (synced && s.status === 'error' && s.prevStatus !== 'error') chime('err');
+      // Needs you: a hand up (waiting) or a board question on a busy agent. Alert once when it starts.
+      const needs = s.status === 'waiting' || !!s.ask;
+      if (synced && needs && !s.needed) alertNeed(s);
+      s.needed = needs;
       s.prevStatus = s.status;
+      applyLook(s);
       s.el.querySelector('.name').textContent = s.name;
     });
     for (const [id, s] of sprites) if (!seen.has(id)) { s.el.remove(); sprites.delete(id); }
     handOffs(issues);
     renderCards();
+    synced = true;     // alerts only for changes after the first look at the office
   }
+  let synced = false;
 
   // Hand-offs: when an issue moves from one agent to another between two polls, both walk to
   // the lounge table for a few seconds, and the one handing over says what it passes on.
@@ -550,7 +667,7 @@
       const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>`
         : s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">${esc(s.waitReason)}</div>`
         : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
-      return `<div class="card"><div class="top"><span class="sw" style="background:${s.shirt}"></span><b>${esc(s.name)}</b></div>
+      return `<div class="card"><div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b>${esc(s.name)}</b><button type="button" class="edit" data-id="${esc(s.id)}" title="${esc(L.editLook)}" aria-label="${esc(L.editLook)}">✎</button></div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
         <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}</div>${err}</div>`;
     }).join('');
@@ -665,13 +782,17 @@
   function drawChar(s, t) {
     const x = Math.round(s.x), y = Math.round(s.y);
     const bob = s.walking ? Math.floor(t * 8 + s.seed) % 2 : 0;
+    const lk = s.look || {};
     rect('rgba(0,0,0,.25)', x - 4, y - 1, 8, 2);
     if (!s.seated) {
       const ph = s.walking ? Math.floor(t * 8 + s.seed) % 2 : 0;
-      rect('#2b2f45', x - 3, y - 5, 2, ph ? 4 : 5);
-      rect('#2b2f45', x + 1, y - 5, 2, ph ? 5 : 4);
+      const leg = lk.bottom === 'skirt' ? s.skin : '#2b2f45';
+      rect(leg, x - 3, y - 5, 2, ph ? 4 : 5);
+      rect(leg, x + 1, y - 5, 2, ph ? 5 : 4);
+      if (lk.shoes === 'heels') { rect('#1a1a1a', x - 3, y - 1, 2, 1); rect('#1a1a1a', x + 1, y - 1, 2, 1); }
     }
     rect(s.shirt, x - 4, y - 11 - bob, 8, 6);
+    if (lk.bottom === 'skirt' && !s.seated) rect('#2b2f45', x - 4, y - 6 - bob, 8, 2);
     if (s.typing) {
       const a = Math.floor(t * 10 + s.seed) % 2;
       rect(s.skin, x - 5, y - 8 - bob - a, 2, 2);
@@ -686,10 +807,17 @@
       rect(s.skin, x + 4, y - 10 - bob, 1, 4);
     }
     const slump = s.status === 'error' && s.seated ? 1 : 0;
+    if (photoHead(g, s, x, y - 14.5 - bob + slump, 4.6)) return;
+    if (lk.hair === 'long') { rect(s.hair, x - 4, y - 17 - bob + slump, 1, 6); rect(s.hair, x + 3, y - 17 - bob + slump, 1, 6); }
     rect(s.skin, x - 3, y - 17 - bob + slump, 6, 6);
-    rect(s.hair, x - 3, y - 18 - bob + slump, 6, 2);
-    rect(s.hair, x - 3, y - 17 - bob + slump, 1, 2);
-    rect(s.hair, x + 2, y - 17 - bob + slump, 1, 2);
+    if (lk.hair !== 'bald') {
+      rect(s.hair, x - 3, y - 18 - bob + slump, 6, 2);
+      rect(s.hair, x - 3, y - 17 - bob + slump, 1, 2);
+      rect(s.hair, x + 2, y - 17 - bob + slump, 1, 2);
+      if (lk.hair === 'bun') rect(s.hair, x - 1, y - 20 - bob + slump, 2, 2);
+      if (lk.hair === 'curly') { rect(s.hair, x - 4, y - 18 - bob + slump, 1, 2); rect(s.hair, x + 3, y - 18 - bob + slump, 1, 2); }
+      if (lk.hair === 'pony') rect(s.hair, x + 3, y - 16 - bob + slump, 1, 4);
+    }
     if (((t + s.seed) % 4) >= 0.14) {
       const ox = s.dir || 0;
       rect('#1a1a1a', x - 2 + ox, y - 14 - bob + slump, 1, 1);
@@ -704,11 +832,15 @@
   // (22×13+ tiles of 16 px); a theme with scale > 1 gets a sharper canvas to draw on.
   const themes = {
     pixel: {
-      id: 'pixel', name: { en: 'Pixel (classic)', tr: 'Piksel (klasik)' }, scale: 1, smooth: false,
+      // Drawn at 3× with no smoothing: the same pixel art, but photo heads and logos stay sharp.
+      id: 'pixel', name: { en: 'Pixel (classic)', tr: 'Piksel (klasik)' }, scale: 3, smooth: false, logoSpot: [11.75 * T, 5, 18, 18],
       drawRoom: (c) => drawRoom(c.t),
       props: (c, list) => loungeProps(c.t, list),
       drawDesk: (c, d, s) => drawDesk(d, s, c.t),
-      drawChar: (c, s) => drawChar(s, c.t),
+      drawChar: (c, s) => {          // also used for the appearance preview, on another canvas
+        const main = g; g = c.g;
+        try { drawChar(s, c.t); } finally { g = main; }
+      },
     },
   };
   let theme = themes.pixel;
@@ -726,29 +858,34 @@
       s.el.style.top = ((s.y - 20) * k) + 'px';
       const b = s.el.querySelector('.bub');
       b.style.maxWidth = bubMax;
-      let text = null, cls = '';
-      if (s.bubble && now < s.bubbleUntil) { text = s.bubble; cls = s.bubbleClass; }
-      else if (s.status === 'error' && s.seated) { text = L.errBubble; cls = 'err'; }
-      else if (s.status === 'waiting' && s.seated) { text = L.waitBubble; cls = 'wait'; }
-      else if (s.typing && s.ask && Math.floor(now / 3) % 2) { text = '✋ ' + (s.ask.issue.identifier || L.waiting); cls = 'wait'; }
-      else if (s.typing && s.task) text = '⌨ ' + (s.task.identifier || s.task.title);
-      else if (s.status === 'paused') text = 'zZ';
+      const [text, cls] = labelFor(s, now);
       if (text) { b.textContent = text; b.className = 'bub ' + cls; b.style.display = ''; }
       else b.style.display = 'none';
     }
   }
 
   let last = performance.now() / 1000;
+  const reducedMotion = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  // Frame rate: 60 by default; HD themes on a kiosk (often a TV box) and reduced-motion users get
+  // fewer frames, and the ⚙ menu can lower it further. Hidden tabs draw nothing at all.
+  function targetFps() {
+    const f = Number(settings.fps);
+    if (f) return f;
+    if (reducedMotion) return 15;
+    return KIOSK && theme.scale > 1 ? 30 : 60;
+  }
   function frame() {
     const now = performance.now() / 1000;
+    if (!recording && now - last < 1 / targetFps() - 0.004) { requestAnimationFrame(frame); return; }
     const dt = Math.min(0.1, now - last); last = now;
     g.setTransform(theme.scale, 0, 0, theme.scale, 0, 0);
     g.imageSmoothingEnabled = !!theme.smooth;
     g.clearRect(0, 0, CW, CH);
     const hr = new Date().getHours();
-    const c = { g, t: now, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites, desks: DESKS, lounge: LOUNGE, company: officeName,
+    const c = { g, t: now, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites, desks: DESKS, lounge: LOUNGE, company: officeName, logo: imageOf(looks.logo),
       anyError: [...sprites.values()].some((s) => s.status === 'error') };
     theme.drawRoom(c);
+    if (looks.logo) drawLogo(c);
     const list = [];
     theme.props(c, list);
     const byDesk = new Map();
@@ -758,8 +895,354 @@
     for (const s of sprites.values()) list.push({ z: s.y, f: () => theme.drawChar(c, s) });
     list.sort((a, b) => a.z - b.z).forEach((o) => o.f());
     if (theme.overlay) theme.overlay(c);
+    if (recording) burnLabels(now);
     placeLabels(now);
     requestAnimationFrame(frame);
+  }
+
+  // ---------- appearance: per-agent looks, photo heads, company logo ----------
+  // Stored by the Cubicle server in ~/.cubicle/appearance.json when there is one (so every
+  // screen of the office agrees), otherwise in this browser. Never sent anywhere else.
+  const LOOK_KEY = 'cubicle.appearance';
+  let looks = { agents: {}, names: {} };
+  let looksOnServer = false;
+  const images = new Map();                       // data URL -> Image (decoded once)
+  function imageOf(src) {
+    if (!src) return null;
+    let im = images.get(src);
+    if (!im) { im = new Image(); im.src = src; images.set(src, im); }
+    return im.complete && im.naturalWidth ? im : null;
+  }
+  const normLooks = (d) => ({ agents: (d && d.agents) || {}, names: (d && d.names) || {}, ...(d && d.logo ? { logo: d.logo } : {}) });
+  async function loadLooks() {
+    if (!DEMO && !EMBED) {
+      try { const r = await fetch('/api/appearance', { cache: 'no-store' }); if (r.ok) { looks = normLooks(await r.json()); looksOnServer = true; return; } } catch (_) {}
+    }
+    try { looks = normLooks(JSON.parse(localStorage.getItem(LOOK_KEY) || '{}')); } catch (_) {}
+  }
+  // Returns '' when saved where every screen sees it, or a message to show.
+  async function saveLooks() {
+    if (looksOnServer) {
+      try {
+        const r = await fetch('/api/appearance', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify(looks) });
+        if (r.ok) return '';
+      } catch (_) {}
+      try { localStorage.setItem(LOOK_KEY, JSON.stringify(looks)); } catch (_) {}
+      return L.lookDenied;
+    }
+    try { localStorage.setItem(LOOK_KEY, JSON.stringify(looks)); } catch (_) {}
+    return '';
+  }
+  const lookFor = (s) => looks.agents[s.id] || looks.names[s.name] || null;
+  function applyLook(s) {
+    const lk = lookFor(s) || {};
+    s.look = lk;
+    s.skin = lk.skin || s.baseSkin; s.hair = lk.hairColor || s.baseHair; s.shirt = lk.color || s.baseShirt;
+    s.photoSrc = lk.photo || null;
+  }
+  // Themes call this to draw an agent's photo in place of the drawn head. Returns false when
+  // the agent has no photo (or it is still loading), so the theme draws its own head.
+  function photoHead(gc, s, cx, cy, r) {
+    const im = s && s.photoSrc ? imageOf(s.photoSrc) : null;
+    if (!im) return false;
+    gc.save();
+    gc.beginPath(); gc.arc(cx, cy, r, 0, Math.PI * 2); gc.closePath();
+    gc.fillStyle = s.skin || '#d9a47a'; gc.fill();
+    gc.clip();
+    gc.imageSmoothingEnabled = true; gc.imageSmoothingQuality = 'high';
+    gc.drawImage(im, cx - r, cy - r, r * 2, r * 2);
+    gc.restore();
+    gc.save(); gc.strokeStyle = 'rgba(0,0,0,.35)'; gc.lineWidth = Math.max(0.25, r * 0.08);
+    gc.beginPath(); gc.arc(cx, cy, r, 0, Math.PI * 2); gc.stroke(); gc.restore();
+    return true;
+  }
+  window.CubicleThemes.photoHead = photoHead;
+
+  // The company logo, drawn where the theme leaves room for it (theme.logoSpot, office pixels).
+  function drawLogo(c) {
+    const im = imageOf(looks.logo);
+    if (!im || c.logoDrawn || theme.logoSpot === false) return;
+    const [x, y, w, h] = typeof theme.logoSpot === 'function' ? theme.logoSpot(c) : (theme.logoSpot || [11.7 * T, 5, 18, 18]);
+    const k = Math.min(w / im.naturalWidth, h / im.naturalHeight), dw = im.naturalWidth * k, dh = im.naturalHeight * k;
+    g.save();
+    g.fillStyle = 'rgba(255,255,255,.9)'; g.fillRect(x - 1, y - 1, w + 2, h + 2);
+    g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+    g.drawImage(im, x + (w - dw) / 2, y + (h - dh) / 2, dw, dh);
+    g.restore();
+  }
+
+  // Read an image file into a data URL, scaled down to at most `max` pixels on its longest side.
+  function readImage(file) {
+    return new Promise((resolve, reject) => {
+      if (!file || !/^image\//.test(file.type)) return reject(new Error('not an image'));
+      const fr = new FileReader();
+      fr.onload = () => { const im = new Image(); im.onload = () => resolve(im); im.onerror = reject; im.src = fr.result; };
+      fr.onerror = reject; fr.readAsDataURL(file);
+    });
+  }
+  function toDataUrl(im, max, type = 'image/png') {
+    const k = Math.min(1, max / Math.max(im.naturalWidth, im.naturalHeight));
+    const cv2 = document.createElement('canvas'); cv2.width = Math.round(im.naturalWidth * k); cv2.height = Math.round(im.naturalHeight * k);
+    const g2 = cv2.getContext('2d'); g2.imageSmoothingQuality = 'high'; g2.drawImage(im, 0, 0, cv2.width, cv2.height);
+    return cv2.toDataURL(type, 0.9);
+  }
+  function pickFile(accept = 'image/*') {
+    return new Promise((resolve) => {
+      const inp = document.createElement('input'); inp.type = 'file'; inp.accept = accept;
+      inp.onchange = () => resolve(inp.files && inp.files[0]); inp.click();
+    });
+  }
+
+  // ---------- the appearance dialog: looks and the photo-head wizard ----------
+  const dlg = document.getElementById('looks');
+  let editing = null;          // { s, draft, crop }
+  const HAIRS_STYLES = ['short', 'long', 'bun', 'pony', 'curly', 'bald'];
+  const HAIR_LABEL = { short: 'hairShort', long: 'hairLong', bun: 'hairBun', pony: 'hairPony', curly: 'hairCurly', bald: 'hairBald' };
+  const CROP = 240, CIRCLE = 100;       // crop canvas size and circle radius, in CSS pixels
+  function openLooks(s) {
+    const cur = lookFor(s) || {};
+    editing = { s, draft: { ...cur }, crop: null };
+    const opt = (v, label, cur2) => `<option value="${esc(v)}"${v === cur2 ? ' selected' : ''}>${esc(label)}</option>`;
+    const d = editing.draft;
+    dlg.innerHTML = `<h2>${esc(L.looks)} · ${esc(s.name)}</h2>
+      <div class="cols">
+        <div><canvas class="preview" width="300" height="380"></canvas></div>
+        <div>
+          <label>${esc(L.photo)}</label>
+          <div class="drop"><button type="button" data-act="pick">${esc(L.photoPick)}</button> <button type="button" data-act="nophoto"${d.photo ? '' : ' hidden'}>${esc(L.photoRemove)}</button>
+            <div class="crop"><canvas width="${CROP * 2}" height="${CROP * 2}"></canvas>
+              <div class="hint">${esc(L.photoHint)}</div>
+              <label>${esc(L.zoom)}</label><input type="range" data-k="zoom" min="0" max="100" value="50" style="width:240px">
+              <div><button type="button" data-act="face"${'FaceDetector' in window ? '' : ' hidden'}>${esc(L.findFace)}</button> <span class="hint" data-msg></span></div>
+            </div>
+          </div>
+          <div class="grid">
+            <div><label>${esc(L.hair)}</label><select data-k="hair"><option value="">–</option>${HAIRS_STYLES.map((h) => opt(h, L[HAIR_LABEL[h]], d.hair)).join('')}</select></div>
+            <div><label>${esc(L.hairColor)}</label><input type="color" data-k="hairColor" value="${esc(d.hairColor || s.baseHair)}"></div>
+            <div><label>${esc(L.skin)}</label><select data-k="skin"><option value="">–</option>${SKINS.map((c, i) => opt(c, `${i + 1}`, d.skin)).join('')}</select></div>
+            <div><label>${esc(L.color)}</label><input type="color" data-k="color" value="${esc(d.color || s.baseShirt)}"></div>
+            <div><label>${esc(L.clothes)}</label><select data-k="bottom"><option value="">–</option>${opt('trousers', L.trousers, d.bottom)}${opt('skirt', L.skirt, d.bottom)}</select></div>
+            <div><label>${esc(L.shoes)}</label><select data-k="shoes"><option value="">–</option>${opt('flats', L.flats, d.shoes)}${opt('heels', L.heels, d.shoes)}</select></div>
+          </div>
+        </div>
+      </div>
+      <div class="foot"><span class="note">${esc(looksOnServer ? L.lookServer : L.lookLocal)}</span>
+        <button type="button" data-act="reset">${esc(L.resetLook)}</button>
+        <button type="button" data-act="cancel">${esc(L.cancel)}</button>
+        <button type="button" class="primary" data-act="save">${esc(L.save)}</button></div>`;
+    const colorTouched = new Set();
+    dlg.querySelectorAll('[data-k]').forEach((el) => el.addEventListener('input', () => {
+      const k = el.dataset.k;
+      if (k === 'zoom') return cropZoom(Number(el.value));
+      if (el.type === 'color') colorTouched.add(k);
+      d[k] = el.value || undefined;
+    }));
+    dlg.querySelector('[data-act="pick"]').onclick = async () => { const f = await pickFile(); if (f) startCrop(f); };
+    dlg.querySelector('[data-act="nophoto"]').onclick = (e) => { delete d.photo; editing.crop = null; dlg.querySelector('.crop').classList.remove('on'); e.target.hidden = true; };
+    dlg.querySelector('[data-act="face"]').onclick = () => findFace();
+    dlg.querySelector('[data-act="cancel"]').onclick = () => closeLooks();
+    dlg.querySelector('[data-act="reset"]').onclick = async () => { delete looks.agents[s.id]; delete looks.names[s.name]; await finishLooks(); };
+    dlg.querySelector('[data-act="save"]').onclick = async () => {
+      if (editing.crop) d.photo = cropResult();
+      for (const k of ['hairColor', 'color']) if (!colorTouched.has(k) && !cur[k]) delete d[k];
+      for (const k of Object.keys(d)) if (d[k] === undefined || d[k] === '') delete d[k];
+      if (Object.keys(d).length) { looks.agents[s.id] = d; looks.names[s.name] = d; }
+      else { delete looks.agents[s.id]; delete looks.names[s.name]; }
+      await finishLooks();
+    };
+    // drop or paste a picture anywhere in the dialog
+    const drop = dlg.querySelector('.drop');
+    drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+    drop.addEventListener('dragleave', () => drop.classList.remove('over'));
+    drop.addEventListener('drop', (e) => { e.preventDefault(); drop.classList.remove('over'); const f = e.dataTransfer.files[0]; if (f) startCrop(f); });
+    dlg.onpaste = (e) => { const f = [...(e.clipboardData && e.clipboardData.files || [])][0]; if (f) startCrop(f); };
+    dlg.showModal();
+    previewLoop();
+  }
+  async function finishLooks() {
+    const msg = await saveLooks();
+    for (const sp of sprites.values()) applyLook(sp);
+    renderCards();
+    if (msg) { dlg.querySelector('.foot .note').textContent = msg; setTimeout(closeLooks, 2600); }
+    else closeLooks();
+  }
+  function closeLooks() { editing = null; if (dlg.open) dlg.close(); }
+  dlg.addEventListener('close', () => { editing = null; });
+
+  // The preview draws the agent with the current theme, the draft look and the photo as it would be cropped.
+  function previewLoop() {
+    if (!editing || !dlg.open) return;
+    const pc = dlg.querySelector('.preview'); const pg = pc.getContext('2d');
+    const s = editing.s, d = editing.draft;
+    const cropSrc = editing.crop && editing.crop.preview;
+    const ghost = { ...s, x: 15, y: 34, walking: false, seated: false, typing: false, status: 'idle', dir: 0, bubble: null,
+      look: d, skin: d.skin || s.baseSkin, hair: d.hairColor || s.baseHair, shirt: d.color || s.baseShirt,
+      photoSrc: cropSrc || d.photo || null };
+    const k = pc.width / 30;
+    pg.setTransform(1, 0, 0, 1, 0, 0); pg.clearRect(0, 0, pc.width, pc.height);
+    pg.setTransform(k, 0, 0, k, 0, 0); pg.imageSmoothingEnabled = !!theme.smooth;
+    const c = { g: pg, t: performance.now() / 1000, T, CW: 30, CH: 38, night: false, opts: themeOpts, sprites: new Map(), desks: [], lounge: [], company: '', anyError: false };
+    try { theme.drawChar(c, ghost); } catch (_) {}
+    requestAnimationFrame(previewLoop);
+  }
+
+  // Photo crop: the picture moves and zooms under a fixed circle; what is inside the circle
+  // becomes the head (a 160 px JPEG, clipped to a circle when drawn).
+  async function startCrop(file) {
+    let im;
+    try { im = await readImage(file); } catch (_) { return; }
+    const box = dlg.querySelector('.crop'); box.classList.add('on');
+    dlg.querySelector('[data-act="nophoto"]').hidden = false;
+    const fit = CROP / Math.min(im.naturalWidth, im.naturalHeight);
+    const cr = editing.crop = { im, min: (2 * CIRCLE) / Math.max(im.naturalWidth, im.naturalHeight) * 0.6, max: fit * 6, scale: fit, x: 0, y: 0 };
+    // A portrait usually has the face in the upper middle: start there.
+    cr.x = CROP / 2 - (im.naturalWidth / 2) * cr.scale;
+    cr.y = CROP / 2 - (im.naturalHeight * 0.38) * cr.scale;
+    syncZoomSlider(); drawCrop();
+    const cc = box.querySelector('canvas');
+    let drag = null;
+    cc.onpointerdown = (e) => { drag = { x: e.clientX, y: e.clientY, cx: cr.x, cy: cr.y }; cc.setPointerCapture(e.pointerId); };
+    cc.onpointermove = (e) => { if (!drag) return; cr.x = drag.cx + (e.clientX - drag.x); cr.y = drag.cy + (e.clientY - drag.y); drawCrop(); };
+    cc.onpointerup = () => { drag = null; };
+    cc.onwheel = (e) => {
+      e.preventDefault();
+      const r = cc.getBoundingClientRect(), px = e.clientX - r.left, py = e.clientY - r.top;
+      zoomAt(cr.scale * Math.exp(-e.deltaY * 0.0015), px, py); syncZoomSlider();
+    };
+    if ('FaceDetector' in window) findFace();
+  }
+  function zoomAt(scale, px = CROP / 2, py = CROP / 2) {
+    const cr = editing.crop; if (!cr) return;
+    const next = Math.max(cr.min, Math.min(cr.max, scale));
+    cr.x = px - (px - cr.x) * (next / cr.scale); cr.y = py - (py - cr.y) * (next / cr.scale); cr.scale = next;
+    drawCrop();
+  }
+  const sliderToScale = (v, cr) => cr.min * Math.pow(cr.max / cr.min, v / 100);
+  function cropZoom(v) { const cr = editing && editing.crop; if (cr) zoomAt(sliderToScale(v, cr)); }
+  function syncZoomSlider() {
+    const cr = editing.crop, el = dlg.querySelector('[data-k="zoom"]');
+    el.value = String(Math.round(100 * Math.log(cr.scale / cr.min) / Math.log(cr.max / cr.min)));
+  }
+  function drawCrop() {
+    const cr = editing.crop, cc = dlg.querySelector('.crop canvas'), gc = cc.getContext('2d');
+    gc.setTransform(2, 0, 0, 2, 0, 0);
+    gc.fillStyle = '#111'; gc.fillRect(0, 0, CROP, CROP);
+    gc.imageSmoothingQuality = 'high';
+    gc.drawImage(cr.im, cr.x, cr.y, cr.im.naturalWidth * cr.scale, cr.im.naturalHeight * cr.scale);
+    gc.fillStyle = 'rgba(10,11,18,.62)';
+    gc.beginPath(); gc.rect(0, 0, CROP, CROP); gc.arc(CROP / 2, CROP / 2, CIRCLE, 0, Math.PI * 2, true); gc.fill('evenodd');
+    gc.strokeStyle = 'rgba(255,255,255,.9)'; gc.lineWidth = 1.5; gc.beginPath(); gc.arc(CROP / 2, CROP / 2, CIRCLE, 0, Math.PI * 2); gc.stroke();
+    cr.preview = cropResult(64);
+  }
+  function cropResult(size = 160) {
+    const cr = editing.crop, out = document.createElement('canvas'); out.width = out.height = size;
+    const go = out.getContext('2d'); go.imageSmoothingQuality = 'high';
+    const k = size / (2 * CIRCLE);
+    go.fillStyle = '#d9a47a'; go.fillRect(0, 0, size, size);
+    go.drawImage(cr.im, (cr.x - (CROP / 2 - CIRCLE)) * k, (cr.y - (CROP / 2 - CIRCLE)) * k, cr.im.naturalWidth * cr.scale * k, cr.im.naturalHeight * cr.scale * k);
+    return out.toDataURL('image/jpeg', 0.88);
+  }
+  // Chrome's built-in face detection (when the browser has it): centre the circle on the face,
+  // with room for the hair above it.
+  async function findFace() {
+    const cr = editing && editing.crop, msg = dlg.querySelector('[data-msg]');
+    if (!cr || !('FaceDetector' in window)) return;
+    try {
+      const faces = await new window.FaceDetector({ fastMode: true, maxDetectedFaces: 1 }).detect(cr.im);
+      if (!faces.length) { msg.textContent = L.noFace; return; }
+      const b = faces[0].boundingBox;
+      const scale = (2 * CIRCLE) / (Math.max(b.width, b.height) * 1.55);
+      cr.scale = Math.max(cr.min, Math.min(cr.max, scale));
+      const cx = b.x + b.width / 2, cy = b.y + b.height * 0.42;
+      cr.x = CROP / 2 - cx * cr.scale; cr.y = CROP / 2 - cy * cr.scale;
+      msg.textContent = ''; syncZoomSlider(); drawCrop();
+    } catch (_) { msg.textContent = L.noFace; }
+  }
+  cardsEl.addEventListener('click', (e) => {
+    const b = e.target.closest('.edit'); if (!b) return;
+    const s = sprites.get(b.dataset.id); if (s) openLooks(s);
+  });
+
+  // ---------- alerts: notification and sound when an agent needs you ----------
+  let audio = null;
+  function chime(kind) {
+    if (settings.sound === 'off' || !settings.sound) return;
+    if (kind !== 'need' && settings.sound !== 'all') return;
+    try {
+      audio = audio || new (window.AudioContext || window.webkitAudioContext)();
+      if (audio.state === 'suspended') audio.resume();
+      const notes = kind === 'need' ? [[880, 0], [659.25, 0.13]] : kind === 'done' ? [[659.25, 0], [1318.5, 0.1]] : [[220, 0], [196, 0.16]];
+      for (const [f, at] of notes) {
+        const o = audio.createOscillator(), v = audio.createGain(), t0 = audio.currentTime + at;
+        o.type = kind === 'err' ? 'square' : 'sine'; o.frequency.value = f;
+        v.gain.setValueAtTime(0.0001, t0); v.gain.exponentialRampToValueAtTime(kind === 'err' ? 0.05 : 0.12, t0 + 0.015); v.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.2);
+        o.connect(v).connect(audio.destination); o.start(t0); o.stop(t0 + 0.22);
+      }
+    } catch (_) {}
+  }
+  function alertNeed(s) {
+    chime('need');
+    if (!settings.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
+    if (!document.hidden && document.hasFocus()) return;           // the raised hand is enough
+    const t = s.task ? [s.task.identifier, s.task.title].filter(Boolean).join(' ') : '';
+    try { new Notification(L.needsYouTitle(s.name), { body: t || L.waitBubble, tag: `cubicle-${s.id}`, silent: settings.sound && settings.sound !== 'off' }); } catch (_) {}
+  }
+
+  // ---------- recording: the office, names and bubbles included, to a video file ----------
+  let recording = null;         // { rec, until }
+  function labelFor(s, now) {
+    if (s.bubble && now < s.bubbleUntil) return [s.bubble, s.bubbleClass];
+    if (s.status === 'error' && s.seated) return [L.errBubble, 'err'];
+    if (s.status === 'waiting' && s.seated) return [L.waitBubble, 'wait'];
+    if (s.typing && s.ask && Math.floor(now / 3) % 2) return ['✋ ' + (s.ask.issue.identifier || L.waiting), 'wait'];
+    if (s.typing && s.task) return ['⌨ ' + (s.task.identifier || s.task.title), ''];
+    if (s.status === 'paused') return ['zZ', ''];
+    return [null, ''];
+  }
+  function burnLabels(now) {
+    // Recording captures only the canvas, so draw names, bubbles and the header onto it.
+    const pill = (text, x, y, size, bg, fg) => {
+      g.font = `600 ${size}px system-ui, sans-serif`;
+      const w = Math.min(g.measureText(text).width, 3.2 * T), h = size * 1.45;
+      g.fillStyle = bg; g.beginPath(); g.roundRect(x - w / 2 - size * 0.55, y - h, w + size * 1.1, h, h / 2); g.fill();
+      g.fillStyle = fg; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(text, x, y - h / 2, w); g.textAlign = 'start';
+      return h;
+    };
+    const col = { err: ['#ffdede', '#8a1111'], ok: ['#dcffe2', '#145c24'], wait: ['#fff1c9', '#6b4d00'], '': ['#ffffff', '#1d1f2b'] };
+    for (const s of sprites.values()) {
+      const y = s.y - 20;
+      const h = pill(s.name, s.x, y, 4, 'rgba(15,16,26,.8)', '#fff');
+      const [text, cls] = labelFor(s, now);
+      if (text) pill(text, s.x, y - h - 1, 4, ...(col[cls] || col['']));
+    }
+    g.font = '700 6px system-ui, sans-serif'; g.fillStyle = 'rgba(10,11,18,.7)'; g.fillRect(0, 0, CW, 9);
+    g.fillStyle = '#fff'; g.textBaseline = 'middle'; g.fillText(`Cubicle · ${officeName}`, 4, 4.8);
+    g.font = '500 4.5px system-ui, sans-serif'; g.fillStyle = '#c9cbe0'; g.textAlign = 'right';
+    g.fillText(`${statusEl.textContent}`, CW - 4, 4.8, CW * 0.6); g.textAlign = 'start';
+  }
+  function startRecording(button) {
+    const types = ['video/mp4;codecs=avc1', 'video/mp4', 'video/webm;codecs=vp9', 'video/webm'];
+    const type = window.MediaRecorder && types.find((t) => MediaRecorder.isTypeSupported(t));
+    if (!type || !cv.captureStream) { button.textContent = L.recordUnsupported; return; }
+    const chunks = [], secs = 30;
+    const rec = new MediaRecorder(cv.captureStream(30), { mimeType: type, videoBitsPerSecond: 6e6 });
+    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      const blob = new Blob(chunks, { type }), a = document.createElement('a');
+      a.href = URL.createObjectURL(blob); a.download = `cubicle-${new Date().toISOString().slice(0, 16).replace(/[:T]/g, '-')}.${type.includes('mp4') ? 'mp4' : 'webm'}`;
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(a.href), 10000);
+      recording = null; labelsEl.style.visibility = ''; button.textContent = L.recordSaved; setTimeout(() => { button.textContent = L.record; }, 2500);
+    };
+    recording = { rec, until: performance.now() / 1000 + secs };
+    labelsEl.style.visibility = 'hidden';            // the names and bubbles are drawn into the video instead
+    rec.start(1000);
+    const tick = () => {
+      if (!recording) return;
+      const left = Math.ceil(recording.until - performance.now() / 1000);
+      if (left <= 0) { rec.stop(); return; }
+      button.textContent = L.recording(left); setTimeout(tick, 250);
+    };
+    tick();
   }
 
   // ---------- settings ----------
@@ -774,6 +1257,7 @@
   try { settings = { ...settings, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch (_) {}
   // URL parameters win, so a kiosk link always opens the same way.
   if (params.get('theme')) settings.theme = params.get('theme');
+  if (['auto', '30', '15', '60'].includes(params.get('fps'))) settings.fps = params.get('fps');
   async function loadCatalog() {
     try {
       const list = await (await fetch('themes/index.json', { cache: 'no-store' })).json();
@@ -823,12 +1307,50 @@
     const entry = CATALOG.find((c) => c.id === theme.id) || CATALOG[0];
     const sel = (key, label, values, cur) => `<label for="set-${key}">${esc(label)}</label><select id="set-${key}" data-key="${key}">` +
       values.map(([v, n]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(tr(n))}</option>`).join('') + '</select>';
+    const own = (key, label, values, cur) => sel(key, label, values.map(([v, n]) => [v, { en: n }]), cur).replace('<select ', '<select data-own="1" ');
     panel.innerHTML = sel('theme', L.theme, CATALOG.map((c) => [c.id, c.name]), entry.id) +
       entry.options.map((o) => sel(o.key, tr(o.label), o.values, themeOpts[o.key])).join('') +
-      `<button type="button" id="set-copy">${esc(L.copyLink)}</button><div class="note">${esc(L.settingsNote)}</div>`;
+      `<button type="button" id="set-copy">${esc(L.copyLink)}</button><div class="note">${esc(L.settingsNote)}</div><hr>` +
+      `<label class="check"><input type="checkbox" id="set-notify"${settings.notify ? ' checked' : ''}> ${esc(L.notify)}</label>` +
+      own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
+      own('fps', L.fps, [['auto', L.fpsAuto], ['30', L.fps30], ['15', L.fps15]], settings.fps || 'auto') +
+      `<hr><label>${esc(L.logo)}</label><div class="row"><button type="button" id="set-logo">${esc(L.logoPick)}</button>` +
+      (looks.logo ? `<button type="button" id="set-nologo">${esc(L.logoRemove)}</button>` : '') + '</div>' +
+      `<div class="row"><button type="button" id="set-export">${esc(L.exportLooks)}</button><button type="button" id="set-import">${esc(L.importLooks)}</button></div>` +
+      `<hr><button type="button" id="set-record">${esc(recording ? L.recording(Math.ceil(recording.until - performance.now() / 1000)) : L.record)}</button>`;
     panel.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => {
-      settings[el.dataset.key] = el.value; save(); applySettings();
+      settings[el.dataset.key] = el.value; save();
+      if (el.dataset.own) { if (el.dataset.key === 'sound' && el.value !== 'off') chime('need'); return; }
+      applySettings();
     }));
+    panel.querySelector('#set-notify').addEventListener('change', async (e) => {
+      settings.notify = e.target.checked; save();
+      if (settings.notify && 'Notification' in window && Notification.permission === 'default') await Notification.requestPermission();
+      if (settings.notify && (!('Notification' in window) || Notification.permission === 'denied')) {
+        e.target.checked = settings.notify = false; save();
+        e.target.parentElement.insertAdjacentHTML('afterend', `<div class="note">${esc(L.notifyBlocked)}</div>`);
+      }
+    });
+    panel.querySelector('#set-logo').addEventListener('click', async () => {
+      const f = await pickFile(); if (!f) return;
+      try { looks.logo = toDataUrl(await readImage(f), 256); await saveLooks(); renderSettings(); } catch (_) {}
+    });
+    const nologo = panel.querySelector('#set-nologo');
+    if (nologo) nologo.addEventListener('click', async () => { delete looks.logo; await saveLooks(); renderSettings(); });
+    panel.querySelector('#set-export').addEventListener('click', () => {
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(new Blob([JSON.stringify(looks, null, 1)], { type: 'application/json' }));
+      a.download = 'cubicle-appearance.json'; document.body.appendChild(a); a.click(); a.remove();
+    });
+    panel.querySelector('#set-import').addEventListener('click', async () => {
+      const f = await pickFile('application/json,.json'); if (!f) return;
+      try {
+        const d = normLooks(JSON.parse(await f.text()));
+        looks = { agents: { ...looks.agents, ...d.agents }, names: { ...looks.names, ...d.names }, ...(d.logo || looks.logo ? { logo: d.logo || looks.logo } : {}) };
+        await saveLooks(); for (const sp of sprites.values()) applyLook(sp); renderCards(); renderSettings();
+      } catch (_) {}
+    });
+    panel.querySelector('#set-record').addEventListener('click', (e) => { if (!recording) startRecording(e.target); });
     panel.querySelector('#set-copy').addEventListener('click', async (e) => {
       const u = new URL(location.href);
       u.searchParams.set('theme', entry.id);
