@@ -78,6 +78,15 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     f = apply(f, { session_id: 's2', hook_event_name: 'PermissionRequest', agent_id: 'a2', agent_type: 'Plan', tool_name: 'Bash', tool_input: { command: 'ls' } });
     assert.strictEqual(find('s2:a2').status, 'waiting');
     assert.strictEqual(find('s2').status, 'running');
+    // a permission_prompt notification from inside a subagent raises the subagent's hand (#7)
+    f = apply(f, { session_id: 's2', hook_event_name: 'Notification', agent_id: 'a1', agent_type: 'Explore', notification_type: 'permission_prompt', message: 'Claude needs your permission to use Bash' });
+    assert.strictEqual(find('s2:a1').status, 'waiting');
+    assert.strictEqual(find('s2').status, 'running', 'the session keeps working');
+    f = apply(f, { session_id: 's2', hook_event_name: 'Notification', agent_id: 'a1', notification_type: 'idle_prompt', message: 'waiting' });
+    assert.strictEqual(find('s2:a1').status, 'waiting', 'other notifications change nothing');
+    assert.strictEqual(find('s2').status, 'running');
+    f = apply(f, { session_id: 's2', hook_event_name: 'PostToolUse', agent_id: 'a1', tool_name: 'Bash', tool_input: { command: 'ls' } });
+    assert.strictEqual(find('s2:a1').status, 'running');
     f = apply(f, { session_id: 's2', hook_event_name: 'SubagentStop', agent_id: 'a1', agent_type: 'Explore' });
     assert.ok(!find('s2:a1'));
     assert.ok(find('s2:a2'));

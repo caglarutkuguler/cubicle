@@ -55,6 +55,13 @@ function applySubagent(feed, agents, ev, now) {
       a = a || fresh();
       Object.assign(a, { status: 'waiting', task: ev.tool_name ? `allow ${summarize(ev)}?` : 'needs your permission' });
       break;
+    case 'Notification':
+      // A permission prompt from inside a subagent raises the subagent's hand, not the session's.
+      // Other notifications are ignored here too, as they are for sessions.
+      if (!needsUser(ev)) return feed;
+      a = a || fresh();
+      Object.assign(a, { status: 'waiting', task: ev.message ? String(ev.message).slice(0, 80) : 'needs your permission' });
+      break;
     default:
       return null; // not a subagent-specific event: let the session character handle it
   }
