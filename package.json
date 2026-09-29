@@ -1,6 +1,6 @@
 {
   "name": "@caglarutkuguler/cubicle",
-  "version": "0.8.0",
+  "version": "0.9.0",
   "description": "A live pixel-art office for your AI agents — Paperclip, Claude Code, or any JSON feed. Zero dependencies, read-only.",
   "bin": {
     "cubicle": "bin/cubicle.js"
