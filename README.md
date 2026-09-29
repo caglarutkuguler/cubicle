@@ -134,7 +134,7 @@ Use a board API key with the narrowest read-only scope Paperclip lets you create
 
 **Claude Code.** A hook script ([`bin/cubicle-hook.js`](bin/cubicle-hook.js)) runs on Claude Code's own hook events and rewrites `~/.cubicle/claude-code.json`. Tool calls put the character at its desk, permission prompts raise its hand, `Stop` sends it to the lounge. Subagents started with the Agent (Task) tool get their own character next to the session (thanks @omeruyanik03). Setup and privacy notes: [`examples/claude-code/README.md`](examples/claude-code/README.md).
 
-**Codex CLI and Gemini CLI.** The same hook, installed with `install-hooks codex` or `install-hooks gemini`, writes `~/.cubicle/codex.json` or `~/.cubicle/gemini.json`; read them with `--source codex` or `--source gemini`. Codex uses Claude Code's hook events; Gemini's are mapped onto them. See [`examples/codex/`](examples/codex/) and [`examples/gemini/`](examples/gemini/).
+**Codex CLI and Gemini CLI.** The same hook, installed with `install-hooks codex` or `install-hooks gemini`, writes `~/.cubicle/codex.json` or `~/.cubicle/gemini.json`; read them with `--source codex` or `--source gemini`. Codex uses Claude Code's hook events (trust them once with `/hooks` in Codex); Gemini's are mapped onto them. Both were checked end to end with the real CLIs (Codex 0.159, Gemini CLI 0.61). See [`examples/codex/`](examples/codex/) and [`examples/gemini/`](examples/gemini/).
 
 **Replay.** `--record day.jsonl` saves what the office shows whenever it changes. `--source replay:day.jsonl --speed 60` plays it back an hour a minute, looping, with the replayed time in the header: a whole working day in a few minutes, for a demo or a wall screen.
 

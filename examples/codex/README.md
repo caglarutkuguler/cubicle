@@ -11,7 +11,11 @@ npx @caglarutkuguler/cubicle install-hooks codex     # adds the hooks to ~/.code
 npx @caglarutkuguler/cubicle --source codex          # then open http://127.0.0.1:3200
 ```
 
-Hooks need Codex's `hooks` feature, which is on by default (`[features] hooks = true` in `~/.codex/config.toml`). Restart running Codex sessions so they load the hooks. `install-hooks codex --uninstall` removes only Cubicle's entries.
+Then **trust the hooks once**: Codex skips new hooks until you review them. Start `codex`, type `/hooks`, and trust the Cubicle entries (they all run `cubicle-hook.js codex`). Codex prints a warning at startup while hooks are waiting for review. After an update that moves the script, trust them again.
+
+Hooks need Codex's `hooks` feature, which is on by default. Restart running Codex sessions so they load the hooks. `install-hooks codex --uninstall` removes only Cubicle's entries.
+
+Checked end to end with Codex CLI 0.159.0: a session appears when it starts, types with the prompt and each shell command in its bubble, raises its hand on an approval prompt ("allow Bash: touch c.txt?") and goes back to the lounge on `Stop`.
 
 Several at once: `--source claude-code,codex,gemini` puts every CLI in the same office.
 

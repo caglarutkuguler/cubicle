@@ -11,7 +11,9 @@ npx @caglarutkuguler/cubicle install-hooks gemini    # adds the hooks to ~/.gemi
 npx @caglarutkuguler/cubicle --source gemini         # then open http://127.0.0.1:3200
 ```
 
-Restart running Gemini CLI sessions so they load the hooks. `install-hooks gemini --uninstall` removes only Cubicle's entries.
+Restart running Gemini CLI sessions so they load the hooks. Gemini runs hooks only in folders it trusts, so answer its trust prompt in the folders you work in. `install-hooks gemini --uninstall` removes only Cubicle's entries.
+
+Checked end to end with Gemini CLI 0.61.0: a session appears when it starts, types with the prompt and each tool call in its bubble, raises its hand on a confirmation ("allow rm a.txt?") and goes back to the lounge after `AfterAgent`.
 
 Several at once: `--source claude-code,codex,gemini` puts every CLI in the same office.
 
@@ -20,10 +22,12 @@ Several at once: `--source claude-code,codex,gemini` puts every CLI in the same 
 | Gemini CLI event | In the office |
 | --- | --- |
 | `BeforeAgent` | Starts working; the bubble shows the prompt |
-| `BeforeTool`, `AfterTool`, `PreCompress` | Sits at the desk and types; the bubble shows the tool and file or command |
-| `Notification` of type `ToolPermission` | Hand up, amber screen: Gemini is waiting for your permission |
+| `BeforeTool`, `AfterTool` | Sits at the desk and types; the bubble shows the tool and file or command |
+| `Notification` of type `ToolPermission` | Hand up, amber screen, the command or file in the bubble: Gemini is waiting for your confirmation |
 | `AfterAgent` | "✓ done", back to the lounge |
 | `SessionStart` / `SessionEnd` | Arrives / leaves the office |
+
+`PreCompress` is installed but ignored: Gemini fires it on every turn.
 
 ## Cost and safety
 

@@ -161,8 +161,12 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     assert.strictEqual(g.agents[0].task, 'run_shell_command: npm test');
     g = hookApply(g, { session_id: 'g1', hook_event_name: 'BeforeTool', tool_name: 'read_file', tool_input: { absolute_path: '/w/site/a.css' } }, 'gemini');
     assert.strictEqual(g.agents[0].task, 'read_file a.css');
-    g = hookApply(g, { session_id: 'g1', hook_event_name: 'Notification', notification_type: 'ToolPermission', message: 'Allow shell?' }, 'gemini');
-    assert.strictEqual(g.agents[0].status, 'waiting');
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'PreCompress', trigger: 'auto' }, 'gemini');
+    assert.strictEqual(g.agents[0].task, 'read_file a.css', 'PreCompress fires every turn; it changes nothing');
+    // as recorded from Gemini CLI 0.61: a shell command waiting for confirmation
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'Notification', notification_type: 'ToolPermission', message: 'Tool Confirm Shell Command requires execution',
+      details: { type: 'exec', title: 'Confirm Shell Command', command: 'rm a.txt', rootCommand: 'rm' } }, 'gemini');
+    assert.strictEqual(g.agents[0].status, 'waiting'); assert.strictEqual(g.agents[0].task, 'allow rm a.txt?');
     g = hookApply(g, { session_id: 'g1', hook_event_name: 'AfterAgent' }, 'gemini');
     assert.strictEqual(g.agents[0].status, 'idle');
     g = hookApply(g, { session_id: 'g1', hook_event_name: 'SessionEnd', reason: 'exit' }, 'gemini');

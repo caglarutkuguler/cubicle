@@ -42,7 +42,15 @@ const runtimeOf = (name) => RUNTIMES[name] ? name : 'claude';
 // Gemini CLI events carry the same fields under other names; translate them once.
 function normalize(ev, runtime) {
   if (runtime !== 'gemini') return ev;
-  return { ...ev, hook_event_name: GEMINI_EVENTS[ev.hook_event_name] || ev.hook_event_name };
+  // Gemini fires PreCompress on every turn, compressing or not: not worth a bubble.
+  if (ev.hook_event_name === 'PreCompress') return { ...ev, hook_event_name: 'Ignored' };
+  const out = { ...ev, hook_event_name: GEMINI_EVENTS[ev.hook_event_name] || ev.hook_event_name };
+  // Tool confirmations carry the command in `details`; show it like a Claude Code permission prompt.
+  const d = ev.details || {};
+  if (ev.hook_event_name === 'Notification' && (d.command || d.fileName || d.filePath)) {
+    out.message = `allow ${String(d.command || path.basename(String(d.fileName || d.filePath))).slice(0, 60)}?`;
+  }
+  return out;
 }
 
 const STALE_MS = 12 * 60 * 60 * 1000; // drop sessions with no event for 12 h
