@@ -128,6 +128,9 @@
   // proxy behind it (e.g. the hosted demo on GitHub Pages).
   let DEMO = params.has('demo');
   const KIOSK = params.has('kiosk');
+  // Inside Paperclip (installed as a plugin) the page is served by Paperclip itself and
+  // reads its API directly on the same origin, with the signed-in user's own access.
+  const EMBED = params.get('embed') === 'paperclip';
   if (KIOSK) document.body.classList.add('kiosk');
 
   // ---------- setup ----------
@@ -196,14 +199,16 @@
           if (!companies.length) return { agents: [], issues: [], label: '', note: L.noCompany };
           const want = params.get('company');
           company = companies.find((c) => c.issuePrefix === want || c.id === want) || companies[0];
-          if (companies.length > 1) {
+          if (companies.length > 1 && !EMBED) {
             companySel.hidden = false;
             companySel.innerHTML = companies.map((c) => `<option value="${esc(c.id)}">${esc(c.name)}</option>`).join('');
             companySel.value = company.id;
           }
         }
         const [agents, issues] = await Promise.all([
-          getJSON(`/api/companies/${company.id}/agents`), getJSON(`/api/companies/${company.id}/issues`),
+          getJSON(`/api/companies/${company.id}/agents`),
+          // Open issues only; the Cubicle server filters these itself, Paperclip can do it for us.
+          getJSON(`/api/companies/${company.id}/issues${EMBED ? '?status=backlog,todo,in_progress,in_review,blocked' : ''}`),
         ]);
         p.label = company.name;
         return { agents, issues, label: company.name };
@@ -279,7 +284,10 @@
 
   async function init() {
     const b = document.getElementById('banner');
-    if (!DEMO) {
+    if (EMBED) {
+      paperclipUrl = location.origin;
+      providers = [paperclipProvider()];
+    } else if (!DEMO) {
       try {
         const cfg = await getJSON('/config.json');
         redacted = !!cfg.redact;
@@ -428,7 +436,8 @@
     if (t.url) return `<a href="${esc(t.url)}" target="_blank" rel="noopener">${label || '↗'}</a>`;
     // Only Paperclip issues (which carry assigneeAgentId) link into Paperclip.
     if (!paperclipUrl || DEMO || !company || !('assigneeAgentId' in t)) return label;
-    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="_blank" rel="noopener">${label}</a>`;
+    const target = EMBED ? '_top' : '_blank';   // inside Paperclip, open the issue in Paperclip itself
+    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="${target}" rel="noopener">${label}</a>`;
   }
 
   function renderCards() {

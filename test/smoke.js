@@ -253,10 +253,13 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { up.close(); }
   }
 
-  // paperclip mode (no Paperclip running)
+  // paperclip mode: defaults
   await withServer([], async (base) => {
     const cfg = JSON.parse((await get(`${base}/config.json`)).body);
     assert.strictEqual(cfg.source, 'paperclip'); assert.strictEqual(cfg.paperclipUrl, 'http://127.0.0.1:3100');
+  });
+  // paperclip mode, Paperclip not reachable (port 9 is never served)
+  await withServer(['--paperclip', 'http://127.0.0.1:9'], async (base) => {
     assert.strictEqual((await get(`${base}/api/feed`)).status, 404);
     assert.strictEqual((await get(`${base}/api/companies/x/secrets`)).status, 403);
     assert.strictEqual((await get(`${base}/api/companies`)).status, 502);
@@ -303,6 +306,38 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
   {
     const out = require('child_process').execFileSync(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--version']).toString().trim();
     assert.strictEqual(out, require('../package.json').version);
+  }
+
+  // Paperclip plugin: manifest matches the package, the worker answers the host's lifecycle calls
+  {
+    const fs = require('fs');
+    const pkg = require('../package.json');
+    const manifest = require('../paperclip/manifest.js');
+    assert.strictEqual(manifest.version, pkg.version);
+    assert.match(manifest.id, /^[a-z0-9][a-z0-9._-]*$/);
+    for (const key of ['manifest', 'worker', 'ui']) assert.ok(fs.existsSync(path.join(ROOT, pkg.paperclipPlugin[key])), `paperclipPlugin.${key} exists`);
+    assert.strictEqual(path.resolve(ROOT, manifest.entrypoints.worker), path.resolve(ROOT, pkg.paperclipPlugin.worker));
+    for (const f of ['paperclip', ...pkg.paperclipPlugin.ui.replace('./', '').split('/')]) assert.ok(pkg.files.includes(f) || f === '', `${f} is published`);
+    const ui = fs.readFileSync(path.join(ROOT, 'public/index.js'), 'utf8');
+    for (const slot of manifest.ui.slots) assert.ok(ui.includes(`export function ${slot.exportName}(`), `UI exports ${slot.exportName}`);
+    new Function('React', ui.replace(/^import .*$/m, '').replace(/^export /gm, ''));   // parses
+
+    const w = spawn(process.execPath, [path.join(ROOT, 'paperclip/worker.js')], { stdio: ['pipe', 'pipe', 'inherit'] });
+    const replies = [];
+    let buf = '';
+    w.stdout.on('data', (d) => { buf += d; let i; while ((i = buf.indexOf('\n')) >= 0) { replies.push(JSON.parse(buf.slice(0, i))); buf = buf.slice(i + 1); } });
+    const send = (m) => w.stdin.write(JSON.stringify({ jsonrpc: '2.0', ...m }) + '\n');
+    send({ id: 1, method: 'initialize', params: { manifest, config: {} } });
+    send({ method: 'someNotification', params: {} });
+    send({ id: 2, method: 'health', params: {} });
+    send({ id: 3, method: 'getData', params: {} });
+    send({ id: 4, method: 'shutdown', params: {} });
+    const code = await new Promise((r) => w.on('exit', r));
+    assert.strictEqual(code, 0);
+    assert.deepStrictEqual(replies.map((m) => m.id), [1, 2, 3, 4], 'one reply per request, none for notifications');
+    assert.strictEqual(replies[0].result.ok, true);
+    assert.strictEqual(replies[1].result.status, 'ok');
+    assert.strictEqual(replies[2].error.code, -32601);
   }
 
   // page script parses

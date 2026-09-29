@@ -27,6 +27,14 @@ Requires Node.js 18+.
 npx @caglarutkuguler/cubicle
 ```
 
+**Inside Paperclip** — as a plugin, with its own menu entry and no separate server:
+
+```bash
+npx paperclipai plugin install @caglarutkuguler/cubicle
+```
+
+Open **Cubicle** in Paperclip's sidebar. Details in [Inside Paperclip](#inside-paperclip).
+
 **Claude Code** (one character per session, driven by Claude Code's own hooks; details in [`examples/claude-code/`](examples/claude-code/)):
 
 ```bash
@@ -119,6 +127,24 @@ Use a board API key with the narrowest read-only scope Paperclip lets you create
 
 **Feed.** Any process can write `{ "company": "…", "agents": [{ "id", "name", "role", "status", "task", "error" }] }` to a file or serve it over HTTP. Full spec with status aliases: [`docs/FEED.md`](docs/FEED.md). A sample is in [`examples/feed.json`](examples/feed.json).
 
+## Inside Paperclip
+
+[![Cubicle as a Paperclip plugin](docs/paperclip-plugin.png)](docs/paperclip-plugin.png)
+
+The same npm package is also a Paperclip plugin. Install it once and every company gets a **Cubicle** entry in the sidebar:
+
+```bash
+npx paperclipai plugin install @caglarutkuguler/cubicle
+```
+
+- Nothing else to run: Paperclip serves the office page from the plugin, and the page reads the same three endpoints as the standalone proxy (companies, agents, open issues), on Paperclip's own origin with your own session. It only ever sends `GET` requests. The plugin asks Paperclip for two capabilities, both UI only (`ui.sidebar.register`, `ui.page.register`); its worker answers Paperclip's lifecycle calls and nothing else.
+- Themes, the ⚙ menu and "needs you" work the same. Task ids link to the issue inside Paperclip.
+- **Kiosk / TV** (top right of the page) opens the office full screen at a Paperclip URL, so a wall display needs only a browser signed in to Paperclip.
+- Update with `npx paperclipai plugin install @caglarutkuguler/cubicle` again; remove with `npx paperclipai plugin uninstall caglarutkuguler.cubicle`.
+- Hacking on it: `npx paperclipai plugin install /path/to/your/cubicle/clone` installs from a checkout.
+
+Differences from the standalone server: `--redact` and the proxy's field filtering don't apply (the page talks to Paperclip directly, as the signed-in user, who can already see everything it shows), and Claude Code sessions or feeds are not mixed in; run the standalone server for those.
+
 ## How it compares
 
 Cubicle is one of several pixel offices for AI agents, all inspired by [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents). They optimise for different things:
@@ -126,8 +152,8 @@ Cubicle is one of several pixel offices for AI agents, all inspired by [Pixel Ag
 | | Cubicle | [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) | [Agent Pixels](https://github.com/gcampton/Agent-Pixels) | [agents-in-the-office](https://github.com/gukosowa/agents-in-the-office) |
 | --- | --- | --- | --- | --- |
 | Works with | Paperclip, Claude Code, any JSON feed | Claude Code | Paperclip | Claude Code, Gemini CLI |
-| Runs as | Standalone page (`npx`, systemd, kiosk) | VS Code extension or `npx` browser app | Paperclip plugin | Standalone app |
-| Setup | One command, nothing to build | Marketplace install; build from source to hack on it | Build against the Paperclip plugin SDK | See its README |
+| Runs as | Paperclip plugin, or standalone page (`npx`, systemd, kiosk) | VS Code extension or `npx` browser app | Paperclip plugin | Standalone app |
+| Setup | One command, nothing to build (also as a plugin) | Marketplace install; build from source to hack on it | Build against the Paperclip plugin SDK | See its README |
 | Access to your agents | Read-only by design (GET allowlist) | Watches local Claude Code sessions | Inside Paperclip | Watches local sessions |
 | Shows "needs you" | Yes: permission prompts, board questions | Yes: waiting for approval | Not listed | Yes: approval alerts |
 | Office editor, art | Fixed room, programmer art | Layout editor, furniture and character assets, pets | 80+ characters, multi-room views | Tile map editor, sound packs |
@@ -197,4 +223,4 @@ Cubicle is a community project and is not affiliated with or endorsed by Papercl
 
 **Cubicle**, AI ajanlarınızı canlı bir pixel ofiste gösterir: [Paperclip](https://github.com/paperclipai/paperclip) ve Claude Code hazır gelir; başka sistemler küçük bir [JSON feed](docs/FEED.md) ile bağlanır. Çalışan ajan masasına oturup yazar ve başının üstünde görevi görünür; sizi bekleyen ajan elini kaldırır; işi biten ajan dinlenme alanına döner; hata alan ajanın ekranı kırmızı yanar.
 
-Kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD askerî tema (Kara, Hava, Deniz veya Müşterek Kuvvetler) seçilebilir; aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır.
+Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD askerî tema (Kara, Hava, Deniz veya Müşterek Kuvvetler) seçilebilir; aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır.
