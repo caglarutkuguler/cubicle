@@ -280,6 +280,7 @@
   }
 
   let providers = [];
+  let officeName = '';    // first source's company name; themes may put it on the wall
   let redacted = false;   // server runs with --redact: titles/commands never reach the page
 
   async function init() {
@@ -338,6 +339,7 @@
       return;
     }
     document.getElementById('co').textContent = labels.join(' · ');
+    officeName = labels[0] || '';
     sync(agents, issues);
     if (!DEMO) {
       const b = document.getElementById('banner');
@@ -643,7 +645,7 @@
     g.imageSmoothingEnabled = !!theme.smooth;
     g.clearRect(0, 0, CW, CH);
     const hr = new Date().getHours();
-    const c = { g, t: now, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites, desks: DESKS, lounge: LOUNGE,
+    const c = { g, t: now, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites, desks: DESKS, lounge: LOUNGE, company: officeName,
       anyError: [...sprites.values()].some((s) => s.status === 'error') };
     theme.drawRoom(c);
     const list = [];
@@ -662,36 +664,38 @@
   // ---------- settings ----------
   // Themes the settings panel offers. Options are listed here so the panel can show them
   // before the theme file is loaded.
-  const CATALOG = [
-    { id: 'pixel', name: themes.pixel.name, options: [] },
-    { id: 'military', name: { en: 'Military (HD)', tr: 'Askerî (HD)' }, options: [
-      { key: 'branch', label: { en: 'Branch', tr: 'Kuvvet' }, values: [
-        ['land', { en: 'Land forces', tr: 'Kara Kuvvetleri' }],
-        ['air', { en: 'Air force', tr: 'Hava Kuvvetleri' }],
-        ['naval', { en: 'Naval forces', tr: 'Deniz Kuvvetleri' }],
-        ['joint', { en: 'Joint forces', tr: 'Müşterek Kuvvetler' }],
-      ] },
-    ] },
-  ];
+  // Theme list: public/themes/index.json (id, name, options). Adding a theme is one .js file
+  // plus one entry there; see docs/THEMES.md.
+  let CATALOG = [{ id: 'pixel', name: themes.pixel.name, options: [] }];
   const tr = (o) => (o && (o[lang] || o.en)) || '';
   const STORE = 'cubicle.settings';
   let settings = { theme: 'pixel' };
   try { settings = { ...settings, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch (_) {}
   // URL parameters win, so a kiosk link always opens the same way.
   if (params.get('theme')) settings.theme = params.get('theme');
-  for (const c of CATALOG) for (const o of c.options) if (params.get(o.key)) settings[o.key] = params.get(o.key);
+  async function loadCatalog() {
+    try {
+      const list = await (await fetch('themes/index.json', { cache: 'no-store' })).json();
+      CATALOG = [CATALOG[0], ...list.filter((t) => t && /^[a-z0-9-]+$/.test(t.id) && t.id !== 'pixel').map((t) => ({ options: [], ...t }))];
+    } catch (_) {}
+    for (const c of CATALOG) for (const o of c.options) if (params.get(o.key)) settings[o.key] = params.get(o.key);
+  }
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (_) {} };
 
-  function loadTheme(id) {
-    if (themes[id]) return Promise.resolve(themes[id]);
-    if (!/^[a-z0-9-]+$/.test(id)) return Promise.resolve(themes.pixel);
-    return new Promise((resolve) => {
-      const el = document.createElement('script');
-      el.src = `themes/${id}.js`;
-      el.onload = () => resolve(themes[id] || themes.pixel);
-      el.onerror = () => resolve(themes.pixel);
-      document.head.appendChild(el);
-    });
+  const loadScript = (src) => new Promise((resolve) => {
+    const el = document.createElement('script');
+    el.src = src; el.onload = () => resolve(true); el.onerror = () => resolve(false);
+    document.head.appendChild(el);
+  });
+  let kitLoaded = null;
+  async function loadTheme(id) {
+    if (themes[id]) return themes[id];
+    if (!/^[a-z0-9-]+$/.test(id)) return themes.pixel;
+    // kit.js holds the shared drawing helpers (people, desks, windows...) most themes use.
+    kitLoaded = kitLoaded || loadScript('themes/kit.js');
+    await kitLoaded;
+    await loadScript(`themes/${id}.js`);
+    return themes[id] || themes.pixel;
   }
 
   async function applySettings() {
@@ -735,7 +739,7 @@
   }
 
   resizeCanvas();
-  applySettings();
+  loadCatalog().then(applySettings);
   init();
 })();
 </script>

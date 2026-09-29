@@ -268,33 +268,47 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     const th = await get(`${base}/themes/military.js`);
     assert.strictEqual(th.status, 200); assert.ok(th.body.includes('CubicleThemes.register'));
     assert.strictEqual((await get(`${base}/themes/nope.js`)).status, 404);
+    assert.ok(JSON.parse((await get(`${base}/themes/index.json`)).body).some((t) => t.id === 'military'));
+    assert.strictEqual((await get(`${base}/themes/kit.js`)).status, 200);
+    assert.strictEqual((await get(`${base}/themes/other.json`)).status, 404);
     assert.strictEqual((await get(`${base}/themes/..%2Fbin%2Fcubicle.js`)).status, 404);
     assert.strictEqual((await get(`${base}/themes/Military.js`)).status, 404);
   });
 
-  // every theme in the settings catalog exists, registers, and draws every option without throwing
+  // every theme in themes/index.json exists, registers, and draws every option with every
+  // status and many different agents (so every outfit branch runs) without throwing
   {
     const fs = require('fs'); const vm = require('vm');
-    const page = fs.readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
-    const catalog = page.slice(page.indexOf('const CATALOG'), page.indexOf('];', page.indexOf('const CATALOG')));
-    const ids = [...catalog.matchAll(/\{ id: '([a-z0-9-]+)'/g)].map((m) => m[1]).filter((id) => id !== 'pixel');
-    assert.ok(ids.includes('military'));
-    const ctx = () => new Proxy({}, { get: (o, k) => (k in o ? o[k] : k === 'measureText' ? () => ({ width: 10 }) : k.startsWith('create') ? () => ({ addColorStop() {} }) : () => {}), set: (o, k, v) => { o[k] = v; return true; } });
-    for (const id of ids) {
+    const dir = path.join(ROOT, 'public/themes');
+    const catalog = JSON.parse(fs.readFileSync(path.join(dir, 'index.json'), 'utf8'));
+    const ids = catalog.map((e) => e.id);
+    assert.ok(ids.includes('military') && new Set(ids).size === ids.length, 'unique theme ids');
+    for (const f of fs.readdirSync(dir).filter((f) => f.endsWith('.js') && f !== 'kit.js')) assert.ok(ids.includes(f.slice(0, -3)), `${f} is listed in themes/index.json`);
+    const kit = fs.readFileSync(path.join(dir, 'kit.js'), 'utf8');
+    const ctx = () => new Proxy({}, { get: (o, k) => (k in o ? o[k] : k === 'measureText' ? () => ({ width: 10 }) : String(k).startsWith('create') ? () => ({ addColorStop() {} }) : () => {}), set: (o, k, v) => { o[k] = v; return true; } });
+    const people = [];
+    for (let i = 0; i < 24; i++) for (const status of ['running', 'waiting', 'idle', 'error']) for (const seated of [true, false]) {
+      people.push({ id: `agent-${i}`, name: i ? `Agent ${i}` : 'CEO', role: i % 5 ? 'engineer' : 'ceo', status, ask: status === 'waiting', x: 40, y: 60, dir: (i % 3) - 1, seed: i / 7,
+        walking: !seated && i % 2 === 0, seated, typing: seated && status === 'running', shirt: '#335577', skin: '#c68642', hair: '#222', desk: [1, 3] });
+    }
+    for (const entry of catalog) {
+      assert.match(entry.id, /^[a-z0-9-]+$/); assert.ok(entry.name && entry.name.en, `${entry.id} has an English name`);
       const registered = [];
-      vm.runInNewContext(fs.readFileSync(path.join(ROOT, `public/themes/${id}.js`), 'utf8'), { window: { CubicleThemes: { register: (t) => registered.push(t), T: 16 } }, Math, Date });
+      const sandbox = { window: { CubicleThemes: { register: (t) => registered.push(t), T: 16 } }, Math, Date, String, Object, Array, Set, Map, Number };
+      vm.createContext(sandbox);
+      vm.runInContext(kit, sandbox);
+      vm.runInContext(fs.readFileSync(path.join(dir, `${entry.id}.js`), 'utf8'), sandbox);
       const t = registered[0];
-      assert.ok(t && t.id === id && t.scale >= 1, `${id} registers itself`);
-      const values = [...catalog.slice(catalog.indexOf(`id: '${id}'`)).split(/\{ id: '/)[0].matchAll(/\['([a-z0-9-]+)', \{/g)].map((m) => m[1]);
-      for (const v of values.length ? values : [undefined]) {
-        if (t.setup) t.setup({ branch: v });
-        for (const anyError of [false, true]) for (const night of [false, true]) {
-          const c = { g: ctx(), t: 12345, T: 16, CW: 352, CH: 264, night, opts: { branch: v }, sprites: new Map(), desks: [[1, 3], [4, 3]], lounge: [[17, 5]], anyError };
+      assert.ok(t && t.id === entry.id && t.scale >= 1, `${entry.id} registers itself`);
+      const combos = [{}];
+      for (const o of entry.options || []) for (const [v] of o.values) combos.push({ [o.key]: v });
+      for (const opts of combos) {
+        if (t.setup) t.setup(opts);
+        for (const [anyError, night, n] of [[false, false, 0], [true, true, 30], [false, true, 5]]) {
+          const sprites = new Map(people.slice(0, n).map((s) => [s.id, s]));
+          const c = { g: ctx(), t: 12345.6, T: 16, CW: 352, CH: 264, night, opts, sprites, desks: [[1, 3], [4, 3]], lounge: [[17, 5]], anyError, company: n ? 'Demo Co.' : '' };
           t.drawRoom(c); const list = []; t.props(c, list); list.forEach((o) => o.f());
-          for (const status of ['running', 'waiting', 'idle', 'error']) {
-            const s = { id: 'a1', name: 'CEO', role: 'ceo', status, ask: status === 'waiting', x: 40, y: 60, dir: 1, seed: 1.5, walking: status === 'idle', seated: status !== 'idle', typing: status === 'running', shirt: '#335577', skin: '#c68642', hair: '#222', desk: [1, 3] };
-            t.drawDesk(c, [1, 3], s); t.drawChar(c, s); t.drawChar(c, { ...s, id: 'another-agent', role: 'engineer', dir: -1 });
-          }
+          for (const s of people) { t.drawDesk(c, [1, 3], s); t.drawChar(c, s); }
           t.drawDesk(c, [4, 3], undefined);
           if (t.overlay) t.overlay(c);
         }

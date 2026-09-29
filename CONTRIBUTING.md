@@ -27,22 +27,7 @@ The easiest way to support a new agent runtime is to write the [feed format](doc
 
 ## Adding a theme
 
-A theme changes how the office is drawn and nothing else. It is one file, `public/themes/<id>.js`, that calls `window.CubicleThemes.register({...})` with:
-
-| Field | |
-| --- | --- |
-| `id`, `name` | `name` is `{ en, tr }` |
-| `scale`, `smooth` | canvas resolution multiplier (1 = pixel art, 4 = HD) and whether to smooth images |
-| `setup(opts)` | optional; receives the theme's options from the ⚙ menu (for example `{ branch: 'air' }`) |
-| `drawRoom(c)` | floor, walls, windows |
-| `props(c, list)` | push `{ z, f }` for furniture that characters can walk in front of or behind; `z` is the y they sort by |
-| `drawDesk(c, desk, sprite)` | one desk; `sprite` is the agent sitting there, if any |
-| `drawChar(c, sprite)` | one agent: `sprite.status`, `seated`, `typing`, `walking`, `dir`, `role`, `shirt`, `skin`, `hair` |
-| `overlay(c)` | optional; drawn on top of everything |
-
-`c` holds the 2D context `g`, the time `t` in seconds, the tile size `T` (16), the office size `CW`×`CH`, `night`, `opts`, `desks`, `lounge`, `sprites` and `anyError`. Draw in office pixels; the page scales the canvas for you. Then add the theme and its options to `CATALOG` in `public/index.html`. `npm test` loads every theme in the catalog and draws each option with every status, so a typo in one branch fails CI instead of a wall display.
-
-Themes follow the same rules as the rest of Cubicle: no image files, no network, no dependencies.
+A theme is one file in `public/themes/` plus one entry in `public/themes/index.json`, drawn with the shared helpers in `public/themes/kit.js` (people in any outfit, desks that show the agent's state, windows, furniture). [docs/THEMES.md](docs/THEMES.md) has a copy-paste template, the layout and the rules. `npm test` draws every listed theme with every option and status, so a typo in one branch fails CI instead of a wall display. Issues labelled [theme](https://github.com/caglarutkuguler/cubicle/labels/theme) are ideas waiting for someone.
 
 ## The Paperclip plugin
 

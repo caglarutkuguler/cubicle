@@ -235,13 +235,15 @@ const server = http.createServer((req, res) => {
       '{"error":"paperclip unreachable"}', (data) => shapePaperclip(url.pathname, data));
   }
 
-  // Optional themes: public/themes/<name>.js, loaded by the page only when chosen.
-  const themeMatch = url.pathname.match(/^\/themes\/([a-z0-9-]+)\.js$/);
+  // Optional themes: public/themes/<name>.js, loaded by the page only when chosen, and the
+  // list of them in public/themes/index.json.
+  const themeMatch = url.pathname.match(/^\/themes\/([a-z0-9-]+\.js|index\.json)$/);
   if (themeMatch) {
-    const file = path.join(PUBLIC_DIR, 'themes', `${themeMatch[1]}.js`);
+    const file = path.join(PUBLIC_DIR, 'themes', themeMatch[1]);
+    const type = file.endsWith('.json') ? 'application/json' : 'text/javascript; charset=utf-8';
     return fs.readFile(file, (err, buf) => {
       if (err) return send(res, 404, 'Not found', 'text/plain');
-      res.writeHead(200, { 'content-type': 'text/javascript; charset=utf-8', 'cache-control': 'no-store' });
+      res.writeHead(200, { 'content-type': type, 'cache-control': 'no-store' });
       res.end(buf);
     });
   }
