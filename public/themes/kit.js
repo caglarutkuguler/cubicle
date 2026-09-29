@@ -180,15 +180,26 @@
       });
     },
     /** Company name as lettering on the wall (the "logo"). */
+    // The company name, and the user's logo in front of it when there is one (the page then
+    // doesn't hang the logo elsewhere). Logo and name are centred together on x.
     sign(c, x, y, { color = '#d8b25a', size = 6, plate = null, weight = 700, font = 'Georgia, "Times New Roman", serif', max = 60 } = {}) {
-      const name = (c.company || '').slice(0, 28);
-      if (!name) return;
+      const name = (c.company || '').slice(0, 40);
+      const logo = c.logo && c.logo.naturalWidth ? c.logo : null;
+      if (!name && !logo) return;
       g.font = `${weight} ${size}px ${font}`;
-      const w = Math.min(max, g.measureText(name).width);
-      if (plate) K.rr(plate, x - w / 2 - 3, y - size * 0.8, w + 6, size * 1.6, 1);
+      const lh = size * 1.9, lw = logo ? Math.min(lh * 3, lh * logo.naturalWidth / logo.naturalHeight) : 0, gap = logo && name ? size * 0.6 : 0;
+      const tw = name ? Math.min(max - lw - gap, g.measureText(name).width) : 0, w = lw + gap + tw, left = x - w / 2;
+      if (plate) { const ph = Math.max(size * 1.6, logo ? lh + 3 : 0); K.rr(plate, left - 3, y - ph / 2, w + 6, ph, 1.5); }
+      if (logo) {
+        g.save(); g.imageSmoothingEnabled = true; g.imageSmoothingQuality = 'high';
+        g.fillStyle = 'rgba(255,255,255,.92)'; g.fillRect(left - 0.8, y - lh / 2 - 0.8, lw + 1.6, lh + 1.6);
+        g.drawImage(logo, left, y - lh / 2, lw, lh); g.restore();
+        c.logoDrawn = true;
+      }
+      if (!name) return;
       g.save(); g.shadowColor = 'rgba(0,0,0,.4)'; g.shadowBlur = 1.5; g.shadowOffsetY = 0.6;
-      g.fillStyle = color; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText(name, x, y, max); g.restore(); g.textAlign = 'start';
+      g.fillStyle = color; g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.fillText(name, left + lw + gap, y, tw); g.restore(); g.textAlign = 'start';
     },
 
     // ---------- furniture ----------

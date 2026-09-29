@@ -18,8 +18,7 @@
     const outside = view === 'sea' ? K.sea : (cc, x, y, w, h) => K.skyline(cc, x, y, w, h, 3);
     for (const wx of [1.2, 4.4, 17.4]) K.window(c, wx * T, 4, 2.6 * T, 20, outside, { frame: '#2a190f', mullions: 1 });
     // the company name in brass, with a board report on a screen next to it
-    K.rr('#2a190f', 7.7 * T, 6, 5.6 * T, 16, 1.5);
-    K.sign(c, 10.5 * T, 14, { color: '#e2bd66', size: 7, max: 5 * T });
+    K.sign(c, 10.5 * T, 14, { color: '#e2bd66', size: 7, max: 5.6 * T, plate: '#2a190f' });
     K.statusBoard(c, 20.6 * T, 5, 1.1 * T, 18, { frame: '#8a6a2e' });
     K.analogClock(c, 15.9 * T, 13, 5, { rim: '#8a6a2e' });
     K.partition(c, { glass: 'rgba(200,220,240,.18)', frame: '#8a6a2e' });
