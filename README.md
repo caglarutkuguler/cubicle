@@ -155,7 +155,7 @@ npx paperclipai plugin install @caglarutkuguler/cubicle
 - Nothing else to run: Paperclip serves the office page from the plugin, and the page reads the same three endpoints as the standalone proxy (companies, agents, open issues), on Paperclip's own origin with your own session. It only ever sends `GET` requests. The plugin asks Paperclip for two capabilities, both UI only (`ui.sidebar.register`, `ui.page.register`); its worker answers Paperclip's lifecycle calls and nothing else.
 - Themes, the ⚙ menu and "needs you" work the same. Task ids link to the issue inside Paperclip.
 - **Kiosk / TV** (top right of the page) opens the office full screen at a Paperclip URL, so a wall display needs only a browser signed in to Paperclip.
-- Update with `npx paperclipai plugin install @caglarutkuguler/cubicle` again; remove with `npx paperclipai plugin uninstall caglarutkuguler.cubicle`.
+- Update to the latest version with Paperclip's upgrade endpoint (instance admins; no key needed in the default `local_trusted` mode): `curl -X POST http://127.0.0.1:3100/api/plugins/caglarutkuguler.cubicle/upgrade`. Remove with `npx paperclipai plugin uninstall caglarutkuguler.cubicle`.
 - Hacking on it: `npx paperclipai plugin install /path/to/your/cubicle/clone` installs from a checkout.
 
 Differences from the standalone server: `--redact` and the proxy's field filtering don't apply (the page talks to Paperclip directly, as the signed-in user, who can already see everything it shows), and Claude Code sessions or feeds are not mixed in; run the standalone server for those.

@@ -1,9 +1,12 @@
 // Paperclip plugin manifest for Cubicle. Paperclip reads this when the package is installed
 // with `paperclipai plugin install @caglarutkuguler/cubicle`; the standalone server ignores it.
-'use strict';
-const { version, author } = require('../package.json');
+// ESM on purpose: Paperclip re-imports the manifest with a new query string after an
+// upgrade, which reloads an ES module; package.json is read from disk each time for the same reason.
+import { readFileSync } from 'node:fs';
 
-module.exports = {
+const { version, author } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8'));
+
+export default {
   id: 'caglarutkuguler.cubicle',
   apiVersion: 1,
   version,

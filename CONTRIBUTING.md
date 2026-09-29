@@ -31,7 +31,7 @@ A theme is one file in `public/themes/` plus one entry in `public/themes/index.j
 
 ## The Paperclip plugin
 
-The npm package doubles as a Paperclip plugin (`paperclipPlugin` in `package.json`). `paperclip/manifest.js` declares a sidebar link and a page; `public/index.js` is the React module Paperclip loads for them (plain ESM using Paperclip's own React, no build), and it frames `public/index.html?embed=paperclip`, which Paperclip serves from the plugin folder. `paperclip/worker.js` answers the host's lifecycle calls over JSON-RPC on stdio without the SDK, so the package keeps zero dependencies. To try changes, install your clone into a local Paperclip: `npx paperclipai plugin install /path/to/cubicle`.
+The npm package doubles as a Paperclip plugin (`paperclipPlugin` in `package.json`). `paperclip/manifest.mjs` declares a sidebar link and a page; `public/index.js` is the React module Paperclip loads for them (plain ESM using Paperclip's own React, no build), and it frames `public/index.html?embed=paperclip`, which Paperclip serves from the plugin folder. `paperclip/worker.js` answers the host's lifecycle calls over JSON-RPC on stdio without the SDK, so the package keeps zero dependencies. To try changes, install your clone into a local Paperclip: `npx paperclipai plugin install /path/to/cubicle`.
 
 ## Translations
 

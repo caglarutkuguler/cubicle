@@ -47,7 +47,7 @@
     "access": "public"
   },
   "paperclipPlugin": {
-    "manifest": "./paperclip/manifest.js",
+    "manifest": "./paperclip/manifest.mjs",
     "worker": "./paperclip/worker.js",
     "ui": "./public"
   }

@@ -421,7 +421,21 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
   {
     const fs = require('fs');
     const pkg = require('../package.json');
-    const manifest = require('../paperclip/manifest.js');
+    const { pathToFileURL } = require('url');
+    const manifest = (await import(pathToFileURL(path.join(ROOT, 'paperclip/manifest.mjs')).href)).default;
+    // Paperclip re-imports the manifest after an upgrade; the new version must show up then.
+    {
+      const os = require('os');
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-pkg-'));
+      fs.mkdirSync(path.join(dir, 'paperclip'));
+      fs.copyFileSync(path.join(ROOT, 'paperclip/manifest.mjs'), path.join(dir, 'paperclip/manifest.mjs'));
+      const url = pathToFileURL(path.join(dir, 'paperclip/manifest.mjs'));
+      fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ version: '1.0.0', author: 'x' }));
+      assert.strictEqual((await import(`${url.href}?m=1`)).default.version, '1.0.0');
+      fs.writeFileSync(path.join(dir, 'package.json'), JSON.stringify({ version: '1.1.0', author: 'x' }));
+      assert.strictEqual((await import(`${url.href}?m=2`)).default.version, '1.1.0');
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
     assert.strictEqual(manifest.version, pkg.version);
     assert.match(manifest.id, /^[a-z0-9][a-z0-9._-]*$/);
     for (const key of ['manifest', 'worker', 'ui']) assert.ok(fs.existsSync(path.join(ROOT, pkg.paperclipPlugin[key])), `paperclipPlugin.${key} exists`);
