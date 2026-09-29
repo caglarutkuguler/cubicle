@@ -33,6 +33,8 @@ A bare array of agents is accepted too.
 | `status` | yes | One of `running`, `idle`, `error`, `paused`, `waiting`. Aliases: `working`/`busy`/`active` → running; `done`/`finished` → idle; `failed` → error; `sleeping`/`stopped`/`offline` → paused; `blocked`/`needs_input`/`permission` → waiting. Unknown values count as idle. |
 | `task` | no | A string, or `{ "id", "title", "url" }`. Shown in the bubble while typing and on the card; `url` makes it a link. |
 | `error` | no | Text shown on the card when `status` is `error`. |
+| `parent` | no | The `id` of the agent that started this one (a subagent). When it appears, an envelope flies from the parent's desk to it. |
+| `recent` | no | The last steps, oldest first: `[[startedAtMs, "Bash: npm test", durationMs], ...]` (duration optional while a step runs). Shown as "Last steps" on the card; at most 10 are kept, and `--redact` cuts each to the tool name. |
 | `since` | no | Creation timestamp (any sortable value). Decides desk order; defaults to array order. |
 | `company` | no | Top-level; shown in the header. |
 

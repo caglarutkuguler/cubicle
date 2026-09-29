@@ -6,7 +6,9 @@
       "tr": "Askerî (HD)",
       "de": "Militär (HD)",
       "es": "Militar (HD)",
-      "fr": "Militaire (HD)"
+      "fr": "Militaire (HD)",
+      "zh": "军事（高清）",
+      "ar": "عسكري (عالي الدقة)"
     },
     "options": [
       {
@@ -16,7 +18,9 @@
           "tr": "Kuvvet",
           "de": "Teilstreitkraft",
           "es": "Rama",
-          "fr": "Armée"
+          "fr": "Armée",
+          "zh": "军种",
+          "ar": "الفرع"
         },
         "values": [
           [
@@ -26,7 +30,9 @@
               "tr": "Kara Kuvvetleri",
               "de": "Heer",
               "es": "Ejército de Tierra",
-              "fr": "Armée de terre"
+              "fr": "Armée de terre",
+              "zh": "陆军",
+              "ar": "القوات البرية"
             }
           ],
           [
@@ -36,7 +42,9 @@
               "tr": "Hava Kuvvetleri",
               "de": "Luftwaffe",
               "es": "Ejército del Aire",
-              "fr": "Armée de l’air"
+              "fr": "Armée de l’air",
+              "zh": "空军",
+              "ar": "القوات الجوية"
             }
           ],
           [
@@ -46,7 +54,9 @@
               "tr": "Deniz Kuvvetleri",
               "de": "Marine",
               "es": "Armada",
-              "fr": "Marine nationale"
+              "fr": "Marine nationale",
+              "zh": "海军",
+              "ar": "القوات البحرية"
             }
           ],
           [
@@ -56,7 +66,9 @@
               "tr": "Müşterek Kuvvetler",
               "de": "Gemeinsame Streitkräfte",
               "es": "Fuerzas conjuntas",
-              "fr": "Forces interarmées"
+              "fr": "Forces interarmées",
+              "zh": "联合部队",
+              "ar": "القوات المشتركة"
             }
           ]
         ]
@@ -70,7 +82,9 @@
       "tr": "Holding (HD)",
       "de": "Holding-Zentrale (HD)",
       "es": "Sede del holding (HD)",
-      "fr": "Siège du holding (HD)"
+      "fr": "Siège du holding (HD)",
+      "zh": "集团总部（高清）",
+      "ar": "مقر الشركة القابضة (عالي الدقة)"
     },
     "options": [
       {
@@ -80,7 +94,9 @@
           "tr": "Manzara",
           "de": "Aussicht",
           "es": "Vista",
-          "fr": "Vue"
+          "fr": "Vue",
+          "zh": "景观",
+          "ar": "المنظر"
         },
         "values": [
           [
@@ -90,7 +106,9 @@
               "tr": "Şehir",
               "de": "Stadt",
               "es": "Ciudad",
-              "fr": "Ville"
+              "fr": "Ville",
+              "zh": "城市",
+              "ar": "المدينة"
             }
           ],
           [
@@ -100,7 +118,9 @@
               "tr": "Deniz",
               "de": "Meer",
               "es": "Mar",
-              "fr": "Mer"
+              "fr": "Mer",
+              "zh": "海",
+              "ar": "البحر"
             }
           ]
         ]
@@ -114,7 +134,9 @@
       "tr": "Plaza ofisi (HD)",
       "de": "Büro im Hochhaus (HD)",
       "es": "Oficina en torre (HD)",
-      "fr": "Bureau en tour (HD)"
+      "fr": "Bureau en tour (HD)",
+      "zh": "写字楼（高清）",
+      "ar": "مكتب في برج (عالي الدقة)"
     },
     "options": [
       {
@@ -124,7 +146,9 @@
           "tr": "Manzara",
           "de": "Aussicht",
           "es": "Vista",
-          "fr": "Vue"
+          "fr": "Vue",
+          "zh": "景观",
+          "ar": "المنظر"
         },
         "values": [
           [
@@ -134,7 +158,9 @@
               "tr": "Şehir",
               "de": "Stadt",
               "es": "Ciudad",
-              "fr": "Ville"
+              "fr": "Ville",
+              "zh": "城市",
+              "ar": "المدينة"
             }
           ],
           [
@@ -144,7 +170,9 @@
               "tr": "Deniz",
               "de": "Meer",
               "es": "Mar",
-              "fr": "Mer"
+              "fr": "Mer",
+              "zh": "海",
+              "ar": "البحر"
             }
           ]
         ]
@@ -158,7 +186,9 @@
       "tr": "Depo (HD)",
       "de": "Lager (HD)",
       "es": "Almacén (HD)",
-      "fr": "Entrepôt (HD)"
+      "fr": "Entrepôt (HD)",
+      "zh": "仓库（高清）",
+      "ar": "مستودع (عالي الدقة)"
     },
     "options": []
   },
@@ -169,7 +199,9 @@
       "tr": "Fabrika (HD)",
       "de": "Fabrik (HD)",
       "es": "Fábrica (HD)",
-      "fr": "Usine (HD)"
+      "fr": "Usine (HD)",
+      "zh": "工厂（高清）",
+      "ar": "مصنع (عالي الدقة)"
     },
     "options": [
       {
@@ -179,7 +211,9 @@
           "tr": "Üretim hattı",
           "de": "Fertigungslinie",
           "es": "Línea de producción",
-          "fr": "Ligne de production"
+          "fr": "Ligne de production",
+          "zh": "生产线",
+          "ar": "خط الإنتاج"
         },
         "values": [
           [
@@ -189,7 +223,9 @@
               "tr": "Otomotiv",
               "de": "Karosserien",
               "es": "Carrocerías",
-              "fr": "Carrosseries"
+              "fr": "Carrosseries",
+              "zh": "汽车车身",
+              "ar": "هياكل السيارات"
             }
           ],
           [
@@ -199,7 +235,9 @@
               "tr": "Şişeleme",
               "de": "Abfüllung",
               "es": "Embotellado",
-              "fr": "Embouteillage"
+              "fr": "Embouteillage",
+              "zh": "灌装",
+              "ar": "التعبئة"
             }
           ]
         ]
@@ -213,7 +251,9 @@
       "tr": "Uzay üssü (HD)",
       "de": "Raumbasis (HD)",
       "es": "Base espacial (HD)",
-      "fr": "Base spatiale (HD)"
+      "fr": "Base spatiale (HD)",
+      "zh": "太空基地（高清）",
+      "ar": "قاعدة فضائية (عالي الدقة)"
     },
     "options": [
       {
@@ -223,7 +263,9 @@
           "tr": "Üs",
           "de": "Basis",
           "es": "Base",
-          "fr": "Base"
+          "fr": "Base",
+          "zh": "基地",
+          "ar": "القاعدة"
         },
         "values": [
           [
@@ -233,7 +275,9 @@
               "tr": "Yörünge",
               "de": "Orbit",
               "es": "Órbita",
-              "fr": "Orbite"
+              "fr": "Orbite",
+              "zh": "轨道",
+              "ar": "المدار"
             }
           ],
           [
@@ -243,7 +287,9 @@
               "tr": "Mars",
               "de": "Mars",
               "es": "Marte",
-              "fr": "Mars"
+              "fr": "Mars",
+              "zh": "火星",
+              "ar": "المريخ"
             }
           ]
         ]

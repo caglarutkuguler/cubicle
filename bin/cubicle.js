@@ -185,6 +185,12 @@ function shapeFeed(data) {
     }
     if (a.taskUrl && !REDACT) r.taskUrl = a.taskUrl;
     if (a.error) r.error = REDACT ? 'error' : a.error;
+    if (a.parent) r.parent = String(a.parent);
+    // The last few steps: [startedAt ms, summary, duration ms?]. Redacted to the tool name.
+    if (Array.isArray(a.recent)) {
+      r.recent = a.recent.filter((x) => Array.isArray(x) && Number.isFinite(x[0])).slice(-10)
+        .map(([t, text, d]) => [t, REDACT ? toolOnly(text) : String(text).slice(0, 100), ...(Number.isFinite(d) ? [d] : [])]);
+    }
     return r;
   });
   return Array.isArray(data) ? agents : { ...pick(data, ['company']), agents };

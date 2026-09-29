@@ -17,7 +17,7 @@ Your agents get a desk. When one starts working it walks over, sits down and sta
 - **Themes.** The classic pixel office, or HD rooms: a holding HQ, a plaza office, a warehouse, a factory, a space base and a military operations room. Pick one from the ⚙ menu; a theme is one file anyone can add.
 - **Your people, your brand.** Give any agent a real face from a photo (a wizard crops the head), a hairstyle, a skirt or heels; put your logo on the wall.
 - **Tells you when you're needed.** Optional desktop notification and sound when an agent raises its hand, and a 30-second video recording of the office for sharing.
-- **English, Turkish, German, Spanish and French UI**, picked from your browser language or with `?lang=xx`.
+- **English, Turkish, German, Spanish, French, Chinese and Arabic UI** (right to left), picked from your browser language or with `?lang=xx`.
 
 ## Quick start
 
@@ -84,7 +84,7 @@ node bin/cubicle.js            # add --source … as above
 URL parameters:
 
 - `?company=PREFIX` opens a specific Paperclip company (for example `?company=MEG`). With several companies, a picker also appears in the header.
-- `?lang=en`, `tr`, `de`, `es` or `fr` sets the language.
+- `?lang=en`, `tr`, `de`, `es`, `fr`, `zh` or `ar` sets the language.
 - `?demo` shows fake agents.
 - `?theme=military&branch=land` picks a theme and its options (listed in [`public/themes/index.json`](public/themes/index.json)). The same choices are in the ⚙ menu, which remembers them per browser and copies a link that carries them, so a kiosk always opens the same way.
 - `?kiosk` fills the screen with the office for a TV or a second monitor (run the server with `--redact` if that screen is shared): cards and footer hidden, names and bubbles scale with the screen, cursor hidden. Combined with the auto-updater, a wall display picks up new versions by itself.
@@ -120,6 +120,15 @@ Themes change only how the office is drawn; movement, bubbles, cards and the dat
 Each card below the office links to the agent's current task when the source provides a link (Paperclip issues do), and shows the agent's spend this month when Paperclip reports one (amber from 80 % of the budget, red at 100 %).
 
 When a Paperclip issue moves from one agent to another, both walk to the lounge table for a few seconds and the one handing over says which issue it passes on.
+
+## Watching closely
+
+- **Click an agent** (or its name on a card) to follow it: the office zooms in, keeps it in the middle, and a panel shows its task, spend and last steps. Scroll or use the + and − buttons to zoom, drag to look around, double-click or Esc to go back.
+- **Icons in the bubbles** say what kind of step it is: ✏️ editing, 📖 reading, ▶ running a command, 🔎 searching, 🌐 on the web, 👥 starting a subagent.
+- **Last steps.** For Claude Code, Codex and Gemini CLI, each card lists the last few tool calls with how long ago and how long they took.
+- **Envelopes** fly from desk to desk when a Paperclip issue changes hands or a session starts a subagent.
+- People **walk around desks** and through the doorway instead of through the furniture, and two agents on a break sometimes chat.
+- After an update, a small note links to what changed.
 
 ## Faces, looks and your logo
 

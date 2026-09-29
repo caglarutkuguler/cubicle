@@ -147,6 +147,36 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { console.log = log; fs.rmSync(dir, { recursive: true, force: true }); }
   }
 
+  // the hook keeps the last steps with their duration; the server passes them on, redacted if asked
+  {
+    const { apply: hookApply } = require('../bin/cubicle-hook.js');
+    let f = { company: 'C', agents: [] };
+    f = hookApply(f, { session_id: 'r1', cwd: '/x/app', hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 'npm test' } });
+    f = hookApply(f, { session_id: 'r1', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'npm test' } });
+    f = hookApply(f, { session_id: 'r1', hook_event_name: 'PreToolUse', tool_name: 'Edit', tool_input: { file_path: '/x/app/a.ts' } });
+    for (let i = 0; i < 12; i++) f = hookApply(f, { session_id: 'r1', hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: `/x/f${i}.ts` } });
+    const r = f.agents[0].recent;
+    assert.strictEqual(r.length, 8, 'only the last few steps are kept');
+    assert.strictEqual(r[r.length - 1][1], 'Read f11.ts');
+    let g = hookApply({ company: 'C', agents: [] }, { session_id: 'r2', cwd: '/x/app', hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 'ls' } });
+    g = hookApply(g, { session_id: 'r2', hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'ls' } });
+    assert.strictEqual(g.agents[0].recent[0].length, 3, 'a finished step has a duration');
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-steps-'));
+    const feedFile = path.join(dir, 'f.json');
+    fs.writeFileSync(feedFile, JSON.stringify({ agents: [{ id: 's', name: 'app', status: 'running', parent: 'p1', recent: [[1, 'Bash: curl -H "Authorization: x" https://secret', 900], [2, 'Edit /secret/a.ts'], ['bad']] }] }));
+    await withServer(['--source', feedFile], async (base) => {
+      const a = JSON.parse((await get(`${base}/api/feed/0`)).body).agents[0];
+      assert.strictEqual(a.parent, 'p1'); assert.strictEqual(a.recent.length, 2); assert.strictEqual(a.recent[0][2], 900);
+    });
+    await withServer(['--source', feedFile, '--redact'], async (base) => {
+      const body = (await get(`${base}/api/feed/0`)).body;
+      assert.ok(!body.includes('secret') && !body.includes('Authorization'), 'redact strips step details');
+      assert.deepStrictEqual(JSON.parse(body).agents[0].recent.map((x) => x[1]), ['Bash', 'Edit']);
+    });
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
   // Codex CLI and Gemini CLI through the same hook (#3)
   {
     const fs = require('fs'); const os = require('os');
@@ -517,7 +547,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       }
       assert.ok(block.summary(3, 1).includes('3') && block.needYou(2).includes('2'));
     }
-    assert.ok(['en', 'tr', 'de', 'es', 'fr'].every((c) => STR[c]));
+    assert.ok(['en', 'tr', 'de', 'es', 'fr', 'zh', 'ar'].every((c) => STR[c]));
   }
 
   console.log('ok');

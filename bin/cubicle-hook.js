@@ -90,6 +90,7 @@ function applySubagent(feed, agents, ev, now) {
     case 'PostToolUse':
       a = a || fresh();
       Object.assign(a, { status: 'running', task: summarize(ev), error: null });
+      remember(a, ev, now);
       break;
     case 'PermissionRequest':
       a = a || fresh();
@@ -142,6 +143,7 @@ function apply(feed, ev, runtime = 'claude') {
     case 'PreCompact':
       a = a || { id, since: now, name, role };
       Object.assign(a, { status: 'running', task: ev.hook_event_name === 'PreCompact' ? 'compacting context' : summarize(ev), error: null });
+      if (ev.hook_event_name !== 'PreCompact') remember(a, ev, now);
       break;
     case 'PermissionRequest':
       a = a || { id, since: now, name, role };
@@ -168,6 +170,19 @@ function apply(feed, ev, runtime = 'claude') {
   a.updated = now;
   if (!agents.includes(a)) agents.push(a);
   return { ...feed, agents };
+}
+
+// The last steps an agent took, for its card: [startedAt, summary, duration once it finished].
+const RECENT = 8;
+function remember(a, ev, now) {
+  const text = summarize(ev);
+  const list = Array.isArray(a.recent) ? a.recent : [];
+  if (ev.hook_event_name === 'PreToolUse') list.push([now, text]);
+  else {
+    const open = [...list].reverse().find((x) => x[1] === text && x.length === 2);
+    if (open) open.push(now - open[0]); else list.push([now, text]);
+  }
+  a.recent = list.slice(-RECENT);
 }
 
 const ASKS_USER = new Set(['permission_prompt', 'agent_needs_input', 'elicitation_dialog', 'elicitation_url_dialog', 'ToolPermission']);

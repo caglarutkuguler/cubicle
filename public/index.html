@@ -86,6 +86,25 @@
   #looks .foot .note { margin-right:auto; max-width:300px; }
   #looks .drop { border:1px dashed var(--line); border-radius:8px; padding:8px; }
   #looks .drop.over { border-color:#9ec5ff; }
+  #view { position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
+  #stage.zoomed { cursor:grab; }
+  #stage.zoomed.panning { cursor:grabbing; }
+  #detail { position:absolute; top:10px; left:10px; z-index:3; width:min(300px, 60%); max-height:calc(100% - 20px); overflow:auto; background:rgba(34,37,54,.96); border:1px solid var(--line); border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  #detail .x { float:right; background:none; border:0; color:var(--muted); cursor:pointer; font-size:14px; }
+  #zoomui { position:absolute; right:8px; bottom:8px; z-index:3; display:flex; gap:4px; }
+  #zoomui button { background:rgba(34,37,54,.9); color:var(--text); border:1px solid var(--line); border-radius:6px; width:28px; height:26px; cursor:pointer; font:inherit; }
+  body.kiosk #detail, body.kiosk #zoomui, body.kiosk #news { display:none !important; }
+  .steps { margin-top:6px; font-size:12px; }
+  .steps summary { cursor:pointer; color:var(--muted); }
+  .steps ol { margin:4px 0 0; padding-inline-start:18px; }
+  .steps li { color:var(--text); }
+  .steps li span { color:var(--muted); }
+  .card b.pick { cursor:pointer; }
+  #news { position:fixed; right:16px; bottom:16px; z-index:6; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:10px 14px; box-shadow:0 8px 24px rgba(0,0,0,.35); max-width:320px; }
+  #news button { background:none; border:0; color:var(--muted); cursor:pointer; margin-inline-start:8px; }
+  [dir="rtl"] .card .edit { margin-left:0; margin-right:auto; }
+  [dir="rtl"] #settings { right:auto; left:0; }
+  [dir="rtl"] #news { right:auto; left:16px; }
   footer { color:var(--muted); font-size:12px; margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 </style>
 </head>
@@ -102,9 +121,14 @@
   </header>
   <div id="banner"></div>
   <div id="stage">
-    <canvas id="c" width="352" height="208"></canvas>
-    <div id="labels"></div>
+    <div id="view">
+      <canvas id="c" width="352" height="208"></canvas>
+      <div id="labels"></div>
+    </div>
+    <div id="detail" hidden></div>
+    <div id="zoomui" hidden><button type="button" data-z="in" aria-label="+">+</button><button type="button" data-z="out" aria-label="−">−</button><button type="button" data-z="reset" aria-label="1:1">⟲</button></div>
   </div>
+  <div id="news" hidden></div>
   <div id="cards"></div>
   <dialog id="looks"></dialog>
   <footer>
@@ -144,6 +168,9 @@
       lookServer: 'Saved on the machine running Cubicle, so every screen of this office shows it.', lookLocal: 'Saved in this browser. Export it to use it in another one.',
       lookDenied: 'Only a browser on the machine running Cubicle can change the appearance. Saved in this browser for now.',
       needsYouTitle: (n) => `${n} needs you`,
+      lastSteps: 'Last steps', whatsNew: (v) => `Cubicle was updated to ${v}.`, whatsNewLink: "What's new",
+      pairs: [['Did you merge it?', 'Tests first. Always tests first.'], ['Coffee or tea?', 'Whatever keeps the tokens flowing.'], ['Who broke the build?', 'Not me, I was in the lounge.'],
+        ['Busy day?', 'Forty tool calls and counting.'], ['Any news from the board?', 'Still waiting on an approval.'], ['Nice desk.', 'It has two monitors now!']],
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
@@ -176,6 +203,9 @@
       lookServer: 'Cubicle’ın çalıştığı makinede saklanır; bu ofisi gösteren her ekran aynı görünümü görür.', lookLocal: 'Bu tarayıcıda saklanır. Başka bir tarayıcıda kullanmak için dışa aktarın.',
       lookDenied: 'Görünümü yalnızca Cubicle’ın çalıştığı makinedeki bir tarayıcı değiştirebilir. Şimdilik bu tarayıcıda saklandı.',
       needsYouTitle: (n) => `${n} sizi bekliyor`,
+      lastSteps: 'Son adımlar', whatsNew: (v) => `Cubicle ${v} sürümüne güncellendi.`, whatsNewLink: 'Yenilikler',
+      pairs: [['Merge ettin mi?', 'Önce testler. Her zaman önce testler.'], ['Kahve mi çay mı?', 'Tokenları akıtan hangisiyse.'], ['Build’i kim bozdu?', 'Ben değilim, moladaydım.'],
+        ['Yoğun gün mü?', 'Kırk araç çağrısı, sayıyorum.'], ['Yönetimden haber var mı?', 'Hâlâ bir onay bekliyorum.'], ['Masan güzelmiş.', 'Artık iki monitörü var!']],
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
@@ -208,6 +238,9 @@
       lookServer: 'Auf dem Rechner gespeichert, auf dem Cubicle läuft, damit jeder Bildschirm dieses Büros es zeigt.', lookLocal: 'In diesem Browser gespeichert. Exportieren, um es in einem anderen zu nutzen.',
       lookDenied: 'Nur ein Browser auf dem Rechner, auf dem Cubicle läuft, kann das Aussehen ändern. Vorerst in diesem Browser gespeichert.',
       needsYouTitle: (n) => `${n} braucht dich`,
+      lastSteps: 'Letzte Schritte', whatsNew: (v) => `Cubicle wurde auf ${v} aktualisiert.`, whatsNewLink: 'Was ist neu',
+      pairs: [['Hast du es gemergt?', 'Erst die Tests. Immer erst die Tests.'], ['Kaffee oder Tee?', 'Hauptsache, die Tokens fließen.'], ['Wer hat den Build kaputt gemacht?', 'Ich nicht, ich war in der Pause.'],
+        ['Viel los heute?', 'Vierzig Tool-Aufrufe und es werden mehr.'], ['Neues vom Vorstand?', 'Ich warte noch auf eine Freigabe.'], ['Schöner Schreibtisch.', 'Jetzt mit zwei Monitoren!']],
       chatter: ['☕', 'Kaffeepause', '…', 'hmm', 'was kommt jetzt?'],
       hint: 'Arbeitende Agenten sitzen am Schreibtisch und tippen, freie hängen in der Lounge ab. Aktualisiert alle 4 s.',
       demo: 'Demo-Modus mit erfundenen Agenten. Entferne <code>?demo</code> aus der Adresse, um deine eigene Paperclip-Firma zu sehen.',
@@ -240,6 +273,9 @@
       lookServer: 'Guardado en el equipo donde corre Cubicle, así cada pantalla de esta oficina lo muestra.', lookLocal: 'Guardado en este navegador. Expórtalo para usarlo en otro.',
       lookDenied: 'Solo un navegador en el equipo donde corre Cubicle puede cambiar la apariencia. Guardado en este navegador por ahora.',
       needsYouTitle: (n) => `${n} te necesita`,
+      lastSteps: 'Últimos pasos', whatsNew: (v) => `Cubicle se actualizó a la ${v}.`, whatsNewLink: 'Novedades',
+      pairs: [['¿Ya lo fusionaste?', 'Primero las pruebas. Siempre primero las pruebas.'], ['¿Café o té?', 'Lo que mantenga los tokens fluyendo.'], ['¿Quién rompió el build?', 'Yo no, estaba en el descanso.'],
+        ['¿Día ajetreado?', 'Cuarenta llamadas a herramientas y contando.'], ['¿Noticias de la dirección?', 'Sigo esperando una aprobación.'], ['Bonito escritorio.', '¡Ahora tiene dos monitores!']],
       chatter: ['☕', 'pausa para el café', '…', 'mmm', '¿y ahora qué?'],
       hint: 'Los agentes que trabajan se sientan en su mesa y teclean; los libres pasan el rato en la sala de descanso. Se actualiza cada 4 s.',
       demo: 'Modo demo con agentes ficticios. Quita <code>?demo</code> de la dirección para ver tu propia empresa de Paperclip.',
@@ -272,10 +308,83 @@
       lookServer: 'Enregistré sur la machine où tourne Cubicle : chaque écran de ce bureau l’affiche.', lookLocal: 'Enregistré dans ce navigateur. Exportez-le pour l’utiliser ailleurs.',
       lookDenied: 'Seul un navigateur sur la machine où tourne Cubicle peut changer l’apparence. Enregistré dans ce navigateur pour l’instant.',
       needsYouTitle: (n) => `${n} a besoin de vous`,
+      lastSteps: 'Dernières étapes', whatsNew: (v) => `Cubicle est passé en ${v}.`, whatsNewLink: 'Nouveautés',
+      pairs: [['Tu l’as fusionné ?', 'D’abord les tests. Toujours les tests d’abord.'], ['Café ou thé ?', 'Ce qui fait couler les tokens.'], ['Qui a cassé le build ?', 'Pas moi, j’étais en pause.'],
+        ['Grosse journée ?', 'Quarante appels d’outils, et ça continue.'], ['Des nouvelles de la direction ?', 'J’attends encore une validation.'], ['Joli bureau.', 'Il a deux écrans maintenant !']],
       chatter: ['☕', 'pause café', '…', 'hum', 'et maintenant ?'],
       hint: 'Les agents au travail sont assis à leur bureau et tapent ; les agents libres traînent dans le salon. Actualisé toutes les 4 s.',
       demo: 'Mode démo avec des agents fictifs. Retirez <code>?demo</code> de l’adresse pour voir votre propre entreprise Paperclip.',
       hosted: 'Ceci est la démo en ligne avec des agents fictifs. Pour voir vos propres agents, lancez <code>npx @caglarutkuguler/cubicle</code> et ouvrez <code>http://127.0.0.1:3200</code>, ou installez-le comme plugin Paperclip.',
+    },
+    zh: {
+      connecting: '正在连接…', unreachable: '无法连接 Paperclip，正在重试…',
+      denied: (c) => `Paperclip 拒绝了访问（${c}）。如果 Paperclip 需要登录，请设置 PAPERCLIP_TOKEN，或检查密钥。`, feedUnreachable: '无法读取代理数据，正在重试…',
+      empty: '还没有代理。', emptyClaude: '还没有 Claude Code 会话。在任意文件夹里运行 <code>claude</code>，它就会走进来。',
+      noCompany: '还没有公司。', summary: (n, r) => `${n} 个代理 · ${r} 个在工作`,
+      running: '工作中', idle: '空闲', error: '出错', paused: '已暂停', waiting: '需要你', noTask: '没有分配的未完成任务',
+      done: '✓ 完成', errBubble: '⚠ 出错', waitBubble: '✋ 需要你',
+      asks: '正在等你回答：', needYou: (n) => `${n} 个需要你`, redacted: '🔒 详情已隐藏',
+      settings: '设置', theme: '主题', copyLink: '复制带这些设置的链接', copied: '已复制 ✓',
+      settingsNote: '保存在此浏览器中。链接可以把设置带到另一块屏幕（电视请加 ?kiosk）。',
+      spend: (a, b) => `本月 ${a} / ${b}`, spendNoBudget: (a) => `本月 ${a}`, spendTitle: 'Paperclip 报告的本月花费',
+      handoff: (id, to) => `${id} → ${to}`, replay: '回放',
+      notify: '代理需要我时显示桌面通知', notifyBlocked: '浏览器设置中已阻止此页面的通知。',
+      sound: '声音', soundOff: '关闭', soundNeed: '代理需要我时', soundAll: '需要我、完成和出错',
+      fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
+      record: '录制 30 秒视频', recording: (n) => `录制中… ${n} 秒`, recordSaved: '视频已保存 ✓', recordUnsupported: '此浏览器无法录制办公室。',
+      logo: '公司标志', logoPick: '上传标志…', logoRemove: '移除标志',
+      exportLooks: '导出外观', importLooks: '导入外观…',
+      editLook: '更改外观', looks: '外观', photo: '照片头像', photoPick: '选择图片…',
+      photoHint: '拖动图片移动，滚动或使用滑块缩放，直到脸部填满圆圈。', zoom: '缩放',
+      findFace: '查找人脸', noFace: '没有找到人脸：请手动放置圆圈。', photoRemove: '移除照片',
+      hair: '头发', hairShort: '短发', hairLong: '长发', hairBun: '发髻', hairPony: '马尾', hairCurly: '卷发', hairBald: '光头',
+      hairColor: '发色', skin: '肤色', color: '颜色', clothes: '服装', trousers: '长裤', skirt: '裙子', shoes: '鞋子', flats: '平底', heels: '高跟',
+      save: '保存', cancel: '取消', resetLook: '恢复默认',
+      lookServer: '保存在运行 Cubicle 的电脑上，这个办公室的每块屏幕都会显示。', lookLocal: '保存在此浏览器中。导出后可在其他浏览器使用。',
+      lookDenied: '只有运行 Cubicle 的电脑上的浏览器才能更改外观。暂时保存在此浏览器中。',
+      needsYouTitle: (n) => `${n} 需要你`,
+      lastSteps: '最近步骤', whatsNew: (v) => `Cubicle 已更新到 ${v}。`, whatsNewLink: '更新内容',
+      pairs: [['合并了吗？', '先跑测试。永远先跑测试。'], ['咖啡还是茶？', '能让 token 流动的都行。'], ['谁把构建弄坏了？', '不是我，我在休息区。'],
+        ['今天忙吗？', '已经四十次工具调用了。'], ['董事会有消息吗？', '还在等一个批准。'], ['桌子不错。', '现在有两台显示器了！']],
+      chatter: ['☕', '喝杯咖啡', '…', '嗯', '下一个是什么？'],
+      hint: '工作中的代理坐在桌前打字，空闲的代理在休息区闲逛。每 4 秒刷新一次。',
+      demo: '演示模式：虚构的代理。从地址中去掉 <code>?demo</code> 即可查看你自己的 Paperclip 公司。',
+      hosted: '这是使用虚构代理的在线演示。要查看你自己的代理，请运行 <code>npx @caglarutkuguler/cubicle</code> 并打开 <code>http://127.0.0.1:3200</code>，或将其安装为 Paperclip 插件。',
+    },
+    ar: {
+      connecting: 'جارٍ الاتصال…', unreachable: 'تعذّر الوصول إلى Paperclip، جارٍ إعادة المحاولة…',
+      denied: (c) => `رفض Paperclip الوصول (${c}). اضبط PAPERCLIP_TOKEN إذا كان Paperclip يتطلب تسجيل الدخول، أو تحقّق من المفتاح.`, feedUnreachable: 'تعذّرت قراءة بيانات الوكلاء، جارٍ إعادة المحاولة…',
+      empty: 'لا يوجد وكلاء بعد.', emptyClaude: 'لا توجد جلسات Claude Code بعد. شغّل <code>claude</code> في أي مجلد وسيدخل المكتب.',
+      noCompany: 'لا توجد شركة بعد.', summary: (n, r) => `${n} وكلاء · ${r} يعملون`,
+      running: 'يعمل', idle: 'متفرغ', error: 'خطأ', paused: 'متوقف', waiting: 'يحتاجك', noTask: 'لا توجد مهمة مفتوحة مسندة',
+      done: '✓ تم', errBubble: '⚠ خطأ', waitBubble: '✋ يحتاجك',
+      asks: 'ينتظر إجابتك على', needYou: (n) => `${n} يحتاجونك`, redacted: '🔒 التفاصيل مخفية',
+      settings: 'الإعدادات', theme: 'السمة', copyLink: 'نسخ رابط بهذه الإعدادات', copied: 'تم النسخ ✓',
+      settingsNote: 'تُحفظ في هذا المتصفح. الرابط ينقلها إلى شاشة أخرى (أضف ?kiosk للتلفاز).',
+      spend: (a, b) => `${a} / ${b} هذا الشهر`, spendNoBudget: (a) => `${a} هذا الشهر`, spendTitle: 'إنفاق هذا الشهر كما يذكره Paperclip',
+      handoff: (id, to) => `${id} ← ${to}`, replay: 'إعادة تشغيل',
+      notify: 'إشعار على سطح المكتب عندما يحتاجني وكيل', notifyBlocked: 'الإشعارات محظورة لهذه الصفحة في إعدادات المتصفح.',
+      sound: 'الصوت', soundOff: 'إيقاف', soundNeed: 'عندما يحتاجني وكيل', soundAll: 'يحتاجني، انتهى، وأخطاء',
+      fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
+      record: 'تسجيل فيديو مدته 30 ثانية', recording: (n) => `جارٍ التسجيل… ${n} ث`, recordSaved: 'تم حفظ الفيديو ✓', recordUnsupported: 'لا يستطيع هذا المتصفح تسجيل المكتب.',
+      logo: 'شعار الشركة', logoPick: 'رفع شعار…', logoRemove: 'إزالة الشعار',
+      exportLooks: 'تصدير المظهر', importLooks: 'استيراد المظهر…',
+      editLook: 'تغيير المظهر', looks: 'المظهر', photo: 'رأس من صورة', photoPick: 'اختر صورة…',
+      photoHint: 'اسحب الصورة لتحريكها، واستخدم عجلة الفأرة أو المنزلق للتكبير حتى يملأ الوجه الدائرة.', zoom: 'تكبير',
+      findFace: 'ابحث عن الوجه', noFace: 'لم يُعثر على وجه: ضع الدائرة يدويًا.', photoRemove: 'إزالة الصورة',
+      hair: 'الشعر', hairShort: 'قصير', hairLong: 'طويل', hairBun: 'كعكة', hairPony: 'ذيل حصان', hairCurly: 'مجعد', hairBald: 'أصلع',
+      hairColor: 'لون الشعر', skin: 'البشرة', color: 'اللون', clothes: 'الملابس', trousers: 'بنطال', skirt: 'تنورة', shoes: 'الأحذية', flats: 'مسطح', heels: 'كعب عالٍ',
+      save: 'حفظ', cancel: 'إلغاء', resetLook: 'العودة إلى الافتراضي',
+      lookServer: 'يُحفظ على الجهاز الذي يشغّل Cubicle، فتعرضه كل شاشات هذا المكتب.', lookLocal: 'يُحفظ في هذا المتصفح. صدّره لاستخدامه في متصفح آخر.',
+      lookDenied: 'لا يغيّر المظهر إلا متصفح على الجهاز الذي يشغّل Cubicle. حُفظ في هذا المتصفح مؤقتًا.',
+      needsYouTitle: (n) => `${n} يحتاجك`,
+      lastSteps: 'آخر الخطوات', whatsNew: (v) => `تم تحديث Cubicle إلى ${v}.`, whatsNewLink: 'ما الجديد',
+      pairs: [['هل دمجته؟', 'الاختبارات أولًا. دائمًا الاختبارات أولًا.'], ['قهوة أم شاي؟', 'أي شيء يُبقي الرموز تتدفق.'], ['من كسر البناء؟', 'لست أنا، كنت في الاستراحة.'],
+        ['يوم مزدحم؟', 'أربعون استدعاءً للأدوات حتى الآن.'], ['أي أخبار من الإدارة؟', 'ما زلت أنتظر موافقة.'], ['مكتب جميل.', 'صار فيه شاشتان الآن!']],
+      chatter: ['☕', 'استراحة قهوة', '…', 'همم', 'ما التالي؟'],
+      hint: 'الوكلاء العاملون يجلسون إلى مكاتبهم ويكتبون، والمتفرغون يتجولون في الاستراحة. يُحدَّث كل 4 ثوانٍ.',
+      demo: 'وضع العرض: وكلاء وهميون. احذف <code>?demo</code> من العنوان لمشاهدة شركتك على Paperclip.',
+      hosted: 'هذا عرض مستضاف بوكلاء وهميين. لمشاهدة وكلائك، شغّل <code>npx @caglarutkuguler/cubicle</code> وافتح <code>http://127.0.0.1:3200</code>، أو ثبّته كإضافة في Paperclip.',
     },
   };
   const params = new URLSearchParams(location.search);
@@ -284,6 +393,7 @@
   const lang = STR[wantLang] ? wantLang : 'en';
   const L = STR[lang];
   document.documentElement.lang = lang;
+  document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
   // Becomes true in init() as well when the page is served without the Cubicle
   // proxy behind it (e.g. the hosted demo on GitHub Pages).
   let DEMO = params.has('demo');
@@ -404,6 +514,7 @@
             title: a.role || a.title || '', createdAt: String(a.since ?? a.createdAt ?? i).padStart(20, '0'),
             status: STATUS_ALIASES[String(a.status || 'idle').toLowerCase()] || 'idle',
             errorReason: a.error || null, task,
+            parent: a.parent ? `${path}#${a.parent}` : null, recent: Array.isArray(a.recent) ? a.recent : null,
           };
         });
         return { agents, issues: [], label: p.label };
@@ -455,10 +566,12 @@
     if (EMBED) {
       paperclipUrl = location.origin;
       providers = [paperclipProvider()];
+      fetch('/api/plugins/ui-contributions').then((r) => r.json()).then((list) => whatsNew((list.find((x) => x.pluginKey === 'caglarutkuguler.cubicle') || {}).version)).catch(() => {});
     } else if (!DEMO) {
       try {
         const cfg = await getJSON('/config.json');
         redacted = !!cfg.redact;
+        whatsNew(cfg.version);
         if (cfg.replay) replayClock = { ...cfg.replay, loadedAt: Date.now() };
         const list = cfg.sources || [cfg.source === 'feed'
           ? { kind: 'feed', label: cfg.label, path: '/api/feed' }
@@ -587,7 +700,11 @@
         labelsEl.appendChild(el);
         s.el = el;
         sprites.set(a.id, s);
+        // A subagent walks in: its session sends it the work.
+        const parent = a.parent && sprites.get(a.parent);
+        if (synced && parent) sendEnvelope(parent, s, '#dff1ff');
       }
+      s.recent = a.recent || null;
       s.idx = idx;
       s.desk = DESKS[idx % DESKS.length];
       s.name = a.name;
@@ -632,6 +749,7 @@
       from.meetUntil = to.meetUntil = now + 9;
       from.meetSpot = MEET[0]; to.meetSpot = MEET[1];
       setBubble(from, L.handoff(i.identifier, to.name), '', 8);
+      sendEnvelope(from, to);
       setBubble(to, '🤝', '', 8);
     }
   }
@@ -661,16 +779,8 @@
 
   function renderCards() {
     const list = [...sprites.values()].sort((a, b) => a.idx - b.idx);
-    cardsEl.innerHTML = list.map((s) => {
-      const t = s.task;
-      const taskHtml = t ? `${taskLink(t)} ${esc(t.title)}` : `<span style="color:var(--muted)">${L.noTask}</span>`;
-      const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>`
-        : s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">${esc(s.waitReason)}</div>`
-        : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
-      return `<div class="card"><div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b>${esc(s.name)}</b><button type="button" class="edit" data-id="${esc(s.id)}" title="${esc(L.editLook)}" aria-label="${esc(L.editLook)}">✎</button></div>
-        <div class="role">${esc(s.role)}${spendHtml(s)}</div>
-        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}</div>${err}</div>`;
-    }).join('');
+    cardsEl.innerHTML = list.map((s) => `<div class="card">${cardHtml(s)}</div>`).join('');
+    if (cam.follow) renderDetail();
   }
 
   // ---------- movement ----------
@@ -682,7 +792,7 @@
       const free = LOUNGE.map((_, i) => i).filter((i) => !used.has(i));
       if (free.length) s.lounge = free[Math.floor(Math.random() * free.length)];
       s.nextWander = now + 9 + Math.random() * 14;
-      if (Math.random() < 0.35) setBubble(s, L.chatter[Math.floor(Math.random() * L.chatter.length)], '', 3);
+      if (Math.random() < 0.35 && !(Math.random() < 0.5 && smallTalk(s, now))) setBubble(s, L.chatter[Math.floor(Math.random() * L.chatter.length)], '', 3);
     }
     const p = LOUNGE[s.lounge % LOUNGE.length];
     return [p[0] * T, p[1] * T, false];
@@ -690,15 +800,13 @@
 
   function step(s, dt, now) {
     const [tx, ty, atDesk] = targetFor(s, now);
-    // Walk through the doorway between the work area and the lounge
-    const inWork = s.x < 14 * T, toWork = tx < 14 * T;
-    let gx = tx, gy = ty;
-    if (inWork !== toWork) {
-      const doorX = 14 * T + 8, doorY = 7 * T;
-      if (Math.abs(s.x - doorX) > 3 || Math.abs(s.y - doorY) > 3) { gx = doorX; gy = doorY; }
-      else { s.x += inWork ? 6 : -6; }
-    }
-    const dx = gx - s.x, dy = gy - s.y, d = Math.hypot(dx, dy);
+    if (s.pending && now >= s.pending.at) { setBubble(s, s.pending.text, '', 3.2); s.pending = null; }
+    // Walk around desks and through the doorway: a path is planned when the target changes.
+    const key = `${Math.round(tx)},${Math.round(ty)},${DESKS.length}:${CH}:${theme.id}`;
+    if (s.pathKey !== key) { s.path = findPath(s.x, s.y, tx, ty); s.pathKey = key; }
+    let [gx, gy] = s.path && s.path.length ? s.path[0] : [tx, ty];
+    let dx = gx - s.x, dy = gy - s.y, d = Math.hypot(dx, dy);
+    if (d < 0.8 && s.path && s.path.length > 1) { s.path.shift(); [gx, gy] = s.path[0]; dx = gx - s.x; dy = gy - s.y; d = Math.hypot(dx, dy); }
     if (d > 0.8) {
       const m = Math.min(d, 34 * dt);
       s.x += (dx / d) * m; s.y += (dy / d) * m;
@@ -708,6 +816,244 @@
     }
     s.seated = !s.walking && atDesk && Math.hypot(tx - s.x, ty - s.y) < 1.5;
     s.typing = s.seated && s.status === 'running';
+  }
+
+  // ---------- walking: shortest paths around desks and walls ----------
+  // A grid of 8 px cells; desks, the wall and the glass partition are solid, the doorway is not.
+  // Themes may add furniture with obstacles(): [[x0, y0, x1, y1], ...] in office pixels.
+  const CELL = 8;
+  const DEFAULT_OBSTACLES = () => [[16.7 * T, 6.8 * T, 20.9 * T, 8.6 * T], [15.8 * T, 2.2 * T, 20.8 * T, 3.5 * T]];
+  let walk = null;
+  function walkGrid() {
+    const key = `${DESKS.length}:${CH}:${theme.id}`;
+    if (walk && walk.key === key) return walk;
+    const cols = Math.ceil(CW / CELL), rows = Math.ceil(CH / CELL), solid = new Uint8Array(cols * rows);
+    const block = (x0, y0, x1, y1) => {
+      for (let cy = Math.max(0, Math.floor(y0 / CELL)); cy < Math.min(rows, Math.ceil(y1 / CELL)); cy++)
+        for (let cx = Math.max(0, Math.floor(x0 / CELL)); cx < Math.min(cols, Math.ceil(x1 / CELL)); cx++) solid[cy * cols + cx] = 1;
+    };
+    block(0, 0, CW, 2 * T + 4);
+    block(14 * T + 6, 2 * T, 14 * T + 10, 6 * T); block(14 * T + 6, 8 * T, 14 * T + 10, CH);
+    for (const d of DESKS) block(d[0] * T, d[1] * T + 8, d[0] * T + 34, d[1] * T + 21);
+    for (const r of (theme.obstacles ? theme.obstacles({ T, CW, CH }) : DEFAULT_OBSTACLES())) block(...r);
+    return (walk = { key, cols, rows, solid });
+  }
+  // Breadth-first search (8 directions, no cutting corners), then drop the points a straight
+  // walk can skip. Returns waypoints in office pixels ending exactly at the target.
+  function findPath(x0, y0, x1, y1) {
+    const w = walkGrid(), { cols, rows, solid } = w;
+    const cell = (x, y) => Math.max(0, Math.min(cols - 1, Math.floor(x / CELL))) + Math.max(0, Math.min(rows - 1, Math.floor(y / CELL))) * cols;
+    const start = cell(x0, y0), goal = cell(x1, y1);
+    if (start === goal) return [[x1, y1]];
+    const prev = new Int32Array(cols * rows).fill(-1); prev[start] = start;
+    const queue = [start];
+    const free = (i) => i === goal || !solid[i];
+    for (let qi = 0; qi < queue.length; qi++) {
+      const i = queue[qi]; if (i === goal) break;
+      const cx = i % cols, cy = (i / cols) | 0;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [1, -1], [-1, 1], [-1, -1]]) {
+        const nx = cx + dx, ny = cy + dy; if (nx < 0 || ny < 0 || nx >= cols || ny >= rows) continue;
+        const n = ny * cols + nx; if (prev[n] !== -1 || !free(n)) continue;
+        if (dx && dy && (solid[cy * cols + nx] || solid[ny * cols + cx])) continue;
+        prev[n] = i; queue.push(n);
+      }
+    }
+    if (prev[goal] === -1) return [[x1, y1]];          // boxed in: walk straight, as before
+    const cells = []; for (let i = goal; i !== start; i = prev[i]) cells.push(i); cells.reverse();
+    const pts = cells.map((i) => [(i % cols) * CELL + CELL / 2, ((i / cols) | 0) * CELL + CELL / 2]);
+    pts[pts.length - 1] = [x1, y1];
+    // keep only the turns
+    const out = [];
+    for (let k = 0; k < pts.length; k++) {
+      const a = out.length ? out[out.length - 1] : [x0, y0], b = pts[k], c = pts[k + 1];
+      if (!c) { out.push(b); break; }
+      const turn = (b[0] - a[0]) * (c[1] - b[1]) - (b[1] - a[1]) * (c[0] - b[0]);
+      if (Math.abs(turn) > 0.01) out.push(b);
+    }
+    return out;
+  }
+
+  // ---------- envelopes: work passing from one agent to another ----------
+  const envelopes = [];
+  function sendEnvelope(from, to, color = '#fff6d8') {
+    envelopes.push({ x: from.x, y: from.y - 16, to, t0: performance.now() / 1000, color });
+  }
+  function drawEnvelopes(now) {
+    for (let i = envelopes.length - 1; i >= 0; i--) {
+      const e = envelopes[i], p = (now - e.t0) / 1.4;
+      if (p > 1.35 || !sprites.has(e.to.id)) { envelopes.splice(i, 1); continue; }
+      const tx = e.to.x, ty = e.to.y - 16, q = Math.min(1, p), ease = q < 0.5 ? 2 * q * q : 1 - Math.pow(-2 * q + 2, 2) / 2;
+      const x = e.x + (tx - e.x) * ease, y = e.y + (ty - e.y) * ease - Math.sin(q * Math.PI) * Math.min(40, Math.hypot(tx - e.x, ty - e.y) * 0.35);
+      g.save();
+      if (p < 1) {
+        g.translate(x, y); g.rotate(Math.sin(now * 9) * 0.12);
+        g.fillStyle = 'rgba(0,0,0,.25)'; g.fillRect(-3.4, -1.7, 7.2, 5);
+        g.fillStyle = e.color; g.fillRect(-3.6, -2.4, 7.2, 5); g.strokeStyle = '#3a3226'; g.lineWidth = 0.45; g.strokeRect(-3.6, -2.4, 7.2, 5);
+        g.beginPath(); g.moveTo(-3.6, -2.4); g.lineTo(0, 0.4); g.lineTo(3.6, -2.4); g.stroke();
+      } else {
+        const r = (p - 1) * 30; g.globalAlpha = Math.max(0, 1 - (p - 1) / 0.35);
+        g.strokeStyle = '#ffe28a'; g.lineWidth = 0.8;
+        for (let k = 0; k < 6; k++) { const a = k * Math.PI / 3; g.beginPath(); g.moveTo(tx + Math.cos(a) * r * 0.4, ty + Math.sin(a) * r * 0.4); g.lineTo(tx + Math.cos(a) * r, ty + Math.sin(a) * r); g.stroke(); }
+      }
+      g.restore();
+    }
+  }
+
+  // ---------- what an agent is doing, as an icon ----------
+  const TOOL_ICONS = [
+    [/^(edit|multiedit|write|apply_patch|replace|write_file|notebookedit)$/, '✏️'],
+    [/^(read|read_file|read_many_files|view_image|notebookread)$/, '📖'],
+    [/^(bash|shell|run_shell_command|exec_command|exec|killshell|bashoutput)$/, '▶'],
+    [/^(grep|glob|search|search_file_content|list_directory|ls|find)$/, '🔎'],
+    [/^(webfetch|websearch|web_fetch|web_search|google_web_search|fetch)$/, '🌐'],
+    [/^(task|agent)$/, '👥'],
+    [/^(todowrite|update_plan|write_todos)$/, '✅'],
+  ];
+  function toolIcon(t) {
+    if (!t || t.identifier) return '⌨';
+    const word = String(t.title || '').replace(/^allow\s+/, '').split(/[\s:]/)[0].toLowerCase();
+    const hit = TOOL_ICONS.find(([re]) => re.test(word));
+    return hit ? hit[1] : '⌨';
+  }
+
+  // ---------- small talk: two idle agents at the same spot chat for a moment ----------
+  function smallTalk(s, now) {
+    const pairs = L.pairs || [];
+    if (!pairs.length) return false;
+    const mate = [...sprites.values()].find((o) => o !== s && o.status === 'idle' && !o.walking && !o.seated && o.x > 15 * T
+      && Math.hypot(o.x - s.x, o.y - s.y) < 3.2 * T && !(o.bubble && now < o.bubbleUntil) && !o.pending);
+    if (!mate) return false;
+    const [q, a] = pairs[Math.floor(Math.random() * pairs.length)];
+    setBubble(s, q, '', 3.2);
+    mate.pending = { text: a, at: now + 2.4 };
+    return true;
+  }
+
+  // ---------- the last steps, for cards and the detail panel ----------
+  const openSteps = new Set();
+  function ago(ms) {
+    const m = Math.round((Date.now() - ms) / 60000);
+    try { return new Intl.RelativeTimeFormat(lang, { numeric: 'auto', style: 'short' }).format(-m, 'minute'); } catch (_) { return `${m} min`; }
+  }
+  function stepsHtml(s) {
+    if (!s.recent || !s.recent.length) return '';
+    const items = [...s.recent].reverse().map(([t, text, d]) => `<li>${esc(text)} <span>· ${esc(ago(t))}${Number.isFinite(d) ? ` · ${(d / 1000).toFixed(d < 10000 ? 1 : 0)} s` : ''}</span></li>`).join('');
+    return `<details class="steps" data-id="${esc(s.id)}"${openSteps.has(s.id) ? ' open' : ''}><summary>${esc(L.lastSteps)} (${s.recent.length})</summary><ol>${items}</ol></details>`;
+  }
+  cardsEl.addEventListener('toggle', (e) => {
+    const d = e.target; if (!d.dataset || !d.dataset.id) return;
+    if (d.open) openSteps.add(d.dataset.id); else openSteps.delete(d.dataset.id);
+  }, true);
+
+  // ---------- zoom, pan, and following one agent ----------
+  const viewEl = document.getElementById('view'), detailEl = document.getElementById('detail'), zoomUi = document.getElementById('zoomui');
+  const cam = { z: 1, x: 0, y: 0, follow: null };
+  function clampCam() {
+    const w = stageEl.clientWidth, h = stageEl.clientHeight;
+    cam.z = Math.max(1, Math.min(4, cam.z));
+    cam.x = Math.min(0, Math.max(w - w * cam.z, cam.x)); cam.y = Math.min(0, Math.max(h - h * cam.z, cam.y));
+    viewEl.style.transform = cam.z === 1 ? '' : `translate(${cam.x}px, ${cam.y}px) scale(${cam.z})`;
+    stageEl.classList.toggle('zoomed', cam.z > 1);
+  }
+  function zoomAtPoint(z, px, py) {
+    const nz = Math.max(1, Math.min(4, z));
+    cam.x = px - (px - cam.x) * (nz / cam.z); cam.y = py - (py - cam.y) * (nz / cam.z); cam.z = nz; clampCam();
+  }
+  function resetCam() { cam.z = 1; cam.x = cam.y = 0; cam.follow = null; detailEl.hidden = true; clampCam(); }
+  function officePoint(clientX, clientY) {
+    const r = stageEl.getBoundingClientRect(), k = cv.clientWidth / CW;
+    return [((clientX - r.left - cam.x) / cam.z) / k, ((clientY - r.top - cam.y) / cam.z) / k];
+  }
+  function spriteAt(ox, oy) {
+    let best = null, bd = 1e9;
+    for (const s of sprites.values()) {
+      if (Math.abs(s.x - ox) > 8 || oy < s.y - 24 || oy > s.y + 3) continue;
+      const d = Math.abs(s.x - ox) + Math.abs(s.y - 10 - oy); if (d < bd) { bd = d; best = s; }
+    }
+    return best;
+  }
+  function select(s) {
+    cam.follow = s ? s.id : null;
+    if (s && cam.z < 2.2) cam.z = 2.2;
+    renderDetail();
+  }
+  function followCam() {
+    if (!cam.follow) return;
+    const s = sprites.get(cam.follow); if (!s) { select(null); return; }
+    const k = cv.clientWidth / CW, w = stageEl.clientWidth, h = stageEl.clientHeight;
+    const tx = w / 2 - s.x * k * cam.z, ty = h / 2 - (s.y - 10) * k * cam.z;
+    cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12; clampCam();
+  }
+  function cardHtml(s) {
+    const t = s.task;
+    const taskHtml = t ? `${taskLink(t)} ${esc(t.title)}` : `<span style="color:var(--muted)">${L.noTask}</span>`;
+    const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>`
+      : s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">${esc(s.waitReason)}</div>`
+      : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
+    return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${esc(s.id)}">${esc(s.name)}</b><button type="button" class="edit" data-id="${esc(s.id)}" title="${esc(L.editLook)}" aria-label="${esc(L.editLook)}">✎</button></div>
+        <div class="role">${esc(s.role)}${spendHtml(s)}</div>
+        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}</div>${err}${stepsHtml(s)}`;
+  }
+  function renderDetail() {
+    const s = cam.follow && sprites.get(cam.follow);
+    if (!s || KIOSK) { detailEl.hidden = true; return; }
+    detailEl.innerHTML = `<button type="button" class="x" aria-label="${esc(L.cancel)}">✕</button>` + cardHtml(s);
+    detailEl.hidden = false;
+  }
+  detailEl.addEventListener('click', (e) => {
+    if (e.target.closest('.x')) { select(null); return; }
+    const b = e.target.closest('.edit'); if (b) { const s = sprites.get(b.dataset.id); if (s) openLooks(s); }
+  });
+  detailEl.addEventListener('toggle', (e) => { const d = e.target; if (d.dataset && d.dataset.id) { if (d.open) openSteps.add(d.dataset.id); else openSteps.delete(d.dataset.id); } }, true);
+  if (!KIOSK) {
+    zoomUi.hidden = false;
+    zoomUi.addEventListener('click', (e) => {
+      const z = e.target.dataset.z, w = stageEl.clientWidth / 2, h = stageEl.clientHeight / 2;
+      if (z === 'in') zoomAtPoint(cam.z * 1.4, w, h); else if (z === 'out') zoomAtPoint(cam.z / 1.4, w, h); else resetCam();
+    });
+    stageEl.addEventListener('wheel', (e) => {
+      if (!e.ctrlKey && !e.metaKey && cam.z === 1 && e.deltaY > 0) return;       // let the page scroll when not zoomed
+      e.preventDefault();
+      const r = stageEl.getBoundingClientRect();
+      cam.follow = null; zoomAtPoint(cam.z * Math.exp(-e.deltaY * 0.0015), e.clientX - r.left, e.clientY - r.top);
+    }, { passive: false });
+    let drag = null;
+    stageEl.addEventListener('pointerdown', (e) => {
+      if (e.target.closest('#detail, #zoomui')) return;
+      drag = { x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, moved: false };
+    });
+    window.addEventListener('pointermove', (e) => {
+      if (!drag) return;
+      if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 4) drag.moved = true;
+      if (drag.moved && cam.z > 1) { cam.follow = null; cam.x = drag.cx + e.clientX - drag.x; cam.y = drag.cy + e.clientY - drag.y; stageEl.classList.add('panning'); clampCam(); }
+    });
+    window.addEventListener('pointerup', (e) => {
+      if (!drag) return;
+      const wasClick = !drag.moved; drag = null; stageEl.classList.remove('panning');
+      if (!wasClick || e.target.closest('#detail, #zoomui')) return;
+      const [ox, oy] = officePoint(e.clientX, e.clientY);
+      select(spriteAt(ox, oy));
+    });
+    stageEl.addEventListener('dblclick', (e) => { if (!e.target.closest('#detail, #zoomui')) resetCam(); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !dlg.open) resetCam(); });
+    cardsEl.addEventListener('click', (e) => {
+      const b = e.target.closest('b.pick'); if (!b) return;
+      const s = sprites.get(b.dataset.id); if (!s) return;
+      select(s); stageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+    window.addEventListener('resize', clampCam);
+  }
+
+  // ---------- after an update: what's new ----------
+  function whatsNew(version) {
+    if (!version || KIOSK || DEMO) return;
+    let prev = null;
+    try { prev = localStorage.getItem('cubicle.version'); localStorage.setItem('cubicle.version', version); } catch (_) { return; }
+    if (!prev || prev === version) return;
+    const el = document.getElementById('news');
+    el.innerHTML = `${esc(L.whatsNew(version))} <a href="https://github.com/caglarutkuguler/cubicle/releases/tag/v${esc(version)}" target="_blank" rel="noopener">${esc(L.whatsNewLink)}</a><button type="button" aria-label="${esc(L.cancel)}">✕</button>`;
+    el.querySelector('button').onclick = () => { el.hidden = true; };
+    el.hidden = false;
   }
 
   // ---------- drawing ----------
@@ -833,7 +1179,7 @@
   const themes = {
     pixel: {
       // Drawn at 3× with no smoothing: the same pixel art, but photo heads and logos stay sharp.
-      id: 'pixel', name: { en: 'Pixel (classic)', tr: 'Piksel (klasik)' }, scale: 3, smooth: false, logoSpot: [11.75 * T, 5, 18, 18],
+      id: 'pixel', name: { en: 'Pixel (classic)', tr: 'Piksel (klasik)', de: 'Pixel (klassisch)', es: 'Píxel (clásico)', fr: 'Pixel (classique)', zh: '像素（经典）', ar: 'بكسل (كلاسيكي)' }, scale: 3, smooth: false, logoSpot: [11.75 * T, 5, 18, 18],
       drawRoom: (c) => drawRoom(c.t),
       props: (c, list) => loungeProps(c.t, list),
       drawDesk: (c, d, s) => drawDesk(d, s, c.t),
@@ -893,10 +1239,17 @@
     const deskCount = Math.max(4, Math.min(DESKS.length, Math.ceil(sprites.size / 4) * 4));
     DESKS.slice(0, deskCount).forEach((d) => list.push({ z: d[1] * T + 21, f: () => theme.drawDesk(c, d, byDesk.get(d)) }));
     for (const s of sprites.values()) list.push({ z: s.y, f: () => theme.drawChar(c, s) });
+    const picked = cam.follow && sprites.get(cam.follow);
+    if (picked) list.push({ z: picked.y - 0.01, f: () => {
+      g.save(); g.strokeStyle = 'rgba(255,226,138,.9)'; g.lineWidth = 0.9;
+      g.beginPath(); g.ellipse(picked.x, picked.y, 7, 2.4, 0, 0, Math.PI * 2); g.stroke(); g.restore();
+    } });
     list.sort((a, b) => a.z - b.z).forEach((o) => o.f());
+    if (envelopes.length) drawEnvelopes(now);
     if (theme.overlay) theme.overlay(c);
     if (recording) burnLabels(now);
     placeLabels(now);
+    followCam();
     requestAnimationFrame(frame);
   }
 
@@ -1195,7 +1548,7 @@
     if (s.status === 'error' && s.seated) return [L.errBubble, 'err'];
     if (s.status === 'waiting' && s.seated) return [L.waitBubble, 'wait'];
     if (s.typing && s.ask && Math.floor(now / 3) % 2) return ['✋ ' + (s.ask.issue.identifier || L.waiting), 'wait'];
-    if (s.typing && s.task) return ['⌨ ' + (s.task.identifier || s.task.title), ''];
+    if (s.typing && s.task) return [toolIcon(s.task) + ' ' + (s.task.identifier || s.task.title), ''];
     if (s.status === 'paused') return ['zZ', ''];
     return [null, ''];
   }
@@ -1361,6 +1714,7 @@
     });
   }
 
+  if (params.has('debug')) window.CubicleDebug = { sprites, findPath, walkGrid, cam };   // for tests and theme authors
   resizeCanvas();
   loadCatalog().then(applySettings);
   init();
