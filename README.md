@@ -14,6 +14,7 @@ Your agents get a desk. When one starts working it walks over, sits down and sta
 - **Read-only by design.** Cubicle only ever makes `GET` requests, and only to a short allowlist. It cannot change anything in your agent system.
 - **Not tied to one platform.** Paperclip and Claude Code are built in; anything else plugs in through a [tiny JSON feed](docs/FEED.md).
 - **Runs anywhere Node runs.** `npx`, a clone, a systemd unit, or a browser tab pointed at the hosted demo.
+- **Themes.** The classic pixel office, or an HD military operations room for land, air, naval or joint forces. Pick one from the ⚙ menu; themes are single files anyone can add.
 - **English and Turkish UI**, picked from your browser language or with `?lang=en` / `?lang=tr`.
 
 ## Quick start
@@ -72,6 +73,7 @@ URL parameters:
 - `?company=PREFIX` opens a specific Paperclip company (for example `?company=MEG`). With several companies, a picker also appears in the header.
 - `?lang=en` or `?lang=tr` sets the language.
 - `?demo` shows fake agents.
+- `?theme=military&branch=land` picks a theme (`branch` is `land`, `air`, `naval` or `joint`). The same choices are in the ⚙ menu, which remembers them per browser and copies a link that carries them, so a kiosk always opens the same way.
 - `?kiosk` fills the screen with the office for a TV or a second monitor (run the server with `--redact` if that screen is shared): cards and footer hidden, names and bubbles scale with the screen, cursor hidden. Combined with the auto-updater, a wall display picks up new versions by itself.
 
 ## What the office shows
@@ -83,6 +85,17 @@ URL parameters:
 | `idle` | Wanders the lounge; says "✓ done" right after finishing a run |
 | `error` | Slumped at its desk, red screen, error text on its card |
 | `paused` | "zZ" |
+
+## Themes
+
+[![Military theme: land, air, naval and joint](docs/theme-military.png)](https://caglarutkuguler.github.io/cubicle/?lang=en&theme=military&branch=joint)
+
+| Theme | What you get |
+| --- | --- |
+| `pixel` (default) | The classic 16-px pixel-art office |
+| `military` | HD operations room drawn at 4× resolution. **Land**: olive walls, tactical map with a marker per working agent. **Air**: hangar windows with a passing jet, radar scope, runway safety line. **Naval**: riveted steel deck, portholes, sonar. **Joint**: video wall with all three plus local and UTC clocks, and every agent in the uniform of one service. Rank follows the agent's role (a star for CEO/lead/director, chevrons otherwise); a red beacon turns on while any agent is in error. |
+
+Themes change only how the office is drawn; movement, bubbles, cards and the data the server sends are the same for every theme. A theme is one file in `public/themes/`, loaded only when chosen; see [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-theme).
 
 Each card below the office links to the agent's current task when the source provides a link (Paperclip issues do).
 
@@ -153,11 +166,11 @@ journalctl --user -u cubicle-update.service   # what it did
 
 ## How it works
 
-`bin/cubicle.js` serves `public/index.html` and either proxies the allowed Paperclip endpoints or serves the feed at `/api/feed`. The page polls every 4 seconds and draws everything, including characters, furniture and the day/night windows, on a 352×208 canvas with plain rectangles.
+`bin/cubicle.js` serves `public/index.html` and either proxies the allowed Paperclip endpoints or serves the feed at `/api/feed`. The page polls every 4 seconds and draws everything, including characters, furniture and the day/night windows, on a canvas 22 tiles wide (352 office pixels, taller when there are more agents) with plain shapes. HD themes draw the same office on a canvas 4× larger.
 
 ## Contributing
 
-Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for the few ground rules (zero dependencies, read-only). Look for issues labelled [good first issue](https://github.com/caglarutkuguler/cubicle/labels/good%20first%20issue). Ideas: adapters for other agent runtimes (write a feed, send a PR with an example), a kiosk mode for wall displays, meeting-room animations when agents hand work to each other, per-agent sprite customisation, replay of a recorded day, and multi-source offices (Paperclip and Claude Code on one floor).
+Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for the few ground rules (zero dependencies, read-only). Look for issues labelled [good first issue](https://github.com/caglarutkuguler/cubicle/labels/good%20first%20issue). Ideas: new themes (one file each), adapters for other agent runtimes (write a feed, send a PR with an example), meeting-room animations when agents hand work to each other, optional sound cues, a company logo on the wall, per-agent appearance, and replay of a recorded day.
 
 ## Releasing
 
@@ -184,4 +197,4 @@ Cubicle is a community project and is not affiliated with or endorsed by Papercl
 
 **Cubicle**, AI ajanlarınızı canlı bir pixel ofiste gösterir: [Paperclip](https://github.com/paperclipai/paperclip) ve Claude Code hazır gelir; başka sistemler küçük bir [JSON feed](docs/FEED.md) ile bağlanır. Çalışan ajan masasına oturup yazar ve başının üstünde görevi görünür; sizi bekleyen ajan elini kaldırır; işi biten ajan dinlenme alanına döner; hata alan ajanın ekranı kırmızı yanar.
 
-Kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir.
+Kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD askerî tema (Kara, Hava, Deniz veya Müşterek Kuvvetler) seçilebilir; aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır.

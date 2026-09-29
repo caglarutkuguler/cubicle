@@ -261,7 +261,43 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     assert.strictEqual((await get(`${base}/api/companies/x/secrets`)).status, 403);
     assert.strictEqual((await get(`${base}/api/companies`)).status, 502);
     assert.strictEqual(await req(`${base}/api/companies`, 'DELETE'), 405);
+    // theme files are served, nothing else under /themes/
+    const th = await get(`${base}/themes/military.js`);
+    assert.strictEqual(th.status, 200); assert.ok(th.body.includes('CubicleThemes.register'));
+    assert.strictEqual((await get(`${base}/themes/nope.js`)).status, 404);
+    assert.strictEqual((await get(`${base}/themes/..%2Fbin%2Fcubicle.js`)).status, 404);
+    assert.strictEqual((await get(`${base}/themes/Military.js`)).status, 404);
   });
+
+  // every theme in the settings catalog exists, registers, and draws every option without throwing
+  {
+    const fs = require('fs'); const vm = require('vm');
+    const page = fs.readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
+    const catalog = page.slice(page.indexOf('const CATALOG'), page.indexOf('];', page.indexOf('const CATALOG')));
+    const ids = [...catalog.matchAll(/\{ id: '([a-z0-9-]+)'/g)].map((m) => m[1]).filter((id) => id !== 'pixel');
+    assert.ok(ids.includes('military'));
+    const ctx = () => new Proxy({}, { get: (o, k) => (k in o ? o[k] : k === 'measureText' ? () => ({ width: 10 }) : k.startsWith('create') ? () => ({ addColorStop() {} }) : () => {}), set: (o, k, v) => { o[k] = v; return true; } });
+    for (const id of ids) {
+      const registered = [];
+      vm.runInNewContext(fs.readFileSync(path.join(ROOT, `public/themes/${id}.js`), 'utf8'), { window: { CubicleThemes: { register: (t) => registered.push(t), T: 16 } }, Math, Date });
+      const t = registered[0];
+      assert.ok(t && t.id === id && t.scale >= 1, `${id} registers itself`);
+      const values = [...catalog.slice(catalog.indexOf(`id: '${id}'`)).split(/\{ id: '/)[0].matchAll(/\['([a-z0-9-]+)', \{/g)].map((m) => m[1]);
+      for (const v of values.length ? values : [undefined]) {
+        if (t.setup) t.setup({ branch: v });
+        for (const anyError of [false, true]) for (const night of [false, true]) {
+          const c = { g: ctx(), t: 12345, T: 16, CW: 352, CH: 264, night, opts: { branch: v }, sprites: new Map(), desks: [[1, 3], [4, 3]], lounge: [[17, 5]], anyError };
+          t.drawRoom(c); const list = []; t.props(c, list); list.forEach((o) => o.f());
+          for (const status of ['running', 'waiting', 'idle', 'error']) {
+            const s = { id: 'a1', name: 'CEO', role: 'ceo', status, ask: status === 'waiting', x: 40, y: 60, dir: 1, seed: 1.5, walking: status === 'idle', seated: status !== 'idle', typing: status === 'running', shirt: '#335577', skin: '#c68642', hair: '#222', desk: [1, 3] };
+            t.drawDesk(c, [1, 3], s); t.drawChar(c, s); t.drawChar(c, { ...s, id: 'another-agent', role: 'engineer', dir: -1 });
+          }
+          t.drawDesk(c, [4, 3], undefined);
+          if (t.overlay) t.overlay(c);
+        }
+      }
+    }
+  }
 
   // --version prints the package version
   {

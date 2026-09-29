@@ -48,6 +48,15 @@
   .p-error { background:#5a1f25; color:#ffb3b8; }
   .p-paused { background:#4d4221; color:#f3dc92; }
   .p-waiting { background:#5a4a12; color:#ffe08a; }
+  #gear { background:none; border:1px solid var(--line); color:var(--muted); border-radius:6px; font-size:15px; line-height:1; padding:3px 7px; cursor:pointer; }
+  #gear:hover, #gear[aria-expanded="true"] { color:var(--text); border-color:#4a4f6b; }
+  #settings { position:absolute; right:0; top:calc(100% + 6px); z-index:5; width:260px; background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:12px; box-shadow:0 8px 24px rgba(0,0,0,.35); color:var(--text); }
+  #settings label { display:block; font-size:12px; color:var(--muted); margin:0 0 4px; }
+  #settings select { width:100%; margin-bottom:10px; }
+  #settings button { width:100%; background:#2f3552; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px; font:inherit; cursor:pointer; }
+  #settings .note { font-size:11px; color:var(--muted); margin-top:8px; }
+  .right { position:relative; }
+  body.kiosk #gear, body.kiosk #settings { display:none !important; }
   footer { color:var(--muted); font-size:12px; margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 </style>
 </head>
@@ -58,6 +67,8 @@
     <div class="right">
       <select id="company" hidden></select>
       <span id="status"></span>
+      <button id="gear" type="button" aria-expanded="false" aria-controls="settings">⚙</button>
+      <div id="settings" hidden></div>
     </div>
   </header>
   <div id="banner"></div>
@@ -84,6 +95,8 @@
       running: 'working', idle: 'idle', error: 'error', paused: 'paused', waiting: 'needs you', noTask: 'no open task assigned',
       done: '✓ done', errBubble: '⚠ error', waitBubble: '✋ needs you',
       asks: 'waiting for your answer on', needYou: (n) => `${n} need${n === 1 ? 's' : ''} you`, redacted: '🔒 details hidden',
+      settings: 'Settings', theme: 'Theme', copyLink: 'Copy link with these settings', copied: 'Copied ✓',
+      settingsNote: 'Saved in this browser. The link carries them to another screen (add ?kiosk for a TV).',
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
@@ -97,6 +110,8 @@
       running: 'çalışıyor', idle: 'boşta', error: 'hata', paused: 'duraklatıldı', waiting: 'sizi bekliyor', noTask: 'atanmış açık görev yok',
       done: '✓ bitirdi', errBubble: '⚠ hata', waitBubble: '✋ sizi bekliyor',
       asks: 'cevabınızı bekliyor:', needYou: (n) => `${n} sizi bekliyor`, redacted: '🔒 ayrıntılar gizli',
+      settings: 'Ayarlar', theme: 'Tema', copyLink: 'Bu ayarlarla link kopyala', copied: 'Kopyalandı ✓',
+      settingsNote: 'Bu tarayıcıda saklanır. Link, ayarları başka bir ekrana taşır (TV için ?kiosk ekleyin).',
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
@@ -635,7 +650,83 @@
     requestAnimationFrame(frame);
   }
 
+  // ---------- settings ----------
+  // Themes the settings panel offers. Options are listed here so the panel can show them
+  // before the theme file is loaded.
+  const CATALOG = [
+    { id: 'pixel', name: themes.pixel.name, options: [] },
+    { id: 'military', name: { en: 'Military (HD)', tr: 'Askerî (HD)' }, options: [
+      { key: 'branch', label: { en: 'Branch', tr: 'Kuvvet' }, values: [
+        ['land', { en: 'Land forces', tr: 'Kara Kuvvetleri' }],
+        ['air', { en: 'Air force', tr: 'Hava Kuvvetleri' }],
+        ['naval', { en: 'Naval forces', tr: 'Deniz Kuvvetleri' }],
+        ['joint', { en: 'Joint forces', tr: 'Müşterek Kuvvetler' }],
+      ] },
+    ] },
+  ];
+  const tr = (o) => (o && (o[lang] || o.en)) || '';
+  const STORE = 'cubicle.settings';
+  let settings = { theme: 'pixel' };
+  try { settings = { ...settings, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch (_) {}
+  // URL parameters win, so a kiosk link always opens the same way.
+  if (params.get('theme')) settings.theme = params.get('theme');
+  for (const c of CATALOG) for (const o of c.options) if (params.get(o.key)) settings[o.key] = params.get(o.key);
+  const save = () => { try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (_) {} };
+
+  function loadTheme(id) {
+    if (themes[id]) return Promise.resolve(themes[id]);
+    if (!/^[a-z0-9-]+$/.test(id)) return Promise.resolve(themes.pixel);
+    return new Promise((resolve) => {
+      const el = document.createElement('script');
+      el.src = `themes/${id}.js`;
+      el.onload = () => resolve(themes[id] || themes.pixel);
+      el.onerror = () => resolve(themes.pixel);
+      document.head.appendChild(el);
+    });
+  }
+
+  async function applySettings() {
+    const entry = CATALOG.find((c) => c.id === settings.theme) || CATALOG[0];
+    themeOpts = {};
+    for (const o of entry.options) themeOpts[o.key] = o.values.some((v) => v[0] === settings[o.key]) ? settings[o.key] : o.values[0][0];
+    theme = await loadTheme(entry.id);
+    if (theme.setup) theme.setup(themeOpts);
+    resizeCanvas();
+    renderSettings();
+  }
+
+  const gear = document.getElementById('gear');
+  const panel = document.getElementById('settings');
+  gear.title = L.settings; gear.setAttribute('aria-label', L.settings);
+  gear.addEventListener('click', () => {
+    panel.hidden = !panel.hidden; gear.setAttribute('aria-expanded', String(!panel.hidden));
+  });
+  document.addEventListener('click', (e) => {
+    if (!panel.hidden && !panel.contains(e.target) && e.target !== gear) { panel.hidden = true; gear.setAttribute('aria-expanded', 'false'); }
+  });
+
+  function renderSettings() {
+    const entry = CATALOG.find((c) => c.id === theme.id) || CATALOG[0];
+    const sel = (key, label, values, cur) => `<label for="set-${key}">${esc(label)}</label><select id="set-${key}" data-key="${key}">` +
+      values.map(([v, n]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(tr(n))}</option>`).join('') + '</select>';
+    panel.innerHTML = sel('theme', L.theme, CATALOG.map((c) => [c.id, c.name]), entry.id) +
+      entry.options.map((o) => sel(o.key, tr(o.label), o.values, themeOpts[o.key])).join('') +
+      `<button type="button" id="set-copy">${esc(L.copyLink)}</button><div class="note">${esc(L.settingsNote)}</div>`;
+    panel.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => {
+      settings[el.dataset.key] = el.value; save(); applySettings();
+    }));
+    panel.querySelector('#set-copy').addEventListener('click', async (e) => {
+      const u = new URL(location.href);
+      u.searchParams.set('theme', entry.id);
+      for (const o of entry.options) u.searchParams.set(o.key, themeOpts[o.key]);
+      try { await navigator.clipboard.writeText(u.toString()); e.target.textContent = L.copied; }
+      catch (_) { prompt(L.copyLink, u.toString()); }
+      setTimeout(() => { e.target.textContent = L.copyLink; }, 1500);
+    });
+  }
+
   resizeCanvas();
+  applySettings();
   init();
 })();
 </script>

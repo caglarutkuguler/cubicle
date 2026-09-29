@@ -25,6 +25,25 @@ Node 18 or newer. CI runs `npm test` on Node 18, 20 and 22.
 
 The easiest way to support a new agent runtime is to write the [feed format](docs/FEED.md) from that runtime (a hook, a wrapper script, a small exporter) and add it under `examples/<runtime>/` with a README, the way `examples/claude-code/` does. Only if a runtime needs server-side logic should it get its own `--source` value.
 
+## Adding a theme
+
+A theme changes how the office is drawn and nothing else. It is one file, `public/themes/<id>.js`, that calls `window.CubicleThemes.register({...})` with:
+
+| Field | |
+| --- | --- |
+| `id`, `name` | `name` is `{ en, tr }` |
+| `scale`, `smooth` | canvas resolution multiplier (1 = pixel art, 4 = HD) and whether to smooth images |
+| `setup(opts)` | optional; receives the theme's options from the ⚙ menu (for example `{ branch: 'air' }`) |
+| `drawRoom(c)` | floor, walls, windows |
+| `props(c, list)` | push `{ z, f }` for furniture that characters can walk in front of or behind; `z` is the y they sort by |
+| `drawDesk(c, desk, sprite)` | one desk; `sprite` is the agent sitting there, if any |
+| `drawChar(c, sprite)` | one agent: `sprite.status`, `seated`, `typing`, `walking`, `dir`, `role`, `shirt`, `skin`, `hair` |
+| `overlay(c)` | optional; drawn on top of everything |
+
+`c` holds the 2D context `g`, the time `t` in seconds, the tile size `T` (16), the office size `CW`×`CH`, `night`, `opts`, `desks`, `lounge`, `sprites` and `anyError`. Draw in office pixels; the page scales the canvas for you. Then add the theme and its options to `CATALOG` in `public/index.html`. `npm test` loads every theme in the catalog and draws each option with every status, so a typo in one branch fails CI instead of a wall display.
+
+Themes follow the same rules as the rest of Cubicle: no image files, no network, no dependencies.
+
 ## Translations
 
 UI strings live in the `STR` object at the top of the script in `public/index.html`. Add a language by copying the `en` block; the page picks it from the browser language or `?lang=xx`.
