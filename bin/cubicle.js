@@ -7,6 +7,7 @@
 //   claude-code          read the feed written by examples/claude-code/cubicle-hook.js
 //   <file.json>          read a Cubicle feed from a JSON file (see docs/FEED.md)
 //   <http(s)://url>      read a Cubicle feed from a URL (GET only)
+//   replay:<file.jsonl>  play back a day recorded with --record
 'use strict';
 
 const http = require('http');
@@ -20,14 +21,16 @@ function arg(name) {
   return i > -1 ? process.argv[i + 1] : undefined;
 }
 
-// `cubicle hook` — used from Claude Code hooks; see examples/claude-code/.
+// `cubicle hook [codex|gemini]` — run from the CLI's hooks; see examples/claude-code/.
 if (process.argv[2] === 'hook') {
-  require('./cubicle-hook.js').main();
+  require('./cubicle-hook.js').main(process.argv[3]);
   return;
 }
-// `cubicle install-hooks [--uninstall]` — add/remove the Claude Code hooks in ~/.claude/settings.json.
+// `cubicle install-hooks [codex|gemini] [--uninstall]` — add/remove the hooks in the CLI's settings
+// (~/.claude/settings.json, ~/.codex/hooks.json or ~/.gemini/settings.json).
 if (process.argv[2] === 'install-hooks') {
-  try { require('./cubicle-hook.js').install({ uninstall: process.argv.includes('--uninstall') }); }
+  const runtime = ['codex', 'gemini', 'claude'].find((r) => process.argv.slice(3).includes(r)) || 'claude';
+  try { require('./cubicle-hook.js').install({ runtime, uninstall: process.argv.includes('--uninstall') }); }
   catch (e) { console.error(e.message); process.exitCode = 1; }
   return;
 }
@@ -41,13 +44,18 @@ if (process.argv.includes('--help') || process.argv.includes('-h')) {
   console.log(`Cubicle — a live pixel-art office for your AI agents
 
 Usage: cubicle [--port 3200] [--host 127.0.0.1] [--source paperclip] [--paperclip http://127.0.0.1:3100] [--token-file FILE]
-       cubicle install-hooks [--uninstall]   add/remove the Claude Code hooks in ~/.claude/settings.json
+              [--record day.jsonl]  [--source replay:day.jsonl --speed 60]
+       cubicle install-hooks [codex|gemini] [--uninstall]   add/remove the hooks for Claude Code (default),
+                                             Codex CLI or Gemini CLI
 
 Sources (--source / CUBICLE_SOURCE), one or several comma-separated, e.g. paperclip,claude-code:
   paperclip            Paperclip server, default (see --paperclip / PAPERCLIP_URL)
   claude-code          Claude Code sessions, via the hook in examples/claude-code/
+  codex, gemini        Codex CLI / Gemini CLI sessions, via the same hook (install-hooks codex|gemini)
   ./agents.json        Any JSON file in the Cubicle feed format (docs/FEED.md)
   http://host/feed     Any URL returning the Cubicle feed format
+  replay:day.jsonl     Play back a file written with --record (alone, not combined), --speed times
+                       faster (default 60: an hour a minute), looping
 
 Environment variables:
   CUBICLE_PORT     Port to listen on (default 3200)
@@ -100,7 +108,10 @@ if (TOKEN && !/^[\x21-\x7e]+$/.test(TOKEN)) {
 // in one office. At most one Paperclip; any number of feeds (served at /api/feed/<n>).
 function parseSource(raw) {
   if (raw === 'paperclip') return { kind: 'paperclip' };
+  if (raw.startsWith('replay:')) return { kind: 'replay', file: path.resolve(raw.slice(7)) };
   if (raw === 'claude-code') return { kind: 'file', file: CLAUDE_CODE_FEED, label: 'Claude Code', emptyIfMissing: true };
+  if (raw === 'codex') return { kind: 'file', file: path.join(os.homedir(), '.cubicle', 'codex.json'), label: 'Codex', emptyIfMissing: true };
+  if (raw === 'gemini') return { kind: 'file', file: path.join(os.homedir(), '.cubicle', 'gemini.json'), label: 'Gemini CLI', emptyIfMissing: true };
   if (/^https?:\/\//.test(raw)) return { kind: 'url', url: new URL(raw), label: raw };
   return { kind: 'file', file: path.resolve(raw), label: path.basename(raw) };
 }
@@ -110,8 +121,13 @@ if (SOURCES.filter((x) => x.kind === 'paperclip').length > 1) {
   console.error('Only one Paperclip source is supported.');
   process.exit(1);
 }
+const REPLAY = SOURCES.find((x) => x.kind === 'replay');
+if (REPLAY && SOURCES.length > 1) {
+  console.error('replay:<file> plays back a whole recorded office; use it on its own.');
+  process.exit(1);
+}
 const HAS_PAPERCLIP = SOURCES.some((x) => x.kind === 'paperclip');
-const FEEDS = SOURCES.filter((x) => x.kind !== 'paperclip');
+const FEEDS = SOURCES.filter((x) => x.kind !== 'paperclip' && x.kind !== 'replay');
 
 function get(url, cb, extraHeaders = {}) {
   const client = url.protocol === 'https:' ? https : http;
@@ -211,6 +227,8 @@ const server = http.createServer((req, res) => {
 
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
+  if (REPLAY && serveReplay(req, res, url)) return;
+
   if (url.pathname === '/config.json') {
     let n = 0;
     const sources = SOURCES.map((x) => x.kind === 'paperclip'
@@ -256,7 +274,90 @@ const server = http.createServer((req, res) => {
   send(res, 404, 'Not found', 'text/plain');
 });
 
+// ---------- record and replay ----------
+// --record day.jsonl asks this server for everything the page reads, every 4 s, and appends
+// what changed: one line per document, { t, path, body }, after a first line describing the
+// sources. replay:day.jsonl serves those documents back on a sped-up clock, so the page
+// cannot tell a replay from a live office.
+function configFor(sources) {
+  let n = 0;
+  return sources.map((x) => x.kind === 'paperclip' ? { kind: 'paperclip', paperclipUrl: PAPERCLIP.origin } : { kind: 'feed', label: x.label, path: `/api/feed/${n++}` });
+}
+
+function startRecording(file) {
+  const last = new Map();
+  fs.appendFileSync(file, JSON.stringify({ t: Date.now(), type: 'config', sources: configFor(SOURCES), redact: REDACT, version: VERSION }) + '\n');
+  const self = (p) => new Promise((resolve) => {
+    http.get({ host: ['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST, port: PORT, path: p, timeout: 10000 }, (r) => {
+      let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve(r.statusCode === 200 ? b : null)); r.on('error', () => resolve(null));
+    }).on('error', () => resolve(null));
+  });
+  const keep = (p, body) => {
+    if (body === null || last.get(p) === body) return;
+    last.set(p, body);
+    fs.appendFile(file, JSON.stringify({ t: Date.now(), path: p, body: JSON.parse(body) }) + '\n', () => {});
+  };
+  async function tick() {
+    const paths = FEEDS.map((_, i) => `/api/feed/${i}`);
+    if (HAS_PAPERCLIP) {
+      const companies = await self('/api/companies');
+      keep('/api/companies', companies);
+      try { for (const c of JSON.parse(companies || '[]')) paths.push(`/api/companies/${c.id}/agents`, `/api/companies/${c.id}/issues`); } catch (_) {}
+    }
+    for (const p of paths) keep(p, await self(p));
+  }
+  setInterval(tick, 4000).unref();
+  tick();
+  console.log(`Recording to ${file}`);
+}
+
+let replay = null;   // { config, from, to, byPath: Map(path -> [{ t, body }]), started, speed }
+function loadReplay(file) {
+  let lines;
+  try { lines = fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)); }
+  catch (e) { console.error(`Cannot read the recording ${file}: ${e.message}`); process.exit(1); }
+  const config = lines.find((l) => l.type === 'config');
+  const docs = lines.filter((l) => l.path);
+  if (!config || !docs.length) { console.error(`${file} is not a Cubicle recording (made with --record).`); process.exit(1); }
+  const byPath = new Map();
+  for (const d of docs) { if (!byPath.has(d.path)) byPath.set(d.path, []); byPath.get(d.path).push(d); }
+  const speed = Math.max(1, Number(arg('speed') || process.env.CUBICLE_SPEED || 60));
+  // After the last document the office stays as it was for 5 real seconds, then the day starts again.
+  replay = { config, from: docs[0].t, to: docs[docs.length - 1].t, byPath, started: Date.now(), speed, hold: 5000 * speed };
+}
+function replayNow() {
+  const span = replay.to - replay.from + replay.hold;              // hold the last state briefly, then loop
+  return replay.from + ((Date.now() - replay.started) * replay.speed) % span;
+}
+function serveReplay(req, res, url) {
+  const at = replayNow();
+  if (url.pathname === '/config.json') {
+    const sources = replay.config.sources || [];
+    const first = sources[0] || { kind: 'feed' };
+    send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: first.paperclipUrl, redact: !!replay.config.redact,
+      replay: { at, from: replay.from, to: replay.to, speed: replay.speed, hold: replay.hold }, version: VERSION, build: build() }));
+    return true;
+  }
+  if (url.pathname.startsWith('/api/')) {
+    const list = replay.byPath.get(url.pathname.replace(/^\/api\/feed$/, '/api/feed/0'));
+    if (!list) { send(res, url.pathname === '/api/companies' ? 200 : 404, url.pathname === '/api/companies' ? '[]' : '{"error":"not in the recording"}'); return true; }
+    let lo = 0, hi = list.length - 1, best = list[0];                       // last document at or before `at`
+    while (lo <= hi) { const mid = (lo + hi) >> 1; if (list[mid].t <= at) { best = list[mid]; lo = mid + 1; } else hi = mid - 1; }
+    send(res, 200, JSON.stringify(best.body));
+    return true;
+  }
+  return false;
+}
+
+if (REPLAY) loadReplay(REPLAY.file);
+
 server.listen(PORT, HOST, () => {
+  if (REPLAY) {
+    const mins = Math.round((replay.to - replay.from) / 60000);
+    console.log(`Cubicle is open at http://${HOST}:${PORT}  (replaying ${REPLAY.file}: ${mins} min at ×${replay.speed}, looping)`);
+    return;
+  }
+  if (arg('record')) startRecording(path.resolve(arg('record')));
   const reading = SOURCES.map((x) => x.kind === 'paperclip' ? PAPERCLIP.origin + (TOKEN ? ' (with an API key)' : '') : x.kind === 'file' ? x.file : x.url.href);
   console.log(`Cubicle is open at http://${HOST}:${PORT}  (reading ${reading.join(' + ')})${REDACT ? '  [redacted: ids and statuses only]' : ''}`);
   const loopback = ['127.0.0.1', 'localhost', '::1'].includes(HOST);

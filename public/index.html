@@ -97,10 +97,12 @@
       asks: 'waiting for your answer on', needYou: (n) => `${n} need${n === 1 ? 's' : ''} you`, redacted: '🔒 details hidden',
       settings: 'Settings', theme: 'Theme', copyLink: 'Copy link with these settings', copied: 'Copied ✓',
       settingsNote: 'Saved in this browser. The link carries them to another screen (add ?kiosk for a TV).',
+      spend: (a, b) => `${a} / ${b} this month`, spendNoBudget: (a) => `${a} this month`, spendTitle: 'Spend this month, as reported by Paperclip',
+      handoff: (id, to) => `${id} → ${to}`, replay: 'replay',
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
       hint: 'Working agents sit at their desks and type; idle agents hang out in the lounge. Refreshes every 4 s.',
       demo: 'Demo mode — fake agents. Remove <code>?demo</code> from the URL to watch your own Paperclip company.',
-      hosted: 'This is the hosted demo with fake agents. To watch your own Paperclip company, run <code>npx github:caglarutkuguler/cubicle</code> and open <code>http://127.0.0.1:3200</code>.',
+      hosted: 'This is the hosted demo with fake agents. To watch your own agents, run <code>npx @caglarutkuguler/cubicle</code> and open <code>http://127.0.0.1:3200</code>, or install it as a Paperclip plugin.',
     },
     tr: {
       connecting: 'Bağlanılıyor…', unreachable: "Paperclip'e ulaşılamıyor, yeniden deneniyor…",
@@ -112,10 +114,63 @@
       asks: 'cevabınızı bekliyor:', needYou: (n) => `${n} sizi bekliyor`, redacted: '🔒 ayrıntılar gizli',
       settings: 'Ayarlar', theme: 'Tema', copyLink: 'Bu ayarlarla link kopyala', copied: 'Kopyalandı ✓',
       settingsNote: 'Bu tarayıcıda saklanır. Link, ayarları başka bir ekrana taşır (TV için ?kiosk ekleyin).',
+      spend: (a, b) => `bu ay ${a} / ${b}`, spendNoBudget: (a) => `bu ay ${a}`, spendTitle: 'Paperclip’in bildirdiği bu ayki harcama',
+      handoff: (id, to) => `${id} → ${to}`, replay: 'tekrar',
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
       hint: 'Çalışan ajan masasına oturup yazar; boştaki ajan dinlenme alanında dolaşır. 4 saniyede bir yenilenir.',
       demo: "Demo modu: sahte ajanlar. Kendi Paperclip şirketinizi izlemek için adresten <code>?demo</code> kısmını kaldırın.",
-      hosted: "Bu, sahte ajanlarla çalışan barındırılan demo. Kendi Paperclip şirketinizi izlemek için <code>npx github:caglarutkuguler/cubicle</code> çalıştırıp <code>http://127.0.0.1:3200</code> adresini açın.",
+      hosted: "Bu, sahte ajanlarla çalışan barındırılan demo. Kendi ajanlarınızı izlemek için <code>npx @caglarutkuguler/cubicle</code> çalıştırıp <code>http://127.0.0.1:3200</code> adresini açın ya da Paperclip eklentisi olarak kurun.",
+    },
+    de: {
+      connecting: 'Verbinde…', unreachable: 'Paperclip nicht erreichbar, neuer Versuch…',
+      denied: (c) => `Paperclip hat den Zugriff verweigert (${c}). Für ein Paperclip mit Anmeldung PAPERCLIP_TOKEN setzen oder den Schlüssel prüfen.`, feedUnreachable: 'Agenten-Feed nicht lesbar, neuer Versuch…',
+      empty: 'Noch keine Agenten.', emptyClaude: 'Noch keine Claude-Code-Sitzungen. Starte <code>claude</code> in einem beliebigen Ordner, dann kommt sie herein.',
+      noCompany: 'Noch keine Firma.', summary: (n, r) => `${n} Agenten · ${r} arbeiten`,
+      running: 'arbeitet', idle: 'frei', error: 'Fehler', paused: 'pausiert', waiting: 'braucht dich', noTask: 'keine offene Aufgabe zugewiesen',
+      done: '✓ fertig', errBubble: '⚠ Fehler', waitBubble: '✋ braucht dich',
+      asks: 'wartet auf deine Antwort zu', needYou: (n) => `${n} ${n === 1 ? 'braucht' : 'brauchen'} dich`, redacted: '🔒 Details verborgen',
+      settings: 'Einstellungen', theme: 'Thema', copyLink: 'Link mit diesen Einstellungen kopieren', copied: 'Kopiert ✓',
+      settingsNote: 'In diesem Browser gespeichert. Der Link nimmt sie auf einen anderen Bildschirm mit (für einen Fernseher ?kiosk anhängen).',
+      spend: (a, b) => `${a} / ${b} diesen Monat`, spendNoBudget: (a) => `${a} diesen Monat`, spendTitle: 'Ausgaben diesen Monat, laut Paperclip',
+      handoff: (id, to) => `${id} → ${to}`, replay: 'Wiedergabe',
+      chatter: ['☕', 'Kaffeepause', '…', 'hmm', 'was kommt jetzt?'],
+      hint: 'Arbeitende Agenten sitzen am Schreibtisch und tippen, freie hängen in der Lounge ab. Aktualisiert alle 4 s.',
+      demo: 'Demo-Modus mit erfundenen Agenten. Entferne <code>?demo</code> aus der Adresse, um deine eigene Paperclip-Firma zu sehen.',
+      hosted: 'Das ist die gehostete Demo mit erfundenen Agenten. Für deine eigenen Agenten <code>npx @caglarutkuguler/cubicle</code> ausführen und <code>http://127.0.0.1:3200</code> öffnen, oder es als Paperclip-Plugin installieren.',
+    },
+    es: {
+      connecting: 'Conectando…', unreachable: 'No se puede conectar con Paperclip, reintentando…',
+      denied: (c) => `Paperclip denegó el acceso (${c}). Define PAPERCLIP_TOKEN para un Paperclip con autenticación o revisa la clave.`, feedUnreachable: 'No se puede leer el feed de agentes, reintentando…',
+      empty: 'Todavía no hay agentes.', emptyClaude: 'Todavía no hay sesiones de Claude Code. Ejecuta <code>claude</code> en cualquier carpeta y entrará.',
+      noCompany: 'Todavía no hay empresa.', summary: (n, r) => `${n} agentes · ${r} trabajando`,
+      running: 'trabajando', idle: 'libre', error: 'error', paused: 'en pausa', waiting: 'te necesita', noTask: 'sin tarea abierta asignada',
+      done: '✓ listo', errBubble: '⚠ error', waitBubble: '✋ te necesita',
+      asks: 'espera tu respuesta en', needYou: (n) => `${n} te ${n === 1 ? 'necesita' : 'necesitan'}`, redacted: '🔒 detalles ocultos',
+      settings: 'Ajustes', theme: 'Tema', copyLink: 'Copiar enlace con estos ajustes', copied: 'Copiado ✓',
+      settingsNote: 'Se guardan en este navegador. El enlace los lleva a otra pantalla (añade ?kiosk para una TV).',
+      spend: (a, b) => `${a} / ${b} este mes`, spendNoBudget: (a) => `${a} este mes`, spendTitle: 'Gasto de este mes según Paperclip',
+      handoff: (id, to) => `${id} → ${to}`, replay: 'repetición',
+      chatter: ['☕', 'pausa para el café', '…', 'mmm', '¿y ahora qué?'],
+      hint: 'Los agentes que trabajan se sientan en su mesa y teclean; los libres pasan el rato en la sala de descanso. Se actualiza cada 4 s.',
+      demo: 'Modo demo con agentes ficticios. Quita <code>?demo</code> de la dirección para ver tu propia empresa de Paperclip.',
+      hosted: 'Esta es la demo alojada con agentes ficticios. Para ver tus propios agentes, ejecuta <code>npx @caglarutkuguler/cubicle</code> y abre <code>http://127.0.0.1:3200</code>, o instálalo como plugin de Paperclip.',
+    },
+    fr: {
+      connecting: 'Connexion…', unreachable: 'Impossible de joindre Paperclip, nouvel essai…',
+      denied: (c) => `Paperclip a refusé l’accès (${c}). Définissez PAPERCLIP_TOKEN pour un Paperclip avec authentification, ou vérifiez la clé.`, feedUnreachable: 'Impossible de lire le flux des agents, nouvel essai…',
+      empty: 'Aucun agent pour l’instant.', emptyClaude: 'Aucune session Claude Code pour l’instant. Lancez <code>claude</code> dans n’importe quel dossier et elle entrera.',
+      noCompany: 'Aucune entreprise pour l’instant.', summary: (n, r) => `${n} agents · ${r} au travail`,
+      running: 'au travail', idle: 'libre', error: 'erreur', paused: 'en pause', waiting: 'a besoin de vous', noTask: 'aucune tâche ouverte assignée',
+      done: '✓ terminé', errBubble: '⚠ erreur', waitBubble: '✋ a besoin de vous',
+      asks: 'attend votre réponse sur', needYou: (n) => `${n} ${n === 1 ? 'a' : 'ont'} besoin de vous`, redacted: '🔒 détails masqués',
+      settings: 'Réglages', theme: 'Thème', copyLink: 'Copier le lien avec ces réglages', copied: 'Copié ✓',
+      settingsNote: 'Enregistrés dans ce navigateur. Le lien les emporte sur un autre écran (ajoutez ?kiosk pour une télé).',
+      spend: (a, b) => `${a} / ${b} ce mois-ci`, spendNoBudget: (a) => `${a} ce mois-ci`, spendTitle: 'Dépenses du mois, selon Paperclip',
+      handoff: (id, to) => `${id} → ${to}`, replay: 'relecture',
+      chatter: ['☕', 'pause café', '…', 'hum', 'et maintenant ?'],
+      hint: 'Les agents au travail sont assis à leur bureau et tapent ; les agents libres traînent dans le salon. Actualisé toutes les 4 s.',
+      demo: 'Mode démo avec des agents fictifs. Retirez <code>?demo</code> de l’adresse pour voir votre propre entreprise Paperclip.',
+      hosted: 'Ceci est la démo en ligne avec des agents fictifs. Pour voir vos propres agents, lancez <code>npx @caglarutkuguler/cubicle</code> et ouvrez <code>http://127.0.0.1:3200</code>, ou installez-le comme plugin Paperclip.',
     },
   };
   const params = new URLSearchParams(location.search);
@@ -257,8 +312,10 @@
       ['Growth', 'Growth Marketer'], ['Analyst', 'Functional Analyst'], ['QA', 'QA & Refactoring'],
     ];
     const tasks = ['Audit site health', 'Keyword research', 'Qualified leads shortlist', 'Review checkout flow', 'Refactor module', 'Write test checklist'];
+    const spend = [[420, 2000], [1250, 2000], [2000, 2000], [1830, 2000], [0, 0], [610, 1000]];   // cents: spent, budget
     const agents = roster.map(([name, title], i) => ({
       id: `demo-${i}`, name, title, createdAt: `2026-01-01T00:0${i}:00Z`, status: 'idle', errorReason: null,
+      spentMonthlyCents: spend[i][0], budgetMonthlyCents: spend[i][1],
     }));
     function tick() {
       const s = Math.floor((Date.now() - t0) / 1000);
@@ -273,7 +330,9 @@
       async load() {
         tick();
         if (!company) company = { id: 'demo', name: 'Demo Co.', issuePrefix: 'DEMO' };
-        const issues = agents.map((a, i) => ({ identifier: `DEMO-${i + 1}`, title: tasks[i], status: 'in_progress', assigneeAgentId: a.id }));
+        // Every 30 s the Analyst hands its task to QA and back, to show a hand-off.
+        const passed = Math.floor((Date.now() - t0) / 30000) % 2 === 1;
+        const issues = agents.map((a, i) => ({ identifier: `DEMO-${i + 1}`, title: tasks[i], status: 'in_progress', assigneeAgentId: i === 4 && passed ? agents[5].id : a.id }));
         return { agents: agents.map((a) => ({ ...a })), issues, label: 'Demo Co.' };
       },
     };
@@ -282,6 +341,7 @@
   let providers = [];
   let officeName = '';    // first source's company name; themes may put it on the wall
   let redacted = false;   // server runs with --redact: titles/commands never reach the page
+  let replayClock = null; // server plays back a recording (--source replay:file): show its clock
 
   async function init() {
     const b = document.getElementById('banner');
@@ -292,6 +352,7 @@
       try {
         const cfg = await getJSON('/config.json');
         redacted = !!cfg.redact;
+        if (cfg.replay) replayClock = { ...cfg.replay, loadedAt: Date.now() };
         const list = cfg.sources || [cfg.source === 'feed'
           ? { kind: 'feed', label: cfg.label, path: '/api/feed' }
           : { kind: 'paperclip', paperclipUrl: cfg.paperclipUrl }];
@@ -315,6 +376,13 @@
     poll();
     setInterval(poll, 4000);
     requestAnimationFrame(frame);
+  }
+
+  function timeText() {
+    if (!replayClock) return new Date().toLocaleTimeString(lang);
+    const r = replayClock, span = Math.max(1, r.to - r.from + (r.hold || 0));
+    const at = r.from + ((r.at - r.from) + (Date.now() - r.loadedAt) * r.speed) % span;
+    return `▶ ${L.replay} ${new Date(at).toLocaleString(lang, { weekday: 'short', hour: '2-digit', minute: '2-digit' })} ×${r.speed}`;
   }
 
   function failureText(p, e) {
@@ -352,7 +420,7 @@
     const down = failed.map((i) => `⚠ ${providers[i].label}: ${failureText(providers[i], results[i].reason)}`);
     statusEl.textContent = [
       notes.length && !agents.length ? notes.join(' ') : L.summary(agents.length, running),
-      needYou ? L.needYou(needYou) : '', ...down, redacted ? L.redacted : '', new Date().toLocaleTimeString(lang),
+      needYou ? L.needYou(needYou) : '', ...down, redacted ? L.redacted : '', timeText(),
     ].filter(Boolean).join(' · ');
   }
 
@@ -417,6 +485,7 @@
       s.role = a.title || a.role || '';
       s.status = a.status;
       s.error = a.errorReason || '';
+      s.spent = Number(a.spentMonthlyCents) || 0; s.budget = Number(a.budgetMonthlyCents) || 0;
       s.task = a.task !== undefined ? a.task : currentTask(a.id, issues);
       s.waitReason = '';
       s.ask = a.task === undefined && a.status !== 'error' ? askingBoard(a.id, issues) : null;
@@ -426,7 +495,28 @@
       s.el.querySelector('.name').textContent = s.name;
     });
     for (const [id, s] of sprites) if (!seen.has(id)) { s.el.remove(); sprites.delete(id); }
+    handOffs(issues);
     renderCards();
+  }
+
+  // Hand-offs: when an issue moves from one agent to another between two polls, both walk to
+  // the lounge table for a few seconds, and the one handing over says what it passes on.
+  const assignees = new Map();          // issue identifier -> agent id at the last poll
+  const MEET = [[17.4, 10.3], [19.4, 10.3]];
+  function handOffs(issues) {
+    const now = performance.now() / 1000;
+    for (const i of issues) {
+      if (!i.identifier || !('assigneeAgentId' in i)) continue;
+      const before = assignees.get(i.identifier);
+      assignees.set(i.identifier, i.assigneeAgentId);
+      if (!before || !i.assigneeAgentId || before === i.assigneeAgentId) continue;
+      const from = sprites.get(before), to = sprites.get(i.assigneeAgentId);
+      if (!from || !to || from === to) continue;
+      from.meetUntil = to.meetUntil = now + 9;
+      from.meetSpot = MEET[0]; to.meetSpot = MEET[1];
+      setBubble(from, L.handoff(i.identifier, to.name), '', 8);
+      setBubble(to, '🤝', '', 8);
+    }
   }
 
   function setBubble(s, text, cls = '', secs = 4) {
@@ -442,6 +532,16 @@
     return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="${target}" rel="noopener">${label}</a>`;
   }
 
+  // Monthly spend from Paperclip, when it reports any: "$4.20 / $20.00", amber from 80 %, red at 100 %.
+  const money = (cents) => new Intl.NumberFormat(lang, { style: 'currency', currency: 'USD' }).format(cents / 100);
+  function spendHtml(s) {
+    if (!s.spent && !s.budget) return '';
+    const share = s.budget ? s.spent / s.budget : 0;
+    const col = share >= 1 ? '#ff8a8a' : share >= 0.8 ? '#ffd27a' : 'var(--muted)';
+    const text = s.budget ? L.spend(money(s.spent), money(s.budget)) : L.spendNoBudget(money(s.spent));
+    return ` · <span class="spend" style="color:${col}" title="${esc(L.spendTitle)}">${esc(text)}</span>`;
+  }
+
   function renderCards() {
     const list = [...sprites.values()].sort((a, b) => a.idx - b.idx);
     cardsEl.innerHTML = list.map((s) => {
@@ -451,13 +551,14 @@
         : s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">${esc(s.waitReason)}</div>`
         : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
       return `<div class="card"><div class="top"><span class="sw" style="background:${s.shirt}"></span><b>${esc(s.name)}</b></div>
-        <div class="role">${esc(s.role)}</div>
+        <div class="role">${esc(s.role)}${spendHtml(s)}</div>
         <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}</div>${err}</div>`;
     }).join('');
   }
 
   // ---------- movement ----------
   function targetFor(s, now) {
+    if (s.meetUntil > now) return [s.meetSpot[0] * T, s.meetSpot[1] * T, false];
     if (s.status === 'running' || s.status === 'error' || s.status === 'waiting') return [s.desk[0] * T + 22, s.desk[1] * T + 12, true];
     if (now > s.nextWander) {
       const used = new Set([...sprites.values()].filter((o) => o !== s).map((o) => o.lounge));

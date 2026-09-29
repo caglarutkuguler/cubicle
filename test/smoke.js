@@ -147,6 +147,61 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { console.log = log; fs.rmSync(dir, { recursive: true, force: true }); }
   }
 
+  // Codex CLI and Gemini CLI through the same hook (#3)
+  {
+    const fs = require('fs'); const os = require('os');
+    const { apply: hookApply, install, RUNTIMES } = require('../bin/cubicle-hook.js');
+    // Gemini: its own event names, mapped onto the office
+    let g = { company: 'Gemini CLI', agents: [] };
+    g = hookApply(g, { session_id: 'g1', cwd: '/w/site', hook_event_name: 'SessionStart', source: 'startup' }, 'gemini');
+    assert.strictEqual(g.agents[0].role, 'Gemini CLI'); assert.strictEqual(g.agents[0].status, 'idle');
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'BeforeAgent', prompt: 'fix the footer' }, 'gemini');
+    assert.strictEqual(g.agents[0].status, 'running'); assert.strictEqual(g.agents[0].task, 'fix the footer');
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'BeforeTool', tool_name: 'run_shell_command', tool_input: { command: 'npm test' } }, 'gemini');
+    assert.strictEqual(g.agents[0].task, 'run_shell_command: npm test');
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'BeforeTool', tool_name: 'read_file', tool_input: { absolute_path: '/w/site/a.css' } }, 'gemini');
+    assert.strictEqual(g.agents[0].task, 'read_file a.css');
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'Notification', notification_type: 'ToolPermission', message: 'Allow shell?' }, 'gemini');
+    assert.strictEqual(g.agents[0].status, 'waiting');
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'AfterAgent' }, 'gemini');
+    assert.strictEqual(g.agents[0].status, 'idle');
+    g = hookApply(g, { session_id: 'g1', hook_event_name: 'SessionEnd', reason: 'exit' }, 'gemini');
+    assert.strictEqual(g.agents.length, 0);
+    // Codex: Claude Code's event names
+    let c = { company: 'Codex', agents: [] };
+    c = hookApply(c, { session_id: 'c1', cwd: '/w/api', hook_event_name: 'PermissionRequest', tool_name: 'Bash', tool_input: { command: 'rm -rf dist' } }, 'codex');
+    assert.strictEqual(c.agents[0].role, 'Codex'); assert.strictEqual(c.agents[0].status, 'waiting'); assert.strictEqual(c.agents[0].name, 'api');
+
+    // the hook writes ~/.cubicle/<runtime>.json and answers {} on stdout for Codex and Gemini
+    const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-home-'));
+    for (const [rt, ev, out] of [['codex', { session_id: 'c9', cwd: '/x/app', hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command: 'ls' } }, '{}'],
+      ['gemini', { session_id: 'g9', cwd: '/x/app', hook_event_name: 'BeforeTool', tool_name: 'write_file', tool_input: { file_path: '/x/app/b.ts' } }, '{}'],
+      ['', { session_id: 's9', cwd: '/x/app', hook_event_name: 'Stop' }, '']]) {
+      const r = require('child_process').spawnSync(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), 'hook', ...(rt ? [rt] : [])],
+        { input: JSON.stringify(ev), env: { ...process.env, HOME: home, USERPROFILE: home } });
+      assert.strictEqual(r.status, 0); assert.strictEqual(r.stdout.toString().trim(), out, `${rt || 'claude'} stdout`);
+      const feed = JSON.parse(fs.readFileSync(path.join(home, '.cubicle', RUNTIMES[rt || 'claude'].file), 'utf8'));
+      assert.strictEqual(feed.company, RUNTIMES[rt || 'claude'].label);
+      assert.strictEqual(feed.agents[0].name, 'app');
+    }
+    // install writes each CLI's own config shape
+    const log = console.log; console.log = () => {};
+    try {
+      const cf = path.join(home, 'codex-hooks.json'), gf = path.join(home, 'gemini-settings.json');
+      fs.writeFileSync(gf, JSON.stringify({ theme: 'Dracula' }));
+      install({ runtime: 'codex', settingsFile: cf }); install({ runtime: 'gemini', settingsFile: gf }); install({ runtime: 'gemini', settingsFile: gf });
+      const cs = JSON.parse(fs.readFileSync(cf, 'utf8')), gs = JSON.parse(fs.readFileSync(gf, 'utf8'));
+      assert.ok(cs.hooks.PermissionRequest[0].hooks[0].command.endsWith(' codex'));
+      assert.strictEqual(cs.hooks.SessionEnd[0].hooks[0].timeout, 3);
+      assert.strictEqual(gs.theme, 'Dracula');
+      assert.strictEqual(gs.hooks.BeforeTool.length, 1, 'idempotent');
+      assert.strictEqual(gs.hooks.BeforeTool[0].matcher, '*'); assert.strictEqual(gs.hooks.BeforeTool[0].hooks[0].timeout, 5000);
+      assert.ok(gs.hooks.BeforeTool[0].hooks[0].command.endsWith(' gemini'));
+      install({ runtime: 'gemini', settingsFile: gf, uninstall: true });
+      assert.deepStrictEqual(JSON.parse(fs.readFileSync(gf, 'utf8')), { theme: 'Dracula' });
+    } finally { console.log = log; fs.rmSync(home, { recursive: true, force: true }); }
+  }
+
   // feed mode
   await withServer(['--source', path.join(ROOT, 'examples/feed.json')], async (base) => {
     assert.strictEqual((await get(`${base}/`)).status, 200);
@@ -262,6 +317,37 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { up.close(); }
   }
 
+  // --record writes what the page would read; replay:<file> serves it back (#4)
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-rec-'));
+    const feedFile = path.join(dir, 'feed.json'), rec = path.join(dir, 'day.jsonl');
+    fs.writeFileSync(feedFile, JSON.stringify({ company: 'Rec Co', agents: [{ id: 'r1', name: 'Recorder', status: 'running', task: 'Edit a.ts' }] }));
+    await withServer(['--source', feedFile, '--record', rec], async () => { await sleep(700); });
+    const lines = fs.readFileSync(rec, 'utf8').trim().split('\n').map((l) => JSON.parse(l));
+    assert.strictEqual(lines[0].type, 'config');
+    assert.strictEqual(lines[0].sources[0].path, '/api/feed/0');
+    assert.ok(lines.some((l) => l.path === '/api/feed/0' && l.body.agents[0].name === 'Recorder'));
+    // a second document later in the "day"
+    fs.appendFileSync(rec, JSON.stringify({ t: lines[1].t + 3600e3, path: '/api/feed/0', body: { company: 'Rec Co', agents: [{ id: 'r1', name: 'Recorder', status: 'idle' }] } }) + '\n');
+    await withServer(['--source', `replay:${rec}`, '--speed', '1'], async (base) => {
+      const cfg = JSON.parse((await get(`${base}/config.json`)).body);
+      assert.ok(cfg.replay && cfg.replay.speed === 1 && cfg.replay.to - cfg.replay.from >= 3600e3);
+      assert.strictEqual(cfg.sources[0].path, '/api/feed/0');
+      assert.strictEqual(JSON.parse((await get(`${base}/api/feed/0`)).body).agents[0].status, 'running', 'the start of the day');
+      assert.strictEqual((await get(`${base}/api/feed/1`)).status, 404);
+      assert.strictEqual((await get(`${base}/themes/index.json`)).status, 200, 'static files still served');
+      assert.strictEqual((await get(`${base}/`)).status, 200);
+    });
+    await withServer(['--source', `replay:${rec}`, '--speed', '100000'], async (base) => {
+      await sleep(200);
+      const seen = new Set();
+      for (let i = 0; i < 20; i++) { seen.add(JSON.parse((await get(`${base}/api/feed/0`)).body).agents[0].status); await sleep(25); }
+      assert.ok(seen.has('idle'), 'a fast replay reaches the later document');
+    });
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
+
   // paperclip mode: defaults
   await withServer([], async (base) => {
     const cfg = JSON.parse((await get(`${base}/config.json`)).body);
@@ -366,6 +452,20 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
   // page script parses
   const html = require('fs').readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
   new Function(html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>')));
+
+  // every UI language has every string English has, with the same kind (text or function)
+  {
+    const src = html.slice(html.indexOf('  const STR = {'), html.indexOf('  const params = new URLSearchParams'));
+    const STR = new Function(`${src}; return STR;`)();
+    for (const [code, block] of Object.entries(STR)) {
+      for (const [k, v] of Object.entries(STR.en)) {
+        assert.ok(k in block, `${code} is missing "${k}"`);
+        assert.strictEqual(typeof block[k], typeof v, `${code}.${k} should be a ${typeof v}`);
+      }
+      assert.ok(block.summary(3, 1).includes('3') && block.needYou(2).includes('2'));
+    }
+    assert.ok(['en', 'tr', 'de', 'es', 'fr'].every((c) => STR[c]));
+  }
 
   console.log('ok');
 })().catch((e) => { console.error(e); process.exit(1); });

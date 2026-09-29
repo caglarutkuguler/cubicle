@@ -35,7 +35,7 @@ The npm package doubles as a Paperclip plugin (`paperclipPlugin` in `package.jso
 
 ## Translations
 
-UI strings live in the `STR` object at the top of the script in `public/index.html`. Add a language by copying the `en` block; the page picks it from the browser language or `?lang=xx`.
+UI strings live in the `STR` object at the top of the script in `public/index.html` (English, Turkish, German, Spanish and French so far). Add a language by copying the `en` block; the page picks it from the browser language or `?lang=xx`. `npm test` checks that every language has every string. Theme names in `public/themes/index.json` fall back to English, so a `"de": "…"` next to `en` and `tr` is welcome but optional.
 
 ## Pull requests
 

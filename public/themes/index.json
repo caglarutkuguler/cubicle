@@ -3,42 +3,60 @@
     "id": "military",
     "name": {
       "en": "Military (HD)",
-      "tr": "Askerî (HD)"
+      "tr": "Askerî (HD)",
+      "de": "Militär (HD)",
+      "es": "Militar (HD)",
+      "fr": "Militaire (HD)"
     },
     "options": [
       {
         "key": "branch",
         "label": {
           "en": "Branch",
-          "tr": "Kuvvet"
+          "tr": "Kuvvet",
+          "de": "Teilstreitkraft",
+          "es": "Rama",
+          "fr": "Armée"
         },
         "values": [
           [
             "land",
             {
               "en": "Land forces",
-              "tr": "Kara Kuvvetleri"
+              "tr": "Kara Kuvvetleri",
+              "de": "Heer",
+              "es": "Ejército de Tierra",
+              "fr": "Armée de terre"
             }
           ],
           [
             "air",
             {
               "en": "Air force",
-              "tr": "Hava Kuvvetleri"
+              "tr": "Hava Kuvvetleri",
+              "de": "Luftwaffe",
+              "es": "Ejército del Aire",
+              "fr": "Armée de l’air"
             }
           ],
           [
             "naval",
             {
               "en": "Naval forces",
-              "tr": "Deniz Kuvvetleri"
+              "tr": "Deniz Kuvvetleri",
+              "de": "Marine",
+              "es": "Armada",
+              "fr": "Marine nationale"
             }
           ],
           [
             "joint",
             {
               "en": "Joint forces",
-              "tr": "Müşterek Kuvvetler"
+              "tr": "Müşterek Kuvvetler",
+              "de": "Gemeinsame Streitkräfte",
+              "es": "Fuerzas conjuntas",
+              "fr": "Forces interarmées"
             }
           ]
         ]
@@ -49,28 +67,40 @@
     "id": "holding",
     "name": {
       "en": "Holding HQ (HD)",
-      "tr": "Holding (HD)"
+      "tr": "Holding (HD)",
+      "de": "Holding-Zentrale (HD)",
+      "es": "Sede del holding (HD)",
+      "fr": "Siège du holding (HD)"
     },
     "options": [
       {
         "key": "view",
         "label": {
           "en": "View",
-          "tr": "Manzara"
+          "tr": "Manzara",
+          "de": "Aussicht",
+          "es": "Vista",
+          "fr": "Vue"
         },
         "values": [
           [
             "city",
             {
               "en": "City",
-              "tr": "Şehir"
+              "tr": "Şehir",
+              "de": "Stadt",
+              "es": "Ciudad",
+              "fr": "Ville"
             }
           ],
           [
             "sea",
             {
               "en": "Sea",
-              "tr": "Deniz"
+              "tr": "Deniz",
+              "de": "Meer",
+              "es": "Mar",
+              "fr": "Mer"
             }
           ]
         ]
@@ -81,28 +111,40 @@
     "id": "plaza",
     "name": {
       "en": "Plaza office (HD)",
-      "tr": "Plaza ofisi (HD)"
+      "tr": "Plaza ofisi (HD)",
+      "de": "Büro im Hochhaus (HD)",
+      "es": "Oficina en torre (HD)",
+      "fr": "Bureau en tour (HD)"
     },
     "options": [
       {
         "key": "view",
         "label": {
           "en": "View",
-          "tr": "Manzara"
+          "tr": "Manzara",
+          "de": "Aussicht",
+          "es": "Vista",
+          "fr": "Vue"
         },
         "values": [
           [
             "city",
             {
               "en": "City",
-              "tr": "Şehir"
+              "tr": "Şehir",
+              "de": "Stadt",
+              "es": "Ciudad",
+              "fr": "Ville"
             }
           ],
           [
             "sea",
             {
               "en": "Sea",
-              "tr": "Deniz"
+              "tr": "Deniz",
+              "de": "Meer",
+              "es": "Mar",
+              "fr": "Mer"
             }
           ]
         ]
@@ -113,7 +155,10 @@
     "id": "warehouse",
     "name": {
       "en": "Warehouse (HD)",
-      "tr": "Depo (HD)"
+      "tr": "Depo (HD)",
+      "de": "Lager (HD)",
+      "es": "Almacén (HD)",
+      "fr": "Entrepôt (HD)"
     },
     "options": []
   },
@@ -121,28 +166,40 @@
     "id": "factory",
     "name": {
       "en": "Factory (HD)",
-      "tr": "Fabrika (HD)"
+      "tr": "Fabrika (HD)",
+      "de": "Fabrik (HD)",
+      "es": "Fábrica (HD)",
+      "fr": "Usine (HD)"
     },
     "options": [
       {
         "key": "line",
         "label": {
           "en": "Production line",
-          "tr": "Üretim hattı"
+          "tr": "Üretim hattı",
+          "de": "Fertigungslinie",
+          "es": "Línea de producción",
+          "fr": "Ligne de production"
         },
         "values": [
           [
             "auto",
             {
               "en": "Car bodies",
-              "tr": "Otomotiv"
+              "tr": "Otomotiv",
+              "de": "Karosserien",
+              "es": "Carrocerías",
+              "fr": "Carrosseries"
             }
           ],
           [
             "food",
             {
               "en": "Bottling",
-              "tr": "Şişeleme"
+              "tr": "Şişeleme",
+              "de": "Abfüllung",
+              "es": "Embotellado",
+              "fr": "Embouteillage"
             }
           ]
         ]
@@ -153,28 +210,40 @@
     "id": "space",
     "name": {
       "en": "Space base (HD)",
-      "tr": "Uzay üssü (HD)"
+      "tr": "Uzay üssü (HD)",
+      "de": "Raumbasis (HD)",
+      "es": "Base espacial (HD)",
+      "fr": "Base spatiale (HD)"
     },
     "options": [
       {
         "key": "base",
         "label": {
           "en": "Base",
-          "tr": "Üs"
+          "tr": "Üs",
+          "de": "Basis",
+          "es": "Base",
+          "fr": "Base"
         },
         "values": [
           [
             "orbit",
             {
               "en": "Orbit",
-              "tr": "Yörünge"
+              "tr": "Yörünge",
+              "de": "Orbit",
+              "es": "Órbita",
+              "fr": "Orbite"
             }
           ],
           [
             "mars",
             {
               "en": "Mars",
-              "tr": "Mars"
+              "tr": "Mars",
+              "de": "Mars",
+              "es": "Marte",
+              "fr": "Mars"
             }
           ]
         ]

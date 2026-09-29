@@ -12,10 +12,10 @@ Your agents get a desk. When one starts working it walks over, sits down and sta
 
 - **Zero dependencies.** One small Node.js file plus one HTML page. No build step, no image assets.
 - **Read-only by design.** Cubicle only ever makes `GET` requests, and only to a short allowlist. It cannot change anything in your agent system.
-- **Not tied to one platform.** Paperclip and Claude Code are built in; anything else plugs in through a [tiny JSON feed](docs/FEED.md).
+- **Not tied to one platform.** Paperclip, Claude Code, Codex CLI and Gemini CLI are built in; anything else plugs in through a [tiny JSON feed](docs/FEED.md).
 - **Runs anywhere Node runs.** `npx`, a clone, a systemd unit, or a browser tab pointed at the hosted demo.
-- **Themes.** The classic pixel office, or an HD military operations room for land, air, naval or joint forces. Pick one from the ⚙ menu; themes are single files anyone can add.
-- **English and Turkish UI**, picked from your browser language or with `?lang=en` / `?lang=tr`.
+- **Themes.** The classic pixel office, or HD rooms: a holding HQ, a plaza office, a warehouse, a factory, a space base and a military operations room. Pick one from the ⚙ menu; a theme is one file anyone can add.
+- **English, Turkish, German, Spanish and French UI**, picked from your browser language or with `?lang=xx`.
 
 ## Quick start
 
@@ -71,17 +71,19 @@ node bin/cubicle.js            # add --source … as above
 | --- | --- | --- |
 | `--port` | `CUBICLE_PORT` | `3200` |
 | `--host` | `CUBICLE_HOST` | `127.0.0.1` |
-| `--source` | `CUBICLE_SOURCE` | `paperclip` — or `claude-code`, a `.json` file, an `http(s)://` URL, or several of these comma-separated |
+| `--source` | `CUBICLE_SOURCE` | `paperclip` — or `claude-code`, `codex`, `gemini`, `replay:FILE.jsonl`, a `.json` file, an `http(s)://` URL, or several of these comma-separated |
 | `--paperclip` | `PAPERCLIP_URL` | `http://127.0.0.1:3100` |
 | `--token-file` | `PAPERCLIP_TOKEN` / `PAPERCLIP_TOKEN_FILE` | none — API key for an authenticated Paperclip |
 | `--redact` | `CUBICLE_REDACT=1` | off — strip task titles, commands and error text on the server; the office shows only ids, tool names and statuses |
+| `--record FILE.jsonl` | | off — append everything the office shows to a file, only when it changes |
+| `--speed N` | `CUBICLE_SPEED` | `60` — replay speed for `--source replay:FILE.jsonl` (60 = an hour a minute) |
 
 URL parameters:
 
 - `?company=PREFIX` opens a specific Paperclip company (for example `?company=MEG`). With several companies, a picker also appears in the header.
-- `?lang=en` or `?lang=tr` sets the language.
+- `?lang=en`, `tr`, `de`, `es` or `fr` sets the language.
 - `?demo` shows fake agents.
-- `?theme=military&branch=land` picks a theme (`branch` is `land`, `air`, `naval` or `joint`). The same choices are in the ⚙ menu, which remembers them per browser and copies a link that carries them, so a kiosk always opens the same way.
+- `?theme=military&branch=land` picks a theme and its options (listed in [`public/themes/index.json`](public/themes/index.json)). The same choices are in the ⚙ menu, which remembers them per browser and copies a link that carries them, so a kiosk always opens the same way.
 - `?kiosk` fills the screen with the office for a TV or a second monitor (run the server with `--redact` if that screen is shared): cards and footer hidden, names and bubbles scale with the screen, cursor hidden. Combined with the auto-updater, a wall display picks up new versions by itself.
 
 ## What the office shows
@@ -96,16 +98,25 @@ URL parameters:
 
 ## Themes
 
+[![HD themes: holding, plaza, warehouse, factory, space](docs/themes-hd.png)](https://caglarutkuguler.github.io/cubicle/?lang=en&theme=plaza)
+
 [![Military theme: land, air, naval and joint](docs/theme-military.png)](https://caglarutkuguler.github.io/cubicle/?lang=en&theme=military&branch=joint)
 
 | Theme | What you get |
 | --- | --- |
 | `pixel` (default) | The classic 16-px pixel-art office |
+| `holding` | Walnut-panelled headquarters with the company name on the wall, a boardroom and a city or sea view; suits, skirts and heels |
+| `plaza` | A high floor of a glass tower: window wall with a skyline or sea view, white desks, a coffee bar and sofa in the lounge; smart casual, some in skirts and heels |
+| `warehouse` | Loading-bay doors, a conveyor that runs faster the more agents work, pallet racks and a forklift; hi-vis vests and hard hats |
+| `factory` | A production line (car bodies with robot arms, or bottling) that runs while agents work, an andon tower that shows the office state, coveralls |
+| `space` | A base in orbit or on Mars: viewports, holographic consoles, mission clock, a hydroponics garden; mission jumpsuits |
 | `military` | HD operations room drawn at 4× resolution. **Land**: olive walls, tactical map with a marker per working agent. **Air**: hangar windows with a passing jet, radar scope, runway safety line. **Naval**: riveted steel deck, portholes, sonar. **Joint**: video wall with all three plus local and UTC clocks, and every agent in the uniform of one service. Rank follows the agent's role (a star for CEO/lead/director, chevrons otherwise); a red beacon turns on while any agent is in error. |
 
-Themes change only how the office is drawn; movement, bubbles, cards and the data the server sends are the same for every theme. A theme is one file in `public/themes/`, loaded only when chosen; see [CONTRIBUTING.md](CONTRIBUTING.md#adding-a-theme).
+Themes change only how the office is drawn; movement, bubbles, cards and the data the server sends are the same for every theme. A theme is one file in `public/themes/` plus a line in `index.json`, loaded only when chosen; a shared kit draws people, desks, windows and furniture, so a new room is mostly a palette and an outfit. How to write one: [docs/THEMES.md](docs/THEMES.md).
 
-Each card below the office links to the agent's current task when the source provides a link (Paperclip issues do).
+Each card below the office links to the agent's current task when the source provides a link (Paperclip issues do), and shows the agent's spend this month when Paperclip reports one (amber from 80 % of the budget, red at 100 %).
+
+When a Paperclip issue moves from one agent to another, both walk to the lounge table for a few seconds and the one handing over says which issue it passes on.
 
 ## Sources
 
@@ -122,6 +133,10 @@ npx @caglarutkuguler/cubicle --paperclip https://paperclip.example.com --token-f
 Use a board API key with the narrowest read-only scope Paperclip lets you create; an agent key also works but only sees that agent's company. There is no `--token` flag on purpose, because command-line flags are visible in the process list. With systemd, put `PAPERCLIP_TOKEN=…` in a `chmod 600` file and point `EnvironmentFile=` at it (see `examples/systemd/cubicle.service`).
 
 **Claude Code.** A hook script ([`bin/cubicle-hook.js`](bin/cubicle-hook.js)) runs on Claude Code's own hook events and rewrites `~/.cubicle/claude-code.json`. Tool calls put the character at its desk, permission prompts raise its hand, `Stop` sends it to the lounge. Subagents started with the Agent (Task) tool get their own character next to the session (thanks @omeruyanik03). Setup and privacy notes: [`examples/claude-code/README.md`](examples/claude-code/README.md).
+
+**Codex CLI and Gemini CLI.** The same hook, installed with `install-hooks codex` or `install-hooks gemini`, writes `~/.cubicle/codex.json` or `~/.cubicle/gemini.json`; read them with `--source codex` or `--source gemini`. Codex uses Claude Code's hook events; Gemini's are mapped onto them. See [`examples/codex/`](examples/codex/) and [`examples/gemini/`](examples/gemini/).
+
+**Replay.** `--record day.jsonl` saves what the office shows whenever it changes. `--source replay:day.jsonl --speed 60` plays it back an hour a minute, looping, with the replayed time in the header: a whole working day in a few minutes, for a demo or a wall screen.
 
 **Several at once.** `--source paperclip,claude-code,./other.json` puts every source in the same office. Each source keeps its own block of desks, so agents don't shuffle when a session starts or ends, and if one source goes down the others keep showing while the header names the one that is unreachable.
 
@@ -151,7 +166,7 @@ Cubicle is one of several pixel offices for AI agents, all inspired by [Pixel Ag
 
 | | Cubicle | [Pixel Agents](https://github.com/pixel-agents-hq/pixel-agents) | [Agent Pixels](https://github.com/gcampton/Agent-Pixels) | [agents-in-the-office](https://github.com/gukosowa/agents-in-the-office) |
 | --- | --- | --- | --- | --- |
-| Works with | Paperclip, Claude Code, any JSON feed | Claude Code | Paperclip | Claude Code, Gemini CLI |
+| Works with | Paperclip, Claude Code, Codex CLI, Gemini CLI, any JSON feed | Claude Code | Paperclip | Claude Code, Gemini CLI |
 | Runs as | Paperclip plugin, or standalone page (`npx`, systemd, kiosk) | VS Code extension or `npx` browser app | Paperclip plugin | Standalone app |
 | Setup | One command, nothing to build (also as a plugin) | Marketplace install; build from source to hack on it | Build against the Paperclip plugin SDK | See its README |
 | Access to your agents | Read-only by design (GET allowlist) | Watches local Claude Code sessions | Inside Paperclip | Watches local sessions |
@@ -196,7 +211,7 @@ journalctl --user -u cubicle-update.service   # what it did
 
 ## Contributing
 
-Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for the few ground rules (zero dependencies, read-only). Look for issues labelled [good first issue](https://github.com/caglarutkuguler/cubicle/labels/good%20first%20issue). Ideas: new themes (one file each), adapters for other agent runtimes (write a feed, send a PR with an example), meeting-room animations when agents hand work to each other, optional sound cues, a company logo on the wall, per-agent appearance, and replay of a recorded day.
+Issues and pull requests are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md) for the few ground rules (zero dependencies, read-only). Look for issues labelled [good first issue](https://github.com/caglarutkuguler/cubicle/labels/good%20first%20issue). Ideas: new themes (one file each; see [docs/THEMES.md](docs/THEMES.md)), more UI languages, adapters for other agent runtimes (write a feed, send a PR with an example), optional sound cues, a company logo on the wall, and per-agent appearance.
 
 ## Releasing
 
@@ -223,4 +238,4 @@ Cubicle is a community project and is not affiliated with or endorsed by Papercl
 
 **Cubicle**, AI ajanlarınızı canlı bir pixel ofiste gösterir: [Paperclip](https://github.com/paperclipai/paperclip) ve Claude Code hazır gelir; başka sistemler küçük bir [JSON feed](docs/FEED.md) ile bağlanır. Çalışan ajan masasına oturup yazar ve başının üstünde görevi görünür; sizi bekleyen ajan elini kaldırır; işi biten ajan dinlenme alanına döner; hata alan ajanın ekranı kırmızı yanar.
 
-Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD askerî tema (Kara, Hava, Deniz veya Müşterek Kuvvetler) seçilebilir; aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır.
+Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD temalar seçilebilir: holding, plaza ofisi, depo, fabrika, uzay üssü ve askerî (Kara, Hava, Deniz veya Müşterek Kuvvetler); aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır.
