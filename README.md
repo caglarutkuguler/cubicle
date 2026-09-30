@@ -187,7 +187,8 @@ npx paperclipai plugin install @caglarutkuguler/cubicle
 - Nothing else to run: Paperclip serves the office page from the plugin, and the page reads the same three endpoints as the standalone proxy (companies, agents, open issues), on Paperclip's own origin with your own session. It only ever sends `GET` requests. The plugin asks Paperclip for three capabilities, all UI only (`ui.sidebar.register`, `ui.page.register`, `ui.dashboardWidget.register`); its worker answers Paperclip's lifecycle calls and nothing else.
 - Themes, the ⚙ menu, faces and "needs you" work the same. Task ids link to the issue inside Paperclip.
 - A **dashboard widget** puts a small live office on Paperclip's dashboard; clicking it opens the page.
-- **Kiosk / TV** (top right of the page) opens the office full screen at a Paperclip URL, so a wall display needs only a browser signed in to Paperclip.
+- **New tab** (top right of the page) opens the whole office, cards and ⚙ menu included, in a browser tab of its own; issue links there open in another tab so the office stays put.
+- **Kiosk / TV** next to it opens the office full screen at a Paperclip URL, so a wall display needs only a browser signed in to Paperclip.
 - Update to the latest version with Paperclip's upgrade endpoint (instance admins; no key needed in the default `local_trusted` mode): `curl -X POST http://127.0.0.1:3100/api/plugins/caglarutkuguler.cubicle/upgrade`. When a version asks for a new capability (0.11 adds the dashboard widget), Paperclip refuses the upgrade; install it again instead, which keeps the plugin's id and your kiosk links: `npx paperclipai plugin uninstall caglarutkuguler.cubicle && npx paperclipai plugin install @caglarutkuguler/cubicle`. Remove with `npx paperclipai plugin uninstall caglarutkuguler.cubicle`.
 - Hacking on it: `npx paperclipai plugin install /path/to/your/cubicle/clone` installs from a checkout.
 

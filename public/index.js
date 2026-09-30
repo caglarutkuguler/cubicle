@@ -47,10 +47,12 @@ export function CubicleOfficePage({ context }) {
   React.useEffect(() => { let live = true; pluginId().then((v) => { if (live) setId(v); }); return () => { live = false; }; }, []);
   if (!id) return null;
   const src = officeUrl(id, context);
+  const link = { target: '_blank', rel: 'noopener', style: { color: 'var(--muted-foreground)' } };
   return h('div', { style: { display: 'flex', flexDirection: 'column', height: 'calc(100vh - 170px)', minHeight: '420px' } },
-    h('div', { style: { display: 'flex', justifyContent: 'flex-end', padding: '0 4px 6px', fontSize: '12px' } },
-      h('a', { href: officeUrl(id, context, { kiosk: '' }), target: '_blank', rel: 'noopener', style: { color: 'var(--muted-foreground)' } },
-        'Kiosk / TV ↗')),
+    h('div', { style: { display: 'flex', justifyContent: 'flex-end', gap: '14px', padding: '0 4px 6px', fontSize: '12px' } },
+      // The full page (cards, ⚙ menu) in a tab of its own, and the full-screen office for a TV.
+      h('a', { ...link, href: src, title: 'Open the office in a new browser tab' }, 'New tab ↗'),
+      h('a', { ...link, href: officeUrl(id, context, { kiosk: '' }), title: 'Full-screen office for a TV or second monitor' }, 'Kiosk / TV ↗')),
     h('iframe', {
       key: src, src, title: 'Cubicle office', allow: 'clipboard-write',
       style: { flex: 1, width: '100%', border: 0, borderRadius: '8px', background: '#1b1b2b' },

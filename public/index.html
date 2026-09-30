@@ -763,7 +763,8 @@
     if (t.url) return `<a href="${esc(t.url)}" target="_blank" rel="noopener">${label || '↗'}</a>`;
     // Only Paperclip issues (which carry assigneeAgentId) link into Paperclip.
     if (!paperclipUrl || DEMO || !company || !('assigneeAgentId' in t)) return label;
-    const target = EMBED ? '_top' : '_blank';   // inside Paperclip, open the issue in Paperclip itself
+    // Framed inside Paperclip: open the issue in Paperclip itself. In a tab of its own: keep the office open.
+    const target = EMBED && window.top !== window ? '_top' : '_blank';
     return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="${target}" rel="noopener">${label}</a>`;
   }
 
