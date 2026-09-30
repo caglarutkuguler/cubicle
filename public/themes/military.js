@@ -197,6 +197,9 @@
     });
   }
 
+  // This theme draws without the kit, so it carries its one wall word itself.
+  const LOCAL = { en: 'LOCAL', tr: 'YEREL', de: 'LOKAL', es: 'LOCAL', fr: 'LOCAL', zh: '本地', ar: 'محلي' };
+  const localWord = (c) => LOCAL[c.lang] || LOCAL.en;
   function clockText(c, x, y, label, date, utc) {
     const hh = utc ? date.getUTCHours() : date.getHours(), mm = utc ? date.getUTCMinutes() : date.getMinutes();
     rr('#101418', x, y, 15, 9, 1.2);
@@ -229,7 +232,7 @@
       scope(c, 5.5 * T, 5, 2.6 * T, 20, 'radar');
       scope(c, 8.6 * T, 5, 2.6 * T, 20, 'sonar');
       statusBars(c, 11.6 * T, 5, 1.1 * T, 20);
-      clockText(c, 16.2 * T, 7, 'LOCAL', date, false);
+      clockText(c, 16.2 * T, 7, localWord(c), date, false);
       clockText(c, 17.4 * T, 7, 'UTC', date, true);
     } else {
       const view = branch === 'land' ? windowLand : branch === 'air' ? windowAir : porthole;
@@ -240,7 +243,7 @@
       });
       if (branch === 'land') mapDisplay(c, 9.2 * T, 4.5, 2.6 * T, 21);
       else scope(c, 9.2 * T + 5, 4, 1.9 * T, 23, branch === 'air' ? 'radar' : 'sonar');
-      clockText(c, 12.7 * T + 1, 8, 'LOCAL', date, false);
+      clockText(c, 12.7 * T + 1, 8, localWord(c), date, false);
     }
     beacon(c);
     // glass partition with a doorway

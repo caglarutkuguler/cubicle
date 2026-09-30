@@ -53,11 +53,11 @@
     });
     // shift board in the break area
     K.rr('#1f2428', 16 * T, 4, 3.2 * T, 20, 1);
-    K.text('SHIFT', 16 * T + 4, 8, { size: 3, color: '#8fe3ff' });
-    K.text(`${K.pad(n.running)} RUN`, 16 * T + 4, 13, { size: 3, color: '#3bdc6a', font: 'ui-monospace, Menlo, monospace' });
-    K.text(`${K.pad(n.waiting)} HOLD`, 16 * T + 4, 17.5, { size: 3, color: '#ffc34a', font: 'ui-monospace, Menlo, monospace' });
-    K.text(`${K.pad(n.error)} STOP`, 16 * T + 4, 22, { size: 3, color: '#ff5a5a', font: 'ui-monospace, Menlo, monospace' });
-    K.clock(c, 20 * T, 7, { label: 'SHIFT' });
+    K.text(K.say(c, 'SHIFT'), 16 * T + 4, 8, { size: 3, color: '#8fe3ff' });
+    K.text(`${K.pad(n.running)} ${K.say(c, 'RUN')}`, 16 * T + 4, 13, { size: 3, color: '#3bdc6a', font: 'ui-monospace, Menlo, monospace' });
+    K.text(`${K.pad(n.waiting)} ${K.say(c, 'HOLD')}`, 16 * T + 4, 17.5, { size: 3, color: '#ffc34a', font: 'ui-monospace, Menlo, monospace' });
+    K.text(`${K.pad(n.error)} ${K.say(c, 'STOP')}`, 16 * T + 4, 22, { size: 3, color: '#ff5a5a', font: 'ui-monospace, Menlo, monospace' });
+    K.clock(c, 20 * T, 7, { label: K.say(c, 'SHIFT') });
     K.partition(c, { glass: 'rgba(230,180,34,.14)', frame: '#3b4247' });
   }
 

@@ -11,6 +11,17 @@
   const T = 16;
   let g = null;
 
+  // Signage themes write on walls and boards, in every language the page speaks (see K.say).
+  const WORDS = {
+    LOCAL: { en: 'LOCAL', tr: 'YEREL', de: 'LOKAL', es: 'LOCAL', fr: 'LOCAL', zh: '本地', ar: 'محلي' },
+    UTC: { en: 'UTC' },
+    SHIFT: { en: 'SHIFT', tr: 'VARDİYA', de: 'SCHICHT', es: 'TURNO', fr: 'ÉQUIPE', zh: '班次', ar: 'الوردية' },
+    RUN: { en: 'RUN', tr: 'ÇALIŞAN', de: 'LÄUFT', es: 'ACTIVO', fr: 'MARCHE', zh: '运行', ar: 'يعمل' },
+    HOLD: { en: 'HOLD', tr: 'BEKLEYEN', de: 'WARTET', es: 'ESPERA', fr: 'ATTENTE', zh: '等待', ar: 'انتظار' },
+    STOP: { en: 'STOP', tr: 'DURAN', de: 'STOPP', es: 'PARADO', fr: 'ARRÊT', zh: '停止', ar: 'توقف' },
+    MET: { en: 'MET', tr: 'GÖREV', de: 'MISSION', es: 'MISIÓN', fr: 'MISSION', zh: '任务', ar: 'المهمة' },
+  };
+
   const K = {
     T,
     /** Call at the start of every theme function: points the helpers at this frame's canvas. */
@@ -147,8 +158,13 @@
       for (let i = 1; i <= mullions; i++) K.rect(frame, x + (w * i) / (mullions + 1) - 0.6, y, 1.2, h);
       K.rect('rgba(255,255,255,.10)', x, y, w, 1.2);
     },
+    /** Words on the wall in the page's language: K.say(c, { en: 'SHIFT', tr: 'VARDİYA' }) or a WORDS key. */
+    say(c, words) {
+      const w = typeof words === 'string' ? WORDS[words] || { en: words } : words;
+      return w[(c && c.lang) || 'en'] || w.en;
+    },
     /** Digital wall clock. */
-    clock(c, x, y, { label = 'LOCAL', utc = false, color = '#ff6b4a', bg = '#101418' } = {}) {
+    clock(c, x, y, { label = K.say(c, 'LOCAL'), utc = false, color = '#ff6b4a', bg = '#101418' } = {}) {
       const d = new Date(), hh = utc ? d.getUTCHours() : d.getHours(), mm = utc ? d.getUTCMinutes() : d.getMinutes();
       K.rr(bg, x, y, 15, 9, 1.2);
       K.text(`${K.pad(hh)}:${K.pad(mm)}`, x + 7.5, y + 4.2, { size: 5.4, color, align: 'center', font: 'ui-monospace, Menlo, Consolas, monospace' });

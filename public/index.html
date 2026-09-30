@@ -156,6 +156,7 @@
       notify: 'Desktop notification when an agent needs me', notifyBlocked: 'Notifications are blocked for this page in the browser settings.',
       sound: 'Sound', soundOff: 'Off', soundNeed: 'When an agent needs me', soundAll: 'Needs me, done and errors',
       fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
+      language: 'Language', languageAuto: 'Browser language',
       record: 'Record a 30 s video', recording: (n) => `Recording… ${n} s`, recordSaved: 'Video saved ✓', recordUnsupported: 'This browser cannot record the office.',
       logo: 'Company logo', logoPick: 'Upload a logo…', logoRemove: 'Remove the logo',
       exportLooks: 'Export appearance', importLooks: 'Import appearance…',
@@ -191,6 +192,7 @@
       notify: 'Bir ajan beni beklediğinde masaüstü bildirimi', notifyBlocked: 'Bu sayfa için bildirimler tarayıcı ayarlarında engellenmiş.',
       sound: 'Ses', soundOff: 'Kapalı', soundNeed: 'Bir ajan beni beklediğinde', soundAll: 'Bekleyen, biten ve hata',
       fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
+      language: 'Dil', languageAuto: 'Tarayıcı dili',
       record: '30 saniyelik video kaydet', recording: (n) => `Kaydediliyor… ${n} sn`, recordSaved: 'Video kaydedildi ✓', recordUnsupported: 'Bu tarayıcı ofisi kaydedemiyor.',
       logo: 'Şirket logosu', logoPick: 'Logo yükle…', logoRemove: 'Logoyu kaldır',
       exportLooks: 'Görünümü dışa aktar', importLooks: 'Görünümü içe aktar…',
@@ -226,6 +228,7 @@
       notify: 'Desktop-Benachrichtigung, wenn ein Agent mich braucht', notifyBlocked: 'Benachrichtigungen sind für diese Seite in den Browser-Einstellungen blockiert.',
       sound: 'Ton', soundOff: 'Aus', soundNeed: 'Wenn ein Agent mich braucht', soundAll: 'Braucht mich, fertig und Fehler',
       fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
+      language: 'Sprache', languageAuto: 'Browsersprache',
       record: '30-Sekunden-Video aufnehmen', recording: (n) => `Aufnahme… ${n} s`, recordSaved: 'Video gespeichert ✓', recordUnsupported: 'Dieser Browser kann das Büro nicht aufnehmen.',
       logo: 'Firmenlogo', logoPick: 'Logo hochladen…', logoRemove: 'Logo entfernen',
       exportLooks: 'Aussehen exportieren', importLooks: 'Aussehen importieren…',
@@ -261,6 +264,7 @@
       notify: 'Notificación de escritorio cuando un agente me necesita', notifyBlocked: 'Las notificaciones están bloqueadas para esta página en los ajustes del navegador.',
       sound: 'Sonido', soundOff: 'Desactivado', soundNeed: 'Cuando un agente me necesita', soundAll: 'Me necesita, terminado y errores',
       fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
+      language: 'Idioma', languageAuto: 'Idioma del navegador',
       record: 'Grabar un vídeo de 30 s', recording: (n) => `Grabando… ${n} s`, recordSaved: 'Vídeo guardado ✓', recordUnsupported: 'Este navegador no puede grabar la oficina.',
       logo: 'Logo de la empresa', logoPick: 'Subir un logo…', logoRemove: 'Quitar el logo',
       exportLooks: 'Exportar apariencia', importLooks: 'Importar apariencia…',
@@ -296,6 +300,7 @@
       notify: 'Notification de bureau quand un agent a besoin de moi', notifyBlocked: 'Les notifications sont bloquées pour cette page dans les réglages du navigateur.',
       sound: 'Son', soundOff: 'Désactivé', soundNeed: 'Quand un agent a besoin de moi', soundAll: 'Besoin de moi, terminé et erreurs',
       fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
+      language: 'Langue', languageAuto: 'Langue du navigateur',
       record: 'Enregistrer une vidéo de 30 s', recording: (n) => `Enregistrement… ${n} s`, recordSaved: 'Vidéo enregistrée ✓', recordUnsupported: 'Ce navigateur ne peut pas enregistrer le bureau.',
       logo: 'Logo de l’entreprise', logoPick: 'Importer un logo…', logoRemove: 'Retirer le logo',
       exportLooks: 'Exporter l’apparence', importLooks: 'Importer l’apparence…',
@@ -331,6 +336,7 @@
       notify: '代理需要我时显示桌面通知', notifyBlocked: '浏览器设置中已阻止此页面的通知。',
       sound: '声音', soundOff: '关闭', soundNeed: '代理需要我时', soundAll: '需要我、完成和出错',
       fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
+      language: '语言', languageAuto: '浏览器语言',
       record: '录制 30 秒视频', recording: (n) => `录制中… ${n} 秒`, recordSaved: '视频已保存 ✓', recordUnsupported: '此浏览器无法录制办公室。',
       logo: '公司标志', logoPick: '上传标志…', logoRemove: '移除标志',
       exportLooks: '导出外观', importLooks: '导入外观…',
@@ -366,6 +372,7 @@
       notify: 'إشعار على سطح المكتب عندما يحتاجني وكيل', notifyBlocked: 'الإشعارات محظورة لهذه الصفحة في إعدادات المتصفح.',
       sound: 'الصوت', soundOff: 'إيقاف', soundNeed: 'عندما يحتاجني وكيل', soundAll: 'يحتاجني، انتهى، وأخطاء',
       fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
+      language: 'اللغة', languageAuto: 'لغة المتصفح',
       record: 'تسجيل فيديو مدته 30 ثانية', recording: (n) => `جارٍ التسجيل… ${n} ث`, recordSaved: 'تم حفظ الفيديو ✓', recordUnsupported: 'لا يستطيع هذا المتصفح تسجيل المكتب.',
       logo: 'شعار الشركة', logoPick: 'رفع شعار…', logoRemove: 'إزالة الشعار',
       exportLooks: 'تصدير المظهر', importLooks: 'استيراد المظهر…',
@@ -388,8 +395,10 @@
     },
   };
   const params = new URLSearchParams(location.search);
-  // Any language with a block in STR is picked from ?lang=xx or the browser language; English otherwise.
-  const wantLang = (params.get('lang') || navigator.language || 'en').slice(0, 2).toLowerCase();
+  // Any language with a block in STR is picked from ?lang=xx, then the ⚙ menu's choice (saved in this
+  // browser), then the browser language; English otherwise.
+  const savedLang = (() => { try { return JSON.parse(localStorage.getItem('cubicle.settings') || '{}').lang || ''; } catch (_) { return ''; } })();
+  const wantLang = (params.get('lang') || savedLang || navigator.language || 'en').slice(0, 2).toLowerCase();
   const lang = STR[wantLang] ? wantLang : 'en';
   const L = STR[lang];
   document.documentElement.lang = lang;
@@ -1229,7 +1238,7 @@
     g.imageSmoothingEnabled = !!theme.smooth;
     g.clearRect(0, 0, CW, CH);
     const hr = new Date().getHours();
-    const c = { g, t: now, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites, desks: DESKS, lounge: LOUNGE, company: officeName, logo: imageOf(looks.logo),
+    const c = { g, t: now, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites, desks: DESKS, lounge: LOUNGE, company: officeName, lang, logo: imageOf(looks.logo),
       anyError: [...sprites.values()].some((s) => s.status === 'error') };
     theme.drawRoom(c);
     if (looks.logo) drawLogo(c);
@@ -1435,7 +1444,7 @@
     const k = pc.width / 30;
     pg.setTransform(1, 0, 0, 1, 0, 0); pg.clearRect(0, 0, pc.width, pc.height);
     pg.setTransform(k, 0, 0, k, 0, 0); pg.imageSmoothingEnabled = !!theme.smooth;
-    const c = { g: pg, t: performance.now() / 1000, T, CW: 30, CH: 38, night: false, opts: themeOpts, sprites: new Map(), desks: [], lounge: [], company: '', anyError: false };
+    const c = { g: pg, t: performance.now() / 1000, T, CW: 30, CH: 38, night: false, opts: themeOpts, sprites: new Map(), desks: [], lounge: [], company: '', lang, anyError: false };
     try { theme.drawChar(c, ghost); } catch (_) {}
     requestAnimationFrame(previewLoop);
   }
@@ -1606,6 +1615,7 @@
   // plus one entry there; see docs/THEMES.md.
   let CATALOG = [{ id: 'pixel', name: themes.pixel.name, options: [] }];
   const tr = (o) => (o && (o[lang] || o.en)) || '';
+  const LANG_NAMES = { en: 'English', tr: 'Türkçe', de: 'Deutsch', es: 'Español', fr: 'Français', zh: '中文', ar: 'العربية' };
   const STORE = 'cubicle.settings';
   let settings = { theme: 'pixel' };
   try { settings = { ...settings, ...JSON.parse(localStorage.getItem(STORE) || '{}') }; } catch (_) {}
@@ -1668,12 +1678,14 @@
       `<label class="check"><input type="checkbox" id="set-notify"${settings.notify ? ' checked' : ''}> ${esc(L.notify)}</label>` +
       own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
       own('fps', L.fps, [['auto', L.fpsAuto], ['30', L.fps30], ['15', L.fps15]], settings.fps || 'auto') +
+      own('lang', L.language, [['', L.languageAuto], ...Object.keys(STR).map((k) => [k, LANG_NAMES[k] || k])], settings.lang || '') +
       `<hr><label>${esc(L.logo)}</label><div class="row"><button type="button" id="set-logo">${esc(L.logoPick)}</button>` +
       (looks.logo ? `<button type="button" id="set-nologo">${esc(L.logoRemove)}</button>` : '') + '</div>' +
       `<div class="row"><button type="button" id="set-export">${esc(L.exportLooks)}</button><button type="button" id="set-import">${esc(L.importLooks)}</button></div>` +
       `<hr><button type="button" id="set-record">${esc(recording ? L.recording(Math.ceil(recording.until - performance.now() / 1000)) : L.record)}</button>`;
     panel.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => {
       settings[el.dataset.key] = el.value; save();
+      if (el.dataset.key === 'lang') { if (!el.value) delete settings.lang; save(); location.reload(); return; }
       if (el.dataset.own) { if (el.dataset.key === 'sound' && el.value !== 'off') chime('need'); return; }
       applySettings();
     }));
@@ -1709,6 +1721,7 @@
       const u = new URL(location.href);
       u.searchParams.set('theme', entry.id);
       for (const o of entry.options) u.searchParams.set(o.key, themeOpts[o.key]);
+      if (settings.lang) u.searchParams.set('lang', settings.lang);
       try { await navigator.clipboard.writeText(u.toString()); e.target.textContent = L.copied; }
       catch (_) { prompt(L.copyLink, u.toString()); }
       setTimeout(() => { e.target.textContent = L.copyLink; }, 1500);

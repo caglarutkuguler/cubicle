@@ -44,13 +44,15 @@
     }
     // mission board: one light per agent at work
     K.rr('#0c1420', 8.4 * T, 4, 4.8 * T, 20, 2);
-    K.text(base === 'mars' ? 'ARES BASE' : 'ORBITAL OPS', 8.4 * T + 4, 8, { size: 3, color: '#8fe3ff' });
+    K.text(K.say(c, base === 'mars'
+      ? { en: 'ARES BASE', tr: 'ARES ÜSSÜ', de: 'ARES-BASIS', es: 'BASE ARES', fr: 'BASE ARÈS', zh: '阿瑞斯基地', ar: 'قاعدة آريس' }
+      : { en: 'ORBITAL OPS', tr: 'YÖRÜNGE ÜSSÜ', de: 'ORBITALSTATION', es: 'OPS ORBITALES', fr: 'OPS ORBITALES', zh: '轨道站', ar: 'العمليات المدارية' }), 8.4 * T + 4, 8, { size: 3, color: '#8fe3ff' });
     const all = [...c.sprites.values()];
     all.slice(0, 16).forEach((s, i) => {
       const col = s.status === 'error' ? '#ff5a5a' : (s.status === 'waiting' || s.ask) ? '#ffd23f' : s.status === 'running' ? '#5fe0ff' : '#3a4a5a';
       K.circle(col, 8.4 * T + 6 + (i % 8) * 8.8, 14 + Math.floor(i / 8) * 5, 1.4);
     });
-    K.clock(c, 8.4 * T + 4.8 * T - 17, 5.5, { label: 'MET', utc: true, color: '#8fe3ff', bg: '#0c1420' });
+    K.clock(c, 8.4 * T + 4.8 * T - 17, 5.5, { label: K.say(c, 'MET'), utc: true, color: '#8fe3ff', bg: '#0c1420' });
     K.partition(c, { glass: 'rgba(120,220,255,.16)', frame: '#8d97a3' });
   }
 

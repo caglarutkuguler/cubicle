@@ -98,7 +98,7 @@ A seated agent stands at `(x*T + 22, y*T + 12)` of its desk, to the right of the
 
 ## What you get
 
-`c` (every function): `g` the 2D context, `t` time in seconds, `T`, `CW`, `CH`, `night`, `opts`, `sprites` (every agent), `desks`, `lounge`, `anyError`, `company` (the company name, may be empty).
+`c` (every function): `g` the 2D context, `t` time in seconds, `T`, `CW`, `CH`, `night`, `opts`, `sprites` (every agent), `desks`, `lounge`, `anyError`, `company` (the company name, may be empty), `lang` (the page language: `en`, `tr`, `de`, `es`, `fr`, `zh` or `ar`).
 
 An agent `s`: `id`, `name`, `role`, `status` (`running`, `waiting`, `idle`, `error`, `paused`), `ask` (a board question is waiting), `seated`, `typing`, `walking`, `dir`, `x`, `y`, `shirt`, `skin`, `hair` colours, and `look`: what the user chose in the appearance dialog (`hair` style, `bottom` `'trousers'`/`'skirt'`, `shoes` `'flats'`/`'heels'`; colours are already in `shirt`, `skin`, `hair`).
 
@@ -116,6 +116,7 @@ Call `K.begin(c)` at the start of each function. The main helpers:
 | `desk`, `monitor`, `screenColor` | a desk that shows the agent's state (typing, amber when it needs you, red on error) |
 | `plant`, `sofa`, `table`, `shelf`, `waterCooler`, `coffeeMachine` | furniture |
 | `clock`, `analogClock`, `statusBoard`, `counts(c)`, `sign` | things on the wall that react to the office |
+| `say(c, { en: 'SHIFT', tr: 'VARDİYA', ... })` | words on walls and boards in the page's language (English when a language is missing); `K.say(c, 'LOCAL')` uses the kit's own list |
 | `person(c, s, look)` | an agent in any outfit; see the comment above it in `kit.js` for every `look` field (suits, skirts and heels, coveralls, hi-vis vests, hard hats, lab coats, headsets, helmets...) |
 | `rand(s, salt)`, `pick(s, salt, list)`, `senior(s)` | stable per-agent choices: the same agent always gets the same look |
 
@@ -123,6 +124,7 @@ Call `K.begin(c)` at the start of each function. The main helpers:
 
 - Everything is drawn in code: no image files, fonts, network requests or dependencies.
 - No real logos, brands, flags, emblems or recognisable characters. The company name comes from the data (`K.sign`); the user's own logo is placed by the page at your `logoSpot`.
+- Write words on walls with `K.say`, at least in English and Turkish, so the room speaks the page's language.
 - Keep states readable: working, needs-you (amber), error (red) and idle should be obvious at a glance on a TV across the room.
 - Looks come from the agent id (`K.rand`, `K.pick`), never from `Math.random()`, so nobody changes clothes between frames.
 - One theme per pull request. Include a screenshot.

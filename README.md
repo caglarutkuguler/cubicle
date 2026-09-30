@@ -17,7 +17,7 @@ Your agents get a desk. When one starts working it walks over, sits down and sta
 - **Themes.** The classic pixel office, or HD rooms: a holding HQ, a plaza office, a warehouse, a factory, a space base and a military operations room. Pick one from the ⚙ menu; a theme is one file anyone can add.
 - **Your people, your brand.** Give any agent a real face from a photo (a wizard crops the head), a hairstyle, a skirt or heels; put your logo on the wall.
 - **Tells you when you're needed.** Optional desktop notification and sound when an agent raises its hand, and a 30-second video recording of the office for sharing.
-- **English, Turkish, German, Spanish, French, Chinese and Arabic UI** (right to left), picked from your browser language or with `?lang=xx`.
+- **English, Turkish, German, Spanish, French, Chinese and Arabic UI** (right to left), picked from your browser language, the ⚙ menu or `?lang=xx`; words on the walls of the HD themes follow it.
 
 ## Quick start
 
@@ -84,7 +84,7 @@ node bin/cubicle.js            # add --source … as above
 URL parameters:
 
 - `?company=PREFIX` opens a specific Paperclip company (for example `?company=MEG`). With several companies, a picker also appears in the header.
-- `?lang=en`, `tr`, `de`, `es`, `fr`, `zh` or `ar` sets the language.
+- `?lang=en`, `tr`, `de`, `es`, `fr`, `zh` or `ar` sets the language (the ⚙ menu's **Language** does the same and is remembered per browser).
 - `?demo` shows fake agents.
 - `?theme=military&branch=land` picks a theme and its options (listed in [`public/themes/index.json`](public/themes/index.json)). The same choices are in the ⚙ menu, which remembers them per browser and copies a link that carries them, so a kiosk always opens the same way.
 - `?kiosk` fills the screen with the office for a TV or a second monitor (run the server with `--redact` if that screen is shared): cards and footer hidden, names and bubbles scale with the screen, cursor hidden. Combined with the auto-updater, a wall display picks up new versions by itself.
@@ -272,4 +272,4 @@ Cubicle is a community project and is not affiliated with or endorsed by Papercl
 
 **Cubicle**, AI ajanlarınızı canlı bir pixel ofiste gösterir: [Paperclip](https://github.com/paperclipai/paperclip) ve Claude Code hazır gelir; başka sistemler küçük bir [JSON feed](docs/FEED.md) ile bağlanır. Çalışan ajan masasına oturup yazar ve başının üstünde görevi görünür; sizi bekleyen ajan elini kaldırır; işi biten ajan dinlenme alanına döner; hata alan ajanın ekranı kırmızı yanar.
 
-Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; `?lang=tr` ile de seçilebilir. ⚙ menüsünden klasik piksel ofis ya da HD temalar seçilebilir: holding, plaza ofisi, depo, fabrika, uzay üssü ve askerî (Kara, Hava, Deniz veya Müşterek Kuvvetler); aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır. Her ajan kartındaki ✎ düğmesiyle ajana bir fotoğraftan kesilen gerçek bir yüz, saç modeli, etek ya da topuklu ayakkabı verilebilir; ⚙ menüsünden şirket logosu yüklenir, bir ajan sizi beklediğinde masaüstü bildirimi ve ses açılabilir, ofisin 30 saniyelik videosu kaydedilebilir.
+Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Arayüz tarayıcı diline göre Türkçe açılır; dil ⚙ menüsündeki **Dil** seçeneğinden ya da `?lang=tr` ile değiştirilir, HD temalardaki duvar yazıları da bu dile uyar. ⚙ menüsünden klasik piksel ofis ya da HD temalar seçilebilir: holding, plaza ofisi, depo, fabrika, uzay üssü ve askerî (Kara, Hava, Deniz veya Müşterek Kuvvetler); aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır. Her ajan kartındaki ✎ düğmesiyle ajana bir fotoğraftan kesilen gerçek bir yüz, saç modeli, etek ya da topuklu ayakkabı verilebilir; ⚙ menüsünden şirket logosu yüklenir, bir ajan sizi beklediğinde masaüstü bildirimi ve ses açılabilir, ofisin 30 saniyelik videosu kaydedilebilir.
