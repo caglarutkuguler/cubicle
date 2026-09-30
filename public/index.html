@@ -86,10 +86,27 @@
   #looks .foot .note { margin-right:auto; max-width:300px; }
   #looks .drop { border:1px dashed var(--line); border-radius:8px; padding:8px; }
   #looks .drop.over { border-color:#9ec5ff; }
+  dialog#answer { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:0; width:min(1100px, 94vw); height:min(820px, 88vh); box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  dialog#answer[open] { display:flex; flex-direction:column; }
+  dialog#answer::backdrop { background:rgba(8,9,15,.6); }
+  #answer .head { display:flex; align-items:center; gap:12px; padding:10px 14px; border-bottom:1px solid var(--line); font-size:13px; }
+  #answer .head b { margin-inline-end:auto; }
+  #answer .x { background:none; border:0; color:var(--muted); cursor:pointer; font-size:16px; }
+  #answer iframe { flex:1; width:100%; border:0; background:#fff; }
+  #answer .note { padding:6px 14px; font-size:11px; color:var(--muted); border-top:1px solid var(--line); }
+  button.reply { background:#5a4a12; color:#ffe08a; border:1px solid #7a6420; border-radius:6px; padding:1px 8px; font:inherit; font-size:12px; cursor:pointer; margin-inline-start:6px; }
+  button.reply:hover { background:#6b5816; }
+  body.kiosk button.reply { display:none; }
+  /* ⚙: cards hidden, or the animation off (then each card shows its agent at a desk, drawn once) */
+  body.nocards #cards { display:none; }
+  body.noanim #stage, body.noanim #zoomui, body.noanim #detail { display:none !important; }
+  body.noanim #cards { margin-top:0; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); }
+  .card { position:relative; }
+  .card canvas.desk { position:static; inset:auto; display:block; width:calc(100% + 22px); height:auto; aspect-ratio:46 / 36; margin:-9px -11px 8px; border-radius:8px 8px 0 0; background:#2a2d3d; }
   #view { position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
   #stage.zoomed { cursor:grab; }
   #stage.zoomed.panning { cursor:grabbing; }
-  #detail { position:absolute; top:10px; left:10px; z-index:3; width:min(300px, 60%); max-height:calc(100% - 20px); overflow:auto; background:rgba(34,37,54,.96); border:1px solid var(--line); border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  #detail { position:absolute; top:10px; left:10px; z-index:3; transition:left .15s ease-out, top .15s ease-out; width:min(300px, 60%); max-height:calc(100% - 20px); overflow:auto; background:rgba(34,37,54,.96); border:1px solid var(--line); border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
   #detail .x { float:right; background:none; border:0; color:var(--muted); cursor:pointer; font-size:14px; }
   #zoomui { position:absolute; right:8px; bottom:8px; z-index:3; display:flex; gap:4px; }
   #zoomui button { background:rgba(34,37,54,.9); color:var(--text); border:1px solid var(--line); border-radius:6px; width:28px; height:26px; cursor:pointer; font:inherit; }
@@ -131,6 +148,7 @@
   <div id="news" hidden></div>
   <div id="cards"></div>
   <dialog id="looks"></dialog>
+  <dialog id="answer"><div class="head"><b></b><a target="_blank" rel="noopener"></a><button type="button" class="x"></button></div><iframe title="Paperclip"></iframe><div class="note"></div></dialog>
   <footer>
     <span id="hint"></span>
     <span><a href="https://github.com/caglarutkuguler/cubicle" target="_blank" rel="noopener">Cubicle</a> · MIT</span>
@@ -157,6 +175,7 @@
       sound: 'Sound', soundOff: 'Off', soundNeed: 'When an agent needs me', soundAll: 'Needs me, done and errors',
       fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
       language: 'Language', languageAuto: 'Browser language',
+      reply: 'Answer', replyTitle: (n) => `${n} is waiting for you`, openInPaperclip: 'Open in Paperclip ↗', replyNote: 'You answer on Paperclip’s own page; Cubicle itself stays read-only.', close: 'Close', anim: 'Office animation', cardsToggle: 'Agent cards', viewNote: 'With the animation off, the cards show each agent at its desk.',
       record: 'Record a 30 s video', recording: (n) => `Recording… ${n} s`, recordSaved: 'Video saved ✓', recordUnsupported: 'This browser cannot record the office.',
       logo: 'Company logo', logoPick: 'Upload a logo…', logoRemove: 'Remove the logo',
       exportLooks: 'Export appearance', importLooks: 'Import appearance…',
@@ -193,6 +212,7 @@
       sound: 'Ses', soundOff: 'Kapalı', soundNeed: 'Bir ajan beni beklediğinde', soundAll: 'Bekleyen, biten ve hata',
       fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
       language: 'Dil', languageAuto: 'Tarayıcı dili',
+      reply: 'Yanıtla', replyTitle: (n) => `${n} sizi bekliyor`, openInPaperclip: 'Paperclip’te aç ↗', replyNote: 'Yanıt Paperclip’in kendi sayfasından verilir; Cubicle salt okunur kalır.', close: 'Kapat', anim: 'Ofis animasyonu', cardsToggle: 'Ajan kartları', viewNote: 'Animasyon kapalıyken kartlar her ajanı masasında gösterir.',
       record: '30 saniyelik video kaydet', recording: (n) => `Kaydediliyor… ${n} sn`, recordSaved: 'Video kaydedildi ✓', recordUnsupported: 'Bu tarayıcı ofisi kaydedemiyor.',
       logo: 'Şirket logosu', logoPick: 'Logo yükle…', logoRemove: 'Logoyu kaldır',
       exportLooks: 'Görünümü dışa aktar', importLooks: 'Görünümü içe aktar…',
@@ -229,6 +249,7 @@
       sound: 'Ton', soundOff: 'Aus', soundNeed: 'Wenn ein Agent mich braucht', soundAll: 'Braucht mich, fertig und Fehler',
       fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
       language: 'Sprache', languageAuto: 'Browsersprache',
+      reply: 'Antworten', replyTitle: (n) => `${n} wartet auf Sie`, openInPaperclip: 'In Paperclip öffnen ↗', replyNote: 'Sie antworten auf der Seite von Paperclip selbst; Cubicle bleibt schreibgeschützt.', close: 'Schließen', anim: 'Büro-Animation', cardsToggle: 'Agentenkarten', viewNote: 'Ohne Animation zeigen die Karten jeden Agenten an seinem Schreibtisch.',
       record: '30-Sekunden-Video aufnehmen', recording: (n) => `Aufnahme… ${n} s`, recordSaved: 'Video gespeichert ✓', recordUnsupported: 'Dieser Browser kann das Büro nicht aufnehmen.',
       logo: 'Firmenlogo', logoPick: 'Logo hochladen…', logoRemove: 'Logo entfernen',
       exportLooks: 'Aussehen exportieren', importLooks: 'Aussehen importieren…',
@@ -265,6 +286,7 @@
       sound: 'Sonido', soundOff: 'Desactivado', soundNeed: 'Cuando un agente me necesita', soundAll: 'Me necesita, terminado y errores',
       fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
       language: 'Idioma', languageAuto: 'Idioma del navegador',
+      reply: 'Responder', replyTitle: (n) => `${n} te está esperando`, openInPaperclip: 'Abrir en Paperclip ↗', replyNote: 'Respondes en la propia página de Paperclip; Cubicle sigue siendo de solo lectura.', close: 'Cerrar', anim: 'Animación de la oficina', cardsToggle: 'Tarjetas de agentes', viewNote: 'Sin animación, las tarjetas muestran a cada agente en su escritorio.',
       record: 'Grabar un vídeo de 30 s', recording: (n) => `Grabando… ${n} s`, recordSaved: 'Vídeo guardado ✓', recordUnsupported: 'Este navegador no puede grabar la oficina.',
       logo: 'Logo de la empresa', logoPick: 'Subir un logo…', logoRemove: 'Quitar el logo',
       exportLooks: 'Exportar apariencia', importLooks: 'Importar apariencia…',
@@ -301,6 +323,7 @@
       sound: 'Son', soundOff: 'Désactivé', soundNeed: 'Quand un agent a besoin de moi', soundAll: 'Besoin de moi, terminé et erreurs',
       fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
       language: 'Langue', languageAuto: 'Langue du navigateur',
+      reply: 'Répondre', replyTitle: (n) => `${n} vous attend`, openInPaperclip: 'Ouvrir dans Paperclip ↗', replyNote: 'Vous répondez sur la page de Paperclip elle-même ; Cubicle reste en lecture seule.', close: 'Fermer', anim: 'Animation du bureau', cardsToggle: 'Cartes des agents', viewNote: 'Sans animation, les cartes montrent chaque agent à son bureau.',
       record: 'Enregistrer une vidéo de 30 s', recording: (n) => `Enregistrement… ${n} s`, recordSaved: 'Vidéo enregistrée ✓', recordUnsupported: 'Ce navigateur ne peut pas enregistrer le bureau.',
       logo: 'Logo de l’entreprise', logoPick: 'Importer un logo…', logoRemove: 'Retirer le logo',
       exportLooks: 'Exporter l’apparence', importLooks: 'Importer l’apparence…',
@@ -337,6 +360,7 @@
       sound: '声音', soundOff: '关闭', soundNeed: '代理需要我时', soundAll: '需要我、完成和出错',
       fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
       language: '语言', languageAuto: '浏览器语言',
+      reply: '回复', replyTitle: (n) => `${n} 在等你`, openInPaperclip: '在 Paperclip 中打开 ↗', replyNote: '你在 Paperclip 自己的页面上回复；Cubicle 本身仍然只读。', close: '关闭', anim: '办公室动画', cardsToggle: '代理卡片', viewNote: '关闭动画时，卡片会显示每个代理坐在自己的桌前。',
       record: '录制 30 秒视频', recording: (n) => `录制中… ${n} 秒`, recordSaved: '视频已保存 ✓', recordUnsupported: '此浏览器无法录制办公室。',
       logo: '公司标志', logoPick: '上传标志…', logoRemove: '移除标志',
       exportLooks: '导出外观', importLooks: '导入外观…',
@@ -373,6 +397,7 @@
       sound: 'الصوت', soundOff: 'إيقاف', soundNeed: 'عندما يحتاجني وكيل', soundAll: 'يحتاجني، انتهى، وأخطاء',
       fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
       language: 'اللغة', languageAuto: 'لغة المتصفح',
+      reply: 'رد', replyTitle: (n) => `${n} ينتظرك`, openInPaperclip: 'افتح في Paperclip ↗', replyNote: 'تجيب من صفحة Paperclip نفسها؛ ويبقى Cubicle للقراءة فقط.', close: 'إغلاق', anim: 'حركة المكتب', cardsToggle: 'بطاقات الوكلاء', viewNote: 'عند إيقاف الحركة، تعرض البطاقات كل وكيل على مكتبه.',
       record: 'تسجيل فيديو مدته 30 ثانية', recording: (n) => `جارٍ التسجيل… ${n} ث`, recordSaved: 'تم حفظ الفيديو ✓', recordUnsupported: 'لا يستطيع هذا المتصفح تسجيل المكتب.',
       logo: 'شعار الشركة', logoPick: 'رفع شعار…', logoRemove: 'إزالة الشعار',
       exportLooks: 'تصدير المظهر', importLooks: 'استيراد المظهر…',
@@ -407,6 +432,9 @@
   // proxy behind it (e.g. the hosted demo on GitHub Pages).
   let DEMO = params.has('demo');
   const KIOSK = params.has('kiosk');
+  // ⚙ view toggles (the settings object is read lazily; a kiosk always animates).
+  function animOn() { try { return KIOSK || settings.anim !== false; } catch (_) { return true; } }
+  function cardsOn() { try { return settings.cards !== false; } catch (_) { return true; } }
   // Inside Paperclip (installed as a plugin) the page is served by Paperclip itself and
   // reads its API directly on the same origin, with the signed-in user's own access.
   const EMBED = params.get('embed') === 'paperclip';
@@ -767,6 +795,14 @@
     s.bubble = text; s.bubbleClass = cls; s.bubbleUntil = performance.now() / 1000 + secs;
   }
 
+  // A Paperclip issue the board can answer from here: a question to the board, or a waiting agent's issue.
+  function issueUrl(t) {
+    if (!paperclipUrl || DEMO || !company || !t || !t.identifier || !('assigneeAgentId' in t)) return '';
+    return `${paperclipUrl}/${encodeURIComponent(company.issuePrefix)}/issues/${encodeURIComponent(t.identifier)}`;
+  }
+  const answerIssue = (s) => (s.ask ? s.ask.issue : s.status === 'waiting' ? s.task : null);
+  const answerable = (s) => !KIOSK && !!issueUrl(answerIssue(s));
+
   function taskLink(t) {
     const label = esc(t.identifier);
     if (t.url) return `<a href="${esc(t.url)}" target="_blank" rel="noopener">${label || '↗'}</a>`;
@@ -789,8 +825,36 @@
 
   function renderCards() {
     const list = [...sprites.values()].sort((a, b) => a.idx - b.idx);
-    cardsEl.innerHTML = list.map((s) => `<div class="card">${cardHtml(s)}</div>`).join('');
+    const desks = !animOn() && cardsOn();
+    cardsEl.innerHTML = list.map((s) => `<div class="card">${desks ? `<canvas class="desk" data-id="${esc(s.id)}"></canvas>` : ''}${cardHtml(s)}</div>`).join('');
+    if (desks) cardsEl.querySelectorAll('canvas.desk').forEach((el) => { const s = sprites.get(el.dataset.id); if (s) drawDeskCard(el, s); });
     if (cam.follow) renderDetail();
+  }
+
+  // Animation off: each card shows its agent sitting at its desk, drawn once per update with the
+  // current theme (the room around the desk included), so a busy screen costs nothing between polls.
+  const DESK_VIEW = [46, 36];           // office pixels around a desk: 46 wide, 36 high
+  function drawDeskCard(el, s) {
+    const d = s.desk || DESKS[0];
+    const k = theme.scale * Math.min(2, window.devicePixelRatio || 1) * 1.6;
+    const [vw, vh] = DESK_VIEW;
+    el.width = Math.round(vw * k); el.height = Math.round(vh * k);
+    const gc = el.getContext('2d');
+    // Office pixels -> this canvas: the desk's top-left sits 6 px in, 14 px down.
+    const ox = d[0] * T - 6, oy = d[1] * T - 14;
+    gc.setTransform(k, 0, 0, k, -ox * k, -oy * k);
+    gc.imageSmoothingEnabled = !!theme.smooth;
+    const hr = new Date().getHours();
+    const ghost = { ...s, x: d[0] * T + 22, y: d[1] * T + 12, walking: false, seated: true, typing: s.status === 'running', dir: 0, bubble: null };
+    const c = { g: gc, t: 0, T, CW, CH, night: hr < 7 || hr >= 20, opts: themeOpts, sprites: new Map([[s.id, ghost]]), desks: [d], lounge: LOUNGE, company: '', lang,
+      logo: null, anyError: s.status === 'error', deskCard: true };
+    try {
+      gc.save(); gc.beginPath(); gc.rect(ox, oy, vw, vh); gc.clip();
+      theme.drawRoom(c);
+      theme.drawDesk(c, d, ghost);
+      theme.drawChar(c, ghost);
+      gc.restore();
+    } catch (_) {}
   }
 
   // ---------- movement ----------
@@ -1000,18 +1064,53 @@
     const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>`
       : s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">${esc(s.waitReason)}</div>`
       : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
+    const reply = answerable(s) ? `<button type="button" class="reply" data-id="${esc(s.id)}">✋ ${esc(L.reply)}</button>` : '';
     return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${esc(s.id)}">${esc(s.name)}</b><button type="button" class="edit" data-id="${esc(s.id)}" title="${esc(L.editLook)}" aria-label="${esc(L.editLook)}">✎</button></div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
-        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}</div>${err}${stepsHtml(s)}`;
+        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${err}${stepsHtml(s)}`;
   }
+  // The panel sits beside the followed agent (right of it, or left when there is no room) and
+  // moves with it, so zooming out or panning never leaves it over someone else.
+  function placeDetail() {
+    const s = cam.follow && sprites.get(cam.follow);
+    if (!s || detailEl.hidden) return;
+    const k = cv.clientWidth / CW, w = stageEl.clientWidth, h = stageEl.clientHeight;
+    const pw = detailEl.offsetWidth, ph = detailEl.offsetHeight, gap = 14;
+    const sx = cam.x + s.x * k * cam.z, sy = cam.y + (s.y - 12) * k * cam.z, half = 8 * k * cam.z;
+    let x = sx + half + gap;
+    if (x + pw > w - 8) x = sx - half - gap - pw;
+    if (x < 8) x = Math.max(8, Math.min(w - pw - 8, sx + half + gap));
+    const y = Math.max(8, Math.min(h - ph - 8, sy - ph / 2));
+    detailEl.style.left = Math.round(x) + 'px'; detailEl.style.top = Math.round(y) + 'px';
+  }
+
+  // Answering without leaving the office: Paperclip's own issue page in a dialog. Cubicle sends
+  // nothing itself; the answer goes through Paperclip's page as if it were opened in a tab.
+  const answerDlg = document.getElementById('answer');
+  function openAnswer(s) {
+    const t = answerIssue(s), url = issueUrl(t);
+    if (!url) return;
+    answerDlg.querySelector('.head b').textContent = `${L.replyTitle(s.name)} · ${t.identifier}${t.title ? ' ' + t.title : ''}`;
+    const a = answerDlg.querySelector('.head a'); a.href = url; a.textContent = L.openInPaperclip;
+    const x = answerDlg.querySelector('.x'); x.textContent = '✕'; x.setAttribute('aria-label', L.close);
+    answerDlg.querySelector('.note').textContent = L.replyNote;
+    answerDlg.querySelector('iframe').src = url;
+    if (!answerDlg.open) answerDlg.showModal();
+  }
+  answerDlg.querySelector('.x').addEventListener('click', () => answerDlg.close());
+  answerDlg.addEventListener('click', (e) => { if (e.target === answerDlg) answerDlg.close(); });   // backdrop
+  answerDlg.addEventListener('close', () => { answerDlg.querySelector('iframe').src = 'about:blank'; poll(); });
+
   function renderDetail() {
     const s = cam.follow && sprites.get(cam.follow);
     if (!s || KIOSK) { detailEl.hidden = true; return; }
     detailEl.innerHTML = `<button type="button" class="x" aria-label="${esc(L.cancel)}">✕</button>` + cardHtml(s);
     detailEl.hidden = false;
+    placeDetail();
   }
   detailEl.addEventListener('click', (e) => {
     if (e.target.closest('.x')) { select(null); return; }
+    const r = e.target.closest('.reply'); if (r) { const s = sprites.get(r.dataset.id); if (s) openAnswer(s); return; }
     const b = e.target.closest('.edit'); if (b) { const s = sprites.get(b.dataset.id); if (s) openLooks(s); }
   });
   detailEl.addEventListener('toggle', (e) => { const d = e.target; if (d.dataset && d.dataset.id) { if (d.open) openSteps.add(d.dataset.id); else openSteps.delete(d.dataset.id); } }, true);
@@ -1045,14 +1144,19 @@
       select(spriteAt(ox, oy));
     });
     stageEl.addEventListener('dblclick', (e) => { if (!e.target.closest('#detail, #zoomui')) resetCam(); });
-    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !dlg.open) resetCam(); });
+    window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !dlg.open && !answerDlg.open) resetCam(); });
     cardsEl.addEventListener('click', (e) => {
-      const b = e.target.closest('b.pick'); if (!b) return;
+      const b = e.target.closest('b.pick'); if (!b || !animOn()) return;
       const s = sprites.get(b.dataset.id); if (!s) return;
       select(s); stageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
     window.addEventListener('resize', clampCam);
   }
+
+  cardsEl.addEventListener('click', (e) => {
+    const r = e.target.closest('.reply'); if (!r) return;
+    const s = sprites.get(r.dataset.id); if (s) openAnswer(s);
+  });
 
   // ---------- after an update: what's new ----------
   function whatsNew(version) {
@@ -1190,15 +1294,14 @@
     pixel: {
       // Drawn at 3× with no smoothing: the same pixel art, but photo heads and logos stay sharp.
       id: 'pixel', name: { en: 'Pixel (classic)', tr: 'Piksel (klasik)', de: 'Pixel (klassisch)', es: 'Píxel (clásico)', fr: 'Pixel (classique)', zh: '像素（经典）', ar: 'بكسل (كلاسيكي)' }, scale: 3, smooth: false, logoSpot: [11.75 * T, 5, 18, 18],
-      drawRoom: (c) => drawRoom(c.t),
+      // Each draws on c.g: the office, the appearance preview or a desk card.
+      drawRoom: (c) => onCanvas(c, () => drawRoom(c.t)),
       props: (c, list) => loungeProps(c.t, list),
-      drawDesk: (c, d, s) => drawDesk(d, s, c.t),
-      drawChar: (c, s) => {          // also used for the appearance preview, on another canvas
-        const main = g; g = c.g;
-        try { drawChar(s, c.t); } finally { g = main; }
-      },
+      drawDesk: (c, d, s) => onCanvas(c, () => drawDesk(d, s, c.t)),
+      drawChar: (c, s) => onCanvas(c, () => drawChar(s, c.t)),
     },
   };
+  function onCanvas(c, fn) { const main = g; g = c.g; try { fn(); } finally { g = main; } }
   let theme = themes.pixel;
   let themeOpts = {};
   window.CubicleThemes = { register(t) { themes[t.id] = t; }, T };
@@ -1232,6 +1335,7 @@
   }
   function frame() {
     const now = performance.now() / 1000;
+    if (!animOn() && !recording) { setTimeout(() => requestAnimationFrame(frame), 400); return; }
     if (!recording && now - last < 1 / targetFps() - 0.004) { requestAnimationFrame(frame); return; }
     const dt = Math.min(0.1, now - last); last = now;
     g.setTransform(theme.scale, 0, 0, theme.scale, 0, 0);
@@ -1260,6 +1364,7 @@
     if (recording) burnLabels(now);
     placeLabels(now);
     followCam();
+    placeDetail();
     requestAnimationFrame(frame);
   }
 
@@ -1630,6 +1735,17 @@
     for (const c of CATALOG) for (const o of c.options) if (params.get(o.key)) settings[o.key] = params.get(o.key);
   }
   const save = () => { try { localStorage.setItem(STORE, JSON.stringify(settings)); } catch (_) {} };
+  // ?anim=0 / ?cards=0 as well, for a link that always opens the same way.
+  if (['0', '1'].includes(params.get('anim'))) settings.anim = params.get('anim') === '1';
+  if (['0', '1'].includes(params.get('cards'))) settings.cards = params.get('cards') === '1';
+  if (settings.anim === false && settings.cards === false) settings.cards = true;   // something must show
+  function applyView() {
+    document.body.classList.toggle('noanim', !animOn() && !KIOSK);
+    document.body.classList.toggle('nocards', !cardsOn());
+    if (!animOn()) select(null);
+    renderCards();
+    if (animOn()) resizeCanvas();
+  }
 
   const loadScript = (src) => new Promise((resolve) => {
     const el = document.createElement('script');
@@ -1655,6 +1771,7 @@
     if (theme.setup) theme.setup(themeOpts);
     resizeCanvas();
     renderSettings();
+    if (!animOn()) renderCards();          // desk cards are drawn with the theme
   }
 
   const gear = document.getElementById('gear');
@@ -1675,6 +1792,9 @@
     panel.innerHTML = sel('theme', L.theme, CATALOG.map((c) => [c.id, c.name]), entry.id) +
       entry.options.map((o) => sel(o.key, tr(o.label), o.values, themeOpts[o.key])).join('') +
       `<button type="button" id="set-copy">${esc(L.copyLink)}</button><div class="note">${esc(L.settingsNote)}</div><hr>` +
+      `<label class="check"><input type="checkbox" id="set-anim"${animOn() ? ' checked' : ''}${!cardsOn() ? ' disabled' : ''}> ${esc(L.anim)}</label>` +
+      `<label class="check"><input type="checkbox" id="set-cards"${cardsOn() ? ' checked' : ''}${!animOn() ? ' disabled' : ''}> ${esc(L.cardsToggle)}</label>` +
+      `<div class="note" style="margin:-4px 0 10px">${esc(L.viewNote)}</div><hr>` +
       `<label class="check"><input type="checkbox" id="set-notify"${settings.notify ? ' checked' : ''}> ${esc(L.notify)}</label>` +
       own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
       own('fps', L.fps, [['auto', L.fpsAuto], ['30', L.fps30], ['15', L.fps15]], settings.fps || 'auto') +
@@ -1682,7 +1802,7 @@
       `<hr><label>${esc(L.logo)}</label><div class="row"><button type="button" id="set-logo">${esc(L.logoPick)}</button>` +
       (looks.logo ? `<button type="button" id="set-nologo">${esc(L.logoRemove)}</button>` : '') + '</div>' +
       `<div class="row"><button type="button" id="set-export">${esc(L.exportLooks)}</button><button type="button" id="set-import">${esc(L.importLooks)}</button></div>` +
-      `<hr><button type="button" id="set-record">${esc(recording ? L.recording(Math.ceil(recording.until - performance.now() / 1000)) : L.record)}</button>`;
+      (animOn() ? `<hr><button type="button" id="set-record">${esc(recording ? L.recording(Math.ceil(recording.until - performance.now() / 1000)) : L.record)}</button>` : '');
     panel.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => {
       settings[el.dataset.key] = el.value; save();
       if (el.dataset.key === 'lang') { if (!el.value) delete settings.lang; save(); location.reload(); return; }
@@ -1716,7 +1836,11 @@
         await saveLooks(); for (const sp of sprites.values()) applyLook(sp); renderCards(); renderSettings();
       } catch (_) {}
     });
-    panel.querySelector('#set-record').addEventListener('click', (e) => { if (!recording) startRecording(e.target); });
+    const rec = panel.querySelector('#set-record');
+    if (rec) rec.addEventListener('click', (e) => { if (!recording) startRecording(e.target); });
+    for (const key of ['anim', 'cards']) panel.querySelector(`#set-${key}`).addEventListener('change', (e) => {
+      settings[key] = e.target.checked; save(); applyView(); renderSettings();
+    });
     panel.querySelector('#set-copy').addEventListener('click', async (e) => {
       const u = new URL(location.href);
       u.searchParams.set('theme', entry.id);
@@ -1728,9 +1852,9 @@
     });
   }
 
-  if (params.has('debug')) window.CubicleDebug = { sprites, findPath, walkGrid, cam };   // for tests and theme authors
+  if (params.has('debug')) window.CubicleDebug = { sprites, findPath, walkGrid, cam, select, openAnswer, renderCards };   // for tests and theme authors
   resizeCanvas();
-  loadCatalog().then(applySettings);
+  loadCatalog().then(applySettings).then(applyView);
   init();
 })();
 </script>
