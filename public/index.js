@@ -29,8 +29,21 @@ function officeUrl(id, context, extra) {
   return `/_plugins/${encodeURIComponent(id)}/ui/index.html?${q}`;
 }
 
+// The company prefix for links. Not every slot gets it in `context` (the dashboard widget does not),
+// but Paperclip's own URL starts with it: /<PREFIX>/dashboard. A bare /cubicle would be read as a
+// company called "CUBICLE".
+function companyPrefix(context) {
+  if (context && context.companyPrefix) return context.companyPrefix;
+  const first = typeof window !== 'undefined' ? window.location.pathname.split('/')[1] : '';
+  return first && !first.startsWith('_') && first !== 'api' && first.toLowerCase() !== ROUTE ? decodeURIComponent(first) : '';
+}
+function pageHref(context) {
+  const prefix = companyPrefix(context);
+  return prefix ? `/${encodeURIComponent(prefix)}/${ROUTE}` : `/${ROUTE}`;
+}
+
 export function CubicleSidebarLink({ context }) {
-  const href = context && context.companyPrefix ? `/${context.companyPrefix}/${ROUTE}` : `/${ROUTE}`;
+  const href = pageHref(context);
   const active = typeof window !== 'undefined' && window.location.pathname.startsWith(href);
   return h('a', {
     href,
@@ -64,8 +77,8 @@ export function CubicleDashboardWidget({ context }) {
   const [id, setId] = React.useState(null);
   React.useEffect(() => { let live = true; pluginId().then((v) => { if (live) setId(v); }); return () => { live = false; }; }, []);
   if (!id) return null;
-  const page = context && context.companyPrefix ? `/${context.companyPrefix}/${ROUTE}` : `/${ROUTE}`;
-  const src = officeUrl(id, context, { kiosk: '', widget: '', fps: '15' });
+  const page = pageHref(context);
+  const src = officeUrl(id, { ...context, companyPrefix: companyPrefix(context) }, { kiosk: '', widget: '', fps: '15' });
   return h('a', { href: page, title: 'Cubicle', style: { display: 'block', position: 'relative', textDecoration: 'none', color: 'inherit' } },
     h('div', { style: { fontSize: '13px', fontWeight: 600, marginBottom: '6px' } }, 'Cubicle'),
     h('iframe', {
