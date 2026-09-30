@@ -23,6 +23,8 @@
   .bub.err { background:#ffdede; color:#8a1111; }
   .bub.ok { background:#dcffe2; color:#145c24; }
   .bub.wait { background:#fff1c9; color:#6b4d00; }
+  .bub.talk { position:relative; overflow:visible; white-space:normal; width:max-content; text-align:center; line-height:1.25; }
+  .bub.talk::after { content:''; position:absolute; left:50%; bottom:-.38em; margin-left:-.4em; border:.4em solid transparent; border-bottom:0; border-top-color:#fff; }
   .name { background:rgba(15,16,26,.78); color:#fff; font-size:1em; font-weight:600; padding:.09em .55em; border-radius:.45em; }
   /* ?kiosk: the office fills the screen, for a TV or a second monitor */
   body.kiosk { overflow:hidden; cursor:none; }
@@ -176,6 +178,15 @@
       fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
       language: 'Language', languageAuto: 'Browser language',
       reply: 'Answer', replyTitle: (n) => `${n} is waiting for you`, openInPaperclip: 'Open in Paperclip ↗', replyNote: 'You answer on Paperclip’s own page; Cubicle itself stays read-only.', close: 'Close', anim: 'Office animation', cardsToggle: 'Agent cards', viewNote: 'With the animation off, the cards show each agent at its desk.',
+      talk: {
+        doneA: (id) => `I just wrapped up ${id}.`, doneB: 'Nice. Anything tricky?', doneD: 'Good, one less on the board.',
+        doneC: ['A few edge cases, but the tests caught them.', 'Not really, the spec was clear.', 'The review took longer than the work.'],
+        nextA: (n) => `What's next for you, ${n}?`, nextB: (id, t) => `${id}: ${t}.`, nextC: 'Sounds good. Shout if you need a hand.',
+        waitA: (n) => `${n} is waiting for an answer from the board.`, waitB: (id) => (id ? `On ${id}? Hope someone replies soon.` : 'Hope someone replies soon.'),
+        errA: (n) => `${n}'s run just failed.`, errB: 'It will retry. If not, someone will read the logs.',
+        busyA: (k) => `${k} of us are heads-down right now.`, busyB: 'Then this is the right time for a coffee.',
+        roleA: (r) => `How is ${r} going these days?`, roleB: ['Busy, but fine.', 'Quiet today, for once.', 'Waiting for the next ticket.'],
+      },
       record: 'Record a 30 s video', recording: (n) => `Recording… ${n} s`, recordSaved: 'Video saved ✓', recordUnsupported: 'This browser cannot record the office.',
       logo: 'Company logo', logoPick: 'Upload a logo…', logoRemove: 'Remove the logo',
       exportLooks: 'Export appearance', importLooks: 'Import appearance…',
@@ -213,6 +224,15 @@
       fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
       language: 'Dil', languageAuto: 'Tarayıcı dili',
       reply: 'Yanıtla', replyTitle: (n) => `${n} sizi bekliyor`, openInPaperclip: 'Paperclip’te aç ↗', replyNote: 'Yanıt Paperclip’in kendi sayfasından verilir; Cubicle salt okunur kalır.', close: 'Kapat', anim: 'Ofis animasyonu', cardsToggle: 'Ajan kartları', viewNote: 'Animasyon kapalıyken kartlar her ajanı masasında gösterir.',
+      talk: {
+        doneA: (id) => `${id} işini az önce bitirdim.`, doneB: 'Eline sağlık. Zorlandın mı?', doneD: 'Güzel, panoda bir iş eksildi.',
+        doneC: ['Birkaç uç durum çıktı, testler yakaladı.', 'Pek değil, tanım netti.', 'İnceleme işin kendisinden uzun sürdü.'],
+        nextA: (n) => `Sırada ne var ${n}?`, nextB: (id, t) => `${id}: ${t}.`, nextC: 'Kolay gelsin. Yardım lazım olursa seslen.',
+        waitA: (n) => `${n} yönetimden yanıt bekliyor.`, waitB: (id) => (id ? `${id} için mi? Umarım biri hemen yanıtlar.` : 'Umarım biri hemen yanıtlar.'),
+        errA: (n) => `${n} hata aldı.`, errB: 'Yeniden dener. Olmazsa biri loglara bakar.',
+        busyA: (k) => `Şu an ${k} kişi işe gömülmüş durumda.`, busyB: 'O zaman tam kahve zamanı.',
+        roleA: (r) => `${r} tarafında işler nasıl?`, roleB: ['Yoğun ama iyi.', 'Bugün sakin, nihayet.', 'Yeni işi bekliyorum.'],
+      },
       record: '30 saniyelik video kaydet', recording: (n) => `Kaydediliyor… ${n} sn`, recordSaved: 'Video kaydedildi ✓', recordUnsupported: 'Bu tarayıcı ofisi kaydedemiyor.',
       logo: 'Şirket logosu', logoPick: 'Logo yükle…', logoRemove: 'Logoyu kaldır',
       exportLooks: 'Görünümü dışa aktar', importLooks: 'Görünümü içe aktar…',
@@ -250,6 +270,15 @@
       fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
       language: 'Sprache', languageAuto: 'Browsersprache',
       reply: 'Antworten', replyTitle: (n) => `${n} wartet auf Sie`, openInPaperclip: 'In Paperclip öffnen ↗', replyNote: 'Sie antworten auf der Seite von Paperclip selbst; Cubicle bleibt schreibgeschützt.', close: 'Schließen', anim: 'Büro-Animation', cardsToggle: 'Agentenkarten', viewNote: 'Ohne Animation zeigen die Karten jeden Agenten an seinem Schreibtisch.',
+      talk: {
+        doneA: (id) => `Ich habe gerade ${id} abgeschlossen.`, doneB: 'Sehr gut. War es knifflig?', doneD: 'Gut, eins weniger auf dem Board.',
+        doneC: ['Ein paar Randfälle, aber die Tests haben sie gefunden.', 'Nicht wirklich, die Vorgabe war klar.', 'Das Review hat länger gedauert als die Arbeit.'],
+        nextA: (n) => `Was steht als Nächstes an, ${n}?`, nextB: (id, t) => `${id}: ${t}.`, nextC: 'Klingt gut. Sag Bescheid, wenn du Hilfe brauchst.',
+        waitA: (n) => `${n} wartet auf eine Antwort vom Board.`, waitB: (id) => (id ? `Wegen ${id}? Hoffentlich antwortet bald jemand.` : 'Hoffentlich antwortet bald jemand.'),
+        errA: (n) => `Bei ${n} ist gerade ein Lauf fehlgeschlagen.`, errB: 'Es wird neu versucht. Sonst schaut jemand in die Logs.',
+        busyA: (k) => `Gerade arbeiten ${k} von uns konzentriert.`, busyB: 'Dann ist jetzt die richtige Zeit für einen Kaffee.',
+        roleA: (r) => `Wie läuft es gerade bei ${r}?`, roleB: ['Viel los, aber gut.', 'Heute ruhig, zur Abwechslung.', 'Ich warte auf das nächste Ticket.'],
+      },
       record: '30-Sekunden-Video aufnehmen', recording: (n) => `Aufnahme… ${n} s`, recordSaved: 'Video gespeichert ✓', recordUnsupported: 'Dieser Browser kann das Büro nicht aufnehmen.',
       logo: 'Firmenlogo', logoPick: 'Logo hochladen…', logoRemove: 'Logo entfernen',
       exportLooks: 'Aussehen exportieren', importLooks: 'Aussehen importieren…',
@@ -287,6 +316,15 @@
       fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
       language: 'Idioma', languageAuto: 'Idioma del navegador',
       reply: 'Responder', replyTitle: (n) => `${n} te está esperando`, openInPaperclip: 'Abrir en Paperclip ↗', replyNote: 'Respondes en la propia página de Paperclip; Cubicle sigue siendo de solo lectura.', close: 'Cerrar', anim: 'Animación de la oficina', cardsToggle: 'Tarjetas de agentes', viewNote: 'Sin animación, las tarjetas muestran a cada agente en su escritorio.',
+      talk: {
+        doneA: (id) => `Acabo de terminar ${id}.`, doneB: '¡Bien! ¿Fue complicado?', doneD: 'Genial, una menos en el tablero.',
+        doneC: ['Algunos casos límite, pero los tests los detectaron.', 'No mucho, la especificación era clara.', 'La revisión tardó más que el trabajo.'],
+        nextA: (n) => `¿Qué tienes ahora, ${n}?`, nextB: (id, t) => `${id}: ${t}.`, nextC: 'Suena bien. Avísame si necesitas ayuda.',
+        waitA: (n) => `${n} está esperando una respuesta de la dirección.`, waitB: (id) => (id ? `¿Por ${id}? Ojalá alguien conteste pronto.` : 'Ojalá alguien conteste pronto.'),
+        errA: (n) => `A ${n} le acaba de fallar una ejecución.`, errB: 'Lo reintentará. Si no, alguien mirará los logs.',
+        busyA: (k) => `Ahora mismo ${k} de nosotros están concentrados.`, busyB: 'Entonces es buen momento para un café.',
+        roleA: (r) => `¿Qué tal va ${r}?`, roleB: ['Mucho trabajo, pero bien.', 'Hoy está tranquilo, por fin.', 'Esperando el siguiente ticket.'],
+      },
       record: 'Grabar un vídeo de 30 s', recording: (n) => `Grabando… ${n} s`, recordSaved: 'Vídeo guardado ✓', recordUnsupported: 'Este navegador no puede grabar la oficina.',
       logo: 'Logo de la empresa', logoPick: 'Subir un logo…', logoRemove: 'Quitar el logo',
       exportLooks: 'Exportar apariencia', importLooks: 'Importar apariencia…',
@@ -324,6 +362,15 @@
       fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
       language: 'Langue', languageAuto: 'Langue du navigateur',
       reply: 'Répondre', replyTitle: (n) => `${n} vous attend`, openInPaperclip: 'Ouvrir dans Paperclip ↗', replyNote: 'Vous répondez sur la page de Paperclip elle-même ; Cubicle reste en lecture seule.', close: 'Fermer', anim: 'Animation du bureau', cardsToggle: 'Cartes des agents', viewNote: 'Sans animation, les cartes montrent chaque agent à son bureau.',
+      talk: {
+        doneA: (id) => `Je viens de terminer ${id}.`, doneB: 'Bravo. C’était compliqué ?', doneD: 'Parfait, une de moins sur le tableau.',
+        doneC: ['Quelques cas limites, mais les tests les ont vus.', 'Pas vraiment, le besoin était clair.', 'La relecture a pris plus de temps que le travail.'],
+        nextA: (n) => `Et toi, ${n}, c’est quoi la suite ?`, nextB: (id, t) => `${id} : ${t}.`, nextC: 'Ça marche. Fais-moi signe si tu as besoin d’aide.',
+        waitA: (n) => `${n} attend une réponse de la direction.`, waitB: (id) => (id ? `Pour ${id} ? J’espère qu’on lui répondra vite.` : 'J’espère qu’on lui répondra vite.'),
+        errA: (n) => `L’exécution de ${n} vient d’échouer.`, errB: 'Ça va réessayer. Sinon quelqu’un regardera les logs.',
+        busyA: (k) => `${k} d’entre nous sont concentrés en ce moment.`, busyB: 'Alors c’est le bon moment pour un café.',
+        roleA: (r) => `Comment ça se passe côté ${r} ?`, roleB: ['Chargé, mais ça va.', 'Calme aujourd’hui, pour une fois.', 'J’attends le prochain ticket.'],
+      },
       record: 'Enregistrer une vidéo de 30 s', recording: (n) => `Enregistrement… ${n} s`, recordSaved: 'Vidéo enregistrée ✓', recordUnsupported: 'Ce navigateur ne peut pas enregistrer le bureau.',
       logo: 'Logo de l’entreprise', logoPick: 'Importer un logo…', logoRemove: 'Retirer le logo',
       exportLooks: 'Exporter l’apparence', importLooks: 'Importer l’apparence…',
@@ -361,6 +408,15 @@
       fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
       language: '语言', languageAuto: '浏览器语言',
       reply: '回复', replyTitle: (n) => `${n} 在等你`, openInPaperclip: '在 Paperclip 中打开 ↗', replyNote: '你在 Paperclip 自己的页面上回复；Cubicle 本身仍然只读。', close: '关闭', anim: '办公室动画', cardsToggle: '代理卡片', viewNote: '关闭动画时，卡片会显示每个代理坐在自己的桌前。',
+      talk: {
+        doneA: (id) => `我刚完成了 ${id}。`, doneB: '干得好。难吗？', doneD: '好，看板上又少了一个。',
+        doneC: ['有几个边界情况，不过测试都发现了。', '还好，需求很清楚。', '评审比干活还久。'],
+        nextA: (n) => `${n}，你接下来做什么？`, nextB: (id, t) => `${id}：${t}。`, nextC: '不错。需要帮忙就喊我。',
+        waitA: (n) => `${n} 在等董事会的答复。`, waitB: (id) => (id ? `是 ${id} 吗？希望很快有人回复。` : '希望很快有人回复。'),
+        errA: (n) => `${n} 的运行刚刚失败了。`, errB: '会自动重试的。不行的话会有人看日志。',
+        busyA: (k) => `现在有 ${k} 个人在埋头干活。`, busyB: '那正好去喝杯咖啡。',
+        roleA: (r) => `${r} 那边最近怎么样？`, roleB: ['挺忙，但还好。', '今天难得清闲。', '在等下一个任务。'],
+      },
       record: '录制 30 秒视频', recording: (n) => `录制中… ${n} 秒`, recordSaved: '视频已保存 ✓', recordUnsupported: '此浏览器无法录制办公室。',
       logo: '公司标志', logoPick: '上传标志…', logoRemove: '移除标志',
       exportLooks: '导出外观', importLooks: '导入外观…',
@@ -398,6 +454,15 @@
       fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
       language: 'اللغة', languageAuto: 'لغة المتصفح',
       reply: 'رد', replyTitle: (n) => `${n} ينتظرك`, openInPaperclip: 'افتح في Paperclip ↗', replyNote: 'تجيب من صفحة Paperclip نفسها؛ ويبقى Cubicle للقراءة فقط.', close: 'إغلاق', anim: 'حركة المكتب', cardsToggle: 'بطاقات الوكلاء', viewNote: 'عند إيقاف الحركة، تعرض البطاقات كل وكيل على مكتبه.',
+      talk: {
+        doneA: (id) => `أنهيت ${id} للتو.`, doneB: 'أحسنت. هل كان صعبًا؟', doneD: 'جيد، مهمة أقل على اللوحة.',
+        doneC: ['بعض الحالات الحدّية، لكن الاختبارات كشفتها.', 'ليس حقًا، كان المطلوب واضحًا.', 'المراجعة أخذت وقتًا أطول من العمل.'],
+        nextA: (n) => `ما التالي لديك يا ${n}؟`, nextB: (id, t) => `${id}: ${t}.`, nextC: 'رائع. نادني إن احتجت مساعدة.',
+        waitA: (n) => `${n} ينتظر ردًا من الإدارة.`, waitB: (id) => (id ? `بخصوص ${id}؟ أتمنى أن يرد أحد قريبًا.` : 'أتمنى أن يرد أحد قريبًا.'),
+        errA: (n) => `فشل تشغيل ${n} للتو.`, errB: 'سيعيد المحاولة. وإلا سيتفقد أحد السجلات.',
+        busyA: (k) => `${k} منا منشغلون بالعمل الآن.`, busyB: 'إذن هذا وقت مناسب للقهوة.',
+        roleA: (r) => `كيف تسير الأمور في ${r}؟`, roleB: ['مشغول، لكن بخير.', 'هادئ اليوم على غير العادة.', 'أنتظر المهمة التالية.'],
+      },
       record: 'تسجيل فيديو مدته 30 ثانية', recording: (n) => `جارٍ التسجيل… ${n} ث`, recordSaved: 'تم حفظ الفيديو ✓', recordUnsupported: 'لا يستطيع هذا المتصفح تسجيل المكتب.',
       logo: 'شعار الشركة', logoPick: 'رفع شعار…', logoRemove: 'إزالة الشعار',
       exportLooks: 'تصدير المظهر', importLooks: 'استيراد المظهر…',
@@ -753,7 +818,11 @@
       s.waitReason = '';
       s.ask = a.task === undefined && a.status !== 'error' ? askingBoard(a.id, issues) : null;
       if (s.ask && a.status === 'idle') { s.status = 'waiting'; s.task = s.ask.issue; s.waitReason = s.ask.reason; }
-      if (s.prevStatus === 'running' && s.status === 'idle') { setBubble(s, L.done, 'ok', 6); if (synced) chime('done'); }
+      if (s.prevStatus === 'running' && s.status === 'idle') {
+        setBubble(s, L.done, 'ok', 6); if (synced) chime('done');
+        if (s.prevTask && s.prevTask.identifier) s.lastDone = { id: s.prevTask.identifier, at: Date.now() };
+      }
+      if (s.task) s.prevTask = s.task;
       if (synced && s.status === 'error' && s.prevStatus !== 'error') chime('err');
       // Needs you: a hand up (waiting) or a board question on a busy agent. Alert once when it starts.
       const needs = s.status === 'waiting' || !!s.ask;
@@ -860,19 +929,21 @@
   // ---------- movement ----------
   function targetFor(s, now) {
     if (s.meetUntil > now) return [s.meetSpot[0] * T, s.meetSpot[1] * T, false];
+    if (s.chat && s.status === 'idle') return s.chat.a === s ? [...s.chat.spot, false] : [...s.chat.stay, false];
     if (s.status === 'running' || s.status === 'error' || s.status === 'waiting') return [s.desk[0] * T + 22, s.desk[1] * T + 12, true];
     if (now > s.nextWander) {
       const used = new Set([...sprites.values()].filter((o) => o !== s).map((o) => o.lounge));
       const free = LOUNGE.map((_, i) => i).filter((i) => !used.has(i));
       if (free.length) s.lounge = free[Math.floor(Math.random() * free.length)];
       s.nextWander = now + 9 + Math.random() * 14;
-      if (Math.random() < 0.35 && !(Math.random() < 0.5 && smallTalk(s, now))) setBubble(s, L.chatter[Math.floor(Math.random() * L.chatter.length)], '', 3);
+      if (!(Math.random() < 0.5 && startChat(s, now)) && Math.random() < 0.15) setBubble(s, pick(L.chatter), '', 3);
     }
     const p = LOUNGE[s.lounge % LOUNGE.length];
     return [p[0] * T, p[1] * T, false];
   }
 
   function step(s, dt, now) {
+    if (s.chat && (s.chat.a === s || !sprites.has(s.chat.a.id))) runChat(s.chat, now);
     const [tx, ty, atDesk] = targetFor(s, now);
     if (s.pending && now >= s.pending.at) { setBubble(s, s.pending.text, '', 3.2); s.pending = null; }
     // Walk around desks and through the doorway: a path is planned when the target changes.
@@ -991,16 +1062,63 @@
   }
 
   // ---------- small talk: two idle agents at the same spot chat for a moment ----------
-  function smallTalk(s, now) {
-    const pairs = L.pairs || [];
-    if (!pairs.length) return false;
-    const mate = [...sprites.values()].find((o) => o !== s && o.status === 'idle' && !o.walking && !o.seated && o.x > 15 * T
-      && Math.hypot(o.x - s.x, o.y - s.y) < 3.2 * T && !(o.bubble && now < o.bubbleUntil) && !o.pending);
-    if (!mate) return false;
-    const [q, a] = pairs[Math.floor(Math.random() * pairs.length)];
-    setBubble(s, q, '', 3.2);
-    mate.pending = { text: a, at: now + 2.4 };
-    return true;
+  // ---------- conversations: two agents on a break stand side by side and talk ----------
+  // The one who starts walks up next to the other; they face each other and take turns, and what
+  // they say comes from the office itself: work just finished, what is next, who is waiting or failing.
+  const CHAT_GAP = 19, LINE_SECS = 3.4;
+  const pick = (a) => a[Math.floor(Math.random() * a.length)];
+  const short = (t, n = 34) => (t && t.length > n ? t.slice(0, n - 1) + '…' : t || '');
+  function standFree(x, y) {
+    const w = walkGrid(), cx = Math.floor(x / CELL), cy = Math.floor(y / CELL);
+    return x > 15 * T + 4 && x < CW - 8 && y > 3 * T && y < CH - 6 && !w.solid[cy * w.cols + cx];
+  }
+  function chatScript(a, b) {
+    const t = L.talk; if (!t) return null;
+    const others = [...sprites.values()].filter((o) => o !== a && o !== b);
+    const topics = [];
+    if (a.lastDone && Date.now() - a.lastDone.at < 20 * 60000 && a.lastDone.id)
+      topics.push([[0, t.doneA(a.lastDone.id)], [1, t.doneB], [0, pick(t.doneC)], [1, t.doneD]]);
+    if (b.task && b.task.identifier)
+      topics.push([[0, t.nextA(b.name)], [1, t.nextB(b.task.identifier, short(b.task.title))], [0, t.nextC]]);
+    const w = others.find((o) => o.status === 'waiting' || o.ask);
+    if (w) { const id = (w.ask ? w.ask.issue : w.task || {}).identifier; topics.push([[0, t.waitA(w.name)], [1, t.waitB(id)]]); }
+    const e = others.find((o) => o.status === 'error');
+    if (e) topics.push([[0, t.errA(e.name)], [1, t.errB]]);
+    const busy = others.filter((o) => o.status === 'running').length;
+    if (busy >= 2) topics.push([[0, t.busyA(busy)], [1, t.busyB]]);
+    if (b.role) topics.push([[0, t.roleA(short(b.role, 26))], [1, pick(t.roleB)]]);
+    if (L.pairs && L.pairs.length) { const [q, r] = pick(L.pairs); topics.push([[0, q], [1, r]]); }
+    return topics.length ? pick(topics) : null;
+  }
+  const onBreak = (o, now) => o.status === 'idle' && !o.chat && !o.seated && o.x > 15 * T && !(o.meetUntil > now);
+  function startChat(a, now) {
+    if (!onBreak(a, now) || now - (a.lastChat || 0) < 35) return false;
+    const mates = [...sprites.values()].filter((o) => o !== a && onBreak(o, now) && !o.walking && now - (o.lastChat || 0) > 35)
+      .sort((p, q) => Math.hypot(p.x - a.x, p.y - a.y) - Math.hypot(q.x - a.x, q.y - a.y));
+    for (const b of mates) {
+      const side = [Math.sign(a.x - b.x) || 1, -(Math.sign(a.x - b.x) || 1)].find((sd) => standFree(b.x + sd * CHAT_GAP, b.y));
+      if (!side) continue;
+      const lines = chatScript(a, b); if (!lines) return false;
+      a.chat = b.chat = { a, b, lines, i: 0, next: 0, spot: [b.x + side * CHAT_GAP, b.y], stay: [b.x, b.y], until: now + 30 + lines.length * LINE_SECS };
+      return true;
+    }
+    return false;
+  }
+  function endChat(c, now) {
+    for (const o of [c.a, c.b]) { o.chat = null; o.lastChat = now; o.nextWander = now + 4 + Math.random() * 6; }
+  }
+  // Called once per frame for each conversation (from its starter).
+  function runChat(c, now) {
+    const { a, b } = c;
+    if (a.status !== 'idle' || b.status !== 'idle' || !sprites.has(a.id) || !sprites.has(b.id) || now > c.until) { endChat(c, now); return; }
+    const there = !a.walking && !b.walking && Math.hypot(a.x - c.spot[0], a.y - c.spot[1]) < 2;
+    if (!there) return;
+    a.dir = Math.sign(b.x - a.x); b.dir = -a.dir;         // look at each other
+    if (now < c.next) return;
+    if (c.i >= c.lines.length) { endChat(c, now); return; }
+    const [who, text] = c.lines[c.i++];
+    setBubble(who ? b : a, text, 'talk', LINE_SECS - 0.2);
+    c.next = now + LINE_SECS;
   }
 
   // ---------- the last steps, for cards and the detail panel ----------
@@ -1310,14 +1428,15 @@
     const k = cv.clientWidth / CW;
     // Keep bubbles narrower than the gap between neighbouring desks so they never overlap.
     const bubMax = Math.max(80, Math.floor(3.3 * T * k - 6)) + 'px';
+    const talkMax = Math.max(110, Math.floor(5.2 * T * k)) + 'px';   // a sentence may wrap to two lines
     // In kiosk mode names and bubbles grow with the screen (11px at the default ~3x scale).
     if (KIOSK) labelsEl.style.fontSize = Math.max(11, Math.round(11 * k / 3)) + 'px';
     for (const s of sprites.values()) {
       s.el.style.left = (s.x * k) + 'px';
       s.el.style.top = ((s.y - 20) * k) + 'px';
       const b = s.el.querySelector('.bub');
-      b.style.maxWidth = bubMax;
       const [text, cls] = labelFor(s, now);
+      b.style.maxWidth = cls === 'talk' ? talkMax : bubMax;
       if (text) { b.textContent = text; b.className = 'bub ' + cls; b.style.display = ''; }
       else b.style.display = 'none';
     }
@@ -1852,7 +1971,7 @@
     });
   }
 
-  if (params.has('debug')) window.CubicleDebug = { sprites, findPath, walkGrid, cam, select, openAnswer, renderCards };   // for tests and theme authors
+  if (params.has('debug')) window.CubicleDebug = { sprites, findPath, walkGrid, cam, select, openAnswer, renderCards, startChat };   // for tests and theme authors
   resizeCanvas();
   loadCatalog().then(applySettings).then(applyView);
   init();

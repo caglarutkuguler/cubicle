@@ -128,7 +128,8 @@ When a Paperclip issue moves from one agent to another, both walk to the lounge 
 - **Icons in the bubbles** say what kind of step it is: ✏️ editing, 📖 reading, ▶ running a command, 🔎 searching, 🌐 on the web, 👥 starting a subagent.
 - **Last steps.** For Claude Code, Codex and Gemini CLI, each card lists the last few tool calls with how long ago and how long they took.
 - **Envelopes** fly from desk to desk when a Paperclip issue changes hands or a session starts a subagent.
-- People **walk around desks** and through the doorway instead of through the furniture, and two agents on a break sometimes chat.
+- People **walk around desks** and through the doorway instead of through the furniture.
+- **Conversations.** Two agents on a break sometimes walk up to each other, stand side by side facing each other and take turns talking about the office itself: work one of them just finished, what the other has next, who is waiting for the board or has just failed, how busy the desks are.
 - After an update, a small note links to what changed.
 
 ## Faces, looks and your logo
