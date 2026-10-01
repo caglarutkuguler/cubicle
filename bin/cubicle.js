@@ -143,8 +143,10 @@ function get(url, cb, extraHeaders = {}) {
 const ALLOWED = [
   /^\/api\/health$/,
   /^\/api\/companies$/,
-  /^\/api\/companies\/[\w-]+\/(agents|issues)$/,
+  /^\/api\/companies\/[\w-]+\/(agents|issues|heartbeat-runs)$/,
 ];
+// Heartbeat runs: only the latest few, so a failed run's error can be shown on the agent.
+const RUNS_QUERY = '?limit=60&summary=1';
 
 function send(res, status, body, type = 'application/json') {
   if (res.headersSent) return res.destroy();   // too late for a clean error: just drop the connection
@@ -165,8 +167,12 @@ function shapePaperclip(pathname, data) {
   if (!Array.isArray(data)) return data;
   if (pathname === '/api/companies') return data.map((c) => pick(c, ['id', 'name', 'issuePrefix']));
   if (pathname.endsWith('/agents')) return data.map((a) => ({
-    ...pick(a, ['id', 'name', 'role', 'title', 'status', 'createdAt', 'budgetMonthlyCents', 'spentMonthlyCents']),
+    ...pick(a, ['id', 'name', 'urlKey', 'role', 'title', 'status', 'createdAt', 'budgetMonthlyCents', 'spentMonthlyCents']),
     errorReason: a.errorReason ? (REDACT ? 'error' : a.errorReason) : null,
+  }));
+  if (pathname.endsWith('/heartbeat-runs')) return data.filter((r) => r && r.agentId && r.finishedAt).map((r) => ({
+    ...pick(r, ['id', 'agentId', 'status', 'errorCode', 'finishedAt']),
+    ...(REDACT ? {} : pick({ error: r.error && String(r.error).slice(0, 500), stderrExcerpt: r.stderrExcerpt && String(r.stderrExcerpt).slice(-600) }, ['error', 'stderrExcerpt'])),
   }));
   if (pathname.endsWith('/issues')) return data.filter((i) => !CLOSED.has(i.status)).map((i) => ({
     ...pick(i, REDACT ? ['identifier', 'status', 'assigneeAgentId'] : ['identifier', 'title', 'status', 'assigneeAgentId']),
@@ -295,7 +301,8 @@ const server = http.createServer((req, res) => {
   if (url.pathname.startsWith('/api/')) {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
-    return proxyJson(res, new URL(url.pathname, PAPERCLIP), TOKEN ? { authorization: `Bearer ${TOKEN}` } : {},
+    const upstreamUrl = new URL(url.pathname + (url.pathname.endsWith('/heartbeat-runs') ? RUNS_QUERY : ''), PAPERCLIP);
+    return proxyJson(res, upstreamUrl, TOKEN ? { authorization: `Bearer ${TOKEN}` } : {},
       '{"error":"paperclip unreachable"}', (data) => shapePaperclip(url.pathname, data));
   }
 
@@ -348,7 +355,7 @@ function startRecording(file) {
     if (HAS_PAPERCLIP) {
       const companies = await self('/api/companies');
       keep('/api/companies', companies);
-      try { for (const c of JSON.parse(companies || '[]')) paths.push(`/api/companies/${c.id}/agents`, `/api/companies/${c.id}/issues`); } catch (_) {}
+      try { for (const c of JSON.parse(companies || '[]')) paths.push(`/api/companies/${c.id}/agents`, `/api/companies/${c.id}/issues`, `/api/companies/${c.id}/heartbeat-runs`); } catch (_) {}
     }
     for (const p of paths) keep(p, await self(p));
   }

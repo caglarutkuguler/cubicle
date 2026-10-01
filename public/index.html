@@ -108,8 +108,25 @@
   #view { position:absolute; inset:0; transform-origin:0 0; will-change:transform; }
   #stage.zoomed { cursor:grab; }
   #stage.zoomed.panning { cursor:grabbing; }
-  #detail { position:absolute; top:10px; left:10px; z-index:3; transition:left .15s ease-out, top .15s ease-out; width:min(300px, 60%); max-height:calc(100% - 20px); overflow:auto; background:rgba(34,37,54,.96); border:1px solid var(--line); border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
-  #detail .x { float:right; background:none; border:0; color:var(--muted); cursor:pointer; font-size:14px; }
+  #detail { position:absolute; top:10px; left:10px; z-index:3; width:min(310px, 46%); max-height:calc(100% - 20px); overflow:auto; background:rgba(34,37,54,.96); border:1px solid var(--line); border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  #detail .x { float:right; margin:-4px -6px 0 6px; width:26px; height:26px; border-radius:6px; background:none; border:1px solid transparent; color:var(--muted); cursor:pointer; font-size:14px; line-height:1; }
+  #detail .x:hover { color:var(--text); border-color:var(--line); background:#2f3552; }
+  #detail .top b { font-size:15px; }
+  .real { color:var(--muted); font-size:11px; }
+  .acts { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:9px; border-top:1px solid var(--line); }
+  .act { background:#2f3552; color:var(--text); border:1px solid #4a5175; border-radius:6px; padding:4px 9px; font:inherit; font-size:12px; cursor:pointer; }
+  .act:hover { background:#3a4266; border-color:#6b74a3; }
+  .act.warn { background:#5a4a12; border-color:#8a7020; color:#ffe08a; }
+  .act.warn:hover { background:#6b5816; }
+  .act.bad { background:#4a1f25; border-color:#7a3038; color:#ffc4c9; }
+  .act.bad:hover { background:#5a252c; }
+  .errbox { margin-top:6px; padding:6px 8px; border-radius:6px; background:#3a1a1f; border:1px solid #6a2a32; color:#ffc4c9; font-size:12px; }
+  .errbox b { display:block; margin-bottom:2px; }
+  .card .errbox pre { display:none; }          /* the full excerpt is in the agent's panel */
+  .errbox code { display:inline-block; margin-top:3px; font-size:11px; color:#ffdfe2; background:rgba(0,0,0,.25); padding:0 4px; border-radius:3px; }
+  .errbox pre { margin:4px 0 0; max-height:7.5em; overflow:auto; white-space:pre-wrap; word-break:break-word; font-size:11px; color:#f3d6d9; background:rgba(0,0,0,.25); padding:4px 6px; border-radius:4px; }
+  #detail a, .card a { text-decoration:underline; text-decoration-color:rgba(158,197,255,.4); text-underline-offset:2px; }
+  #looks input[type=text] { width:100%; box-sizing:border-box; background:#1d2030; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 8px; font:inherit; }
   #zoomui { position:absolute; right:8px; bottom:8px; z-index:3; display:flex; gap:4px; }
   #zoomui button { background:rgba(34,37,54,.9); color:var(--text); border:1px solid var(--line); border-radius:6px; width:28px; height:26px; cursor:pointer; font:inherit; }
   body.kiosk #detail, body.kiosk #zoomui, body.kiosk #news { display:none !important; }
@@ -178,6 +195,7 @@
       fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
       language: 'Language', languageAuto: 'Browser language',
       reply: 'Answer', replyTitle: (n) => `${n} is waiting for you`, openInPaperclip: 'Open in Paperclip ↗', replyNote: 'You answer on Paperclip’s own page; Cubicle itself stays read-only.', close: 'Close', anim: 'Office animation', cardsToggle: 'Agent cards', viewNote: 'With the animation off, the cards show each agent at its desk.',
+      openTask: 'Open task', openRun: 'Open run log', looksName: 'Look & name', lastFail: (a) => `Last run failed · ${a}`, alias: 'Name in Cubicle', aliasHint: 'Only Cubicle shows this name; Paperclip keeps its own.', renameInPaperclip: 'Rename in Paperclip ↗',
       talk: {
         doneA: (id) => `I just wrapped up ${id}.`, doneB: 'Nice. Anything tricky?', doneD: 'Good, one less on the board.',
         doneC: ['A few edge cases, but the tests caught them.', 'Not really, the spec was clear.', 'The review took longer than the work.'],
@@ -224,6 +242,7 @@
       fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
       language: 'Dil', languageAuto: 'Tarayıcı dili',
       reply: 'Yanıtla', replyTitle: (n) => `${n} sizi bekliyor`, openInPaperclip: 'Paperclip’te aç ↗', replyNote: 'Yanıt Paperclip’in kendi sayfasından verilir; Cubicle salt okunur kalır.', close: 'Kapat', anim: 'Ofis animasyonu', cardsToggle: 'Ajan kartları', viewNote: 'Animasyon kapalıyken kartlar her ajanı masasında gösterir.',
+      openTask: 'İşi aç', openRun: 'Çalıştırma kaydını aç', looksName: 'Görünüm ve ad', lastFail: (a) => `Son çalıştırma başarısız · ${a}`, alias: 'Cubicle’daki adı', aliasHint: 'Bu ad yalnızca Cubicle’da görünür; Paperclip kendi adını korur.', renameInPaperclip: 'Paperclip’te yeniden adlandır ↗',
       talk: {
         doneA: (id) => `${id} işini az önce bitirdim.`, doneB: 'Eline sağlık. Zorlandın mı?', doneD: 'Güzel, panoda bir iş eksildi.',
         doneC: ['Birkaç uç durum çıktı, testler yakaladı.', 'Pek değil, tanım netti.', 'İnceleme işin kendisinden uzun sürdü.'],
@@ -270,6 +289,7 @@
       fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
       language: 'Sprache', languageAuto: 'Browsersprache',
       reply: 'Antworten', replyTitle: (n) => `${n} wartet auf Sie`, openInPaperclip: 'In Paperclip öffnen ↗', replyNote: 'Sie antworten auf der Seite von Paperclip selbst; Cubicle bleibt schreibgeschützt.', close: 'Schließen', anim: 'Büro-Animation', cardsToggle: 'Agentenkarten', viewNote: 'Ohne Animation zeigen die Karten jeden Agenten an seinem Schreibtisch.',
+      openTask: 'Aufgabe öffnen', openRun: 'Lauf-Protokoll öffnen', looksName: 'Aussehen & Name', lastFail: (a) => `Letzter Lauf fehlgeschlagen · ${a}`, alias: 'Name in Cubicle', aliasHint: 'Nur Cubicle zeigt diesen Namen; Paperclip behält seinen eigenen.', renameInPaperclip: 'In Paperclip umbenennen ↗',
       talk: {
         doneA: (id) => `Ich habe gerade ${id} abgeschlossen.`, doneB: 'Sehr gut. War es knifflig?', doneD: 'Gut, eins weniger auf dem Board.',
         doneC: ['Ein paar Randfälle, aber die Tests haben sie gefunden.', 'Nicht wirklich, die Vorgabe war klar.', 'Das Review hat länger gedauert als die Arbeit.'],
@@ -316,6 +336,7 @@
       fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
       language: 'Idioma', languageAuto: 'Idioma del navegador',
       reply: 'Responder', replyTitle: (n) => `${n} te está esperando`, openInPaperclip: 'Abrir en Paperclip ↗', replyNote: 'Respondes en la propia página de Paperclip; Cubicle sigue siendo de solo lectura.', close: 'Cerrar', anim: 'Animación de la oficina', cardsToggle: 'Tarjetas de agentes', viewNote: 'Sin animación, las tarjetas muestran a cada agente en su escritorio.',
+      openTask: 'Abrir tarea', openRun: 'Abrir registro de ejecución', looksName: 'Aspecto y nombre', lastFail: (a) => `La última ejecución falló · ${a}`, alias: 'Nombre en Cubicle', aliasHint: 'Solo Cubicle muestra este nombre; Paperclip conserva el suyo.', renameInPaperclip: 'Renombrar en Paperclip ↗',
       talk: {
         doneA: (id) => `Acabo de terminar ${id}.`, doneB: '¡Bien! ¿Fue complicado?', doneD: 'Genial, una menos en el tablero.',
         doneC: ['Algunos casos límite, pero los tests los detectaron.', 'No mucho, la especificación era clara.', 'La revisión tardó más que el trabajo.'],
@@ -362,6 +383,7 @@
       fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
       language: 'Langue', languageAuto: 'Langue du navigateur',
       reply: 'Répondre', replyTitle: (n) => `${n} vous attend`, openInPaperclip: 'Ouvrir dans Paperclip ↗', replyNote: 'Vous répondez sur la page de Paperclip elle-même ; Cubicle reste en lecture seule.', close: 'Fermer', anim: 'Animation du bureau', cardsToggle: 'Cartes des agents', viewNote: 'Sans animation, les cartes montrent chaque agent à son bureau.',
+      openTask: 'Ouvrir la tâche', openRun: 'Ouvrir le journal d’exécution', looksName: 'Apparence et nom', lastFail: (a) => `Dernière exécution en échec · ${a}`, alias: 'Nom dans Cubicle', aliasHint: 'Seul Cubicle affiche ce nom ; Paperclip garde le sien.', renameInPaperclip: 'Renommer dans Paperclip ↗',
       talk: {
         doneA: (id) => `Je viens de terminer ${id}.`, doneB: 'Bravo. C’était compliqué ?', doneD: 'Parfait, une de moins sur le tableau.',
         doneC: ['Quelques cas limites, mais les tests les ont vus.', 'Pas vraiment, le besoin était clair.', 'La relecture a pris plus de temps que le travail.'],
@@ -408,6 +430,7 @@
       fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
       language: '语言', languageAuto: '浏览器语言',
       reply: '回复', replyTitle: (n) => `${n} 在等你`, openInPaperclip: '在 Paperclip 中打开 ↗', replyNote: '你在 Paperclip 自己的页面上回复；Cubicle 本身仍然只读。', close: '关闭', anim: '办公室动画', cardsToggle: '代理卡片', viewNote: '关闭动画时，卡片会显示每个代理坐在自己的桌前。',
+      openTask: '打开任务', openRun: '打开运行日志', looksName: '外观和名称', lastFail: (a) => `上次运行失败 · ${a}`, alias: 'Cubicle 中的名称', aliasHint: '只有 Cubicle 显示这个名称；Paperclip 保留自己的名称。', renameInPaperclip: '在 Paperclip 中重命名 ↗',
       talk: {
         doneA: (id) => `我刚完成了 ${id}。`, doneB: '干得好。难吗？', doneD: '好，看板上又少了一个。',
         doneC: ['有几个边界情况，不过测试都发现了。', '还好，需求很清楚。', '评审比干活还久。'],
@@ -454,6 +477,7 @@
       fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
       language: 'اللغة', languageAuto: 'لغة المتصفح',
       reply: 'رد', replyTitle: (n) => `${n} ينتظرك`, openInPaperclip: 'افتح في Paperclip ↗', replyNote: 'تجيب من صفحة Paperclip نفسها؛ ويبقى Cubicle للقراءة فقط.', close: 'إغلاق', anim: 'حركة المكتب', cardsToggle: 'بطاقات الوكلاء', viewNote: 'عند إيقاف الحركة، تعرض البطاقات كل وكيل على مكتبه.',
+      openTask: 'افتح المهمة', openRun: 'افتح سجل التشغيل', looksName: 'المظهر والاسم', lastFail: (a) => `فشل التشغيل الأخير · ${a}`, alias: 'الاسم في Cubicle', aliasHint: 'يظهر هذا الاسم في Cubicle فقط؛ ويحتفظ Paperclip باسمه.', renameInPaperclip: 'أعد التسمية في Paperclip ↗',
       talk: {
         doneA: (id) => `أنهيت ${id} للتو.`, doneB: 'أحسنت. هل كان صعبًا؟', doneD: 'جيد، مهمة أقل على اللوحة.',
         doneC: ['بعض الحالات الحدّية، لكن الاختبارات كشفتها.', 'ليس حقًا، كان المطلوب واضحًا.', 'المراجعة أخذت وقتًا أطول من العمل.'],
@@ -579,16 +603,37 @@
             companySel.value = company.id;
           }
         }
-        const [agents, issues] = await Promise.all([
+        const [agents, issues, runs] = await Promise.all([
           getJSON(`/api/companies/${company.id}/agents`),
           // Open issues only; the Cubicle server filters these itself, Paperclip can do it for us.
           getJSON(`/api/companies/${company.id}/issues${EMBED ? '?status=backlog,todo,in_progress,in_review,blocked' : ''}`),
+          // The latest runs, for the error of a failed one (optional: older servers and replays lack it).
+          getJSON(`/api/companies/${company.id}/heartbeat-runs${EMBED ? '?limit=60&summary=1' : ''}`).catch(() => []),
         ]);
+        const fails = lastFailures(runs);
+        for (const a of agents) a.lastFail = fails.get(a.id) || null;
         p.label = company.name;
         return { agents, issues, label: company.name };
       },
     };
     return p;
+  }
+
+  // An agent's latest finished run, when it failed: what the panel shows as its error.
+  const FAILED_RUNS = new Set(['failed', 'error', 'timed_out']);
+  function lastFailures(runs) {
+    const latest = new Map();
+    for (const r of Array.isArray(runs) ? runs : []) {
+      if (!r || !r.agentId || !r.finishedAt) continue;
+      const cur = latest.get(r.agentId);
+      if (!cur || r.finishedAt > cur.finishedAt) latest.set(r.agentId, r);
+    }
+    const out = new Map();
+    for (const [id, r] of latest) if (FAILED_RUNS.has(r.status)) out.set(id, {
+      runId: r.id, code: r.errorCode || r.status, error: r.error ? String(r.error).slice(0, 500) : '',
+      stderr: r.stderrExcerpt ? String(r.stderrExcerpt).slice(-600) : '', at: Date.parse(r.finishedAt) || Date.now(),
+    });
+    return out;
   }
 
   // Generic feed (docs/FEED.md): { company?, agents: [{ id, name, role?, status, task?, error? }] } or a bare array.
@@ -809,7 +854,9 @@
       s.recent = a.recent || null;
       s.idx = idx;
       s.desk = DESKS[idx % DESKS.length];
-      s.name = a.name;
+      s.realName = s.name = a.name;            // applyLook may show a name chosen in Cubicle instead
+      s.urlKey = a.urlKey !== undefined ? a.urlKey || '' : undefined;
+      s.lastFail = a.lastFail || null;
       s.role = a.title || a.role || '';
       s.status = a.status;
       s.error = a.errorReason || '';
@@ -879,7 +926,8 @@
     if (!paperclipUrl || DEMO || !company || !('assigneeAgentId' in t)) return label;
     // Framed inside Paperclip: open the issue in Paperclip itself. In a tab of its own: keep the office open.
     const target = EMBED && window.top !== window ? '_top' : '_blank';
-    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="${target}" rel="noopener">${label}</a>`;
+    // A plain click opens it in the dialog over the office; Ctrl/⌘-click still opens a tab.
+    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="${target}" rel="noopener" data-issue="${label}" data-title="${esc(t.title || '')}">${label}</a>`;
   }
 
   // Monthly spend from Paperclip, when it reports any: "$4.20 / $20.00", amber from 80 %, red at 100 %.
@@ -897,7 +945,7 @@
     const desks = !animOn() && cardsOn();
     cardsEl.innerHTML = list.map((s) => `<div class="card">${desks ? `<canvas class="desk" data-id="${esc(s.id)}"></canvas>` : ''}${cardHtml(s)}</div>`).join('');
     if (desks) cardsEl.querySelectorAll('canvas.desk').forEach((el) => { const s = sprites.get(el.dataset.id); if (s) drawDeskCard(el, s); });
-    if (cam.follow) renderDetail();
+    if (cam.sel) renderDetail();
   }
 
   // Animation off: each card shows its agent sitting at its desk, drawn once per update with the
@@ -1139,7 +1187,7 @@
 
   // ---------- zoom, pan, and following one agent ----------
   const viewEl = document.getElementById('view'), detailEl = document.getElementById('detail'), zoomUi = document.getElementById('zoomui');
-  const cam = { z: 1, x: 0, y: 0, follow: null };
+  const cam = { z: 1, x: 0, y: 0, follow: null, sel: null };   // follow: the camera tracks; sel: the panel
   function clampCam() {
     const w = stageEl.clientWidth, h = stageEl.clientHeight;
     cam.z = Math.max(1, Math.min(4, cam.z));
@@ -1151,7 +1199,7 @@
     const nz = Math.max(1, Math.min(4, z));
     cam.x = px - (px - cam.x) * (nz / cam.z); cam.y = py - (py - cam.y) * (nz / cam.z); cam.z = nz; clampCam();
   }
-  function resetCam() { cam.z = 1; cam.x = cam.y = 0; cam.follow = null; detailEl.hidden = true; clampCam(); }
+  function resetCam() { cam.z = 1; cam.x = cam.y = 0; cam.follow = cam.sel = null; detailEl.hidden = true; clampCam(); }
   function officePoint(clientX, clientY) {
     const r = stageEl.getBoundingClientRect(), k = cv.clientWidth / CW;
     return [((clientX - r.left - cam.x) / cam.z) / k, ((clientY - r.top - cam.y) / cam.z) / k];
@@ -1165,70 +1213,104 @@
     return best;
   }
   function select(s) {
-    cam.follow = s ? s.id : null;
+    cam.follow = cam.sel = s ? s.id : null;
     if (s && cam.z < 2.2) cam.z = 2.2;
     renderDetail();
   }
   function followCam() {
     if (!cam.follow) return;
-    const s = sprites.get(cam.follow); if (!s) { select(null); return; }
+    const s = sprites.get(cam.follow); if (!s) { cam.follow = null; return; }
     const k = cv.clientWidth / CW, w = stageEl.clientWidth, h = stageEl.clientHeight;
     const tx = w / 2 - s.x * k * cam.z, ty = h / 2 - (s.y - 10) * k * cam.z;
     cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12; clampCam();
   }
-  function cardHtml(s) {
+  // Where the agent's last Paperclip run is shown (its log), and the agent page (to rename it there).
+  const runUrl = (s) => (s.lastFail && s.lastFail.runId && paperclipUrl && company && !DEMO
+    ? `${paperclipUrl}/${encodeURIComponent(company.issuePrefix)}/agents/${encodeURIComponent(s.urlKey || s.id)}/runs/${encodeURIComponent(s.lastFail.runId)}` : '');
+  const agentUrl = (s) => (s.urlKey !== undefined && paperclipUrl && company && !DEMO
+    ? `${paperclipUrl}/${encodeURIComponent(company.issuePrefix)}/agents/${encodeURIComponent(s.urlKey || s.id)}` : '');
+  // The error to show: the agent's own error text, or its last Paperclip run when that one failed.
+  function errorBox(s) {
+    const f = s.lastFail;
+    if (!(s.status === 'error' && s.error) && !f) return '';
+    const head = f ? L.lastFail(ago(f.at)) : L.error;
+    const msg = (s.status === 'error' && s.error) || (f && f.error) || '';
+    return `<div class="errbox"><b>⚠ ${esc(head)}</b>${msg ? `<div>${esc(msg)}</div>` : ''}${f && f.code ? `<code>${esc(f.code)}</code>` : ''}${f && f.stderr ? `<pre>${esc(f.stderr)}</pre>` : ''}</div>`;
+  }
+  function cardHtml(s, panel = false) {
     const t = s.task;
     const taskHtml = t ? `${taskLink(t)} ${esc(t.title)}` : `<span style="color:var(--muted)">${L.noTask}</span>`;
-    const err = s.status === 'error' && s.error ? `<div class="st" style="color:#ffb3b8">${esc(s.error)}</div>`
-      : s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">${esc(s.waitReason)}</div>`
+    const note = s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">✋ ${esc(s.waitReason)}</div>`
       : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
-    const reply = answerable(s) ? `<button type="button" class="reply" data-id="${esc(s.id)}">✋ ${esc(L.reply)}</button>` : '';
-    return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${esc(s.id)}">${esc(s.name)}</b><button type="button" class="edit" data-id="${esc(s.id)}" title="${esc(L.editLook)}" aria-label="${esc(L.editLook)}">✎</button></div>
+    const reply = !panel && answerable(s) ? `<button type="button" class="reply" data-id="${esc(s.id)}">✋ ${esc(L.reply)}</button>` : '';
+    const id = esc(s.id);
+    const acts = panel ? `<div class="acts">${[
+      answerable(s) ? `<button type="button" class="act warn" data-act="reply" data-id="${id}">✋ ${esc(L.reply)}</button>` : '',
+      issueUrl(t) && !answerable(s) ? `<button type="button" class="act" data-act="task" data-id="${id}">📄 ${esc(L.openTask)}</button>` : '',
+      runUrl(s) ? `<button type="button" class="act bad" data-act="run" data-id="${id}">⚠ ${esc(L.openRun)}</button>` : '',
+      `<button type="button" class="act" data-act="look" data-id="${id}">✎ ${esc(L.looksName)}</button>`,
+    ].join('')}</div>` : '';
+    const nick = s.realName && s.realName !== s.name ? ` <span class="real">(${esc(s.realName)})</span>` : '';
+    return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${id}">${esc(s.name)}</b>${nick}${panel ? '' : `<button type="button" class="edit" data-id="${id}" title="${esc(L.looksName)}" aria-label="${esc(L.looksName)}">✎</button>`}</div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
-        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${err}${stepsHtml(s)}`;
+        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${note}${errorBox(s)}${stepsHtml(s)}${acts}`;
   }
-  // The panel sits beside the followed agent (right of it, or left when there is no room) and
-  // moves with it, so zooming out or panning never leaves it over someone else.
+  // The panel belongs to the selected agent (cam.sel), not to the camera: zooming, panning or the
+  // wheel stop the camera from following but keep the panel next to its agent. It is placed right,
+  // left, below or above the agent, whichever fits, and hides while the agent is out of view.
   function placeDetail() {
-    const s = cam.follow && sprites.get(cam.follow);
+    const s = cam.sel && sprites.get(cam.sel);
     if (!s || detailEl.hidden) return;
-    const k = cv.clientWidth / CW, w = stageEl.clientWidth, h = stageEl.clientHeight;
-    const pw = detailEl.offsetWidth, ph = detailEl.offsetHeight, gap = 14;
-    const sx = cam.x + s.x * k * cam.z, sy = cam.y + (s.y - 12) * k * cam.z, half = 8 * k * cam.z;
-    let x = sx + half + gap;
-    if (x + pw > w - 8) x = sx - half - gap - pw;
-    if (x < 8) x = Math.max(8, Math.min(w - pw - 8, sx + half + gap));
-    const y = Math.max(8, Math.min(h - ph - 8, sy - ph / 2));
+    const k = cv.clientWidth / CW, W = stageEl.clientWidth, H = stageEl.clientHeight, z = k * cam.z, m = 8, gap = 10;
+    const box = { l: cam.x + (s.x - 8) * z, r: cam.x + (s.x + 8) * z, t: cam.y + (s.y - 30) * z, b: cam.y + (s.y + 2) * z };
+    const seen = box.r > 0 && box.l < W && box.b > 0 && box.t < H;
+    detailEl.style.visibility = seen ? '' : 'hidden';
+    if (!seen) return;
+    const pw = detailEl.offsetWidth, ph = detailEl.offsetHeight, cx = (box.l + box.r) / 2, cy = (box.t + box.b) / 2;
+    const clampX = (x) => Math.max(m, Math.min(W - pw - m, x)), clampY = (y) => Math.max(m, Math.min(H - ph - m, y));
+    const spots = [[box.r + gap, clampY(cy - ph / 2)], [box.l - gap - pw, clampY(cy - ph / 2)], [clampX(cx - pw / 2), box.b + gap], [clampX(cx - pw / 2), box.t - gap - ph]];
+    const fits = ([x, y]) => x >= m && y >= m && x + pw <= W - m && y + ph <= H - m;
+    const overlap = ([x, y]) => Math.max(0, Math.min(x + pw, box.r) - Math.max(x, box.l)) * Math.max(0, Math.min(y + ph, box.b) - Math.max(y, box.t));
+    const [x, y] = spots.find(fits) || spots.map(([x2, y2]) => [clampX(x2), clampY(y2)]).sort((a, b) => overlap(a) - overlap(b))[0];
     detailEl.style.left = Math.round(x) + 'px'; detailEl.style.top = Math.round(y) + 'px';
   }
 
   // Answering without leaving the office: Paperclip's own issue page in a dialog. Cubicle sends
   // nothing itself; the answer goes through Paperclip's page as if it were opened in a tab.
   const answerDlg = document.getElementById('answer');
-  function openAnswer(s) {
-    const t = answerIssue(s), url = issueUrl(t);
+  function openPaperclip(url, title, note = '') {
     if (!url) return;
-    answerDlg.querySelector('.head b').textContent = `${L.replyTitle(s.name)} · ${t.identifier}${t.title ? ' ' + t.title : ''}`;
+    answerDlg.querySelector('.head b').textContent = title;
     const a = answerDlg.querySelector('.head a'); a.href = url; a.textContent = L.openInPaperclip;
     const x = answerDlg.querySelector('.x'); x.textContent = '✕'; x.setAttribute('aria-label', L.close);
-    answerDlg.querySelector('.note').textContent = L.replyNote;
+    const n = answerDlg.querySelector('.note'); n.textContent = note; n.hidden = !note;
     answerDlg.querySelector('iframe').src = url;
     if (!answerDlg.open) answerDlg.showModal();
+  }
+  function openAnswer(s) {
+    const t = answerIssue(s);
+    openPaperclip(issueUrl(t), `${L.replyTitle(s.name)} · ${t.identifier}${t.title ? ' ' + t.title : ''}`, L.replyNote);
+  }
+  function act(kind, s) {
+    if (kind === 'reply') openAnswer(s);
+    else if (kind === 'task' && s.task) openPaperclip(issueUrl(s.task), `${s.name} · ${s.task.identifier}${s.task.title ? ' ' + s.task.title : ''}`);
+    else if (kind === 'run') openPaperclip(runUrl(s), `${s.name} · ${L.lastFail(ago(s.lastFail.at))}`);
+    else if (kind === 'look') openLooks(s);
   }
   answerDlg.querySelector('.x').addEventListener('click', () => answerDlg.close());
   answerDlg.addEventListener('click', (e) => { if (e.target === answerDlg) answerDlg.close(); });   // backdrop
   answerDlg.addEventListener('close', () => { answerDlg.querySelector('iframe').src = 'about:blank'; poll(); });
 
   function renderDetail() {
-    const s = cam.follow && sprites.get(cam.follow);
-    if (!s || KIOSK) { detailEl.hidden = true; return; }
-    detailEl.innerHTML = `<button type="button" class="x" aria-label="${esc(L.cancel)}">✕</button>` + cardHtml(s);
+    const s = cam.sel && sprites.get(cam.sel);
+    if (!s || KIOSK) { detailEl.hidden = true; if (cam.sel && !s) cam.sel = null; return; }
+    detailEl.innerHTML = `<button type="button" class="x" title="${esc(L.close)}" aria-label="${esc(L.close)}">✕</button>` + cardHtml(s, true);
     detailEl.hidden = false;
     placeDetail();
   }
   detailEl.addEventListener('click', (e) => {
     if (e.target.closest('.x')) { select(null); return; }
-    const r = e.target.closest('.reply'); if (r) { const s = sprites.get(r.dataset.id); if (s) openAnswer(s); return; }
+    const r = e.target.closest('[data-act]'); if (r) { const s = sprites.get(r.dataset.id); if (s) act(r.dataset.act, s); return; }
     const b = e.target.closest('.edit'); if (b) { const s = sprites.get(b.dataset.id); if (s) openLooks(s); }
   });
   detailEl.addEventListener('toggle', (e) => { const d = e.target; if (d.dataset && d.dataset.id) { if (d.open) openSteps.add(d.dataset.id); else openSteps.delete(d.dataset.id); } }, true);
@@ -1236,7 +1318,10 @@
     zoomUi.hidden = false;
     zoomUi.addEventListener('click', (e) => {
       const z = e.target.dataset.z, w = stageEl.clientWidth / 2, h = stageEl.clientHeight / 2;
-      if (z === 'in') zoomAtPoint(cam.z * 1.4, w, h); else if (z === 'out') zoomAtPoint(cam.z / 1.4, w, h); else resetCam();
+      // Zoom around the selected agent when there is one, so it stays in view.
+      const s = cam.sel && sprites.get(cam.sel), k = cv.clientWidth / CW;
+      const px = s ? cam.x + s.x * k * cam.z : w, py = s ? cam.y + (s.y - 12) * k * cam.z : h;
+      if (z === 'in') zoomAtPoint(cam.z * 1.4, px, py); else if (z === 'out') zoomAtPoint(cam.z / 1.4, px, py); else resetCam();
     });
     stageEl.addEventListener('wheel', (e) => {
       if (!e.ctrlKey && !e.metaKey && cam.z === 1 && e.deltaY > 0) return;       // let the page scroll when not zoomed
@@ -1275,6 +1360,15 @@
     const r = e.target.closest('.reply'); if (!r) return;
     const s = sprites.get(r.dataset.id); if (s) openAnswer(s);
   });
+  detailEl.addEventListener('pointerdown', (e) => e.stopPropagation());   // clicks in the panel never pan the office
+  function issueClick(e) {
+    const a = e.target.closest('a[data-issue]');
+    if (!a || e.ctrlKey || e.metaKey || e.shiftKey || e.button !== 0) return;
+    e.preventDefault();
+    openPaperclip(a.href, `${a.dataset.issue}${a.dataset.title ? ' ' + a.dataset.title : ''}`);
+  }
+  detailEl.addEventListener('click', issueClick);
+  cardsEl.addEventListener('click', issueClick);
 
   // ---------- after an update: what's new ----------
   function whatsNew(version) {
@@ -1472,7 +1566,7 @@
     const deskCount = Math.max(4, Math.min(DESKS.length, Math.ceil(sprites.size / 4) * 4));
     DESKS.slice(0, deskCount).forEach((d) => list.push({ z: d[1] * T + 21, f: () => theme.drawDesk(c, d, byDesk.get(d)) }));
     for (const s of sprites.values()) list.push({ z: s.y, f: () => theme.drawChar(c, s) });
-    const picked = cam.follow && sprites.get(cam.follow);
+    const picked = cam.sel && sprites.get(cam.sel);
     if (picked) list.push({ z: picked.y - 0.01, f: () => {
       g.save(); g.strokeStyle = 'rgba(255,226,138,.9)'; g.lineWidth = 0.9;
       g.beginPath(); g.ellipse(picked.x, picked.y, 7, 2.4, 0, 0, Math.PI * 2); g.stroke(); g.restore();
@@ -1520,12 +1614,13 @@
     try { localStorage.setItem(LOOK_KEY, JSON.stringify(looks)); } catch (_) {}
     return '';
   }
-  const lookFor = (s) => looks.agents[s.id] || looks.names[s.name] || null;
+  const lookFor = (s) => looks.agents[s.id] || looks.names[s.realName || s.name] || null;
   function applyLook(s) {
     const lk = lookFor(s) || {};
     s.look = lk;
     s.skin = lk.skin || s.baseSkin; s.hair = lk.hairColor || s.baseHair; s.shirt = lk.color || s.baseShirt;
     s.photoSrc = lk.photo || null;
+    s.name = (typeof lk.alias === 'string' && lk.alias.trim().slice(0, 40)) || s.realName || s.name;
   }
   // Themes call this to draw an agent's photo in place of the drawn head. Returns false when
   // the agent has no photo (or it is still loading), so the theme draws its own head.
@@ -1591,10 +1686,14 @@
     editing = { s, draft: { ...cur }, crop: null };
     const opt = (v, label, cur2) => `<option value="${esc(v)}"${v === cur2 ? ' selected' : ''}>${esc(label)}</option>`;
     const d = editing.draft;
-    dlg.innerHTML = `<h2>${esc(L.looks)} · ${esc(s.name)}</h2>
+    const rename = agentUrl(s);
+    dlg.innerHTML = `<h2>${esc(L.looksName)} · ${esc(s.realName || s.name)}</h2>
       <div class="cols">
         <div><canvas class="preview" width="300" height="380"></canvas></div>
         <div>
+          <label for="look-alias">${esc(L.alias)}</label>
+          <input id="look-alias" type="text" data-k="alias" maxlength="40" value="${esc(d.alias || '')}" placeholder="${esc(s.realName || s.name)}">
+          <div class="hint">${esc(L.aliasHint)}${rename ? ` <a href="#" data-act="rename">${esc(L.renameInPaperclip)}</a>` : ''}</div>
           <label>${esc(L.photo)}</label>
           <div class="drop"><button type="button" data-act="pick">${esc(L.photoPick)}</button> <button type="button" data-act="nophoto"${d.photo ? '' : ' hidden'}>${esc(L.photoRemove)}</button>
             <div class="crop"><canvas width="${CROP * 2}" height="${CROP * 2}"></canvas>
@@ -1628,13 +1727,17 @@
     dlg.querySelector('[data-act="nophoto"]').onclick = (e) => { delete d.photo; editing.crop = null; dlg.querySelector('.crop').classList.remove('on'); e.target.hidden = true; };
     dlg.querySelector('[data-act="face"]').onclick = () => findFace();
     dlg.querySelector('[data-act="cancel"]').onclick = () => closeLooks();
-    dlg.querySelector('[data-act="reset"]').onclick = async () => { delete looks.agents[s.id]; delete looks.names[s.name]; await finishLooks(); };
+    dlg.querySelector('[data-act="reset"]').onclick = async () => { delete looks.agents[s.id]; delete looks.names[s.realName || s.name]; await finishLooks(); };
+    const rn = dlg.querySelector('[data-act="rename"]');
+    if (rn) rn.onclick = (e) => { e.preventDefault(); closeLooks(); openPaperclip(rename, `${s.realName || s.name} · ${L.renameInPaperclip.replace(' ↗', '')}`); };
     dlg.querySelector('[data-act="save"]').onclick = async () => {
       if (editing.crop) d.photo = cropResult();
       for (const k of ['hairColor', 'color']) if (!colorTouched.has(k) && !cur[k]) delete d[k];
       for (const k of Object.keys(d)) if (d[k] === undefined || d[k] === '') delete d[k];
-      if (Object.keys(d).length) { looks.agents[s.id] = d; looks.names[s.name] = d; }
-      else { delete looks.agents[s.id]; delete looks.names[s.name]; }
+      if (typeof d.alias === 'string') { d.alias = d.alias.trim().slice(0, 40); if (!d.alias || d.alias === s.realName) delete d.alias; }
+      const key = s.realName || s.name;
+      if (Object.keys(d).length) { looks.agents[s.id] = d; looks.names[key] = d; }
+      else { delete looks.agents[s.id]; delete looks.names[key]; }
       await finishLooks();
     };
     // drop or paste a picture anywhere in the dialog
@@ -1648,7 +1751,7 @@
   }
   async function finishLooks() {
     const msg = await saveLooks();
-    for (const sp of sprites.values()) applyLook(sp);
+    for (const sp of sprites.values()) { applyLook(sp); sp.el.querySelector('.name').textContent = sp.name; }
     renderCards();
     if (msg) { dlg.querySelector('.foot .note').textContent = msg; setTimeout(closeLooks, 2600); }
     else closeLooks();
