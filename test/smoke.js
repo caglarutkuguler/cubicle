@@ -362,7 +362,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     ];
     const up = http.createServer((q, r) => {
       r.writeHead(200, { 'content-type': 'application/json' });
-      if (q.url.startsWith('/api/companies/c/heartbeat-runs')) { assert.ok(q.url.includes('limit=60'), 'runs are limited upstream'); return r.end(JSON.stringify([run])); }
+      if (q.url.startsWith('/api/companies/c/heartbeat-runs')) { assert.ok(q.url.includes('limit=60'), 'runs are limited upstream'); return r.end(JSON.stringify([run, { id: 'r2', agentId: 'a1', status: 'running', startedAt: '2026-10-01T10:05:00Z', contextSnapshot: { prompt: 'secret prompt' } }])); }
       if (q.url.endsWith('/issues')) return r.end(JSON.stringify(issues));
       r.end('[]');
     });
@@ -372,6 +372,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       await withServer(['--paperclip', upstream], async (base) => {
         const runs = JSON.parse((await get(`${base}/api/companies/c/heartbeat-runs`)).body);
         assert.deepStrictEqual(Object.keys(runs[0]).sort(), ['agentId', 'error', 'errorCode', 'finishedAt', 'id', 'status', 'stderrExcerpt']);
+        assert.deepStrictEqual(runs[1], { id: 'r2', agentId: 'a1', status: 'running', startedAt: '2026-10-01T10:05:00Z' }, 'a run still going is passed on (it ends the last failure)');
         const kpi = JSON.parse((await get(`${base}/api/kpi/c`)).body);
         assert.deepStrictEqual(kpi.map((i) => i.identifier), ['K-1', 'K-2', 'K-4'], 'finished issues older than 90 days are left out');
         assert.strictEqual(kpi[0].human, true); assert.strictEqual(kpi[1].human, false); assert.strictEqual(kpi[2].convo, true);

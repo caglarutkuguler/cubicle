@@ -43,6 +43,14 @@ const TEXT = {
     which: '“Sizi bekliyor” mesajını yanıtlayın ya da /yanit ID metin yazın.',
   },
 };
+// Each agent's newest run, finished or not (by when it started): a failure counts only while no
+// later run has begun.
+const runTime = (r) => String(r.startedAt || r.createdAt || r.finishedAt || '');
+function latestRuns(runs) {
+  const latest = new Map();
+  for (const r of Array.isArray(runs) ? runs : []) if (r && r.agentId && runTime(r) && (!latest.has(r.agentId) || runTime(r) > runTime(latest.get(r.agentId)))) latest.set(r.agentId, r);
+  return latest;
+}
 const tr = (lang) => TEXT[lang] || TEXT.en;
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const CLOSED = new Set(['done', 'cancelled']);
@@ -84,8 +92,7 @@ async function snapshot(self) {
       for (const c of companies.slice(0, 5)) {
         const [as, issues, runs] = await Promise.all([
           getJSON(`/api/companies/${c.id}/agents`), getJSON(`/api/companies/${c.id}/issues`), getJSON(`/api/companies/${c.id}/heartbeat-runs`)]);
-        const latest = new Map();
-        for (const r of runs || []) if (r && r.agentId && r.finishedAt && (!latest.has(r.agentId) || r.finishedAt > latest.get(r.agentId).finishedAt)) latest.set(r.agentId, r);
+        const latest = latestRuns(runs);
         for (const a of as || []) {
           const mine = (issues || []).filter((i) => i.assigneeAgentId === a.id && !CLOSED.has(i.status));
           const ask = mine.find((i) => ((i.reviewAttention && i.reviewAttention.paths) || []).some((x) => /board|user|human/i.test(String(x && x.responder || ''))));

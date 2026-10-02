@@ -192,8 +192,9 @@ function shapePaperclip(pathname, data) {
     ...pick(a, ['id', 'name', 'urlKey', 'role', 'title', 'status', 'createdAt', 'budgetMonthlyCents', 'spentMonthlyCents']),
     errorReason: a.errorReason ? (REDACT ? 'error' : a.errorReason) : null,
   }));
-  if (pathname.endsWith('/heartbeat-runs')) return data.filter((r) => r && r.agentId && r.finishedAt).map((r) => ({
-    ...pick(r, ['id', 'agentId', 'status', 'errorCode', 'finishedAt']),
+  // Runs still going count too: a run that started after a failure means the failure is over.
+  if (pathname.endsWith('/heartbeat-runs')) return data.filter((r) => r && r.agentId).map((r) => ({
+    ...pick(r, ['id', 'agentId', 'status', 'errorCode', 'startedAt', 'createdAt', 'finishedAt']),
     ...(REDACT ? {} : pick({ error: r.error && String(r.error).slice(0, 500), stderrExcerpt: r.stderrExcerpt && String(r.stderrExcerpt).slice(-600) }, ['error', 'stderrExcerpt'])),
   }));
   if (pathname.endsWith('/issues')) return data.filter((i) => !CLOSED.has(i.status)).map((i) => ({
@@ -338,7 +339,11 @@ const server = http.createServer((req, res) => {
     const first = sources[0];
     // Telegram status for the page's setup dialog; the pairing code only for a browser on this machine.
     const telegram = telegramStatus(req);
-    return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined, redact: REDACT, version: VERSION, build: build(), telegram }));
+    // Paperclip on 127.0.0.1 opens only on this machine. A phone (through Tailscale) gets the address
+    // given for it, or none: the page then leaves out the Paperclip links instead of opening blanks.
+    const pcLinks = !HAS_PAPERCLIP ? undefined : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
+    return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined,
+      paperclipLinks: pcLinks, redact: REDACT, version: VERSION, build: build(), telegram }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -490,6 +495,8 @@ function tgReplies() { return HAS_PAPERCLIP && (TELEGRAM_REPLIES || !!tgSettings
 // The address links in messages use: --public-url, else the one saved from the page (⚙ → Telegram →
 // "Open on your phone"), else this machine's own.
 const PUBLIC_URL_FLAG = arg('public-url') || process.env.CUBICLE_PUBLIC_URL || '';
+// Paperclip's address for other devices (links on the phone), when it differs from --paperclip.
+const PAPERCLIP_PHONE_URL = () => arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || '';
 function tgPublicUrl() {
   return PUBLIC_URL_FLAG || tgSettings().publicUrl || `http://${['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST}:${PORT}`;
 }

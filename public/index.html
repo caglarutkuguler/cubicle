@@ -302,7 +302,7 @@
       tsDownload: 'Download Tailscale', tsCheck: 'Check again', tsChecking: 'Checking…', tsOff: 'Tailscale is installed but not connected. Click the Tailscale icon in the taskbar (next to the clock) and sign in or press “Connect”, then check again.',
       tsOn: (d) => `✓ Tailscale is running on this computer (${d}).`, tsServe: 'Open the office on my phone', tsServeNote: 'Only devices signed in to your Tailscale account can open it; the settings and the pairing code stay on this computer.',
       tsNoPhone: 'No phone in your Tailscale account yet: install Tailscale on the phone and sign in with the same account.', tsFail: 'Tailscale did not accept it. Run this once on this computer (PowerShell or Terminal):',
-      tsPhoneOn: 'On the phone, the Tailscale app must be on (connected).', tsManual: 'Or write an address yourself',
+      tsPhoneOn: 'On the phone, the Tailscale app must be on (connected).', pcAway: 'Paperclip opens only on the computer it runs on. To answer from here, reply to the agent’s message in Telegram.', tsManual: 'Or write an address yourself',
       tgPhonePh: 'e.g. http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links open at ${u}`, tgPhoneTry: 'Open it on your phone to try', tgPhoneFixed: 'The address was given when Cubicle started (--public-url).', tgPhoneClear: 'Remove',
       tgEmbed: 'The Telegram bot belongs to the standalone Cubicle running on this computer, not to the office inside Paperclip. Open it and press ⚙ → Telegram there:', tgOpenStandalone: 'Open Cubicle',
       iss: { backlog: 'backlog', todo: 'to do', in_progress: 'in progress', in_review: 'in review', blocked: 'blocked', done: 'done', cancelled: 'cancelled' },
@@ -377,7 +377,7 @@
       tsDownload: 'Tailscale’i indir', tsCheck: 'Yeniden kontrol et', tsChecking: 'Kontrol ediliyor…', tsOff: 'Tailscale kurulu ama bağlı değil. Görev çubuğunda saatin yanındaki Tailscale simgesine tıklayıp giriş yapın ya da “Connect”e basın, sonra yeniden kontrol edin.',
       tsOn: (d) => `✓ Tailscale bu bilgisayarda çalışıyor (${d}).`, tsServe: 'Ofisi telefonumda aç', tsServeNote: 'Ofisi yalnızca Tailscale hesabınıza bağlı cihazlar açabilir; ayarlar ve eşleme kodu bu bilgisayarda kalır.',
       tsNoPhone: 'Tailscale hesabınızda henüz telefon görünmüyor: telefona Tailscale’i kurup aynı hesapla giriş yapın.', tsFail: 'Tailscale bunu kabul etmedi. Bu bilgisayarda bir kez şu komutu çalıştırın (PowerShell ya da Terminal):',
-      tsPhoneOn: 'Telefonda Tailscale uygulaması açık (bağlı) olmalı.', tsManual: 'Ya da adresi kendiniz yazın',
+      tsPhoneOn: 'Telefonda Tailscale uygulaması açık (bağlı) olmalı.', pcAway: 'Paperclip yalnızca çalıştığı bilgisayarda açılır. Buradan yanıt vermek için Telegram’daki ajan mesajını yanıtlayın.', tsManual: 'Ya da adresi kendiniz yazın',
       tgPhonePh: 'ör. http://bilgisayarim.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Bağlantılar ${u} adresinde açılır`, tgPhoneTry: 'Denemek için telefonda açın', tgPhoneFixed: 'Adres, Cubicle başlatılırken verildi (--public-url).', tgPhoneClear: 'Kaldır',
       tgEmbed: 'Telegram botu, Paperclip içindeki ofise değil, bu bilgisayarda çalışan bağımsız Cubicle’a aittir. Onu açıp orada ⚙ → Telegram’a basın:', tgOpenStandalone: 'Cubicle’ı aç',
       iss: { backlog: 'bekleme listesi', todo: 'yapılacak', in_progress: 'sürüyor', in_review: 'incelemede', blocked: 'engelli', done: 'bitti', cancelled: 'iptal' },
@@ -452,7 +452,7 @@
       tsDownload: 'Tailscale laden', tsCheck: 'Erneut prüfen', tsChecking: 'Wird geprüft…', tsOff: 'Tailscale ist installiert, aber nicht verbunden. Auf das Tailscale-Symbol in der Taskleiste (bei der Uhr) klicken und anmelden oder „Connect“ drücken, dann erneut prüfen.',
       tsOn: (d) => `✓ Tailscale läuft auf diesem Rechner (${d}).`, tsServe: 'Büro auf meinem Handy öffnen', tsServeNote: 'Nur Geräte in Ihrem Tailscale-Konto können es öffnen; Einstellungen und Code bleiben auf diesem Rechner.',
       tsNoPhone: 'Noch kein Handy in Ihrem Tailscale-Konto: Tailscale auf dem Handy installieren und mit demselben Konto anmelden.', tsFail: 'Tailscale hat es nicht angenommen. Einmal auf diesem Rechner ausführen (PowerShell oder Terminal):',
-      tsPhoneOn: 'Auf dem Handy muss die Tailscale-App eingeschaltet (verbunden) sein.', tsManual: 'Oder eine Adresse selbst eintragen',
+      tsPhoneOn: 'Auf dem Handy muss die Tailscale-App eingeschaltet (verbunden) sein.', pcAway: 'Paperclip öffnet sich nur auf dem Rechner, auf dem es läuft. Um von hier zu antworten, antworten Sie in Telegram auf die Nachricht des Agenten.', tsManual: 'Oder eine Adresse selbst eintragen',
       tgPhonePh: 'z. B. http://mein-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links öffnen sich unter ${u}`, tgPhoneTry: 'Zum Testen auf dem Handy öffnen', tgPhoneFixed: 'Die Adresse wurde beim Start angegeben (--public-url).', tgPhoneClear: 'Entfernen',
       tgEmbed: 'Der Telegram-Bot gehört zum eigenständigen Cubicle auf diesem Rechner, nicht zum Büro in Paperclip. Öffnen Sie es und drücken Sie dort ⚙ → Telegram:', tgOpenStandalone: 'Cubicle öffnen',
       iss: { backlog: 'Backlog', todo: 'offen', in_progress: 'in Arbeit', in_review: 'im Review', blocked: 'blockiert', done: 'erledigt', cancelled: 'abgebrochen' },
@@ -527,7 +527,7 @@
       tsDownload: 'Descargar Tailscale', tsCheck: 'Comprobar de nuevo', tsChecking: 'Comprobando…', tsOff: 'Tailscale está instalado pero no conectado. Haz clic en el icono de Tailscale de la barra de tareas (junto al reloj) e inicia sesión o pulsa «Connect»; luego comprueba de nuevo.',
       tsOn: (d) => `✓ Tailscale funciona en este equipo (${d}).`, tsServe: 'Abrir la oficina en mi móvil', tsServeNote: 'Solo los dispositivos de tu cuenta de Tailscale pueden abrirla; los ajustes y el código se quedan en este equipo.',
       tsNoPhone: 'Aún no hay ningún móvil en tu cuenta de Tailscale: instálalo en el móvil y entra con la misma cuenta.', tsFail: 'Tailscale no lo aceptó. Ejecuta esto una vez en este equipo (PowerShell o Terminal):',
-      tsPhoneOn: 'En el móvil, la app de Tailscale debe estar activada (conectada).', tsManual: 'O escribe una dirección tú mismo',
+      tsPhoneOn: 'En el móvil, la app de Tailscale debe estar activada (conectada).', pcAway: 'Paperclip solo se abre en el equipo donde se ejecuta. Para responder desde aquí, contesta al mensaje del agente en Telegram.', tsManual: 'O escribe una dirección tú mismo',
       tgPhonePh: 'p. ej. http://mi-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Los enlaces se abren en ${u}`, tgPhoneTry: 'Ábrelo en el móvil para probar', tgPhoneFixed: 'La dirección se dio al iniciar Cubicle (--public-url).', tgPhoneClear: 'Quitar',
       tgEmbed: 'El bot de Telegram pertenece al Cubicle independiente de este equipo, no a la oficina dentro de Paperclip. Ábrelo y pulsa allí ⚙ → Telegram:', tgOpenStandalone: 'Abrir Cubicle',
       iss: { backlog: 'pendiente', todo: 'por hacer', in_progress: 'en curso', in_review: 'en revisión', blocked: 'bloqueada', done: 'terminada', cancelled: 'cancelada' },
@@ -602,7 +602,7 @@
       tsDownload: 'Télécharger Tailscale', tsCheck: 'Vérifier à nouveau', tsChecking: 'Vérification…', tsOff: 'Tailscale est installé mais pas connecté. Cliquez sur l’icône Tailscale de la barre des tâches (près de l’horloge) et connectez-vous ou appuyez sur « Connect », puis vérifiez à nouveau.',
       tsOn: (d) => `✓ Tailscale fonctionne sur cet ordinateur (${d}).`, tsServe: 'Ouvrir le bureau sur mon téléphone', tsServeNote: 'Seuls les appareils de votre compte Tailscale peuvent l’ouvrir ; les réglages et le code restent sur cet ordinateur.',
       tsNoPhone: 'Aucun téléphone dans votre compte Tailscale pour l’instant : installez Tailscale sur le téléphone et connectez-vous avec le même compte.', tsFail: 'Tailscale ne l’a pas accepté. Lancez ceci une fois sur cet ordinateur (PowerShell ou Terminal) :',
-      tsPhoneOn: 'Sur le téléphone, l’application Tailscale doit être activée (connectée).', tsManual: 'Ou écrivez une adresse vous-même',
+      tsPhoneOn: 'Sur le téléphone, l’application Tailscale doit être activée (connectée).', pcAway: 'Paperclip ne s’ouvre que sur l’ordinateur où il tourne. Pour répondre d’ici, répondez au message de l’agent dans Telegram.', tsManual: 'Ou écrivez une adresse vous-même',
       tgPhonePh: 'ex. http://mon-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Les liens s’ouvrent sur ${u}`, tgPhoneTry: 'Ouvrez-la sur le téléphone pour essayer', tgPhoneFixed: 'L’adresse a été donnée au démarrage (--public-url).', tgPhoneClear: 'Retirer',
       tgEmbed: 'Le bot Telegram appartient au Cubicle autonome de cet ordinateur, pas au bureau dans Paperclip. Ouvrez-le et appuyez sur ⚙ → Telegram :', tgOpenStandalone: 'Ouvrir Cubicle',
       iss: { backlog: 'en attente', todo: 'à faire', in_progress: 'en cours', in_review: 'en revue', blocked: 'bloquée', done: 'terminée', cancelled: 'annulée' },
@@ -677,7 +677,7 @@
       tsDownload: '下载 Tailscale', tsCheck: '重新检查', tsChecking: '正在检查…', tsOff: 'Tailscale 已安装但未连接。点任务栏（时钟旁）的 Tailscale 图标登录或点 “Connect”，然后重新检查。',
       tsOn: (d) => `✓ Tailscale 正在这台电脑上运行（${d}）。`, tsServe: '在我的手机上打开办公室', tsServeNote: '只有登录你 Tailscale 账号的设备才能打开；设置和配对代码只留在这台电脑上。',
       tsNoPhone: '你的 Tailscale 账号里还没有手机：在手机上安装 Tailscale，并用同一账号登录。', tsFail: 'Tailscale 没有接受。请在这台电脑上运行一次（PowerShell 或终端）：',
-      tsPhoneOn: '手机上的 Tailscale 应用必须开启（已连接）。', tsManual: '或者自己填写地址',
+      tsPhoneOn: '手机上的 Tailscale 应用必须开启（已连接）。', pcAway: 'Paperclip 只能在它运行的那台电脑上打开。要在这里回答，请在 Telegram 中回复该代理的消息。', tsManual: '或者自己填写地址',
       tgPhonePh: '例如 http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ 链接将在 ${u} 打开`, tgPhoneTry: '在手机上打开试试', tgPhoneFixed: '地址是在启动 Cubicle 时指定的（--public-url）。', tgPhoneClear: '移除',
       tgEmbed: 'Telegram 机器人属于这台电脑上独立运行的 Cubicle，而不是 Paperclip 里的办公室。打开它，并在那里点 ⚙ → Telegram：', tgOpenStandalone: '打开 Cubicle',
       iss: { backlog: '待办池', todo: '待办', in_progress: '进行中', in_review: '审核中', blocked: '受阻', done: '已完成', cancelled: '已取消' },
@@ -752,7 +752,7 @@
       tsDownload: 'تنزيل Tailscale', tsCheck: 'تحقق مجددًا', tsChecking: 'جارٍ التحقق…', tsOff: 'Tailscale مثبّت لكنه غير متصل. اضغط أيقونة Tailscale في شريط المهام (بجانب الساعة) وسجّل الدخول أو اضغط «Connect»، ثم تحقق مجددًا.',
       tsOn: (d) => `✓ يعمل Tailscale على هذا الحاسوب (${d}).`, tsServe: 'افتح المكتب على هاتفي', tsServeNote: 'لا يفتحه إلا الأجهزة المسجّلة في حساب Tailscale الخاص بك؛ وتبقى الإعدادات ورمز الربط على هذا الحاسوب.',
       tsNoPhone: 'لا يوجد هاتف في حساب Tailscale بعد: ثبّت Tailscale على الهاتف وسجّل الدخول بالحساب نفسه.', tsFail: 'لم يقبل Tailscale ذلك. شغّل هذا الأمر مرة واحدة على هذا الحاسوب (PowerShell أو Terminal):',
-      tsPhoneOn: 'يجب أن يكون تطبيق Tailscale على الهاتف قيد التشغيل (متصلًا).', tsManual: 'أو اكتب عنوانًا بنفسك',
+      tsPhoneOn: 'يجب أن يكون تطبيق Tailscale على الهاتف قيد التشغيل (متصلًا).', pcAway: 'لا يُفتح Paperclip إلا على الحاسوب الذي يعمل عليه. للرد من هنا، ردّ على رسالة الوكيل في Telegram.', tsManual: 'أو اكتب عنوانًا بنفسك',
       tgPhonePh: 'مثال: http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ تُفتح الروابط على ${u}`, tgPhoneTry: 'افتحه على الهاتف للتجربة', tgPhoneFixed: 'تم تحديد العنوان عند تشغيل Cubicle (--public-url).', tgPhoneClear: 'إزالة',
       tgEmbed: 'بوت Telegram تابع لـ Cubicle المستقل على هذا الحاسوب، لا للمكتب داخل Paperclip. افتحه واضغط هناك ⚙ ← Telegram:', tgOpenStandalone: 'افتح Cubicle',
       iss: { backlog: 'قائمة الانتظار', todo: 'للتنفيذ', in_progress: 'قيد التنفيذ', in_review: 'قيد المراجعة', blocked: 'متوقفة', done: 'منجزة', cancelled: 'ملغاة' },
@@ -863,10 +863,10 @@
   function renderNav() {
     if (KIOSK || !navEl) return;
     const framed = EMBED && window.top !== window;
-    const pc = paperclipUrl && company && !DEMO && !framed;
+    const pc = pcLink() && company && !DEMO && !framed;
     const kpi = DEMO || (paperclipUrl && company);
     const html = (kpi ? `<button type="button" class="navb" data-nav="kpi" title="${esc(L.kpiTitle)}">📊 KPI</button>` : '')
-      + (pc ? `<a class="navb" href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/dashboard" target="cubicle-paperclip" rel="noopener" title="${esc(L.openPaperclip)}">Paperclip ↗</a>` : '');
+      + (pc ? `<a class="navb" href="${esc(pcLink())}/${esc(company.issuePrefix)}/dashboard" target="cubicle-paperclip" rel="noopener" title="${esc(L.openPaperclip)}">Paperclip ↗</a>` : '');
     if (navEl.innerHTML !== html) navEl.innerHTML = html;
   }
   navEl.addEventListener('click', (e) => { const b = e.target.closest('[data-nav="kpi"]'); if (b) openKpi(); });
@@ -1245,6 +1245,8 @@
   const SKINS  = ['#f1c7a3','#d9a47a','#b87b52','#f5d5b8','#c68e62'];
 
   let paperclipUrl = '';
+  let pcLinkBase = null;   // where Paperclip links point for this browser ('' = Paperclip cannot be opened from here)
+  const pcLink = () => (pcLinkBase === null ? paperclipUrl : pcLinkBase);
   let companies = [];
   let company = null;
   const sprites = new Map();
@@ -1292,11 +1294,14 @@
   // An agent's latest finished run, when it failed: what the panel shows as its error.
   const FAILED_RUNS = new Set(['failed', 'error', 'timed_out']);
   function lastFailures(runs) {
+    // The newest run of each agent by start time, finished or not: once a new run has started, the
+    // last one's failure is history and the card stops showing it.
+    const when = (r) => String(r.startedAt || r.createdAt || r.finishedAt || '');
     const latest = new Map();
     for (const r of Array.isArray(runs) ? runs : []) {
-      if (!r || !r.agentId || !r.finishedAt) continue;
+      if (!r || !r.agentId || !when(r)) continue;
       const cur = latest.get(r.agentId);
-      if (!cur || r.finishedAt > cur.finishedAt) latest.set(r.agentId, r);
+      if (!cur || when(r) > when(cur)) latest.set(r.agentId, r);
     }
     const out = new Map();
     for (const [id, r] of latest) if (FAILED_RUNS.has(r.status)) out.set(id, {
@@ -1401,7 +1406,7 @@
           ? { kind: 'feed', label: cfg.label, path: '/api/feed' }
           : { kind: 'paperclip', paperclipUrl: cfg.paperclipUrl }];
         providers = list.map((x) => {
-          if (x.kind === 'paperclip') { paperclipUrl = x.paperclipUrl || ''; return paperclipProvider(); }
+          if (x.kind === 'paperclip') { paperclipUrl = x.paperclipUrl || ''; if ('paperclipLinks' in cfg) pcLinkBase = cfg.paperclipLinks || ''; return paperclipProvider(); }
           return feedProvider(x.path || '/api/feed', x.label || 'feed');
         });
         // Reload when the server was updated or restarted.
@@ -1595,8 +1600,8 @@
 
   // A Paperclip issue the board can answer from here: a question to the board, or a waiting agent's issue.
   function issueUrl(t) {
-    if (!paperclipUrl || DEMO || !company || !t || !t.identifier || !('assigneeAgentId' in t)) return '';
-    return `${paperclipUrl}/${encodeURIComponent(company.issuePrefix)}/issues/${encodeURIComponent(t.identifier)}`;
+    if (!pcLink() || DEMO || !company || !t || !t.identifier || !('assigneeAgentId' in t)) return '';
+    return `${pcLink()}/${encodeURIComponent(company.issuePrefix)}/issues/${encodeURIComponent(t.identifier)}`;
   }
   const answerIssue = (s) => (s.ask ? s.ask.issue : s.status === 'waiting' ? s.task : null);
   const answerable = (s) => !KIOSK && !!issueUrl(answerIssue(s));
@@ -1605,11 +1610,11 @@
     const label = esc(t.identifier);
     if (t.url) return `<a href="${esc(t.url)}" target="_blank" rel="noopener">${label || '↗'}</a>`;
     // Only Paperclip issues (which carry assigneeAgentId) link into Paperclip.
-    if (!paperclipUrl || DEMO || !company || !('assigneeAgentId' in t)) return label;
+    if (!pcLink() || DEMO || !company || !('assigneeAgentId' in t)) return label;
     // Framed inside Paperclip: open the issue in Paperclip itself. In a tab of its own: keep the office open.
     const target = EMBED && window.top !== window ? '_top' : '_blank';
     // A plain click opens it in the dialog over the office; Ctrl/⌘-click still opens a tab.
-    return `<a href="${esc(paperclipUrl)}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="${target}" rel="noopener" data-issue="${label}" data-title="${esc(t.title || '')}">${label}</a>`;
+    return `<a href="${esc(pcLink())}/${esc(company.issuePrefix)}/issues/${esc(t.identifier)}" target="${target}" rel="noopener" data-issue="${label}" data-title="${esc(t.title || '')}">${label}</a>`;
   }
 
   // Monthly spend from Paperclip, when it reports any: "$4.20 / $20.00", amber from 80 %, red at 100 %.
@@ -1948,10 +1953,10 @@
     cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12; clampCam();
   }
   // Where the agent's last Paperclip run is shown (its log), and the agent page (to rename it there).
-  const runUrl = (s) => (s.lastFail && s.lastFail.runId && paperclipUrl && company && !DEMO
-    ? `${paperclipUrl}/${encodeURIComponent(company.issuePrefix)}/agents/${encodeURIComponent(s.urlKey || s.id)}/runs/${encodeURIComponent(s.lastFail.runId)}` : '');
-  const agentUrl = (s) => (s.urlKey !== undefined && paperclipUrl && company && !DEMO
-    ? `${paperclipUrl}/${encodeURIComponent(company.issuePrefix)}/agents/${encodeURIComponent(s.urlKey || s.id)}` : '');
+  const runUrl = (s) => (s.lastFail && s.lastFail.runId && pcLink() && company && !DEMO
+    ? `${pcLink()}/${encodeURIComponent(company.issuePrefix)}/agents/${encodeURIComponent(s.urlKey || s.id)}/runs/${encodeURIComponent(s.lastFail.runId)}` : '');
+  const agentUrl = (s) => (s.urlKey !== undefined && pcLink() && company && !DEMO
+    ? `${pcLink()}/${encodeURIComponent(company.issuePrefix)}/agents/${encodeURIComponent(s.urlKey || s.id)}` : '');
   // The error to show: the agent's own error text, or its last Paperclip run when that one failed.
   function errorBox(s) {
     const f = s.lastFail;
@@ -1974,10 +1979,12 @@
       runUrl(s) ? `<button type="button" class="act bad" data-act="run" data-id="${id}">⚠ ${esc(L.openRun)}</button>` : '',
       `<button type="button" class="act" data-act="look" data-id="${id}">✎ ${esc(L.looksName)}</button>`,
     ].join('')}</div>` : '';
+    // Seen from a phone while Paperclip runs on 127.0.0.1: say why there is no Answer button.
+    const away = panel && pcLinkBase === '' && paperclipUrl && answerIssue(s) ? `<div class="st" style="color:var(--muted);font-size:12px;margin-top:6px">ⓘ ${esc(L.pcAway)}</div>` : '';
     const nick = s.realName && s.realName !== s.name ? ` <span class="real">(${esc(s.realName)})</span>` : '';
     return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${id}">${esc(s.name)}</b>${nick}${panel ? '' : `<button type="button" class="edit" data-id="${id}" title="${esc(L.looksName)}" aria-label="${esc(L.looksName)}">✎</button>`}</div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
-        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${note}${errorBox(s)}${stepsHtml(s)}${acts}`;
+        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${note}${errorBox(s)}${stepsHtml(s)}${acts}${away}`;
   }
   // The panel belongs to the selected agent (cam.sel), not to the camera: zooming, panning or the
   // wheel stop the camera from following but keep the panel next to its agent. It is placed right,
