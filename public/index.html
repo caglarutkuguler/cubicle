@@ -141,8 +141,17 @@
   #tg h2 { font-size:15px; margin:0 0 8px; display:flex; } #tg h2 button { margin-inline-start:auto; background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; }
   #tg p { font-size:13px; margin:6px 0; } #tg ol { font-size:13px; padding-inline-start:20px; margin:8px 0; } #tg li { margin:6px 0; line-height:1.45; }
   #tg code { background:#1d2030; border:1px solid var(--line); border-radius:4px; padding:0 4px; font-size:12px; }
-  #tg .state { padding:7px 10px; border-radius:8px; background:#1d2030; border:1px solid var(--line); font-size:13px; }
-  #tg .state.on { border-color:#2f6b40; background:#173022; } #tg .muted { color:var(--muted); font-size:12px; }
+  #tg .tgstep { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:10px 0; background:#1d2030; }
+  #tg .tgstep.done { opacity:.75; border-color:#2f6b40; }
+  #tg .tgstep > b { display:flex; align-items:center; gap:8px; font-size:13.5px; }
+  #tg .num { display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#3d6fd9; color:#fff; font-size:12px; flex:none; }
+  #tg .tgstep.done .num { background:#2f8a4c; }
+  #tg .tgrow { display:flex; gap:6px; margin-top:6px; }
+  #tg .tgrow input { flex:1; min-width:0; background:#14161f; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 8px; font:inherit; font-size:13px; }
+  #tg .act { display:inline-block; text-decoration:none; }
+  #tg .err { color:#ffb3b8; font-size:12px; min-height:1em; margin:4px 0 0; } #tg .ok { color:#9ff0b4; }
+  #tg button.link { background:none; border:0; color:var(--link); cursor:pointer; font:inherit; font-size:12px; text-decoration:underline; }
+  #tg .muted { color:var(--muted); font-size:12px; }
   dialog#answer { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:0; width:min(1100px, 94vw); height:min(820px, 88vh); box-shadow:0 18px 50px rgba(0,0,0,.5); }
   dialog#answer[open] { display:flex; flex-direction:column; }
   dialog#answer::backdrop { background:rgba(8,9,15,.6); }
@@ -258,13 +267,14 @@
       waitsOn1: (id) => `waiting for ${id}`, waitsOnN: (n, id) => `waiting for ${n} tasks (${id}…)`, waitsSubs: (n) => `waiting for ${n} subtasks`, waitsYou: 'waiting for you', stalled: (n) => `${n} stalled`,
       sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sHuman: 'Your desk', sNotify: 'Desktop notification',
       tgButton: '📨 Telegram…', tgIntro: 'Get a message on your phone when an agent needs you or a run fails, with links to the agent and the issue, and ask the office how it is doing.',
-      tgSteps: ['In Telegram, open @BotFather, send /newbot and pick a name. Copy the token it gives you.',
-        'Give the token to the Cubicle server, never on the command line: in its environment file (~/.config/cubicle/env for the service) add CUBICLE_TELEGRAM_TOKEN=<token>, and CUBICLE_PUBLIC_URL=http://<this computer’s address>:3200 so the links open on your phone.',
-        'Restart Cubicle (systemctl --user restart cubicle). It prints a pairing code: journalctl --user -u cubicle | grep /start',
-        'Send that line, /start 123456, to your bot. From then on this chat gets the messages.',
-        'Optional: to answer by replying to a message, add CUBICLE_TELEGRAM_REPLIES=1. Your reply becomes a comment on the Paperclip issue, the only thing Cubicle ever writes to Paperclip.'],
-      tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text', tgOn: (n) => `Telegram is on · ${n} linked chat(s)`, tgOff: 'Telegram is not set up on this Cubicle server yet.',
-      tgCode: (c) => `Send your bot: /start ${c}`, tgReplies: 'Answering from Telegram is on.', tgEmbed: 'Telegram runs in the standalone Cubicle server (npx or the service), not inside Paperclip; its status shows in that Cubicle.',
+      tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text',
+      tg1: 'Create a bot', tg1Text: 'In Telegram, open @BotFather, go to My Bots and press “Create a New Bot”. Give it a name and a username ending in “bot”. BotFather then sends you a token, a long line like 123456789:AAH…; copy it.',
+      tg2: 'Paste the token here', tgTokenPh: 'e.g. 123456789:AAH…', tgSave: 'Save', tgSaving: 'Checking…', tgBad: { format: 'That does not look like a bot token. Copy the whole line BotFather sent.', refused: 'Telegram refused this token. Copy it again from BotFather.', unreachable: 'Telegram could not be reached from this computer. Check the internet connection.' },
+      tgBotOk: (u) => `✓ Connected to ${u}`, tgRemove: 'Disconnect', tgFromEnv: 'The token is set in the server’s environment.',
+      tg3: 'Link your Telegram', tg3Text: 'Press the button: Telegram opens your bot. Press “Start” there. From then on that chat gets the messages.', tgOpenBot: 'Open in Telegram', tgLinked: (n) => `✓ ${n} chat(s) linked`, tgWaitStart: 'Waiting for you to press Start in Telegram…',
+      tg4: 'Optional: answer from Telegram', tgRepliesLabel: 'Let me answer by replying to a message; my reply is written to the Paperclip issue as a comment',
+      tgLocal: 'You can set this up only on the computer Cubicle runs on.', tgPhone: 'The links in the messages open on this computer.',
+      tgEmbed: 'The Telegram bot belongs to the standalone Cubicle running on this computer, not to the office inside Paperclip. Open it and press ⚙ → Telegram there:', tgOpenStandalone: 'Open Cubicle',
       iss: { backlog: 'backlog', todo: 'to do', in_progress: 'in progress', in_review: 'in review', blocked: 'blocked', done: 'done', cancelled: 'cancelled' },
       kpiTask: 'Task', kpiWho: 'Agent', kpiProgress: 'Progress', kpiEta: 'Expected', kpiSub: (d, n) => `${d}/${n} subtasks`, kpiOver: 'past the usual time', kpiDone: 'done', kpiShowDone: 'Show finished', kpiRefresh: 'Refresh', kpiEmpty: 'No tasks from people yet.',
       kpiNote: 'Tasks a person created, not the ones agents made for each other. Progress comes from a task’s subtasks, or from its status when it has none; the expected time follows the pace so far, or how long a task usually takes in this company.',
@@ -322,13 +332,14 @@
       waitsOn1: (id) => `başka bir görevi bekliyor (${id})`, waitsOnN: (n, id) => `${n} görevin bitmesini bekliyor (${id}…)`, waitsSubs: (n) => `${n} alt görevin bitmesini bekliyor`, waitsYou: 'sizi bekliyor', stalled: (n) => `${n} tanesi takıldı`,
       sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
       tgButton: '📨 Telegram…', tgIntro: 'Bir ajan sizi beklediğinde ya da bir çalıştırma hata verdiğinde telefonunuza ajan ve iş bağlantılarıyla mesaj gelir; ofisin durumunu da oradan sorabilirsiniz.',
-      tgSteps: ['Telegram’da @BotFather’ı açın, /newbot yazın ve bir ad seçin. Verdiği token’ı kopyalayın.',
-        'Token’ı Cubicle sunucusuna komut satırında değil, ortam dosyasıyla verin (servis için ~/.config/cubicle/env): CUBICLE_TELEGRAM_TOKEN=<token> satırını ve bağlantıların telefonda açılması için CUBICLE_PUBLIC_URL=http://<bu bilgisayarın adresi>:3200 satırını ekleyin.',
-        'Cubicle’ı yeniden başlatın (systemctl --user restart cubicle). Bir eşleştirme kodu yazar: journalctl --user -u cubicle | grep /start',
-        'O satırı, /start 123456, botunuza gönderin. Bundan sonra mesajlar bu sohbete gelir.',
-        'İsteğe bağlı: mesajı yanıtlayarak cevap vermek için CUBICLE_TELEGRAM_REPLIES=1 ekleyin. Yanıtınız Paperclip’teki işe yorum olarak yazılır; Cubicle’ın Paperclip’e yazdığı tek şey budur.'],
-      tgCommands: 'Komutlar: /durum, /bekleyen, /kpi, /ofis, /yanit ID metin', tgOn: (n) => `Telegram açık · ${n} bağlı sohbet`, tgOff: 'Bu Cubicle sunucusunda Telegram henüz kurulmadı.',
-      tgCode: (c) => `Botunuza gönderin: /start ${c}`, tgReplies: 'Telegram’dan yanıt verme açık.', tgEmbed: 'Telegram, Paperclip içinde değil, bağımsız Cubicle sunucusunda (npx ya da servis) çalışır; durumu o Cubicle’da görünür.',
+      tgCommands: 'Komutlar: /durum, /bekleyen, /kpi, /ofis, /yanit ID metin',
+      tg1: 'Bot oluşturun', tg1Text: 'Telegram’da @BotFather’ı açın, My Bots menüsüne girip “Create a New Bot” düğmesine basın. Bota bir ad ve sonu “bot” ile biten bir kullanıcı adı verin. BotFather size 123456789:AAH… gibi uzun bir satır (token) gönderir; onu kopyalayın.',
+      tg2: 'Token’ı buraya yapıştırın', tgTokenPh: 'örn. 123456789:AAH…', tgSave: 'Kaydet', tgSaving: 'Kontrol ediliyor…', tgBad: { format: 'Bu bir bot token’ına benzemiyor. BotFather’ın gönderdiği satırın tamamını kopyalayın.', refused: 'Telegram bu token’ı kabul etmedi. BotFather’dan yeniden kopyalayın.', unreachable: 'Bu bilgisayardan Telegram’a ulaşılamadı. İnternet bağlantısını kontrol edin.' },
+      tgBotOk: (u) => `✓ ${u} bağlandı`, tgRemove: 'Bağlantıyı kaldır', tgFromEnv: 'Token sunucu ortamında tanımlı.',
+      tg3: 'Telegram’ınızı bağlayın', tg3Text: 'Düğmeye basın: Telegram botunuzu açar. Orada “Başlat” (Start) düğmesine basın. Bundan sonra mesajlar o sohbete gelir.', tgOpenBot: 'Telegram’da aç', tgLinked: (n) => `✓ ${n} sohbet bağlı`, tgWaitStart: 'Telegram’da “Başlat”a basmanız bekleniyor…',
+      tg4: 'İsteğe bağlı: Telegram’dan yanıt', tgRepliesLabel: 'Mesajı yanıtlayarak cevap verebileyim; yanıtım Paperclip’teki işe yorum olarak yazılsın',
+      tgLocal: 'Kurulum yalnızca Cubicle’ın çalıştığı bilgisayardan yapılabilir.', tgPhone: 'Mesajlardaki bağlantılar bu bilgisayarda açılır.',
+      tgEmbed: 'Telegram botu, Paperclip içindeki ofise değil, bu bilgisayarda çalışan bağımsız Cubicle’a aittir. Onu açıp orada ⚙ → Telegram’a basın:', tgOpenStandalone: 'Cubicle’ı aç',
       iss: { backlog: 'bekleme listesi', todo: 'yapılacak', in_progress: 'sürüyor', in_review: 'incelemede', blocked: 'engelli', done: 'bitti', cancelled: 'iptal' },
       kpiTask: 'Görev', kpiWho: 'Ajan', kpiProgress: 'İlerleme', kpiEta: 'Tahmini bitiş', kpiSub: (d, n) => `${d}/${n} alt görev`, kpiOver: 'tipik süreyi aştı', kpiDone: 'bitti', kpiShowDone: 'Bitenleri göster', kpiRefresh: 'Yenile', kpiEmpty: 'Henüz bir kişinin verdiği görev yok.',
       kpiNote: 'Bir kişinin oluşturduğu görevler; ajanların birbirine açtıkları değil. İlerleme görevin alt görevlerinden, alt görev yoksa durumundan hesaplanır; tahmini bitiş şimdiye kadarki hıza ya da bu şirkette bir görevin genelde ne kadar sürdüğüne göre öngörülür.',
@@ -386,13 +397,14 @@
       waitsOn1: (id) => `wartet auf ${id}`, waitsOnN: (n, id) => `wartet auf ${n} Aufgaben (${id} …)`, waitsSubs: (n) => `wartet auf ${n} Teilaufgaben`, waitsYou: 'wartet auf Sie', stalled: (n) => `${n} hängen`,
       sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
       tgButton: '📨 Telegram…', tgIntro: 'Eine Nachricht aufs Handy, wenn ein Agent Sie braucht oder ein Lauf fehlschlägt, mit Links zum Agenten und zur Aufgabe; und fragen Sie das Büro, wie es läuft.',
-      tgSteps: ['Öffnen Sie in Telegram @BotFather, senden Sie /newbot und wählen Sie einen Namen. Kopieren Sie das Token.',
-        'Geben Sie das Token dem Cubicle-Server, nie auf der Kommandozeile: in seiner Umgebungsdatei (~/.config/cubicle/env für den Dienst) CUBICLE_TELEGRAM_TOKEN=<Token> und CUBICLE_PUBLIC_URL=http://<Adresse dieses Rechners>:3200, damit die Links auf dem Handy aufgehen.',
-        'Starten Sie Cubicle neu (systemctl --user restart cubicle). Es gibt einen Kopplungscode aus: journalctl --user -u cubicle | grep /start',
-        'Senden Sie diese Zeile, /start 123456, an Ihren Bot. Ab dann bekommt dieser Chat die Nachrichten.',
-        'Optional: Um per Antwort auf eine Nachricht zu antworten, CUBICLE_TELEGRAM_REPLIES=1 hinzufügen. Ihre Antwort wird ein Kommentar an der Paperclip-Aufgabe, das Einzige, was Cubicle je in Paperclip schreibt.'],
-      tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text', tgOn: (n) => `Telegram ist an · ${n} verbundene Chats`, tgOff: 'Telegram ist auf diesem Cubicle-Server noch nicht eingerichtet.',
-      tgCode: (c) => `Senden Sie Ihrem Bot: /start ${c}`, tgReplies: 'Antworten aus Telegram ist an.', tgEmbed: 'Telegram läuft im eigenständigen Cubicle-Server (npx oder Dienst), nicht in Paperclip; sein Status steht dort.',
+      tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text',
+      tg1: 'Bot anlegen', tg1Text: 'Öffnen Sie in Telegram @BotFather, gehen Sie zu „My Bots“ und drücken Sie „Create a New Bot“. Geben Sie einen Namen und einen Benutzernamen, der auf „bot“ endet. BotFather schickt Ihnen ein Token, eine lange Zeile wie 123456789:AAH…; kopieren Sie es.',
+      tg2: 'Token hier einfügen', tgTokenPh: 'z. B. 123456789:AAH…', tgSave: 'Speichern', tgSaving: 'Wird geprüft…', tgBad: { format: 'Das sieht nicht wie ein Bot-Token aus. Kopieren Sie die ganze Zeile von BotFather.', refused: 'Telegram hat dieses Token abgelehnt. Kopieren Sie es erneut von BotFather.', unreachable: 'Telegram ist von diesem Rechner aus nicht erreichbar. Prüfen Sie die Internetverbindung.' },
+      tgBotOk: (u) => `✓ Verbunden mit ${u}`, tgRemove: 'Trennen', tgFromEnv: 'Das Token ist in der Serverumgebung gesetzt.',
+      tg3: 'Ihr Telegram verknüpfen', tg3Text: 'Drücken Sie den Knopf: Telegram öffnet Ihren Bot. Drücken Sie dort „Start“. Ab dann bekommt dieser Chat die Nachrichten.', tgOpenBot: 'In Telegram öffnen', tgLinked: (n) => `✓ ${n} Chat(s) verknüpft`, tgWaitStart: 'Warte darauf, dass Sie in Telegram „Start“ drücken…',
+      tg4: 'Optional: aus Telegram antworten', tgRepliesLabel: 'Ich möchte per Antwort auf eine Nachricht antworten; die Antwort wird als Kommentar an die Paperclip-Aufgabe geschrieben',
+      tgLocal: 'Die Einrichtung geht nur auf dem Rechner, auf dem Cubicle läuft.', tgPhone: 'Die Links in den Nachrichten öffnen sich auf diesem Rechner.',
+      tgEmbed: 'Der Telegram-Bot gehört zum eigenständigen Cubicle auf diesem Rechner, nicht zum Büro in Paperclip. Öffnen Sie es und drücken Sie dort ⚙ → Telegram:', tgOpenStandalone: 'Cubicle öffnen',
       iss: { backlog: 'Backlog', todo: 'offen', in_progress: 'in Arbeit', in_review: 'im Review', blocked: 'blockiert', done: 'erledigt', cancelled: 'abgebrochen' },
       kpiTask: 'Aufgabe', kpiWho: 'Agent', kpiProgress: 'Fortschritt', kpiEta: 'Voraussichtlich', kpiSub: (d, n) => `${d}/${n} Teilaufgaben`, kpiOver: 'über der üblichen Dauer', kpiDone: 'erledigt', kpiShowDone: 'Erledigte zeigen', kpiRefresh: 'Aktualisieren', kpiEmpty: 'Noch keine Aufgaben von Menschen.',
       kpiNote: 'Aufgaben, die ein Mensch angelegt hat, nicht die der Agenten untereinander. Der Fortschritt kommt aus den Teilaufgaben, ohne Teilaufgaben aus dem Status; die voraussichtliche Zeit folgt dem bisherigen Tempo oder der üblichen Dauer in dieser Firma.',
@@ -450,13 +462,14 @@
       waitsOn1: (id) => `espera a ${id}`, waitsOnN: (n, id) => `espera ${n} tareas (${id}…)`, waitsSubs: (n) => `espera ${n} subtareas`, waitsYou: 'te espera', stalled: (n) => `${n} atascadas`,
       sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
       tgButton: '📨 Telegram…', tgIntro: 'Recibe un mensaje en el móvil cuando un agente te necesita o una ejecución falla, con enlaces al agente y a la tarea, y pregunta a la oficina cómo va.',
-      tgSteps: ['En Telegram, abre @BotFather, envía /newbot y elige un nombre. Copia el token que te da.',
-        'Da el token al servidor de Cubicle, nunca en la línea de comandos: en su archivo de entorno (~/.config/cubicle/env para el servicio) añade CUBICLE_TELEGRAM_TOKEN=<token> y CUBICLE_PUBLIC_URL=http://<dirección de este equipo>:3200 para que los enlaces abran en el móvil.',
-        'Reinicia Cubicle (systemctl --user restart cubicle). Muestra un código de emparejamiento: journalctl --user -u cubicle | grep /start',
-        'Envía esa línea, /start 123456, a tu bot. Desde entonces este chat recibe los mensajes.',
-        'Opcional: para responder contestando a un mensaje, añade CUBICLE_TELEGRAM_REPLIES=1. Tu respuesta se convierte en un comentario en la tarea de Paperclip, lo único que Cubicle escribe en Paperclip.'],
-      tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto', tgOn: (n) => `Telegram activado · ${n} chats enlazados`, tgOff: 'Telegram aún no está configurado en este servidor de Cubicle.',
-      tgCode: (c) => `Envía a tu bot: /start ${c}`, tgReplies: 'Responder desde Telegram está activado.', tgEmbed: 'Telegram funciona en el servidor de Cubicle independiente (npx o el servicio), no dentro de Paperclip; su estado se ve en ese Cubicle.',
+      tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto',
+      tg1: 'Crea un bot', tg1Text: 'En Telegram, abre @BotFather, entra en My Bots y pulsa «Create a New Bot». Dale un nombre y un usuario que termine en «bot». BotFather te envía un token, una línea larga como 123456789:AAH…; cópiala.',
+      tg2: 'Pega el token aquí', tgTokenPh: 'p. ej. 123456789:AAH…', tgSave: 'Guardar', tgSaving: 'Comprobando…', tgBad: { format: 'Eso no parece un token de bot. Copia la línea completa que envió BotFather.', refused: 'Telegram rechazó este token. Vuelve a copiarlo de BotFather.', unreachable: 'No se pudo conectar con Telegram desde este equipo. Revisa la conexión a internet.' },
+      tgBotOk: (u) => `✓ Conectado a ${u}`, tgRemove: 'Desconectar', tgFromEnv: 'El token está definido en el entorno del servidor.',
+      tg3: 'Vincula tu Telegram', tg3Text: 'Pulsa el botón: Telegram abre tu bot. Pulsa «Iniciar» allí. Desde entonces ese chat recibe los mensajes.', tgOpenBot: 'Abrir en Telegram', tgLinked: (n) => `✓ ${n} chat(s) vinculado(s)`, tgWaitStart: 'Esperando a que pulses Iniciar en Telegram…',
+      tg4: 'Opcional: responder desde Telegram', tgRepliesLabel: 'Quiero responder contestando a un mensaje; mi respuesta se escribe como comentario en la tarea de Paperclip',
+      tgLocal: 'Solo se puede configurar en el equipo donde se ejecuta Cubicle.', tgPhone: 'Los enlaces de los mensajes se abren en este equipo.',
+      tgEmbed: 'El bot de Telegram pertenece al Cubicle independiente de este equipo, no a la oficina dentro de Paperclip. Ábrelo y pulsa allí ⚙ → Telegram:', tgOpenStandalone: 'Abrir Cubicle',
       iss: { backlog: 'pendiente', todo: 'por hacer', in_progress: 'en curso', in_review: 'en revisión', blocked: 'bloqueada', done: 'terminada', cancelled: 'cancelada' },
       kpiTask: 'Tarea', kpiWho: 'Agente', kpiProgress: 'Progreso', kpiEta: 'Previsto', kpiSub: (d, n) => `${d}/${n} subtareas`, kpiOver: 'pasó el tiempo habitual', kpiDone: 'terminada', kpiShowDone: 'Mostrar terminadas', kpiRefresh: 'Actualizar', kpiEmpty: 'Aún no hay tareas de personas.',
       kpiNote: 'Tareas que creó una persona, no las que los agentes se crean entre sí. El progreso sale de las subtareas, o del estado si no tiene; el tiempo previsto sigue el ritmo hasta ahora o lo que suele tardar una tarea en esta empresa.',
@@ -514,13 +527,14 @@
       waitsOn1: (id) => `attend ${id}`, waitsOnN: (n, id) => `attend ${n} tâches (${id}…)`, waitsSubs: (n) => `attend ${n} sous-tâches`, waitsYou: 'vous attend', stalled: (n) => `${n} bloquées`,
       sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
       tgButton: '📨 Telegram…', tgIntro: 'Recevez un message sur votre téléphone quand un agent a besoin de vous ou qu’une exécution échoue, avec des liens vers l’agent et la tâche, et demandez au bureau où il en est.',
-      tgSteps: ['Dans Telegram, ouvrez @BotFather, envoyez /newbot et choisissez un nom. Copiez le jeton qu’il vous donne.',
-        'Donnez le jeton au serveur Cubicle, jamais en ligne de commande : dans son fichier d’environnement (~/.config/cubicle/env pour le service), ajoutez CUBICLE_TELEGRAM_TOKEN=<jeton> et CUBICLE_PUBLIC_URL=http://<adresse de cet ordinateur>:3200 pour que les liens s’ouvrent sur le téléphone.',
-        'Redémarrez Cubicle (systemctl --user restart cubicle). Il affiche un code d’appairage : journalctl --user -u cubicle | grep /start',
-        'Envoyez cette ligne, /start 123456, à votre bot. Ce chat reçoit alors les messages.',
-        'Facultatif : pour répondre en répondant à un message, ajoutez CUBICLE_TELEGRAM_REPLIES=1. Votre réponse devient un commentaire sur la tâche Paperclip, la seule chose que Cubicle écrit dans Paperclip.'],
-      tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte', tgOn: (n) => `Telegram activé · ${n} discussion(s) liée(s)`, tgOff: 'Telegram n’est pas encore configuré sur ce serveur Cubicle.',
-      tgCode: (c) => `Envoyez à votre bot : /start ${c}`, tgReplies: 'Répondre depuis Telegram est activé.', tgEmbed: 'Telegram fonctionne dans le serveur Cubicle autonome (npx ou le service), pas dans Paperclip ; son état s’affiche dans ce Cubicle.',
+      tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte',
+      tg1: 'Créez un bot', tg1Text: 'Dans Telegram, ouvrez @BotFather, allez dans My Bots et appuyez sur « Create a New Bot ». Donnez-lui un nom et un nom d’utilisateur finissant par « bot ». BotFather vous envoie un jeton, une longue ligne comme 123456789:AAH… ; copiez-la.',
+      tg2: 'Collez le jeton ici', tgTokenPh: 'ex. 123456789:AAH…', tgSave: 'Enregistrer', tgSaving: 'Vérification…', tgBad: { format: 'Cela ne ressemble pas à un jeton de bot. Copiez toute la ligne envoyée par BotFather.', refused: 'Telegram a refusé ce jeton. Copiez-le à nouveau depuis BotFather.', unreachable: 'Impossible de joindre Telegram depuis cet ordinateur. Vérifiez la connexion internet.' },
+      tgBotOk: (u) => `✓ Connecté à ${u}`, tgRemove: 'Déconnecter', tgFromEnv: 'Le jeton est défini dans l’environnement du serveur.',
+      tg3: 'Liez votre Telegram', tg3Text: 'Appuyez sur le bouton : Telegram ouvre votre bot. Appuyez sur « Démarrer ». Cette discussion reçoit ensuite les messages.', tgOpenBot: 'Ouvrir dans Telegram', tgLinked: (n) => `✓ ${n} discussion(s) liée(s)`, tgWaitStart: 'En attente de votre appui sur Démarrer dans Telegram…',
+      tg4: 'Facultatif : répondre depuis Telegram', tgRepliesLabel: 'Je veux répondre en répondant à un message ; ma réponse est écrite en commentaire sur la tâche Paperclip',
+      tgLocal: 'La configuration se fait uniquement sur l’ordinateur où tourne Cubicle.', tgPhone: 'Les liens des messages s’ouvrent sur cet ordinateur.',
+      tgEmbed: 'Le bot Telegram appartient au Cubicle autonome de cet ordinateur, pas au bureau dans Paperclip. Ouvrez-le et appuyez sur ⚙ → Telegram :', tgOpenStandalone: 'Ouvrir Cubicle',
       iss: { backlog: 'en attente', todo: 'à faire', in_progress: 'en cours', in_review: 'en revue', blocked: 'bloquée', done: 'terminée', cancelled: 'annulée' },
       kpiTask: 'Tâche', kpiWho: 'Agent', kpiProgress: 'Avancement', kpiEta: 'Prévu', kpiSub: (d, n) => `${d}/${n} sous-tâches`, kpiOver: 'au-delà de la durée habituelle', kpiDone: 'terminée', kpiShowDone: 'Afficher les terminées', kpiRefresh: 'Actualiser', kpiEmpty: 'Pas encore de tâches créées par une personne.',
       kpiNote: 'Les tâches créées par une personne, pas celles que les agents se créent entre eux. L’avancement vient des sous-tâches, ou du statut s’il n’y en a pas ; la date prévue suit le rythme actuel ou la durée habituelle d’une tâche dans cette entreprise.',
@@ -578,13 +592,14 @@
       waitsOn1: (id) => `等待 ${id}`, waitsOnN: (n, id) => `等待 ${n} 个任务（${id}…）`, waitsSubs: (n) => `等待 ${n} 个子任务`, waitsYou: '在等你', stalled: (n) => `${n} 个停滞`,
       sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sHuman: '你的办公桌', sNotify: '桌面通知',
       tgButton: '📨 Telegram…', tgIntro: '当代理需要你或运行失败时，手机上会收到带有代理和任务链接的消息，也可以随时询问办公室状态。',
-      tgSteps: ['在 Telegram 中打开 @BotFather，发送 /newbot 并取一个名字，复制它给你的 token。',
-        '把 token 交给 Cubicle 服务器，不要写在命令行上：在它的环境文件（服务为 ~/.config/cubicle/env）中加入 CUBICLE_TELEGRAM_TOKEN=<token>，并加入 CUBICLE_PUBLIC_URL=http://<本机地址>:3200，这样链接能在手机上打开。',
-        '重启 Cubicle（systemctl --user restart cubicle），它会打印配对码：journalctl --user -u cubicle | grep /start',
-        '把这一行 /start 123456 发给你的机器人，之后这个聊天就会收到消息。',
-        '可选：想通过回复消息来作答，加入 CUBICLE_TELEGRAM_REPLIES=1。你的回复会成为 Paperclip 任务上的评论，这是 Cubicle 唯一会写入 Paperclip 的内容。'],
-      tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本', tgOn: (n) => `Telegram 已开启 · ${n} 个已关联聊天`, tgOff: '这台 Cubicle 服务器还没有设置 Telegram。',
-      tgCode: (c) => `发给你的机器人：/start ${c}`, tgReplies: '已开启从 Telegram 回复。', tgEmbed: 'Telegram 运行在独立的 Cubicle 服务器（npx 或服务）中，而不是 Paperclip 里；状态显示在那个 Cubicle 中。',
+      tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本',
+      tg1: '创建机器人', tg1Text: '在 Telegram 中打开 @BotFather，进入 My Bots 并点“Create a New Bot”。给它起个名字和以“bot”结尾的用户名。BotFather 会发给你一个 token，形如 123456789:AAH… 的长字符串，复制它。',
+      tg2: '把 token 粘贴到这里', tgTokenPh: '例如 123456789:AAH…', tgSave: '保存', tgSaving: '正在检查…', tgBad: { format: '这看起来不像机器人 token。请复制 BotFather 发来的完整一行。', refused: 'Telegram 拒绝了这个 token。请从 BotFather 重新复制。', unreachable: '这台电脑连不上 Telegram，请检查网络。' },
+      tgBotOk: (u) => `✓ 已连接 ${u}`, tgRemove: '断开', tgFromEnv: 'token 已在服务器环境中设置。',
+      tg3: '关联你的 Telegram', tg3Text: '点下面的按钮，Telegram 会打开你的机器人，在那里点“开始”。之后这个聊天就会收到消息。', tgOpenBot: '在 Telegram 中打开', tgLinked: (n) => `✓ 已关联 ${n} 个聊天`, tgWaitStart: '等待你在 Telegram 中点“开始”…',
+      tg4: '可选：在 Telegram 中回复', tgRepliesLabel: '允许我通过回复消息来作答；我的回复会作为评论写到 Paperclip 任务上',
+      tgLocal: '只能在运行 Cubicle 的那台电脑上设置。', tgPhone: '消息中的链接会在这台电脑上打开。',
+      tgEmbed: 'Telegram 机器人属于这台电脑上独立运行的 Cubicle，而不是 Paperclip 里的办公室。打开它，并在那里点 ⚙ → Telegram：', tgOpenStandalone: '打开 Cubicle',
       iss: { backlog: '待办池', todo: '待办', in_progress: '进行中', in_review: '审核中', blocked: '受阻', done: '已完成', cancelled: '已取消' },
       kpiTask: '任务', kpiWho: '代理', kpiProgress: '进度', kpiEta: '预计完成', kpiSub: (d, n) => `${d}/${n} 个子任务`, kpiOver: '已超过通常时间', kpiDone: '已完成', kpiShowDone: '显示已完成', kpiRefresh: '刷新', kpiEmpty: '还没有由人创建的任务。',
       kpiNote: '由人创建的任务，不包括代理之间互相创建的任务。进度来自子任务，没有子任务时按状态估算；预计完成时间按目前的速度，或按这家公司任务通常需要的时间推算。',
@@ -642,13 +657,14 @@
       waitsOn1: (id) => `ينتظر ${id}`, waitsOnN: (n, id) => `ينتظر ${n} مهام (${id}…)`, waitsSubs: (n) => `ينتظر ${n} مهام فرعية`, waitsYou: 'ينتظرك', stalled: (n) => `${n} متعثرة`,
       sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
       tgButton: '📨 Telegram…', tgIntro: 'تصلك رسالة على هاتفك عندما يحتاجك وكيل أو يفشل تشغيل، مع روابط للوكيل والمهمة، ويمكنك سؤال المكتب عن حاله.',
-      tgSteps: ['في Telegram افتح ‎@BotFather وأرسل ‎/newbot واختر اسمًا، ثم انسخ الرمز الذي يعطيك إياه.',
-        'أعطِ الرمز لخادم Cubicle، وليس في سطر الأوامر: في ملف البيئة (‎~/.config/cubicle/env للخدمة) أضف CUBICLE_TELEGRAM_TOKEN=<الرمز> و CUBICLE_PUBLIC_URL=http://<عنوان هذا الحاسوب>:3200 لتفتح الروابط على هاتفك.',
-        'أعد تشغيل Cubicle ‏(systemctl --user restart cubicle). سيطبع رمز اقتران: journalctl --user -u cubicle | grep /start',
-        'أرسل ذلك السطر ‎/start 123456 إلى البوت. بعدها تصل الرسائل إلى هذه الدردشة.',
-        'اختياري: للرد عبر الرد على الرسالة أضف CUBICLE_TELEGRAM_REPLIES=1. يصبح ردك تعليقًا على مهمة Paperclip، وهو الشيء الوحيد الذي يكتبه Cubicle في Paperclip.'],
-      tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص', tgOn: (n) => `Telegram مفعّل · ${n} دردشة مرتبطة`, tgOff: 'لم يُعدّ Telegram بعد على خادم Cubicle هذا.',
-      tgCode: (c) => `أرسل إلى البوت: ‎/start ${c}`, tgReplies: 'الرد من Telegram مفعّل.', tgEmbed: 'يعمل Telegram في خادم Cubicle المستقل (npx أو الخدمة)، لا داخل Paperclip؛ وتظهر حالته في ذلك الـ Cubicle.',
+      tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص',
+      tg1: 'أنشئ بوتًا', tg1Text: 'في Telegram افتح ‎@BotFather، وادخل My Bots واضغط «Create a New Bot». أعطه اسمًا واسم مستخدم ينتهي بـ «bot». سيرسل لك BotFather رمزًا (token) طويلًا مثل 123456789:AAH…؛ انسخه.',
+      tg2: 'الصق الرمز هنا', tgTokenPh: 'مثال: 123456789:AAH…', tgSave: 'حفظ', tgSaving: 'جارٍ التحقق…', tgBad: { format: 'لا يبدو هذا رمز بوت. انسخ السطر كاملًا من BotFather.', refused: 'رفض Telegram هذا الرمز. انسخه مجددًا من BotFather.', unreachable: 'تعذر الوصول إلى Telegram من هذا الحاسوب. تحقق من الاتصال بالإنترنت.' },
+      tgBotOk: (u) => `✓ متصل بـ ${u}`, tgRemove: 'قطع الاتصال', tgFromEnv: 'الرمز محدد في بيئة الخادم.',
+      tg3: 'اربط Telegram الخاص بك', tg3Text: 'اضغط الزر: سيفتح Telegram البوت. اضغط «ابدأ» هناك. بعدها تصل الرسائل إلى تلك الدردشة.', tgOpenBot: 'افتح في Telegram', tgLinked: (n) => `✓ ${n} دردشة مرتبطة`, tgWaitStart: 'بانتظار ضغطك على «ابدأ» في Telegram…',
+      tg4: 'اختياري: الرد من Telegram', tgRepliesLabel: 'دعني أجيب بالرد على الرسالة؛ ويُكتب ردي تعليقًا على مهمة Paperclip',
+      tgLocal: 'يتم الإعداد فقط على الحاسوب الذي يعمل عليه Cubicle.', tgPhone: 'تُفتح الروابط في الرسائل على هذا الحاسوب.',
+      tgEmbed: 'بوت Telegram تابع لـ Cubicle المستقل على هذا الحاسوب، لا للمكتب داخل Paperclip. افتحه واضغط هناك ⚙ ← Telegram:', tgOpenStandalone: 'افتح Cubicle',
       iss: { backlog: 'قائمة الانتظار', todo: 'للتنفيذ', in_progress: 'قيد التنفيذ', in_review: 'قيد المراجعة', blocked: 'متوقفة', done: 'منجزة', cancelled: 'ملغاة' },
       kpiTask: 'المهمة', kpiWho: 'الوكيل', kpiProgress: 'التقدم', kpiEta: 'الموعد المتوقع', kpiSub: (d, n) => `${d}/${n} مهام فرعية`, kpiOver: 'تجاوزت المدة المعتادة', kpiDone: 'أُنجزت', kpiShowDone: 'اعرض المنجزة', kpiRefresh: 'تحديث', kpiEmpty: 'لا توجد مهام من أشخاص بعد.',
       kpiNote: 'المهام التي أنشأها شخص، لا التي ينشئها الوكلاء لبعضهم. يُحسب التقدم من المهام الفرعية، أو من الحالة إن لم توجد؛ ويُقدَّر الموعد من الوتيرة حتى الآن أو من المدة المعتادة لمهمة في هذه الشركة.',
@@ -903,20 +919,62 @@
 
   // ---------- Telegram: how to set it up, and whether this server has it on ----------
   const tgDlg = document.getElementById('tg');
-  async function openTelegram() {
-    if (!EMBED && !DEMO) { try { tgInfo = (await getJSON('/config.json')).telegram || tgInfo; } catch (_) {} }
-    // Inline code for things to type: commands, variables, paths.
-    const code = (t) => esc(t).replace(/(\/[a-z]+(?: \d{6}| [A-Z]+-?\w*)?|[A-Z_]{8,}=(?:&lt;.*?&gt;|[^\s&,])*|~\/[\w./-]+|systemctl [^.:]+|journalctl [^.]+(?=$|\.)|@BotFather|https?:\/\/\S+)/g, '<code>$1</code>');
-    const state = EMBED ? `<div class="state">${esc(L.tgEmbed)}</div>`
-      : tgInfo && tgInfo.on ? `<div class="state on">✓ ${esc(L.tgOn(tgInfo.chats || 0))}${tgInfo.code ? `<br>${code(L.tgCode(tgInfo.code))}` : ''}${tgInfo.replies ? `<br>${esc(L.tgReplies)}` : ''}</div>`
-      : `<div class="state">${esc(L.tgOff)}</div>`;
-    tgDlg.innerHTML = `<h2>📨 Telegram <button type="button" aria-label="${esc(L.close)}">✕</button></h2>
-      <p>${esc(L.tgIntro)}</p>${state}
-      <ol>${L.tgSteps.map((t) => `<li>${code(t)}</li>`).join('')}</ol>
-      <p class="muted">${code(L.tgCommands)}</p>`;
-    tgDlg.querySelector('h2 button').onclick = () => tgDlg.close();
-    if (!tgDlg.open) tgDlg.showModal();
+  // A plain walk-through: create a bot, paste its token here, press one button in Telegram. The page
+  // saves the token on this computer (PUT /api/telegram, accepted only from this machine) and the
+  // server starts the bot at once; no files, no restarts.
+  let tgTimer = null;
+  async function tgStatus() { try { const r = await fetch('/api/telegram', { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (_) { return null; } }
+  async function tgPut(body) {
+    const r = await fetch('/api/telegram', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify(body) });
+    const j = await r.json().catch(() => ({}));
+    return r.ok ? { ok: true, status: j } : { ok: false, error: j.error || r.status };
   }
+  async function openTelegram() {
+    clearInterval(tgTimer);
+    const head = `<h2>📨 Telegram <button type="button" data-tg="close" aria-label="${esc(L.close)}">✕</button></h2><p>${esc(L.tgIntro)}</p>`;
+    if (EMBED || DEMO) {
+      tgDlg.innerHTML = head + `<p>${esc(L.tgEmbed)}</p><p><a class="act" href="http://127.0.0.1:3200/" target="_blank" rel="noopener">${esc(L.tgOpenStandalone)} ↗</a></p>`;
+      if (!tgDlg.open) tgDlg.showModal();
+      return;
+    }
+    const st = (await tgStatus()) || { on: false, canEdit: false };
+    const bot = st.username ? `@${st.username}` : '';
+    const step = (n, title, body, done) => `<div class="tgstep${done ? ' done' : ''}"><b><span class="num">${done ? '✓' : n}</span>${esc(title)}</b>${body}</div>`;
+    const tokenBox = st.fromEnv ? `<p class="muted">${esc(L.tgFromEnv)}</p>`
+      : st.on ? `<p>${esc(L.tgBotOk(bot || 'bot'))} <button type="button" class="link" data-tg="remove">${esc(L.tgRemove)}</button></p>`
+      : st.canEdit ? `<div class="tgrow"><input type="password" data-tg="token" placeholder="${esc(L.tgTokenPh)}" autocomplete="off" spellcheck="false"><button type="button" class="act" data-tg="save">${esc(L.tgSave)}</button></div><p class="err" data-tg="err"></p>`
+      : `<p class="muted">${esc(L.tgLocal)}</p>`;
+    const link = st.on && st.username && st.code ? `https://t.me/${encodeURIComponent(st.username)}?start=${encodeURIComponent(st.code)}` : '';
+    const linkBox = !st.on ? '' : `<p>${esc(L.tg3Text)}</p>` + (link ? `<p><a class="act" href="${esc(link)}" target="_blank" rel="noopener">✈ ${esc(L.tgOpenBot)}</a></p>` : '')
+      + `<p class="${st.chats ? 'ok' : 'muted'}">${esc(st.chats ? L.tgLinked(st.chats) : L.tgWaitStart)}</p>`;
+    const replyBox = !st.on || !st.canReply ? '' : `<label class="check"><input type="checkbox" data-tg="replies"${st.replies ? ' checked' : ''}${st.canEdit ? '' : ' disabled'}> ${esc(L.tgRepliesLabel)}</label>`;
+    tgDlg.innerHTML = head
+      + step(1, L.tg1, `<p>${esc(L.tg1Text)}</p><p><a class="act" href="https://t.me/BotFather" target="_blank" rel="noopener">✈ @BotFather</a></p>`, st.on)
+      + step(2, L.tg2, tokenBox, st.on)
+      + (st.on ? step(3, L.tg3, linkBox, st.chats > 0) : '')
+      + (replyBox ? step(4, L.tg4, replyBox, false) : '')
+      + `<p class="muted">${esc(L.tgCommands)} · ${esc(L.tgPhone)}</p>`;
+    if (!tgDlg.open) tgDlg.showModal();
+    // Waiting for Start in Telegram: refresh until a chat is linked.
+    if (st.on && !st.chats) tgTimer = setInterval(async () => {
+      if (!tgDlg.open) { clearInterval(tgTimer); return; }
+      const now = await tgStatus(); if (now && now.chats) openTelegram();
+    }, 2500);
+  }
+  tgDlg.addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-tg]'); if (!b) return;
+    const k = b.dataset.tg;
+    if (k === 'close') { tgDlg.close(); return; }
+    if (k === 'save') {
+      const input = tgDlg.querySelector('[data-tg="token"]'), err = tgDlg.querySelector('[data-tg="err"]');
+      b.disabled = true; b.textContent = L.tgSaving; err.textContent = '';
+      const r = await tgPut({ token: input.value.trim() });
+      if (r.ok) openTelegram(); else { err.textContent = (L.tgBad && L.tgBad[r.error]) || String(r.error); b.disabled = false; b.textContent = L.tgSave; }
+    }
+    if (k === 'remove') { await tgPut({ token: null }); openTelegram(); }
+  });
+  tgDlg.addEventListener('change', async (e) => { if (e.target.dataset.tg === 'replies') await tgPut({ replies: e.target.checked }); });
+  tgDlg.addEventListener('close', () => clearInterval(tgTimer));
   tgDlg.addEventListener('click', (e) => { if (e.target === tgDlg) tgDlg.close(); });
 
   // ---------- layout: the office fits the window ----------

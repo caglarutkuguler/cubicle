@@ -48,7 +48,7 @@ const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</
 const CLOSED = new Set(['done', 'cancelled']);
 const FAILED_RUNS = new Set(['failed', 'error', 'timed_out']);
 
-function request(url, { method = 'GET', headers = {}, body = null, timeout = 70000 } = {}) {
+function request(url, { method = 'GET', headers = {}, body = null, timeout = 70000, onRequest = null } = {}) {
   return new Promise((resolve) => {
     const u = new URL(url);
     const data = body == null ? null : Buffer.from(typeof body === 'string' ? body : JSON.stringify(body));
@@ -67,6 +67,7 @@ function request(url, { method = 'GET', headers = {}, body = null, timeout = 700
     });
     req.on('timeout', () => req.destroy(new Error('timeout')));
     req.on('error', (e) => resolve({ status: 0, error: e.message }));
+    if (onRequest) onRequest(req);
     if (data) req.write(data);
     req.end();
   });
@@ -131,6 +132,14 @@ async function kpiSummary(self) {
   return { open: open.length, avg: open.length ? Math.round(open.reduce((a, b) => a + b, 0) / open.length) : null, done7: roots.filter((i) => i.status === 'done' && Date.parse(i.completedAt) >= week).length };
 }
 
+// Checks a token with Telegram: { ok, username } or { ok: false, error }.
+async function getMe(token) {
+  if (!/^\d{5,}:[\w-]{20,}$/.test(String(token || ''))) return { ok: false, error: 'format' };
+  const r = await request(`${API}/bot${token}/getMe`, { method: 'POST', body: {}, timeout: 15000 });
+  if (r.json && r.json.ok && r.json.result) return { ok: true, username: r.json.result.username };
+  return { ok: false, error: r.status === 401 || r.status === 404 ? 'refused' : r.status ? `http ${r.status}` : 'unreachable' };
+}
+
 function start(opts) {
   const { token, self, log = console.log } = opts;
   const stateFile = opts.stateFile;
@@ -141,7 +150,9 @@ function start(opts) {
     try { fs.mkdirSync(path.dirname(stateFile), { recursive: true }); fs.writeFileSync(stateFile, JSON.stringify(state), { mode: 0o600 }); } catch (_) {}
   };
   const code = String(crypto.randomInt(100000, 1000000));
-  const call = (method, body) => request(`${API}/bot${token}/${method}`, { method: 'POST', body, timeout: method === 'getUpdates' ? 70000 : 20000 });
+  let pending = null;               // the long poll in flight, cancelled by stop()
+  const call = (method, body) => request(`${API}/bot${token}/${method}`, { method: 'POST', body, timeout: method === 'getUpdates' ? 70000 : 20000,
+    onRequest: method === 'getUpdates' ? (q) => { pending = q; } : null });
   const sent = new Map();          // telegram message id -> { issue, prefix }  (for replies)
   let stopped = false;
 
@@ -256,15 +267,19 @@ function start(opts) {
     return send(chatId, esc(t.help));
   }
 
-  let warned409 = false;
+  let warned409 = false, conflicts = 0;
   async function poll() {
     while (!stopped) {
       const r = await call('getUpdates', { offset: state.offset, timeout: opts.pollTimeout ?? 50, allowed_updates: ['message'] });
+      if (stopped) return;
       if (r.status === 409) {
-        if (!warned409) { log('Telegram: another program is reading this bot’s updates (Paperclip’s own Telegram connection?). Give Cubicle a bot of its own; messages are still sent.'); warned409 = true; }
-        await new Promise((res) => setTimeout(res, 60000).unref());
+        // Right after a restart the previous poll may still be open for a moment; after that it is
+        // another program (Paperclip's own Telegram connection?) reading this bot.
+        if (++conflicts > 3 && !warned409) { log('Telegram: another program is reading this bot’s updates (Paperclip’s own Telegram connection?). Give Cubicle a bot of its own; messages are still sent.'); warned409 = true; }
+        await new Promise((res) => setTimeout(res, conflicts > 3 ? 60000 : 3000).unref());
         continue;
       }
+      conflicts = 0;
       if (!r.json || !r.json.ok) { await new Promise((res) => setTimeout(res, r.status === 401 ? 300000 : 5000).unref()); if (r.status === 401) log('Telegram: the bot token was refused'); continue; }
       for (const u of r.json.result || []) {
         state.offset = u.update_id + 1;
@@ -279,7 +294,14 @@ function start(opts) {
     : `Telegram: on. To link your chat, send the bot: /start ${code}`);
   poll();
   watch();
-  return { code, chats: () => Object.keys(state.chats).length, stop() { stopped = true; }, snapshot: () => snapshot(self) };
+  const bot = {
+    code, username: '', chats: () => Object.keys(state.chats).length,
+    setReplies(v) { opts.replies = !!v; },
+    stop() { stopped = true; if (pending) pending.destroy(new Error('stopped')); },
+    snapshot: () => snapshot(self),
+  };
+  getMe(token).then((m) => { if (m.ok) bot.username = m.username; });
+  return bot;
 }
 
-module.exports = { start, snapshot, kpiSummary };
+module.exports = { start, snapshot, kpiSummary, getMe };

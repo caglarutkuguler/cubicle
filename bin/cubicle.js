@@ -69,7 +69,8 @@ Environment variables:
                    There is deliberately no --token flag: flags show up in the process list.
 
 Telegram (optional; docs: README "On Telegram"):
-  CUBICLE_TELEGRAM_TOKEN   Bot token from @BotFather (or a file: --telegram-token-file / CUBICLE_TELEGRAM_TOKEN_FILE).
+  (Easiest: ⚙ → Telegram on the page.) Or CUBICLE_TELEGRAM_TOKEN: the bot token from @BotFather
+                           (or a file: --telegram-token-file / CUBICLE_TELEGRAM_TOKEN_FILE).
                            Cubicle prints a code at startup; send "/start <code>" to the bot to link your chat.
   --public-url URL         Address for links in messages, e.g. http://192.168.1.20:3200 (CUBICLE_PUBLIC_URL)
   --paperclip-public-url   Paperclip's address for links, when it differs from --paperclip
@@ -316,6 +317,7 @@ const server = http.createServer((req, res) => {
   const url = new URL(req.url, 'http://localhost');
 
   if (url.pathname === '/api/appearance') return serveAppearance(req, res);
+  if (url.pathname === '/api/telegram') return serveTelegram(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -328,7 +330,7 @@ const server = http.createServer((req, res) => {
     // `source`/`label`/`paperclipUrl` keep single-source pages from older versions working.
     const first = sources[0];
     // Telegram status for the page's setup dialog; the pairing code only for a browser on this machine.
-    const telegram = TELEGRAM ? { on: true, chats: TELEGRAM.chats(), replies: TELEGRAM_REPLIES && HAS_PAPERCLIP, ...(isLoopback(req.socket.remoteAddress) ? { code: TELEGRAM.code } : {}) } : { on: false };
+    const telegram = telegramStatus(req);
     return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined, redact: REDACT, version: VERSION, build: build(), telegram }));
   }
 
@@ -468,14 +470,63 @@ server.listen(PORT, HOST, () => {
     console.warn(`Warning: bound to ${HOST} with a Paperclip API key. Anyone who can reach this port can read what that key can read.`);
   }
   if (HAS_PAPERCLIP) console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
-  if (TELEGRAM_TOKEN) TELEGRAM = startTelegram();
+  restartTelegram();
 });
 
+// The bot can also be set up from the page (⚙ → Telegram): the token and the replies switch are
+// kept in ~/.cubicle/telegram-settings.json (chmod 600). A token from the environment wins.
 let TELEGRAM = null;
-function startTelegram() {
+const TG_SETTINGS = process.env.CUBICLE_TELEGRAM_SETTINGS || path.join(path.dirname(APPEARANCE_FILE), 'telegram-settings.json');
+function tgSettings() { try { return JSON.parse(fs.readFileSync(TG_SETTINGS, 'utf8')) || {}; } catch (_) { return {}; } }
+function tgToken() { return TELEGRAM_TOKEN || String(tgSettings().token || '').trim(); }
+function tgReplies() { return HAS_PAPERCLIP && (TELEGRAM_REPLIES || !!tgSettings().replies); }
+function restartTelegram() {
+  if (TELEGRAM) { TELEGRAM.stop(); TELEGRAM = null; }
+  if (tgToken()) TELEGRAM = startTelegram(tgToken());
+}
+function telegramStatus(req) {
+  const local = isLoopback(req.socket.remoteAddress);
+  return {
+    on: !!TELEGRAM, username: TELEGRAM ? TELEGRAM.username : '', chats: TELEGRAM ? TELEGRAM.chats() : 0, replies: tgReplies(),
+    canReply: HAS_PAPERCLIP, fromEnv: !!TELEGRAM_TOKEN, canEdit: local,
+    ...(local && TELEGRAM ? { code: TELEGRAM.code } : {}),
+  };
+}
+function serveTelegram(req, res) {
+  if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(telegramStatus(req)));
+  if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');
+  // Same rules as the appearance file: only a browser on this machine, only this page.
+  if (!isLoopback(req.socket.remoteAddress)) return send(res, 403, '{"error":"only from this machine"}');
+  if (!/^application\/json/.test(req.headers['content-type'] || '') || req.headers['x-cubicle'] !== '1') return send(res, 400, '{"error":"bad request"}');
+  const origin = req.headers.origin;
+  if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, '{"error":"cross-origin"}');
+  let body = '';
+  req.on('data', (d) => { if (body.length < 10000) body += d; });
+  req.on('end', async () => {
+    let data; try { data = JSON.parse(body); } catch (_) { return send(res, 400, '{"error":"not JSON"}'); }
+    const next = { ...tgSettings() };
+    if ('token' in data) {
+      if (TELEGRAM_TOKEN) return send(res, 409, '{"error":"env"}');
+      if (data.token) {
+        const me = await require('./cubicle-telegram.js').getMe(String(data.token).trim());
+        if (!me.ok) return send(res, 400, JSON.stringify({ error: me.error }));
+        next.token = String(data.token).trim();
+      } else delete next.token;
+    }
+    if ('replies' in data) next.replies = !!data.replies;
+    try {
+      fs.mkdirSync(path.dirname(TG_SETTINGS), { recursive: true });
+      fs.writeFileSync(TG_SETTINGS, JSON.stringify(next), { mode: 0o600 }); fs.chmodSync(TG_SETTINGS, 0o600);
+    } catch (e) { return send(res, 500, JSON.stringify({ error: `cannot write ${TG_SETTINGS}` })); }
+    if ('token' in data) restartTelegram(); else if (TELEGRAM) TELEGRAM.setReplies(tgReplies());
+    setTimeout(() => send(res, 200, JSON.stringify(telegramStatus(req))), 'token' in data && data.token ? 1200 : 0);   // let getMe fill in the name
+  });
+}
+
+function startTelegram(token) {
   const publicUrl = arg('public-url') || process.env.CUBICLE_PUBLIC_URL || `http://${['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST}:${PORT}`;
   const bot = require('./cubicle-telegram.js').start({
-    token: TELEGRAM_TOKEN, self, publicUrl, replies: TELEGRAM_REPLIES && HAS_PAPERCLIP,
+    token, self, publicUrl, replies: tgReplies(),
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),
@@ -498,6 +549,6 @@ function startTelegram() {
       return { ok: false, status: r.status, error: String(msg).slice(0, 200) };
     },
   });
-  if (TELEGRAM_REPLIES && HAS_PAPERCLIP) console.log('Telegram: replies are on: a reply to a "needs you" message is posted as a comment on that Paperclip issue.');
+  if (tgReplies()) console.log('Telegram: replies are on: a reply to a "needs you" message is posted as a comment on that Paperclip issue.');
   return bot;
 }

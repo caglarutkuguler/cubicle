@@ -25,7 +25,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function withServer(args, fn, env = {}) {
   const port = 3400 + Math.floor(Math.random() * 500);
-  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, ...env } });
+  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, CUBICLE_TELEGRAM_SETTINGS: path.join(require('os').tmpdir(), 'cubicle-no-telegram.json'), ...env } });
   try { await sleep(500); await fn(`http://127.0.0.1:${port}`); } finally { p.kill(); }
 }
 
@@ -426,6 +426,45 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       assert.ok(!sent.some((m) => String(m.chat_id) === '5' && /needs you/.test(m.text)), 'unpaired chats get no notifications');
       assert.strictEqual((fs.statSync(path.join(dir, 'tg.json')).mode & 0o777).toString(8), '600');
     } finally { p.kill(); tg.close(); }
+  }
+
+  // Telegram set up from the page: the token is checked with Telegram, saved privately, and the bot
+  // starts without a restart; only JSON from this page on this machine is accepted
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tgset-'));
+    const TOK = '1234567890:AAHabcdefghijklmnopqrstuvwxyz';
+    const tg = http.createServer((q, r) => {
+      q.resume(); q.on('end', () => {
+        r.writeHead(q.url.startsWith(`/bot${TOK}/`) ? 200 : 401, { 'content-type': 'application/json' });
+        if (q.url === `/bot${TOK}/getMe`) return r.end('{"ok":true,"result":{"username":"OfficeBot"}}');
+        if (q.url === `/bot${TOK}/getUpdates`) return setTimeout(() => r.end('{"ok":true,"result":[]}'), 100);
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const put = (base, body, headers = { 'content-type': 'application/json', 'x-cubicle': '1' }) => new Promise((resolve) => {
+      const u = new URL(`${base}/api/telegram`), data = JSON.stringify(body);
+      const q = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method: 'PUT', headers }, (r) => { let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve({ status: r.statusCode, body: b })); });
+      q.end(data);
+    });
+    try {
+      await withServer(['--source', path.join(dir, 'none.json')], async (base) => {
+        assert.strictEqual(JSON.parse((await get(`${base}/api/telegram`)).body).on, false);
+        assert.strictEqual((await put(base, { token: TOK }, { 'content-type': 'text/plain' })).status, 400, 'needs the page header');
+        assert.strictEqual(JSON.parse((await put(base, { token: 'nope' })).body).error, 'format');
+        assert.strictEqual(JSON.parse((await put(base, { token: '1234567890:AAHwrongwrongwrongwrongwrong' })).body).error, 'refused');
+        const ok = await put(base, { token: TOK });
+        assert.strictEqual(ok.status, 200, ok.body);
+        const st = JSON.parse(ok.body);
+        assert.ok(st.on && st.username === 'OfficeBot' && /^\d{6}$/.test(st.code), ok.body);
+        assert.ok(!(await get(`${base}/api/telegram`)).body.includes(TOK), 'the token is never sent back');
+        const file = path.join(dir, 'tg.json');
+        assert.strictEqual((fs.statSync(file).mode & 0o777).toString(8), '600');
+        await put(base, { token: null });
+        assert.strictEqual(JSON.parse((await get(`${base}/api/telegram`)).body).on, false);
+      }, { CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`, CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_STATE: path.join(dir, 'state.json'), CUBICLE_TELEGRAM_POLL: '0' });
+    } finally { tg.close(); }
   }
 
   // --record writes what the page would read; replay:<file> serves it back (#4)
