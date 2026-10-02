@@ -351,6 +351,83 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { up.close(); }
   }
 
+  // heartbeat runs and the KPI board: only shaped fields leave the server; --redact keeps codes only
+  {
+    const run = { id: 'r1', agentId: 'a1', status: 'failed', errorCode: 'adapter_failed', error: 'token sk-live refused', stderrExcerpt: 'trace /secret/path', finishedAt: '2026-10-01T10:00:00Z', logRef: 'x', contextSnapshot: { prompt: 'secret prompt' } };
+    const issues = [
+      { id: 'i1', identifier: 'K-1', title: 'Launch page', status: 'in_progress', createdByUserId: 'u1', createdAt: '2026-10-01T08:00:00Z', startedAt: '2026-10-01T09:00:00Z', description: 'secret body' },
+      { id: 'i2', identifier: 'K-2', title: 'sub', status: 'done', parentId: 'i1', createdByAgentId: 'a1', completedAt: new Date().toISOString() },
+      { id: 'i3', identifier: 'K-3', title: 'old', status: 'done', createdByUserId: 'u1', completedAt: '2020-01-01T00:00:00Z' },
+      { id: 'i4', identifier: 'K-4', title: 'chat', status: 'todo', createdByUserId: 'u1', conversationAgentId: 'a1' },
+    ];
+    const up = http.createServer((q, r) => {
+      r.writeHead(200, { 'content-type': 'application/json' });
+      if (q.url.startsWith('/api/companies/c/heartbeat-runs')) { assert.ok(q.url.includes('limit=60'), 'runs are limited upstream'); return r.end(JSON.stringify([run])); }
+      if (q.url.endsWith('/issues')) return r.end(JSON.stringify(issues));
+      r.end('[]');
+    });
+    await new Promise((ok) => up.listen(0, '127.0.0.1', ok));
+    const upstream = `http://127.0.0.1:${up.address().port}`;
+    try {
+      await withServer(['--paperclip', upstream], async (base) => {
+        const runs = JSON.parse((await get(`${base}/api/companies/c/heartbeat-runs`)).body);
+        assert.deepStrictEqual(Object.keys(runs[0]).sort(), ['agentId', 'error', 'errorCode', 'finishedAt', 'id', 'status', 'stderrExcerpt']);
+        const kpi = JSON.parse((await get(`${base}/api/kpi/c`)).body);
+        assert.deepStrictEqual(kpi.map((i) => i.identifier), ['K-1', 'K-2', 'K-4'], 'finished issues older than 90 days are left out');
+        assert.strictEqual(kpi[0].human, true); assert.strictEqual(kpi[1].human, false); assert.strictEqual(kpi[2].convo, true);
+        assert.ok(!JSON.stringify(kpi).includes('secret body'));
+        assert.strictEqual((await get(`${base}/api/kpi/../../etc`)).status !== 200, true);
+      });
+      await withServer(['--paperclip', upstream, '--redact'], async (base) => {
+        const all = (await get(`${base}/api/companies/c/heartbeat-runs`)).body + (await get(`${base}/api/kpi/c`)).body;
+        for (const secret of ['sk-live', '/secret/path', 'secret prompt', 'Launch page']) assert.ok(!all.includes(secret), `redacted output leaks ${secret}`);
+        assert.ok(all.includes('adapter_failed'));
+      });
+    } finally { up.close(); }
+  }
+
+  // Telegram (optional): pairing by code, status from the office, a message when an agent starts
+  // needing you; nothing is answered for chats that did not pair
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tg-'));
+    const feed = path.join(dir, 'a.json');
+    fs.writeFileSync(feed, JSON.stringify({ agents: [{ id: 'f1', name: 'Feeder', status: 'working' }] }));
+    const updates = [], sent = []; let uid = 1;
+    const tg = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        const body = b ? JSON.parse(b) : {}; r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/botT0K/getUpdates') return setTimeout(() => r.end(JSON.stringify({ ok: true, result: updates.filter((u) => u.update_id >= (body.offset || 0)) })), 150);
+        if (q.url === '/botT0K/sendMessage') { sent.push(body); return r.end(JSON.stringify({ ok: true, result: { message_id: sent.length } })); }
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const push = (chat, text) => updates.push({ update_id: uid++, message: { message_id: 1, chat: { id: chat }, from: { language_code: 'en' }, text } });
+    const port = 3400 + Math.floor(Math.random() * 500);
+    let log = '';
+    const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--source', feed], { env: { ...process.env, CUBICLE_TELEGRAM_TOKEN: 'T0K',
+      CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`, CUBICLE_TELEGRAM_STATE: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_INTERVAL: '300', CUBICLE_TELEGRAM_POLL: '0' } });
+    p.stdout.on('data', (d) => (log += d));
+    try {
+      await sleep(700);
+      const code = (log.match(/\/start (\d{6})/) || [])[1];
+      assert.ok(code, 'a pairing code is printed');
+      push(5, '/status'); await sleep(500);
+      assert.ok(/code Cubicle printed/.test(sent.at(-1).text), 'an unpaired chat only gets the pairing hint');
+      push(6, `/start ${code}`); await sleep(500);
+      assert.strictEqual(String(sent.at(-1).chat_id), '6'); assert.ok(/linked/.test(sent.at(-1).text));
+      push(6, '/status'); await sleep(500);
+      assert.ok(/1 agents · 1 working · 0 need you/.test(sent.at(-1).text), sent.at(-1).text);
+      fs.writeFileSync(feed, JSON.stringify({ agents: [{ id: 'f1', name: 'Feeder', status: 'waiting', task: { id: 'T-1', title: 'Docs' } }] }));
+      await sleep(900);
+      const note = sent.find((m) => /Feeder<\/b> needs you/.test(m.text));
+      assert.ok(note && String(note.chat_id) === '6' && note.text.includes('?agent='), 'a needs-you message with a link to the agent');
+      assert.ok(!sent.some((m) => String(m.chat_id) === '5' && /needs you/.test(m.text)), 'unpaired chats get no notifications');
+      assert.strictEqual((fs.statSync(path.join(dir, 'tg.json')).mode & 0o777).toString(8), '600');
+    } finally { p.kill(); tg.close(); }
+  }
+
   // --record writes what the page would read; replay:<file> serves it back (#4)
   {
     const fs = require('fs'); const os = require('os');

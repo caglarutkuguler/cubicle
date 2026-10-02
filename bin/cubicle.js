@@ -67,6 +67,14 @@ Environment variables:
   PAPERCLIP_TOKEN  API key for an authenticated Paperclip, sent as "Authorization: Bearer …"
                    (or put it in a file and pass --token-file / PAPERCLIP_TOKEN_FILE).
                    There is deliberately no --token flag: flags show up in the process list.
+
+Telegram (optional; docs: README "On Telegram"):
+  CUBICLE_TELEGRAM_TOKEN   Bot token from @BotFather (or a file: --telegram-token-file / CUBICLE_TELEGRAM_TOKEN_FILE).
+                           Cubicle prints a code at startup; send "/start <code>" to the bot to link your chat.
+  --public-url URL         Address for links in messages, e.g. http://192.168.1.20:3200 (CUBICLE_PUBLIC_URL)
+  --paperclip-public-url   Paperclip's address for links, when it differs from --paperclip
+  --telegram-replies       Let a reply in Telegram be posted as a comment on the Paperclip issue
+                           (the only thing Cubicle ever writes to Paperclip; off by default)
 `);
   process.exit(0);
 }
@@ -97,6 +105,19 @@ function readToken() {
   return (process.env.PAPERCLIP_TOKEN || '').trim();
 }
 const TOKEN = readToken();
+// Telegram (optional): the bot token, like the Paperclip key, only from the environment or a file.
+function readTelegramToken() {
+  const file = arg('telegram-token-file') || process.env.CUBICLE_TELEGRAM_TOKEN_FILE;
+  if (file) {
+    try { return fs.readFileSync(file, 'utf8').trim(); }
+    catch (e) { console.error(`Cannot read Telegram token file ${file}: ${e.message}`); process.exit(1); }
+  }
+  return (process.env.CUBICLE_TELEGRAM_TOKEN || '').trim();
+}
+const TELEGRAM_TOKEN = readTelegramToken();
+// --telegram-replies: the one opt-in exception to read-only. A reply in Telegram becomes a comment
+// on the Paperclip issue, posted with the Paperclip key (or as the board in local_trusted mode).
+const TELEGRAM_REPLIES = process.argv.includes('--telegram-replies') || /^(1|true|yes)$/i.test(process.env.CUBICLE_TELEGRAM_REPLIES || '');
 const REDACT = process.argv.includes('--redact') || /^(1|true|yes)$/i.test(process.env.CUBICLE_REDACT || '');
 if (TOKEN && !/^[\x21-\x7e]+$/.test(TOKEN)) {
   console.error('The Paperclip API key contains spaces or control characters; check PAPERCLIP_TOKEN / the token file.');
@@ -179,6 +200,20 @@ function shapePaperclip(pathname, data) {
     reviewAttention: { paths: ((i.reviewAttention && i.reviewAttention.paths) || []).map((x) => pick(x, ['kind', 'responder', 'label'])) },
   }));
   return data;
+}
+
+// KPI board: every issue a person created and everything under it, finished ones from the last
+// 90 days included, with just the fields progress and timing need.
+const KPI_DAYS = 90;
+function shapeKpi(data) {
+  if (!Array.isArray(data)) return [];
+  const since = Date.now() - KPI_DAYS * 86400000;
+  return data.filter((i) => i && i.id && !(CLOSED.has(i.status) && Date.parse(i.completedAt || i.cancelledAt || i.updatedAt || 0) < since)).map((i) => ({
+    ...pick(i, REDACT ? ['id', 'identifier', 'status', 'parentId', 'assigneeAgentId', 'createdAt', 'startedAt', 'completedAt', 'cancelledAt']
+      : ['id', 'identifier', 'title', 'status', 'parentId', 'assigneeAgentId', 'createdAt', 'startedAt', 'completedAt', 'cancelledAt']),
+    human: !!i.createdByUserId,
+    convo: !!i.conversationAgentId,
+  }));
 }
 
 function shapeFeed(data) {
@@ -298,6 +333,12 @@ const server = http.createServer((req, res) => {
     return serveFeed(res, feed);
   }
 
+  const kpiMatch = url.pathname.match(/^\/api\/kpi\/([\w-]+)$/);
+  if (kpiMatch && HAS_PAPERCLIP) {
+    return proxyJson(res, new URL(`/api/companies/${kpiMatch[1]}/issues`, PAPERCLIP), TOKEN ? { authorization: `Bearer ${TOKEN}` } : {},
+      '{"error":"paperclip unreachable"}', shapeKpi);
+  }
+
   if (url.pathname.startsWith('/api/')) {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
@@ -337,14 +378,17 @@ function configFor(sources) {
   return sources.map((x) => x.kind === 'paperclip' ? { kind: 'paperclip', paperclipUrl: PAPERCLIP.origin } : { kind: 'feed', label: x.label, path: `/api/feed/${n++}` });
 }
 
+// GET one of this server's own endpoints (the recorder and the Telegram bot read the office this way,
+// already shaped and redacted like the page sees it).
+const self = (p) => new Promise((resolve) => {
+  http.get({ host: ['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST, port: PORT, path: p, timeout: 10000 }, (r) => {
+    let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve(r.statusCode === 200 ? b : null)); r.on('error', () => resolve(null));
+  }).on('error', () => resolve(null));
+});
+
 function startRecording(file) {
   const last = new Map();
   fs.appendFileSync(file, JSON.stringify({ t: Date.now(), type: 'config', sources: configFor(SOURCES), redact: REDACT, version: VERSION }) + '\n');
-  const self = (p) => new Promise((resolve) => {
-    http.get({ host: ['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST, port: PORT, path: p, timeout: 10000 }, (r) => {
-      let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve(r.statusCode === 200 ? b : null)); r.on('error', () => resolve(null));
-    }).on('error', () => resolve(null));
-  });
   const keep = (p, body) => {
     if (body === null || last.get(p) === body) return;
     last.set(p, body);
@@ -355,7 +399,7 @@ function startRecording(file) {
     if (HAS_PAPERCLIP) {
       const companies = await self('/api/companies');
       keep('/api/companies', companies);
-      try { for (const c of JSON.parse(companies || '[]')) paths.push(`/api/companies/${c.id}/agents`, `/api/companies/${c.id}/issues`, `/api/companies/${c.id}/heartbeat-runs`); } catch (_) {}
+      try { for (const c of JSON.parse(companies || '[]')) paths.push(`/api/companies/${c.id}/agents`, `/api/companies/${c.id}/issues`, `/api/companies/${c.id}/heartbeat-runs`, `/api/kpi/${c.id}`); } catch (_) {}
     }
     for (const p of paths) keep(p, await self(p));
   }
@@ -418,4 +462,34 @@ server.listen(PORT, HOST, () => {
     console.warn(`Warning: bound to ${HOST} with a Paperclip API key. Anyone who can reach this port can read what that key can read.`);
   }
   if (HAS_PAPERCLIP) console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
+  if (TELEGRAM_TOKEN) startTelegram();
 });
+
+function startTelegram() {
+  const publicUrl = arg('public-url') || process.env.CUBICLE_PUBLIC_URL || `http://${['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST}:${PORT}`;
+  require('./cubicle-telegram.js').start({
+    token: TELEGRAM_TOKEN, self, publicUrl, replies: TELEGRAM_REPLIES && HAS_PAPERCLIP,
+    paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
+    stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
+    interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),
+    pollTimeout: process.env.CUBICLE_TELEGRAM_POLL ? Number(process.env.CUBICLE_TELEGRAM_POLL) : undefined,
+    async postComment(identifier, body) {
+      if (!/^[A-Za-z0-9]+-\d+$/.test(identifier)) return { ok: false, error: 'not an issue id' };
+      const r = await new Promise((resolve) => {
+        const data = Buffer.from(JSON.stringify({ body: String(body).slice(0, 8000), clientRequestId: require('crypto').randomUUID() }));
+        const u = new URL(`/api/issues/${encodeURIComponent(identifier)}/comments`, PAPERCLIP);
+        const req = (u.protocol === 'https:' ? https : http).request(u, { method: 'POST', timeout: 15000,
+          headers: { 'content-type': 'application/json', 'content-length': data.length, ...(TOKEN ? { authorization: `Bearer ${TOKEN}` } : {}) } }, (res) => {
+          let b = ''; res.on('data', (d) => (b += d)); res.on('end', () => resolve({ status: res.statusCode, body: b }));
+        });
+        req.on('timeout', () => req.destroy(new Error('timeout')));
+        req.on('error', (e) => resolve({ status: 0, body: e.message }));
+        req.end(data);
+      });
+      if (r.status >= 200 && r.status < 300) return { ok: true };
+      let msg = r.body; try { msg = JSON.parse(r.body).error || msg; } catch (_) {}
+      return { ok: false, status: r.status, error: String(msg).slice(0, 200) };
+    },
+  });
+  if (TELEGRAM_REPLIES && HAS_PAPERCLIP) console.log('Telegram: replies are on: a reply to a "needs you" message is posted as a comment on that Paperclip issue.');
+}
