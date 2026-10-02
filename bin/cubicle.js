@@ -213,6 +213,10 @@ function shapeKpi(data) {
       : ['id', 'identifier', 'title', 'status', 'parentId', 'assigneeAgentId', 'createdAt', 'startedAt', 'completedAt', 'cancelledAt']),
     human: !!i.createdByUserId,
     convo: !!i.conversationAgentId,
+    // what a blocked task is waiting for: how many open blockers, one of their ids, how many stalled
+    blockers: i.blockerAttention && i.blockerAttention.unresolvedBlockerCount ? { n: i.blockerAttention.unresolvedBlockerCount,
+      sample: i.blockerAttention.sampleBlockerIdentifier || '', stalled: i.blockerAttention.stalledBlockerCount || 0 } : null,
+    asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some((x) => /board|user|human/i.test(String(x && x.responder || ''))),
   }));
 }
 

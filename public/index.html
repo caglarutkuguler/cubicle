@@ -236,7 +236,8 @@
       sound: 'Sound', soundOff: 'Off', soundNeed: 'When an agent needs me', soundAll: 'Needs me, done and errors',
       fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
       layout: 'Layout', layoutAuto: 'Automatic (fit the screen)', layoutSide: 'Office and cards side by side', layoutStack: 'Cards below the office',
-      openPaperclip: 'Open Paperclip in its own tab', kpiTitle: 'Progress of the tasks you gave', kpi: 'Tasks you gave', kpiOpen: 'Open', kpiAvg: 'Average progress', kpiDone7: 'Done in 7 days', kpiLead: 'Typical time to finish', kpiBlocked: 'Blocked',
+      openPaperclip: 'Open Paperclip in its own tab', kpiTitle: 'Progress of the tasks you gave', kpi: 'Tasks you gave', kpiOpen: 'Open', kpiAvg: 'Average progress', kpiDone7: 'Done in 7 days', kpiLead: 'Typical time to finish', kpiBlocked: 'Waiting on other tasks',
+      waitsOn1: (id) => `waiting for ${id}`, waitsOnN: (n, id) => `waiting for ${n} tasks (${id}…)`, waitsSubs: (n) => `waiting for ${n} subtasks`, waitsYou: 'waiting for you', stalled: (n) => `${n} stalled`,
       iss: { backlog: 'backlog', todo: 'to do', in_progress: 'in progress', in_review: 'in review', blocked: 'blocked', done: 'done', cancelled: 'cancelled' },
       kpiTask: 'Task', kpiWho: 'Agent', kpiProgress: 'Progress', kpiEta: 'Expected', kpiSub: (d, n) => `${d}/${n} subtasks`, kpiOver: 'past the usual time', kpiDone: 'done', kpiShowDone: 'Show finished', kpiRefresh: 'Refresh', kpiEmpty: 'No tasks from people yet.',
       kpiNote: 'Tasks a person created, not the ones agents made for each other. Progress comes from a task’s subtasks, or from its status when it has none; the expected time follows the pace so far, or how long a task usually takes in this company.',
@@ -290,7 +291,8 @@
       sound: 'Ses', soundOff: 'Kapalı', soundNeed: 'Bir ajan beni beklediğinde', soundAll: 'Bekleyen, biten ve hata',
       fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
       layout: 'Yerleşim', layoutAuto: 'Otomatik (ekrana sığdır)', layoutSide: 'Ofis ve kartlar yan yana', layoutStack: 'Kartlar ofisin altında',
-      openPaperclip: 'Paperclip’i kendi sekmesinde aç', kpiTitle: 'Verdiğiniz görevlerin ilerlemesi', kpi: 'Verdiğiniz görevler', kpiOpen: 'Açık', kpiAvg: 'Ortalama ilerleme', kpiDone7: '7 günde biten', kpiLead: 'Tipik bitirme süresi', kpiBlocked: 'Engelli',
+      openPaperclip: 'Paperclip’i kendi sekmesinde aç', kpiTitle: 'Verdiğiniz görevlerin ilerlemesi', kpi: 'Verdiğiniz görevler', kpiOpen: 'Açık', kpiAvg: 'Ortalama ilerleme', kpiDone7: '7 günde biten', kpiLead: 'Tipik bitirme süresi', kpiBlocked: 'Başka görevi bekleyen',
+      waitsOn1: (id) => `başka bir görevi bekliyor (${id})`, waitsOnN: (n, id) => `${n} görevin bitmesini bekliyor (${id}…)`, waitsSubs: (n) => `${n} alt görevin bitmesini bekliyor`, waitsYou: 'sizi bekliyor', stalled: (n) => `${n} tanesi takıldı`,
       iss: { backlog: 'bekleme listesi', todo: 'yapılacak', in_progress: 'sürüyor', in_review: 'incelemede', blocked: 'engelli', done: 'bitti', cancelled: 'iptal' },
       kpiTask: 'Görev', kpiWho: 'Ajan', kpiProgress: 'İlerleme', kpiEta: 'Tahmini bitiş', kpiSub: (d, n) => `${d}/${n} alt görev`, kpiOver: 'tipik süreyi aştı', kpiDone: 'bitti', kpiShowDone: 'Bitenleri göster', kpiRefresh: 'Yenile', kpiEmpty: 'Henüz bir kişinin verdiği görev yok.',
       kpiNote: 'Bir kişinin oluşturduğu görevler; ajanların birbirine açtıkları değil. İlerleme görevin alt görevlerinden, alt görev yoksa durumundan hesaplanır; tahmini bitiş şimdiye kadarki hıza ya da bu şirkette bir görevin genelde ne kadar sürdüğüne göre öngörülür.',
@@ -344,7 +346,8 @@
       sound: 'Ton', soundOff: 'Aus', soundNeed: 'Wenn ein Agent mich braucht', soundAll: 'Braucht mich, fertig und Fehler',
       fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
       layout: 'Anordnung', layoutAuto: 'Automatisch (an den Bildschirm anpassen)', layoutSide: 'Büro und Karten nebeneinander', layoutStack: 'Karten unter dem Büro',
-      openPaperclip: 'Paperclip in eigenem Tab öffnen', kpiTitle: 'Fortschritt Ihrer Aufgaben', kpi: 'Ihre Aufgaben', kpiOpen: 'Offen', kpiAvg: 'Durchschnittlicher Fortschritt', kpiDone7: 'In 7 Tagen erledigt', kpiLead: 'Übliche Dauer', kpiBlocked: 'Blockiert',
+      openPaperclip: 'Paperclip in eigenem Tab öffnen', kpiTitle: 'Fortschritt Ihrer Aufgaben', kpi: 'Ihre Aufgaben', kpiOpen: 'Offen', kpiAvg: 'Durchschnittlicher Fortschritt', kpiDone7: 'In 7 Tagen erledigt', kpiLead: 'Übliche Dauer', kpiBlocked: 'Wartet auf andere Aufgaben',
+      waitsOn1: (id) => `wartet auf ${id}`, waitsOnN: (n, id) => `wartet auf ${n} Aufgaben (${id} …)`, waitsSubs: (n) => `wartet auf ${n} Teilaufgaben`, waitsYou: 'wartet auf Sie', stalled: (n) => `${n} hängen`,
       iss: { backlog: 'Backlog', todo: 'offen', in_progress: 'in Arbeit', in_review: 'im Review', blocked: 'blockiert', done: 'erledigt', cancelled: 'abgebrochen' },
       kpiTask: 'Aufgabe', kpiWho: 'Agent', kpiProgress: 'Fortschritt', kpiEta: 'Voraussichtlich', kpiSub: (d, n) => `${d}/${n} Teilaufgaben`, kpiOver: 'über der üblichen Dauer', kpiDone: 'erledigt', kpiShowDone: 'Erledigte zeigen', kpiRefresh: 'Aktualisieren', kpiEmpty: 'Noch keine Aufgaben von Menschen.',
       kpiNote: 'Aufgaben, die ein Mensch angelegt hat, nicht die der Agenten untereinander. Der Fortschritt kommt aus den Teilaufgaben, ohne Teilaufgaben aus dem Status; die voraussichtliche Zeit folgt dem bisherigen Tempo oder der üblichen Dauer in dieser Firma.',
@@ -398,7 +401,8 @@
       sound: 'Sonido', soundOff: 'Desactivado', soundNeed: 'Cuando un agente me necesita', soundAll: 'Me necesita, terminado y errores',
       fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
       layout: 'Disposición', layoutAuto: 'Automática (ajustar a la pantalla)', layoutSide: 'Oficina y tarjetas lado a lado', layoutStack: 'Tarjetas debajo de la oficina',
-      openPaperclip: 'Abrir Paperclip en su propia pestaña', kpiTitle: 'Progreso de las tareas que diste', kpi: 'Tareas que diste', kpiOpen: 'Abiertas', kpiAvg: 'Progreso medio', kpiDone7: 'Terminadas en 7 días', kpiLead: 'Tiempo habitual', kpiBlocked: 'Bloqueadas',
+      openPaperclip: 'Abrir Paperclip en su propia pestaña', kpiTitle: 'Progreso de las tareas que diste', kpi: 'Tareas que diste', kpiOpen: 'Abiertas', kpiAvg: 'Progreso medio', kpiDone7: 'Terminadas en 7 días', kpiLead: 'Tiempo habitual', kpiBlocked: 'Esperan otras tareas',
+      waitsOn1: (id) => `espera a ${id}`, waitsOnN: (n, id) => `espera ${n} tareas (${id}…)`, waitsSubs: (n) => `espera ${n} subtareas`, waitsYou: 'te espera', stalled: (n) => `${n} atascadas`,
       iss: { backlog: 'pendiente', todo: 'por hacer', in_progress: 'en curso', in_review: 'en revisión', blocked: 'bloqueada', done: 'terminada', cancelled: 'cancelada' },
       kpiTask: 'Tarea', kpiWho: 'Agente', kpiProgress: 'Progreso', kpiEta: 'Previsto', kpiSub: (d, n) => `${d}/${n} subtareas`, kpiOver: 'pasó el tiempo habitual', kpiDone: 'terminada', kpiShowDone: 'Mostrar terminadas', kpiRefresh: 'Actualizar', kpiEmpty: 'Aún no hay tareas de personas.',
       kpiNote: 'Tareas que creó una persona, no las que los agentes se crean entre sí. El progreso sale de las subtareas, o del estado si no tiene; el tiempo previsto sigue el ritmo hasta ahora o lo que suele tardar una tarea en esta empresa.',
@@ -452,7 +456,8 @@
       sound: 'Son', soundOff: 'Désactivé', soundNeed: 'Quand un agent a besoin de moi', soundAll: 'Besoin de moi, terminé et erreurs',
       fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
       layout: 'Disposition', layoutAuto: 'Automatique (adapter à l’écran)', layoutSide: 'Bureau et cartes côte à côte', layoutStack: 'Cartes sous le bureau',
-      openPaperclip: 'Ouvrir Paperclip dans son propre onglet', kpiTitle: 'Avancement des tâches que vous avez données', kpi: 'Vos tâches', kpiOpen: 'Ouvertes', kpiAvg: 'Avancement moyen', kpiDone7: 'Terminées en 7 jours', kpiLead: 'Durée habituelle', kpiBlocked: 'Bloquées',
+      openPaperclip: 'Ouvrir Paperclip dans son propre onglet', kpiTitle: 'Avancement des tâches que vous avez données', kpi: 'Vos tâches', kpiOpen: 'Ouvertes', kpiAvg: 'Avancement moyen', kpiDone7: 'Terminées en 7 jours', kpiLead: 'Durée habituelle', kpiBlocked: 'En attente d’autres tâches',
+      waitsOn1: (id) => `attend ${id}`, waitsOnN: (n, id) => `attend ${n} tâches (${id}…)`, waitsSubs: (n) => `attend ${n} sous-tâches`, waitsYou: 'vous attend', stalled: (n) => `${n} bloquées`,
       iss: { backlog: 'en attente', todo: 'à faire', in_progress: 'en cours', in_review: 'en revue', blocked: 'bloquée', done: 'terminée', cancelled: 'annulée' },
       kpiTask: 'Tâche', kpiWho: 'Agent', kpiProgress: 'Avancement', kpiEta: 'Prévu', kpiSub: (d, n) => `${d}/${n} sous-tâches`, kpiOver: 'au-delà de la durée habituelle', kpiDone: 'terminée', kpiShowDone: 'Afficher les terminées', kpiRefresh: 'Actualiser', kpiEmpty: 'Pas encore de tâches créées par une personne.',
       kpiNote: 'Les tâches créées par une personne, pas celles que les agents se créent entre eux. L’avancement vient des sous-tâches, ou du statut s’il n’y en a pas ; la date prévue suit le rythme actuel ou la durée habituelle d’une tâche dans cette entreprise.',
@@ -506,7 +511,8 @@
       sound: '声音', soundOff: '关闭', soundNeed: '代理需要我时', soundAll: '需要我、完成和出错',
       fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
       layout: '布局', layoutAuto: '自动（适应屏幕）', layoutSide: '办公室和卡片并排', layoutStack: '卡片在办公室下方',
-      openPaperclip: '在单独的标签页中打开 Paperclip', kpiTitle: '你分配的任务进度', kpi: '你分配的任务', kpiOpen: '进行中', kpiAvg: '平均进度', kpiDone7: '7 天内完成', kpiLead: '通常完成时间', kpiBlocked: '受阻',
+      openPaperclip: '在单独的标签页中打开 Paperclip', kpiTitle: '你分配的任务进度', kpi: '你分配的任务', kpiOpen: '进行中', kpiAvg: '平均进度', kpiDone7: '7 天内完成', kpiLead: '通常完成时间', kpiBlocked: '等待其他任务',
+      waitsOn1: (id) => `等待 ${id}`, waitsOnN: (n, id) => `等待 ${n} 个任务（${id}…）`, waitsSubs: (n) => `等待 ${n} 个子任务`, waitsYou: '在等你', stalled: (n) => `${n} 个停滞`,
       iss: { backlog: '待办池', todo: '待办', in_progress: '进行中', in_review: '审核中', blocked: '受阻', done: '已完成', cancelled: '已取消' },
       kpiTask: '任务', kpiWho: '代理', kpiProgress: '进度', kpiEta: '预计完成', kpiSub: (d, n) => `${d}/${n} 个子任务`, kpiOver: '已超过通常时间', kpiDone: '已完成', kpiShowDone: '显示已完成', kpiRefresh: '刷新', kpiEmpty: '还没有由人创建的任务。',
       kpiNote: '由人创建的任务，不包括代理之间互相创建的任务。进度来自子任务，没有子任务时按状态估算；预计完成时间按目前的速度，或按这家公司任务通常需要的时间推算。',
@@ -560,7 +566,8 @@
       sound: 'الصوت', soundOff: 'إيقاف', soundNeed: 'عندما يحتاجني وكيل', soundAll: 'يحتاجني، انتهى، وأخطاء',
       fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
       layout: 'التخطيط', layoutAuto: 'تلقائي (ملاءمة الشاشة)', layoutSide: 'المكتب والبطاقات جنبًا إلى جنب', layoutStack: 'البطاقات أسفل المكتب',
-      openPaperclip: 'افتح Paperclip في علامة تبويب مستقلة', kpiTitle: 'تقدم المهام التي أسندتها', kpi: 'المهام التي أسندتها', kpiOpen: 'مفتوحة', kpiAvg: 'متوسط التقدم', kpiDone7: 'أُنجزت خلال 7 أيام', kpiLead: 'المدة المعتادة', kpiBlocked: 'متوقفة',
+      openPaperclip: 'افتح Paperclip في علامة تبويب مستقلة', kpiTitle: 'تقدم المهام التي أسندتها', kpi: 'المهام التي أسندتها', kpiOpen: 'مفتوحة', kpiAvg: 'متوسط التقدم', kpiDone7: 'أُنجزت خلال 7 أيام', kpiLead: 'المدة المعتادة', kpiBlocked: 'تنتظر مهام أخرى',
+      waitsOn1: (id) => `ينتظر ${id}`, waitsOnN: (n, id) => `ينتظر ${n} مهام (${id}…)`, waitsSubs: (n) => `ينتظر ${n} مهام فرعية`, waitsYou: 'ينتظرك', stalled: (n) => `${n} متعثرة`,
       iss: { backlog: 'قائمة الانتظار', todo: 'للتنفيذ', in_progress: 'قيد التنفيذ', in_review: 'قيد المراجعة', blocked: 'متوقفة', done: 'منجزة', cancelled: 'ملغاة' },
       kpiTask: 'المهمة', kpiWho: 'الوكيل', kpiProgress: 'التقدم', kpiEta: 'الموعد المتوقع', kpiSub: (d, n) => `${d}/${n} مهام فرعية`, kpiOver: 'تجاوزت المدة المعتادة', kpiDone: 'أُنجزت', kpiShowDone: 'اعرض المنجزة', kpiRefresh: 'تحديث', kpiEmpty: 'لا توجد مهام من أشخاص بعد.',
       kpiNote: 'المهام التي أنشأها شخص، لا التي ينشئها الوكلاء لبعضهم. يُحسب التقدم من المهام الفرعية، أو من الحالة إن لم توجد؛ ويُقدَّر الموعد من الوتيرة حتى الآن أو من المدة المعتادة لمهمة في هذه الشركة.',
@@ -728,6 +735,7 @@
       const id = `k${n}`, started = now - (2 + n * 3) * h;
       const done = n === 6 || n === 7;
       out.push({ id, identifier: `DEMO-${n + 1}`, title: (s.task && s.task.title) || `Task ${n + 1}`, status: done ? 'done' : n === 3 ? 'blocked' : 'in_progress', assigneeAgentId: s.id, human: true,
+        blockers: n === 3 ? { n: 1, sample: 'DEMO-2', stalled: 0 } : null,
         createdAt: new Date(started - h).toISOString(), startedAt: new Date(started).toISOString(), completedAt: done ? new Date(now - n * 9 * h).toISOString() : null });
       const subs = 2 + (n % 4);
       for (let k = 0; k < subs; k++) out.push({ id: `${id}-${k}`, parentId: id, status: done || k < (n % subs) ? 'done' : k === (n % subs) ? 'in_progress' : 'todo', human: false });
@@ -742,9 +750,21 @@
     if (EMBED) {
       const raw = await getJSON(`/api/companies/${company.id}/issues`);
       return raw.map((i) => ({ id: i.id, identifier: i.identifier, title: i.title, status: i.status, parentId: i.parentId, assigneeAgentId: i.assigneeAgentId,
-        createdAt: i.createdAt, startedAt: i.startedAt, completedAt: i.completedAt, cancelledAt: i.cancelledAt, human: !!i.createdByUserId, convo: !!i.conversationAgentId }));
+        createdAt: i.createdAt, startedAt: i.startedAt, completedAt: i.completedAt, cancelledAt: i.cancelledAt, human: !!i.createdByUserId, convo: !!i.conversationAgentId,
+        blockers: blockerInfo(i), asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some((x) => /board|user|human/i.test(String(x && x.responder || ''))) }));
     }
     return getJSON(`/api/kpi/${company.id}`);
+  }
+  // What a blocked task waits for, from Paperclip's blockerAttention (same shape the server sends).
+  const blockerInfo = (i) => { const b = i.blockerAttention; return b && b.unresolvedBlockerCount ? { n: b.unresolvedBlockerCount, sample: b.sampleBlockerIdentifier || '', stalled: b.stalledBlockerCount || 0 } : null; };
+  function waitText(r) {
+    const i = r.i;
+    if (i.status !== 'blocked') return null;
+    if (i.asksYou) return L.waitsYou;
+    const b = i.blockers;
+    if (b) return (b.n === 1 ? L.waitsOn1(b.sample || '?') : L.waitsOnN(b.n, b.sample || '')) + (b.stalled ? ` · ${L.stalled(b.stalled)}` : '');
+    if (r.sub > r.subDone) return L.waitsSubs(r.sub - r.subDone);
+    return null;
   }
   const fmtDur = (ms) => {
     const hrs = ms / 3600000, unit = hrs >= 36 ? 'day' : hrs >= 1 ? 'hour' : 'minute';
@@ -783,7 +803,7 @@
           <div class="tile"><b>${k.blocked}</b><span>${esc(L.kpiBlocked)}</span></div>
         </div>
         ${rows.length ? `<table><thead><tr><th>${esc(L.kpiTask)}</th><th>${esc(L.kpiWho)}</th><th>${esc(L.kpiProgress)}</th><th>${esc(L.kpiEta)}</th></tr></thead><tbody>${rows.map((r) => `
-          <tr class="${r.closed ? 'done' : ''}"><td>${link(r.i)} ${esc(r.i.title || '')} <span class="pill p-${r.i.status === 'blocked' ? 'error' : r.closed ? 'idle' : r.i.status === 'in_review' ? 'waiting' : 'running'}">${esc((L.iss && L.iss[r.i.status]) || r.i.status.replace('_', ' '))}</span></td>
+          <tr class="${r.closed ? 'done' : ''}"><td>${link(r.i)} ${esc(r.i.title || '')} ${waitText(r) ? `<span class="pill p-waiting" title="${esc((L.iss && L.iss.blocked) || 'blocked')}">⏳ ${esc(waitText(r))}</span>` : `<span class="pill p-${r.i.status === 'blocked' ? 'error' : r.closed ? 'idle' : r.i.status === 'in_review' ? 'waiting' : 'running'}">${esc((L.iss && L.iss[r.i.status]) || r.i.status.replace('_', ' '))}</span>`}</td>
             <td>${esc(agentName(r.i.assigneeAgentId))}</td>
             <td><div class="prog"><div class="bar"><i style="width:${r.pct}%"></i></div><b>${r.pct}%</b></div>${r.sub ? `<div class="sub">${esc(L.kpiSub(r.subDone, r.sub))}</div>` : ''}</td>
             <td>${r.done ? `${esc(L.kpiDone)} · ${esc(fmtWhen(r.doneAt))}` : r.eta ? esc(fmtWhen(r.eta)) : r.over ? `<span class="late">${esc(L.kpiOver)}</span>` : '–'}</td></tr>`).join('')}</tbody></table>` : `<p>${esc(L.kpiEmpty)}</p>`}
