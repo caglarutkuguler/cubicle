@@ -414,9 +414,12 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       const code = (log.match(/\/start (\d{6})/) || [])[1];
       assert.ok(code, 'a pairing code is printed');
       push(5, '/status'); await sleep(500);
-      assert.ok(/code Cubicle printed/.test(sent.at(-1).text), 'an unpaired chat only gets the pairing hint');
-      push(6, `/start ${code}`); await sleep(500);
-      assert.strictEqual(String(sent.at(-1).chat_id), '6'); assert.ok(/linked/.test(sent.at(-1).text));
+      assert.ok(/not linked yet/.test(sent.at(-1).text), 'an unpaired chat only gets the pairing hint');
+      assert.ok(!sent.at(-1).text.includes(code), 'the hint never gives the code away');
+      push(7, '/start'); await sleep(500);
+      assert.ok(/not linked yet/.test(sent.at(-1).text), '/start without the code does not link');
+      push(6, code); await sleep(500);
+      assert.strictEqual(String(sent.at(-1).chat_id), '6'); assert.ok(/linked/.test(sent.at(-1).text), 'the six digits alone link too');
       push(6, '/status'); await sleep(500);
       assert.ok(/1 agents · 1 working · 0 need you/.test(sent.at(-1).text), sent.at(-1).text);
       fs.writeFileSync(feed, JSON.stringify({ agents: [{ id: 'f1', name: 'Feeder', status: 'waiting', task: { id: 'T-1', title: 'Docs' } }] }));
@@ -425,6 +428,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       assert.ok(note && String(note.chat_id) === '6' && note.text.includes('?agent='), 'a needs-you message with a link to the agent');
       assert.ok(!sent.some((m) => String(m.chat_id) === '5' && /needs you/.test(m.text)), 'unpaired chats get no notifications');
       assert.strictEqual((fs.statSync(path.join(dir, 'tg.json')).mode & 0o777).toString(8), '600');
+      assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'tg.json'), 'utf8')).code, code, 'the code is kept for the next start');
     } finally { p.kill(); tg.close(); }
   }
 
@@ -459,6 +463,16 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         const st = JSON.parse(ok.body);
         assert.ok(st.on && st.username === 'OfficeBot' && /^\d{6}$/.test(st.code), ok.body);
         assert.ok(!(await get(`${base}/api/telegram`)).body.includes(TOK), 'the token is never sent back');
+        // the phone address: checked, saved, used; and a request through a local proxy is not "this machine"
+        assert.strictEqual(JSON.parse((await put(base, { publicUrl: 'javascript:alert(1)' })).body).error, 'url');
+        const ph = JSON.parse((await put(base, { publicUrl: 'http://pc.tail1.ts.net:3200/' })).body);
+        assert.strictEqual(ph.publicUrl, 'http://pc.tail1.ts.net:3200');
+        for (const h of [{ 'x-forwarded-for': '100.64.0.2' }, { 'tailscale-user-login': 'me@example.com' }, { host: 'pc.tail1.ts.net:3200' }]) {
+          assert.strictEqual((await put(base, { replies: true }, { 'content-type': 'application/json', 'x-cubicle': '1', ...h })).status, 403, JSON.stringify(h));
+        }
+        const proxied = await new Promise((resolve) => http.get(`${base}/api/telegram`, { headers: { 'x-forwarded-for': '100.64.0.2' } }, (r) => { let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve(JSON.parse(b))); }));
+        assert.ok(!proxied.canEdit && !proxied.code, 'a phone through the proxy sees neither the code nor the settings');
+        assert.strictEqual(JSON.parse((await put(base, { publicUrl: '' })).body).publicUrl.startsWith('http://127.0.0.1:'), true);
         const file = path.join(dir, 'tg.json');
         assert.strictEqual((fs.statSync(file).mode & 0o777).toString(8), '600');
         await put(base, { token: null });

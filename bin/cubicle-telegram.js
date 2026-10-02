@@ -19,7 +19,7 @@ const TEXT = {
     replyHint: 'Reply to this message to answer; it becomes a comment on the issue.',
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
     paired: 'This chat is now linked to the office. You will get a message when an agent needs you.',
-    pairFirst: 'Send the code Cubicle printed when it started: /start 123456',
+    pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
     help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\nOr reply to a “needs you” message.',
     status: (n, run, wait, err) => `${n} agents · ${run} working · ${wait} need you${err ? ` · ${err} in error` : ''}`,
     nobody: 'Nobody is waiting for you.', office: 'Open the office', kpi: 'Tasks you gave',
@@ -33,7 +33,7 @@ const TEXT = {
     replyHint: 'Yanıtlamak için bu mesajı yanıtlayın; yanıtınız işe yorum olarak yazılır.',
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
     paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde mesaj gelecek.',
-    pairFirst: 'Cubicle’ın başlarken yazdığı kodu gönderin: /start 123456',
+    pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
     help: '/durum – ofisin şu anki hâli\n/bekleyen – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/ofis – Cubicle’ı aç\n/yanit ID metin – bir işi yanıtla\nYa da “sizi bekliyor” mesajını yanıtlayın.',
     status: (n, run, wait, err) => `${n} ajan · ${run} çalışıyor · ${wait} sizi bekliyor${err ? ` · ${err} hatada` : ''}`,
     nobody: 'Sizi bekleyen yok.', office: 'Ofisi aç', kpi: 'Verdiğiniz görevler',
@@ -149,7 +149,11 @@ function start(opts) {
   const saveState = () => {
     try { fs.mkdirSync(path.dirname(stateFile), { recursive: true }); fs.writeFileSync(stateFile, JSON.stringify(state), { mode: 0o600 }); } catch (_) {}
   };
-  const code = String(crypto.randomInt(100000, 1000000));
+  // The pairing code stays the same across restarts (it lives in the state file), so a link or QR
+  // code made before an update still works.
+  if (!/^\d{6}$/.test(String(state.code || ''))) { state.code = String(crypto.randomInt(100000, 1000000)); saveState(); }
+  const code = state.code;
+  const seen = { any: 0, unpaired: 0 };   // when a message last came in, and an unlinked /start
   let pending = null;               // the long poll in flight, cancelled by stop()
   const call = (method, body) => request(`${API}/bot${token}/${method}`, { method: 'POST', body, timeout: method === 'getUpdates' ? 70000 : 20000,
     onRequest: method === 'getUpdates' ? (q) => { pending = q; } : null });
@@ -157,7 +161,10 @@ function start(opts) {
   let stopped = false;
 
   const cubicleLink = (q = '') => `${opts.publicUrl.replace(/\/$/, '')}/${q}`;
-  const issueLink = (a, i) => (a.company && a.paperclip && i && i.identifier ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/issues/${encodeURIComponent(i.identifier)}` : '');
+  // A Paperclip on 127.0.0.1 cannot be opened from a phone: when Cubicle has a phone address, such
+  // links are left out (answer by replying in Telegram instead).
+  const local = (u) => { try { return /^(127\.|localhost$|\[::1\]$)/.test(new URL(u).hostname); } catch (_) { return true; } };
+  const issueLink = (a, i) => (a.company && a.paperclip && i && i.identifier && !(local(opts.paperclipPublicUrl || a.paperclip) && !local(opts.publicUrl)) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/issues/${encodeURIComponent(i.identifier)}` : '');
   const agentLink = (a) => cubicleLink(`?agent=${encodeURIComponent(a.id)}${a.company ? `&company=${encodeURIComponent(a.company.issuePrefix)}` : ''}`);
 
   async function send(chatId, html, extra = {}) {
@@ -174,7 +181,7 @@ function start(opts) {
       i && (i.identifier || i.title) ? `<b>${esc(i.identifier || '')}</b> ${esc(i.title || '')}` : '',
       a.reason ? `${t.why}: ${esc(a.reason)}` : '',
       '', links([[t.open, agentLink(a)], [t.inPaperclip, issueLink(a, i)]]),
-      opts.replies && issueLink(a, i) ? `<i>${esc(t.replyHint)}</i>` : ''].filter((x, k) => x || k === 3).join('\n');
+      opts.replies && a.company && i && i.identifier ? `<i>${esc(t.replyHint)}</i>` : ''].filter((x, k) => x || k === 3).join('\n');
   }
   async function notifyNeeds(a) {
     for (const [chat, c] of Object.entries(state.chats)) {
@@ -225,14 +232,18 @@ function start(opts) {
     const paired = !!state.chats[chatId];
     const [cmd, ...rest] = text.split(/\s+/);
     const command = cmd.startsWith('/') ? cmd.slice(1).split('@')[0].toLowerCase() : '';
-    if (command === 'start') {
-      if (paired || rest[0] === code) {
+    seen.any = Date.now();
+    // "/start 123456", or just the six digits
+    const given = command === 'start' ? rest[0] : (!command && /^\d{6}$/.test(cmd) ? cmd : null);
+    if (command === 'start' || (!paired && given)) {
+      if (paired || given === code) {
         if (!paired) { state.chats[chatId] = { lang }; saveState(); log(`Telegram: chat ${chatId} linked`); }
         return send(chatId, `${esc(tr(lang).paired)}\n\n${esc(tr(lang).help)}`);
       }
+      seen.unpaired = Date.now();
       return send(chatId, esc(tr(lang).pairFirst));
     }
-    if (!paired) return send(chatId, esc(tr(lang).pairFirst));
+    if (!paired) { seen.unpaired = Date.now(); return send(chatId, esc(tr(lang).pairFirst)); }
     if (state.chats[chatId].lang !== lang) { state.chats[chatId].lang = lang; saveState(); }
     const t = tr(lang);
     if (m.reply_to_message && !command) {
@@ -267,7 +278,7 @@ function start(opts) {
     return send(chatId, esc(t.help));
   }
 
-  let warned409 = false, conflicts = 0;
+  let warned409 = false, conflicts = 0, polling = 'starting';   // 'ok' | 'conflict' | 'refused' | 'unreachable'
   async function poll() {
     while (!stopped) {
       const r = await call('getUpdates', { offset: state.offset, timeout: opts.pollTimeout ?? 50, allowed_updates: ['message'] });
@@ -275,11 +286,13 @@ function start(opts) {
       if (r.status === 409) {
         // Right after a restart the previous poll may still be open for a moment; after that it is
         // another program (Paperclip's own Telegram connection?) reading this bot.
+        polling = 'conflict';
         if (++conflicts > 3 && !warned409) { log('Telegram: another program is reading this bot’s updates (Paperclip’s own Telegram connection?). Give Cubicle a bot of its own; messages are still sent.'); warned409 = true; }
         await new Promise((res) => setTimeout(res, conflicts > 3 ? 60000 : 3000).unref());
         continue;
       }
       conflicts = 0;
+      polling = r.json && r.json.ok ? 'ok' : r.status === 401 ? 'refused' : 'unreachable';
       if (!r.json || !r.json.ok) { await new Promise((res) => setTimeout(res, r.status === 401 ? 300000 : 5000).unref()); if (r.status === 401) log('Telegram: the bot token was refused'); continue; }
       for (const u of r.json.result || []) {
         state.offset = u.update_id + 1;
@@ -295,8 +308,9 @@ function start(opts) {
   poll();
   watch();
   const bot = {
-    code, username: '', chats: () => Object.keys(state.chats).length,
+    code, username: '', chats: () => Object.keys(state.chats).length, seen: () => ({ ...seen }), polling: () => polling,
     setReplies(v) { opts.replies = !!v; },
+    setPublicUrl(u) { opts.publicUrl = u; },
     stop() { stopped = true; if (pending) pending.destroy(new Error('stopped')); },
     snapshot: () => snapshot(self),
   };

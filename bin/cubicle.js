@@ -281,6 +281,12 @@ function serveFeed(res, source) {
 const APPEARANCE_FILE = arg('appearance') || process.env.CUBICLE_APPEARANCE || path.join(os.homedir(), '.cubicle', 'appearance.json');
 const MAX_APPEARANCE_BYTES = 4 * 1024 * 1024;
 const isLoopback = (a) => /^(127\.|::1$|::ffff:127\.)/.test(String(a || ''));
+// A request is from this machine only if it came in on loopback and not through a proxy on this
+// machine (e.g. `tailscale serve`, which forwards a phone's request from 127.0.0.1).
+const PROXY_HEADERS = ['x-forwarded-for', 'forwarded', 'x-real-ip', 'tailscale-user-login', 'x-forwarded-host'];
+const LOCAL_HOST = /^(localhost|127\.\d+\.\d+\.\d+|\[::1\])(:\d+)?$/i;
+const fromThisMachine = (req) => isLoopback(req.socket.remoteAddress) && !PROXY_HEADERS.some((h) => h in req.headers)
+  && LOCAL_HOST.test(String(req.headers.host || 'localhost'));
 function serveAppearance(req, res) {
   if (req.method === 'GET' || req.method === 'HEAD') {
     return fs.readFile(APPEARANCE_FILE, 'utf8', (err, txt) => {
@@ -291,7 +297,7 @@ function serveAppearance(req, res) {
   if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');
   // Only a browser on this machine may change it, and only this page: a cross-site page cannot
   // send a PUT with a JSON body without a CORS preflight, which this server never grants.
-  if (!isLoopback(req.socket.remoteAddress)) return send(res, 403, '{"error":"appearance can only be changed from this machine"}');
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"appearance can only be changed from this machine"}');
   if (!/^application\/json/.test(req.headers['content-type'] || '') || req.headers['x-cubicle'] !== '1') return send(res, 400, '{"error":"bad request"}');
   const origin = req.headers.origin;
   if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, '{"error":"cross-origin"}');
@@ -480,15 +486,24 @@ const TG_SETTINGS = process.env.CUBICLE_TELEGRAM_SETTINGS || path.join(path.dirn
 function tgSettings() { try { return JSON.parse(fs.readFileSync(TG_SETTINGS, 'utf8')) || {}; } catch (_) { return {}; } }
 function tgToken() { return TELEGRAM_TOKEN || String(tgSettings().token || '').trim(); }
 function tgReplies() { return HAS_PAPERCLIP && (TELEGRAM_REPLIES || !!tgSettings().replies); }
+// The address links in messages use: --public-url, else the one saved from the page (⚙ → Telegram →
+// "Open on your phone"), else this machine's own.
+const PUBLIC_URL_FLAG = arg('public-url') || process.env.CUBICLE_PUBLIC_URL || '';
+function tgPublicUrl() {
+  return PUBLIC_URL_FLAG || tgSettings().publicUrl || `http://${['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST}:${PORT}`;
+}
 function restartTelegram() {
   if (TELEGRAM) { TELEGRAM.stop(); TELEGRAM = null; }
   if (tgToken()) TELEGRAM = startTelegram(tgToken());
 }
 function telegramStatus(req) {
-  const local = isLoopback(req.socket.remoteAddress);
+  const local = fromThisMachine(req);
+  const seen = TELEGRAM ? TELEGRAM.seen() : {};
   return {
     on: !!TELEGRAM, username: TELEGRAM ? TELEGRAM.username : '', chats: TELEGRAM ? TELEGRAM.chats() : 0, replies: tgReplies(),
     canReply: HAS_PAPERCLIP, fromEnv: !!TELEGRAM_TOKEN, canEdit: local,
+    polling: TELEGRAM ? TELEGRAM.polling() : '', heard: !!seen.any, unpaired: !!seen.unpaired,
+    publicUrl: tgPublicUrl(), publicFixed: !!PUBLIC_URL_FLAG,
     ...(local && TELEGRAM ? { code: TELEGRAM.code } : {}),
   };
 }
@@ -496,7 +511,7 @@ function serveTelegram(req, res) {
   if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(telegramStatus(req)));
   if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');
   // Same rules as the appearance file: only a browser on this machine, only this page.
-  if (!isLoopback(req.socket.remoteAddress)) return send(res, 403, '{"error":"only from this machine"}');
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
   if (!/^application\/json/.test(req.headers['content-type'] || '') || req.headers['x-cubicle'] !== '1') return send(res, 400, '{"error":"bad request"}');
   const origin = req.headers.origin;
   if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, '{"error":"cross-origin"}');
@@ -514,19 +529,27 @@ function serveTelegram(req, res) {
       } else delete next.token;
     }
     if ('replies' in data) next.replies = !!data.replies;
+    if ('publicUrl' in data) {
+      const u = String(data.publicUrl || '').trim();
+      if (!u) delete next.publicUrl;
+      else {
+        let ok = false; try { ok = /^https?:$/.test(new URL(u).protocol); } catch (_) {}
+        if (!ok) return send(res, 400, '{"error":"url"}');
+        next.publicUrl = u.replace(/\/+$/, '');
+      }
+    }
     try {
       fs.mkdirSync(path.dirname(TG_SETTINGS), { recursive: true });
       fs.writeFileSync(TG_SETTINGS, JSON.stringify(next), { mode: 0o600 }); fs.chmodSync(TG_SETTINGS, 0o600);
     } catch (e) { return send(res, 500, JSON.stringify({ error: `cannot write ${TG_SETTINGS}` })); }
-    if ('token' in data) restartTelegram(); else if (TELEGRAM) TELEGRAM.setReplies(tgReplies());
+    if ('token' in data) restartTelegram(); else if (TELEGRAM) { TELEGRAM.setReplies(tgReplies()); TELEGRAM.setPublicUrl(tgPublicUrl()); }
     setTimeout(() => send(res, 200, JSON.stringify(telegramStatus(req))), 'token' in data && data.token ? 1200 : 0);   // let getMe fill in the name
   });
 }
 
 function startTelegram(token) {
-  const publicUrl = arg('public-url') || process.env.CUBICLE_PUBLIC_URL || `http://${['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST}:${PORT}`;
   const bot = require('./cubicle-telegram.js').start({
-    token, self, publicUrl, replies: tgReplies(),
+    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(),
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),

@@ -147,6 +147,14 @@
   #tg .num { display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#3d6fd9; color:#fff; font-size:12px; flex:none; }
   #tg .tgstep.done .num { background:#2f8a4c; }
   #tg .tgrow { display:flex; gap:6px; margin-top:6px; }
+  #tg .tgpair { display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; margin:8px 0; }
+  #tg .tgpair figure { margin:0; text-align:center; }
+  #tg .tgpair figcaption { font-size:12px; color:var(--muted); margin-top:4px; }
+  #tg .tgpair > div { flex:1; min-width:180px; }
+  #tg .tgpair p { margin:0 0 8px; }
+  #tg svg.qr { display:block; border-radius:6px; }
+  #tg .tgcode { flex:1; background:#14161f; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:15px; letter-spacing:.5px; user-select:all; }
+  #tg .small { font-size:12px; }
   #tg .tgrow input { flex:1; min-width:0; background:#14161f; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 8px; font:inherit; font-size:13px; }
   #tg .act { display:inline-block; text-decoration:none; }
   #tg .err { color:#ffb3b8; font-size:12px; min-height:1em; margin:4px 0 0; } #tg .ok { color:#9ff0b4; }
@@ -269,11 +277,16 @@
       tgButton: '📨 Telegram…', tgIntro: 'Get a message on your phone when an agent needs you or a run fails, with links to the agent and the issue, and ask the office how it is doing.',
       tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text',
       tg1: 'Create a bot', tg1Text: 'In Telegram, open @BotFather, go to My Bots and press “Create a New Bot”. Give it a name and a username ending in “bot”. BotFather then sends you a token, a long line like 123456789:AAH…; copy it.',
-      tg2: 'Paste the token here', tgTokenPh: 'e.g. 123456789:AAH…', tgSave: 'Save', tgSaving: 'Checking…', tgBad: { format: 'That does not look like a bot token. Copy the whole line BotFather sent.', refused: 'Telegram refused this token. Copy it again from BotFather.', unreachable: 'Telegram could not be reached from this computer. Check the internet connection.' },
+      tg2: 'Paste the token here', tgTokenPh: 'e.g. 123456789:AAH…', tgSave: 'Save', tgSaving: 'Checking…', tgBad: { format: 'That does not look like a bot token. Copy the whole line BotFather sent.', refused: 'Telegram refused this token. Copy it again from BotFather.', unreachable: 'Telegram could not be reached from this computer. Check the internet connection.', url: 'That is not a web address; it should start with http:// or https://.' },
       tgBotOk: (u) => `✓ Connected to ${u}`, tgRemove: 'Disconnect', tgFromEnv: 'The token is set in the server’s environment.',
-      tg3: 'Link your Telegram', tg3Text: 'Press the button: Telegram opens your bot. Press “Start” there. From then on that chat gets the messages.', tgOpenBot: 'Open in Telegram', tgLinked: (n) => `✓ ${n} chat(s) linked`, tgWaitStart: 'Waiting for you to press Start in Telegram…',
+      tg3: 'Link your Telegram', tg3Text: 'Scan the code with your phone’s camera, or use one of the buttons. When your bot opens in Telegram, press “Start”.', tgOpenBot: 'Telegram app on this computer', tgLinked: (n) => `✓ ${n} chat(s) linked`, tgWaitStart: 'Waiting for you to press Start in Telegram…',
       tg4: 'Optional: answer from Telegram', tgRepliesLabel: 'Let me answer by replying to a message; my reply is written to the Paperclip issue as a comment',
-      tgLocal: 'You can set this up only on the computer Cubicle runs on.', tgPhone: 'The links in the messages open on this computer.',
+      tgLocal: 'You can set this up only on the computer Cubicle runs on.', tgPhone: 'The links open on this computer; to open them on your phone, see step 5.',
+      tgOpenWeb: 'Telegram Web', tgScan: 'Scan with your phone', tgOrSend: 'If “Start” does nothing, send the bot this message:', tgCopy: 'Copy', tgCopied: 'Copied',
+      tgNoApp: 'The “Start Bot” button on the t.me page works only if the Telegram app is installed on this computer. Otherwise use your phone or Telegram Web.',
+      tgWrong: 'The bot got a message, but without the right code. Send it the message above.', tgPoll: { conflict: 'Another program is reading this bot (Paperclip’s own Telegram connection?). Give Cubicle a bot of its own.', unreachable: 'Telegram cannot be reached from this computer. Check the internet connection.', refused: 'Telegram refused the token. Disconnect and paste it again.' },
+      tg5: 'Optional: open the links on your phone', tg5Text: 'Right now the links in the messages open only on this computer. To open them on your phone too, use Tailscale (free): install it on this computer and on your phone and sign in with the same account on both. Then write Cubicle’s Tailscale address here.',
+      tgPhonePh: 'e.g. http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links open at ${u}`, tgPhoneTry: 'Open it on your phone to try', tgPhoneFixed: 'The address was given when Cubicle started (--public-url).', tgPhoneClear: 'Remove',
       tgEmbed: 'The Telegram bot belongs to the standalone Cubicle running on this computer, not to the office inside Paperclip. Open it and press ⚙ → Telegram there:', tgOpenStandalone: 'Open Cubicle',
       iss: { backlog: 'backlog', todo: 'to do', in_progress: 'in progress', in_review: 'in review', blocked: 'blocked', done: 'done', cancelled: 'cancelled' },
       kpiTask: 'Task', kpiWho: 'Agent', kpiProgress: 'Progress', kpiEta: 'Expected', kpiSub: (d, n) => `${d}/${n} subtasks`, kpiOver: 'past the usual time', kpiDone: 'done', kpiShowDone: 'Show finished', kpiRefresh: 'Refresh', kpiEmpty: 'No tasks from people yet.',
@@ -334,11 +347,16 @@
       tgButton: '📨 Telegram…', tgIntro: 'Bir ajan sizi beklediğinde ya da bir çalıştırma hata verdiğinde telefonunuza ajan ve iş bağlantılarıyla mesaj gelir; ofisin durumunu da oradan sorabilirsiniz.',
       tgCommands: 'Komutlar: /durum, /bekleyen, /kpi, /ofis, /yanit ID metin',
       tg1: 'Bot oluşturun', tg1Text: 'Telegram’da @BotFather’ı açın, My Bots menüsüne girip “Create a New Bot” düğmesine basın. Bota bir ad ve sonu “bot” ile biten bir kullanıcı adı verin. BotFather size 123456789:AAH… gibi uzun bir satır (token) gönderir; onu kopyalayın.',
-      tg2: 'Token’ı buraya yapıştırın', tgTokenPh: 'örn. 123456789:AAH…', tgSave: 'Kaydet', tgSaving: 'Kontrol ediliyor…', tgBad: { format: 'Bu bir bot token’ına benzemiyor. BotFather’ın gönderdiği satırın tamamını kopyalayın.', refused: 'Telegram bu token’ı kabul etmedi. BotFather’dan yeniden kopyalayın.', unreachable: 'Bu bilgisayardan Telegram’a ulaşılamadı. İnternet bağlantısını kontrol edin.' },
+      tg2: 'Token’ı buraya yapıştırın', tgTokenPh: 'örn. 123456789:AAH…', tgSave: 'Kaydet', tgSaving: 'Kontrol ediliyor…', tgBad: { format: 'Bu bir bot token’ına benzemiyor. BotFather’ın gönderdiği satırın tamamını kopyalayın.', refused: 'Telegram bu token’ı kabul etmedi. BotFather’dan yeniden kopyalayın.', unreachable: 'Bu bilgisayardan Telegram’a ulaşılamadı. İnternet bağlantısını kontrol edin.', url: 'Bu bir web adresi değil; http:// ya da https:// ile başlamalı.' },
       tgBotOk: (u) => `✓ ${u} bağlandı`, tgRemove: 'Bağlantıyı kaldır', tgFromEnv: 'Token sunucu ortamında tanımlı.',
-      tg3: 'Telegram’ınızı bağlayın', tg3Text: 'Düğmeye basın: Telegram botunuzu açar. Orada “Başlat” (Start) düğmesine basın. Bundan sonra mesajlar o sohbete gelir.', tgOpenBot: 'Telegram’da aç', tgLinked: (n) => `✓ ${n} sohbet bağlı`, tgWaitStart: 'Telegram’da “Başlat”a basmanız bekleniyor…',
+      tg3: 'Telegram’ınızı bağlayın', tg3Text: 'Telefonunuzun kamerasıyla kodu okutun ya da düğmelerden birine basın. Bot Telegram’da açılınca “Başlat”a (Start) basın.', tgOpenBot: 'Bu bilgisayardaki Telegram uygulaması', tgLinked: (n) => `✓ ${n} sohbet bağlı`, tgWaitStart: 'Telegram’da “Başlat”a basmanız bekleniyor…',
       tg4: 'İsteğe bağlı: Telegram’dan yanıt', tgRepliesLabel: 'Mesajı yanıtlayarak cevap verebileyim; yanıtım Paperclip’teki işe yorum olarak yazılsın',
-      tgLocal: 'Kurulum yalnızca Cubicle’ın çalıştığı bilgisayardan yapılabilir.', tgPhone: 'Mesajlardaki bağlantılar bu bilgisayarda açılır.',
+      tgLocal: 'Kurulum yalnızca Cubicle’ın çalıştığı bilgisayardan yapılabilir.', tgPhone: 'Bağlantılar bu bilgisayarda açılır; telefonda açılması için 5. adıma bakın.',
+      tgOpenWeb: 'Telegram Web', tgScan: 'Telefonla okutun', tgOrSend: '“Başlat” bir şey yapmazsa bota şu mesajı gönderin:', tgCopy: 'Kopyala', tgCopied: 'Kopyalandı',
+      tgNoApp: 't.me sayfasındaki “Start Bot” düğmesi yalnızca bu bilgisayarda Telegram uygulaması kuruluysa çalışır. Değilse telefonu ya da Telegram Web’i kullanın.',
+      tgWrong: 'Bot bir mesaj aldı ama doğru kod yoktu. Yukarıdaki mesajı gönderin.', tgPoll: { conflict: 'Bu botu başka bir program da okuyor (Paperclip’in kendi Telegram bağlantısı olabilir). Cubicle’a ayrı bir bot verin.', unreachable: 'Bu bilgisayardan Telegram’a ulaşılamıyor. İnternet bağlantısını kontrol edin.', refused: 'Telegram anahtarı reddetti. Bağlantıyı kesip yeniden yapıştırın.' },
+      tg5: 'İsteğe bağlı: bağlantılar telefonda da açılsın', tg5Text: 'Mesajlardaki bağlantılar şu an yalnızca bu bilgisayarda açılır. Telefonda da açılması için ücretsiz Tailscale’i kullanın: bu bilgisayara ve telefona kurun, ikisinde de aynı hesapla giriş yapın. Sonra Cubicle’ın Tailscale adresini buraya yazın.',
+      tgPhonePh: 'ör. http://bilgisayarim.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Bağlantılar ${u} adresinde açılır`, tgPhoneTry: 'Denemek için telefonda açın', tgPhoneFixed: 'Adres, Cubicle başlatılırken verildi (--public-url).', tgPhoneClear: 'Kaldır',
       tgEmbed: 'Telegram botu, Paperclip içindeki ofise değil, bu bilgisayarda çalışan bağımsız Cubicle’a aittir. Onu açıp orada ⚙ → Telegram’a basın:', tgOpenStandalone: 'Cubicle’ı aç',
       iss: { backlog: 'bekleme listesi', todo: 'yapılacak', in_progress: 'sürüyor', in_review: 'incelemede', blocked: 'engelli', done: 'bitti', cancelled: 'iptal' },
       kpiTask: 'Görev', kpiWho: 'Ajan', kpiProgress: 'İlerleme', kpiEta: 'Tahmini bitiş', kpiSub: (d, n) => `${d}/${n} alt görev`, kpiOver: 'tipik süreyi aştı', kpiDone: 'bitti', kpiShowDone: 'Bitenleri göster', kpiRefresh: 'Yenile', kpiEmpty: 'Henüz bir kişinin verdiği görev yok.',
@@ -399,11 +417,16 @@
       tgButton: '📨 Telegram…', tgIntro: 'Eine Nachricht aufs Handy, wenn ein Agent Sie braucht oder ein Lauf fehlschlägt, mit Links zum Agenten und zur Aufgabe; und fragen Sie das Büro, wie es läuft.',
       tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text',
       tg1: 'Bot anlegen', tg1Text: 'Öffnen Sie in Telegram @BotFather, gehen Sie zu „My Bots“ und drücken Sie „Create a New Bot“. Geben Sie einen Namen und einen Benutzernamen, der auf „bot“ endet. BotFather schickt Ihnen ein Token, eine lange Zeile wie 123456789:AAH…; kopieren Sie es.',
-      tg2: 'Token hier einfügen', tgTokenPh: 'z. B. 123456789:AAH…', tgSave: 'Speichern', tgSaving: 'Wird geprüft…', tgBad: { format: 'Das sieht nicht wie ein Bot-Token aus. Kopieren Sie die ganze Zeile von BotFather.', refused: 'Telegram hat dieses Token abgelehnt. Kopieren Sie es erneut von BotFather.', unreachable: 'Telegram ist von diesem Rechner aus nicht erreichbar. Prüfen Sie die Internetverbindung.' },
+      tg2: 'Token hier einfügen', tgTokenPh: 'z. B. 123456789:AAH…', tgSave: 'Speichern', tgSaving: 'Wird geprüft…', tgBad: { format: 'Das sieht nicht wie ein Bot-Token aus. Kopieren Sie die ganze Zeile von BotFather.', refused: 'Telegram hat dieses Token abgelehnt. Kopieren Sie es erneut von BotFather.', unreachable: 'Telegram ist von diesem Rechner aus nicht erreichbar. Prüfen Sie die Internetverbindung.', url: 'Das ist keine Webadresse; sie sollte mit http:// oder https:// beginnen.' },
       tgBotOk: (u) => `✓ Verbunden mit ${u}`, tgRemove: 'Trennen', tgFromEnv: 'Das Token ist in der Serverumgebung gesetzt.',
-      tg3: 'Ihr Telegram verknüpfen', tg3Text: 'Drücken Sie den Knopf: Telegram öffnet Ihren Bot. Drücken Sie dort „Start“. Ab dann bekommt dieser Chat die Nachrichten.', tgOpenBot: 'In Telegram öffnen', tgLinked: (n) => `✓ ${n} Chat(s) verknüpft`, tgWaitStart: 'Warte darauf, dass Sie in Telegram „Start“ drücken…',
+      tg3: 'Ihr Telegram verknüpfen', tg3Text: 'Scannen Sie den Code mit der Handykamera oder nutzen Sie einen der Knöpfe. Wenn sich Ihr Bot in Telegram öffnet, drücken Sie „Start“.', tgOpenBot: 'Telegram-App auf diesem Rechner', tgLinked: (n) => `✓ ${n} Chat(s) verknüpft`, tgWaitStart: 'Warte darauf, dass Sie in Telegram „Start“ drücken…',
       tg4: 'Optional: aus Telegram antworten', tgRepliesLabel: 'Ich möchte per Antwort auf eine Nachricht antworten; die Antwort wird als Kommentar an die Paperclip-Aufgabe geschrieben',
-      tgLocal: 'Die Einrichtung geht nur auf dem Rechner, auf dem Cubicle läuft.', tgPhone: 'Die Links in den Nachrichten öffnen sich auf diesem Rechner.',
+      tgLocal: 'Die Einrichtung geht nur auf dem Rechner, auf dem Cubicle läuft.', tgPhone: 'Die Links öffnen sich auf diesem Rechner; für das Handy siehe Schritt 5.',
+      tgOpenWeb: 'Telegram Web', tgScan: 'Mit dem Handy scannen', tgOrSend: 'Wenn „Start“ nichts tut, schicken Sie dem Bot diese Nachricht:', tgCopy: 'Kopieren', tgCopied: 'Kopiert',
+      tgNoApp: 'Der Knopf „Start Bot“ auf der t.me-Seite funktioniert nur, wenn die Telegram-App auf diesem Rechner installiert ist. Sonst nehmen Sie das Handy oder Telegram Web.',
+      tgWrong: 'Der Bot hat eine Nachricht bekommen, aber ohne den richtigen Code. Schicken Sie die Nachricht oben.', tgPoll: { conflict: 'Ein anderes Programm liest diesen Bot (die eigene Telegram-Verbindung von Paperclip?). Geben Sie Cubicle einen eigenen Bot.', unreachable: 'Telegram ist von diesem Rechner aus nicht erreichbar. Prüfen Sie die Internetverbindung.', refused: 'Telegram hat den Token abgelehnt. Trennen und neu einfügen.' },
+      tg5: 'Optional: Links auf dem Handy öffnen', tg5Text: 'Im Moment öffnen sich die Links in den Nachrichten nur auf diesem Rechner. Damit sie auch auf dem Handy aufgehen, nutzen Sie Tailscale (kostenlos): auf diesem Rechner und dem Handy installieren und auf beiden mit demselben Konto anmelden. Dann die Tailscale-Adresse von Cubicle hier eintragen.',
+      tgPhonePh: 'z. B. http://mein-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links öffnen sich unter ${u}`, tgPhoneTry: 'Zum Testen auf dem Handy öffnen', tgPhoneFixed: 'Die Adresse wurde beim Start angegeben (--public-url).', tgPhoneClear: 'Entfernen',
       tgEmbed: 'Der Telegram-Bot gehört zum eigenständigen Cubicle auf diesem Rechner, nicht zum Büro in Paperclip. Öffnen Sie es und drücken Sie dort ⚙ → Telegram:', tgOpenStandalone: 'Cubicle öffnen',
       iss: { backlog: 'Backlog', todo: 'offen', in_progress: 'in Arbeit', in_review: 'im Review', blocked: 'blockiert', done: 'erledigt', cancelled: 'abgebrochen' },
       kpiTask: 'Aufgabe', kpiWho: 'Agent', kpiProgress: 'Fortschritt', kpiEta: 'Voraussichtlich', kpiSub: (d, n) => `${d}/${n} Teilaufgaben`, kpiOver: 'über der üblichen Dauer', kpiDone: 'erledigt', kpiShowDone: 'Erledigte zeigen', kpiRefresh: 'Aktualisieren', kpiEmpty: 'Noch keine Aufgaben von Menschen.',
@@ -464,11 +487,16 @@
       tgButton: '📨 Telegram…', tgIntro: 'Recibe un mensaje en el móvil cuando un agente te necesita o una ejecución falla, con enlaces al agente y a la tarea, y pregunta a la oficina cómo va.',
       tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto',
       tg1: 'Crea un bot', tg1Text: 'En Telegram, abre @BotFather, entra en My Bots y pulsa «Create a New Bot». Dale un nombre y un usuario que termine en «bot». BotFather te envía un token, una línea larga como 123456789:AAH…; cópiala.',
-      tg2: 'Pega el token aquí', tgTokenPh: 'p. ej. 123456789:AAH…', tgSave: 'Guardar', tgSaving: 'Comprobando…', tgBad: { format: 'Eso no parece un token de bot. Copia la línea completa que envió BotFather.', refused: 'Telegram rechazó este token. Vuelve a copiarlo de BotFather.', unreachable: 'No se pudo conectar con Telegram desde este equipo. Revisa la conexión a internet.' },
+      tg2: 'Pega el token aquí', tgTokenPh: 'p. ej. 123456789:AAH…', tgSave: 'Guardar', tgSaving: 'Comprobando…', tgBad: { format: 'Eso no parece un token de bot. Copia la línea completa que envió BotFather.', refused: 'Telegram rechazó este token. Vuelve a copiarlo de BotFather.', unreachable: 'No se pudo conectar con Telegram desde este equipo. Revisa la conexión a internet.', url: 'No es una dirección web; debe empezar por http:// o https://.' },
       tgBotOk: (u) => `✓ Conectado a ${u}`, tgRemove: 'Desconectar', tgFromEnv: 'El token está definido en el entorno del servidor.',
-      tg3: 'Vincula tu Telegram', tg3Text: 'Pulsa el botón: Telegram abre tu bot. Pulsa «Iniciar» allí. Desde entonces ese chat recibe los mensajes.', tgOpenBot: 'Abrir en Telegram', tgLinked: (n) => `✓ ${n} chat(s) vinculado(s)`, tgWaitStart: 'Esperando a que pulses Iniciar en Telegram…',
+      tg3: 'Vincula tu Telegram', tg3Text: 'Escanea el código con la cámara del móvil o usa uno de los botones. Cuando tu bot se abra en Telegram, pulsa «Iniciar».', tgOpenBot: 'App de Telegram en este equipo', tgLinked: (n) => `✓ ${n} chat(s) vinculado(s)`, tgWaitStart: 'Esperando a que pulses Iniciar en Telegram…',
       tg4: 'Opcional: responder desde Telegram', tgRepliesLabel: 'Quiero responder contestando a un mensaje; mi respuesta se escribe como comentario en la tarea de Paperclip',
-      tgLocal: 'Solo se puede configurar en el equipo donde se ejecuta Cubicle.', tgPhone: 'Los enlaces de los mensajes se abren en este equipo.',
+      tgLocal: 'Solo se puede configurar en el equipo donde se ejecuta Cubicle.', tgPhone: 'Los enlaces se abren en este equipo; para el móvil, mira el paso 5.',
+      tgOpenWeb: 'Telegram Web', tgScan: 'Escanéalo con el móvil', tgOrSend: 'Si «Iniciar» no hace nada, envía al bot este mensaje:', tgCopy: 'Copiar', tgCopied: 'Copiado',
+      tgNoApp: 'El botón «Start Bot» de la página t.me solo funciona si la app de Telegram está instalada en este equipo. Si no, usa el móvil o Telegram Web.',
+      tgWrong: 'El bot recibió un mensaje, pero sin el código correcto. Envía el mensaje de arriba.', tgPoll: { conflict: 'Otro programa está leyendo este bot (¿la conexión de Telegram de Paperclip?). Dale a Cubicle un bot propio.', unreachable: 'No se puede llegar a Telegram desde este equipo. Revisa la conexión a internet.', refused: 'Telegram rechazó el token. Desconecta y pégalo de nuevo.' },
+      tg5: 'Opcional: abrir los enlaces en el móvil', tg5Text: 'Ahora los enlaces de los mensajes solo se abren en este equipo. Para abrirlos también en el móvil, usa Tailscale (gratis): instálalo en este equipo y en el móvil e inicia sesión con la misma cuenta en ambos. Luego escribe aquí la dirección de Tailscale de Cubicle.',
+      tgPhonePh: 'p. ej. http://mi-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Los enlaces se abren en ${u}`, tgPhoneTry: 'Ábrelo en el móvil para probar', tgPhoneFixed: 'La dirección se dio al iniciar Cubicle (--public-url).', tgPhoneClear: 'Quitar',
       tgEmbed: 'El bot de Telegram pertenece al Cubicle independiente de este equipo, no a la oficina dentro de Paperclip. Ábrelo y pulsa allí ⚙ → Telegram:', tgOpenStandalone: 'Abrir Cubicle',
       iss: { backlog: 'pendiente', todo: 'por hacer', in_progress: 'en curso', in_review: 'en revisión', blocked: 'bloqueada', done: 'terminada', cancelled: 'cancelada' },
       kpiTask: 'Tarea', kpiWho: 'Agente', kpiProgress: 'Progreso', kpiEta: 'Previsto', kpiSub: (d, n) => `${d}/${n} subtareas`, kpiOver: 'pasó el tiempo habitual', kpiDone: 'terminada', kpiShowDone: 'Mostrar terminadas', kpiRefresh: 'Actualizar', kpiEmpty: 'Aún no hay tareas de personas.',
@@ -529,11 +557,16 @@
       tgButton: '📨 Telegram…', tgIntro: 'Recevez un message sur votre téléphone quand un agent a besoin de vous ou qu’une exécution échoue, avec des liens vers l’agent et la tâche, et demandez au bureau où il en est.',
       tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte',
       tg1: 'Créez un bot', tg1Text: 'Dans Telegram, ouvrez @BotFather, allez dans My Bots et appuyez sur « Create a New Bot ». Donnez-lui un nom et un nom d’utilisateur finissant par « bot ». BotFather vous envoie un jeton, une longue ligne comme 123456789:AAH… ; copiez-la.',
-      tg2: 'Collez le jeton ici', tgTokenPh: 'ex. 123456789:AAH…', tgSave: 'Enregistrer', tgSaving: 'Vérification…', tgBad: { format: 'Cela ne ressemble pas à un jeton de bot. Copiez toute la ligne envoyée par BotFather.', refused: 'Telegram a refusé ce jeton. Copiez-le à nouveau depuis BotFather.', unreachable: 'Impossible de joindre Telegram depuis cet ordinateur. Vérifiez la connexion internet.' },
+      tg2: 'Collez le jeton ici', tgTokenPh: 'ex. 123456789:AAH…', tgSave: 'Enregistrer', tgSaving: 'Vérification…', tgBad: { format: 'Cela ne ressemble pas à un jeton de bot. Copiez toute la ligne envoyée par BotFather.', refused: 'Telegram a refusé ce jeton. Copiez-le à nouveau depuis BotFather.', unreachable: 'Impossible de joindre Telegram depuis cet ordinateur. Vérifiez la connexion internet.', url: 'Ce n’est pas une adresse web ; elle doit commencer par http:// ou https://.' },
       tgBotOk: (u) => `✓ Connecté à ${u}`, tgRemove: 'Déconnecter', tgFromEnv: 'Le jeton est défini dans l’environnement du serveur.',
-      tg3: 'Liez votre Telegram', tg3Text: 'Appuyez sur le bouton : Telegram ouvre votre bot. Appuyez sur « Démarrer ». Cette discussion reçoit ensuite les messages.', tgOpenBot: 'Ouvrir dans Telegram', tgLinked: (n) => `✓ ${n} discussion(s) liée(s)`, tgWaitStart: 'En attente de votre appui sur Démarrer dans Telegram…',
+      tg3: 'Liez votre Telegram', tg3Text: 'Scannez le code avec l’appareil photo du téléphone, ou utilisez un des boutons. Quand votre bot s’ouvre dans Telegram, appuyez sur « Démarrer ».', tgOpenBot: 'Application Telegram de cet ordinateur', tgLinked: (n) => `✓ ${n} discussion(s) liée(s)`, tgWaitStart: 'En attente de votre appui sur Démarrer dans Telegram…',
       tg4: 'Facultatif : répondre depuis Telegram', tgRepliesLabel: 'Je veux répondre en répondant à un message ; ma réponse est écrite en commentaire sur la tâche Paperclip',
-      tgLocal: 'La configuration se fait uniquement sur l’ordinateur où tourne Cubicle.', tgPhone: 'Les liens des messages s’ouvrent sur cet ordinateur.',
+      tgLocal: 'La configuration se fait uniquement sur l’ordinateur où tourne Cubicle.', tgPhone: 'Les liens s’ouvrent sur cet ordinateur ; pour le téléphone, voir l’étape 5.',
+      tgOpenWeb: 'Telegram Web', tgScan: 'Scannez avec le téléphone', tgOrSend: 'Si « Démarrer » ne fait rien, envoyez ce message au bot :', tgCopy: 'Copier', tgCopied: 'Copié',
+      tgNoApp: 'Le bouton « Start Bot » de la page t.me ne marche que si l’application Telegram est installée sur cet ordinateur. Sinon, utilisez le téléphone ou Telegram Web.',
+      tgWrong: 'Le bot a reçu un message, mais sans le bon code. Envoyez le message ci-dessus.', tgPoll: { conflict: 'Un autre programme lit ce bot (la connexion Telegram de Paperclip ?). Donnez à Cubicle son propre bot.', unreachable: 'Telegram est injoignable depuis cet ordinateur. Vérifiez la connexion internet.', refused: 'Telegram a refusé le jeton. Déconnectez et collez-le à nouveau.' },
+      tg5: 'Facultatif : ouvrir les liens sur le téléphone', tg5Text: 'Pour l’instant les liens des messages ne s’ouvrent que sur cet ordinateur. Pour les ouvrir aussi sur le téléphone, utilisez Tailscale (gratuit) : installez-le sur cet ordinateur et sur le téléphone, et connectez-vous avec le même compte sur les deux. Puis écrivez ici l’adresse Tailscale de Cubicle.',
+      tgPhonePh: 'ex. http://mon-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Les liens s’ouvrent sur ${u}`, tgPhoneTry: 'Ouvrez-la sur le téléphone pour essayer', tgPhoneFixed: 'L’adresse a été donnée au démarrage (--public-url).', tgPhoneClear: 'Retirer',
       tgEmbed: 'Le bot Telegram appartient au Cubicle autonome de cet ordinateur, pas au bureau dans Paperclip. Ouvrez-le et appuyez sur ⚙ → Telegram :', tgOpenStandalone: 'Ouvrir Cubicle',
       iss: { backlog: 'en attente', todo: 'à faire', in_progress: 'en cours', in_review: 'en revue', blocked: 'bloquée', done: 'terminée', cancelled: 'annulée' },
       kpiTask: 'Tâche', kpiWho: 'Agent', kpiProgress: 'Avancement', kpiEta: 'Prévu', kpiSub: (d, n) => `${d}/${n} sous-tâches`, kpiOver: 'au-delà de la durée habituelle', kpiDone: 'terminée', kpiShowDone: 'Afficher les terminées', kpiRefresh: 'Actualiser', kpiEmpty: 'Pas encore de tâches créées par une personne.',
@@ -594,11 +627,16 @@
       tgButton: '📨 Telegram…', tgIntro: '当代理需要你或运行失败时，手机上会收到带有代理和任务链接的消息，也可以随时询问办公室状态。',
       tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本',
       tg1: '创建机器人', tg1Text: '在 Telegram 中打开 @BotFather，进入 My Bots 并点“Create a New Bot”。给它起个名字和以“bot”结尾的用户名。BotFather 会发给你一个 token，形如 123456789:AAH… 的长字符串，复制它。',
-      tg2: '把 token 粘贴到这里', tgTokenPh: '例如 123456789:AAH…', tgSave: '保存', tgSaving: '正在检查…', tgBad: { format: '这看起来不像机器人 token。请复制 BotFather 发来的完整一行。', refused: 'Telegram 拒绝了这个 token。请从 BotFather 重新复制。', unreachable: '这台电脑连不上 Telegram，请检查网络。' },
+      tg2: '把 token 粘贴到这里', tgTokenPh: '例如 123456789:AAH…', tgSave: '保存', tgSaving: '正在检查…', tgBad: { format: '这看起来不像机器人 token。请复制 BotFather 发来的完整一行。', refused: 'Telegram 拒绝了这个 token。请从 BotFather 重新复制。', unreachable: '这台电脑连不上 Telegram，请检查网络。', url: '这不是网址；应以 http:// 或 https:// 开头。' },
       tgBotOk: (u) => `✓ 已连接 ${u}`, tgRemove: '断开', tgFromEnv: 'token 已在服务器环境中设置。',
-      tg3: '关联你的 Telegram', tg3Text: '点下面的按钮，Telegram 会打开你的机器人，在那里点“开始”。之后这个聊天就会收到消息。', tgOpenBot: '在 Telegram 中打开', tgLinked: (n) => `✓ 已关联 ${n} 个聊天`, tgWaitStart: '等待你在 Telegram 中点“开始”…',
+      tg3: '关联你的 Telegram', tg3Text: '用手机相机扫描二维码，或点下面的按钮。机器人在 Telegram 中打开后，点“开始”。', tgOpenBot: '这台电脑上的 Telegram 应用', tgLinked: (n) => `✓ 已关联 ${n} 个聊天`, tgWaitStart: '等待你在 Telegram 中点“开始”…',
       tg4: '可选：在 Telegram 中回复', tgRepliesLabel: '允许我通过回复消息来作答；我的回复会作为评论写到 Paperclip 任务上',
-      tgLocal: '只能在运行 Cubicle 的那台电脑上设置。', tgPhone: '消息中的链接会在这台电脑上打开。',
+      tgLocal: '只能在运行 Cubicle 的那台电脑上设置。', tgPhone: '链接在这台电脑上打开；要在手机上打开，请看第 5 步。',
+      tgOpenWeb: 'Telegram 网页版', tgScan: '用手机扫描', tgOrSend: '如果点“开始”没有反应，就给机器人发这条消息：', tgCopy: '复制', tgCopied: '已复制',
+      tgNoApp: 't.me 页面上的 “Start Bot” 按钮只有在这台电脑装了 Telegram 应用时才有用。否则请用手机或 Telegram 网页版。',
+      tgWrong: '机器人收到了消息，但没有正确的代码。请发送上面的消息。', tgPoll: { conflict: '另一个程序也在读取这个机器人（可能是 Paperclip 自己的 Telegram 连接）。请给 Cubicle 单独建一个机器人。', unreachable: '这台电脑连不上 Telegram。请检查网络连接。', refused: 'Telegram 拒绝了这个令牌。请断开后重新粘贴。' },
+      tg5: '可选：在手机上打开链接', tg5Text: '现在消息中的链接只能在这台电脑上打开。想在手机上也能打开，请使用免费的 Tailscale：在这台电脑和手机上都安装，并用同一个账号登录。然后在这里填写 Cubicle 的 Tailscale 地址。',
+      tgPhonePh: '例如 http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ 链接将在 ${u} 打开`, tgPhoneTry: '在手机上打开试试', tgPhoneFixed: '地址是在启动 Cubicle 时指定的（--public-url）。', tgPhoneClear: '移除',
       tgEmbed: 'Telegram 机器人属于这台电脑上独立运行的 Cubicle，而不是 Paperclip 里的办公室。打开它，并在那里点 ⚙ → Telegram：', tgOpenStandalone: '打开 Cubicle',
       iss: { backlog: '待办池', todo: '待办', in_progress: '进行中', in_review: '审核中', blocked: '受阻', done: '已完成', cancelled: '已取消' },
       kpiTask: '任务', kpiWho: '代理', kpiProgress: '进度', kpiEta: '预计完成', kpiSub: (d, n) => `${d}/${n} 个子任务`, kpiOver: '已超过通常时间', kpiDone: '已完成', kpiShowDone: '显示已完成', kpiRefresh: '刷新', kpiEmpty: '还没有由人创建的任务。',
@@ -659,11 +697,16 @@
       tgButton: '📨 Telegram…', tgIntro: 'تصلك رسالة على هاتفك عندما يحتاجك وكيل أو يفشل تشغيل، مع روابط للوكيل والمهمة، ويمكنك سؤال المكتب عن حاله.',
       tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص',
       tg1: 'أنشئ بوتًا', tg1Text: 'في Telegram افتح ‎@BotFather، وادخل My Bots واضغط «Create a New Bot». أعطه اسمًا واسم مستخدم ينتهي بـ «bot». سيرسل لك BotFather رمزًا (token) طويلًا مثل 123456789:AAH…؛ انسخه.',
-      tg2: 'الصق الرمز هنا', tgTokenPh: 'مثال: 123456789:AAH…', tgSave: 'حفظ', tgSaving: 'جارٍ التحقق…', tgBad: { format: 'لا يبدو هذا رمز بوت. انسخ السطر كاملًا من BotFather.', refused: 'رفض Telegram هذا الرمز. انسخه مجددًا من BotFather.', unreachable: 'تعذر الوصول إلى Telegram من هذا الحاسوب. تحقق من الاتصال بالإنترنت.' },
+      tg2: 'الصق الرمز هنا', tgTokenPh: 'مثال: 123456789:AAH…', tgSave: 'حفظ', tgSaving: 'جارٍ التحقق…', tgBad: { format: 'لا يبدو هذا رمز بوت. انسخ السطر كاملًا من BotFather.', refused: 'رفض Telegram هذا الرمز. انسخه مجددًا من BotFather.', unreachable: 'تعذر الوصول إلى Telegram من هذا الحاسوب. تحقق من الاتصال بالإنترنت.', url: 'هذا ليس عنوان ويب؛ يجب أن يبدأ بـ http:// أو https://.' },
       tgBotOk: (u) => `✓ متصل بـ ${u}`, tgRemove: 'قطع الاتصال', tgFromEnv: 'الرمز محدد في بيئة الخادم.',
-      tg3: 'اربط Telegram الخاص بك', tg3Text: 'اضغط الزر: سيفتح Telegram البوت. اضغط «ابدأ» هناك. بعدها تصل الرسائل إلى تلك الدردشة.', tgOpenBot: 'افتح في Telegram', tgLinked: (n) => `✓ ${n} دردشة مرتبطة`, tgWaitStart: 'بانتظار ضغطك على «ابدأ» في Telegram…',
+      tg3: 'اربط Telegram الخاص بك', tg3Text: 'امسح الرمز بكاميرا الهاتف، أو استخدم أحد الأزرار. عندما يفتح البوت في Telegram اضغط «ابدأ».', tgOpenBot: 'تطبيق Telegram على هذا الحاسوب', tgLinked: (n) => `✓ ${n} دردشة مرتبطة`, tgWaitStart: 'بانتظار ضغطك على «ابدأ» في Telegram…',
       tg4: 'اختياري: الرد من Telegram', tgRepliesLabel: 'دعني أجيب بالرد على الرسالة؛ ويُكتب ردي تعليقًا على مهمة Paperclip',
-      tgLocal: 'يتم الإعداد فقط على الحاسوب الذي يعمل عليه Cubicle.', tgPhone: 'تُفتح الروابط في الرسائل على هذا الحاسوب.',
+      tgLocal: 'يتم الإعداد فقط على الحاسوب الذي يعمل عليه Cubicle.', tgPhone: 'تُفتح الروابط على هذا الحاسوب؛ لفتحها على الهاتف راجع الخطوة 5.',
+      tgOpenWeb: 'Telegram Web', tgScan: 'امسحه بالهاتف', tgOrSend: 'إذا لم يفعل «ابدأ» شيئًا، أرسل إلى البوت هذه الرسالة:', tgCopy: 'نسخ', tgCopied: 'تم النسخ',
+      tgNoApp: 'زر «Start Bot» في صفحة t.me يعمل فقط إذا كان تطبيق Telegram مثبتًا على هذا الحاسوب. وإلا فاستخدم الهاتف أو Telegram Web.',
+      tgWrong: 'وصلت إلى البوت رسالة لكن بدون الرمز الصحيح. أرسل الرسالة أعلاه.', tgPoll: { conflict: 'برنامج آخر يقرأ هذا البوت (ربما اتصال Telegram الخاص بـ Paperclip). أعطِ Cubicle بوتًا خاصًا به.', unreachable: 'لا يمكن الوصول إلى Telegram من هذا الحاسوب. تحقق من اتصال الإنترنت.', refused: 'رفض Telegram الرمز المميز. افصل البوت والصقه من جديد.' },
+      tg5: 'اختياري: فتح الروابط على الهاتف', tg5Text: 'حاليًا تُفتح الروابط في الرسائل على هذا الحاسوب فقط. لفتحها على الهاتف أيضًا استخدم Tailscale المجاني: ثبّته على هذا الحاسوب وعلى الهاتف وسجّل الدخول بالحساب نفسه في كليهما. ثم اكتب هنا عنوان Cubicle في Tailscale.',
+      tgPhonePh: 'مثال: http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ تُفتح الروابط على ${u}`, tgPhoneTry: 'افتحه على الهاتف للتجربة', tgPhoneFixed: 'تم تحديد العنوان عند تشغيل Cubicle (--public-url).', tgPhoneClear: 'إزالة',
       tgEmbed: 'بوت Telegram تابع لـ Cubicle المستقل على هذا الحاسوب، لا للمكتب داخل Paperclip. افتحه واضغط هناك ⚙ ← Telegram:', tgOpenStandalone: 'افتح Cubicle',
       iss: { backlog: 'قائمة الانتظار', todo: 'للتنفيذ', in_progress: 'قيد التنفيذ', in_review: 'قيد المراجعة', blocked: 'متوقفة', done: 'منجزة', cancelled: 'ملغاة' },
       kpiTask: 'المهمة', kpiWho: 'الوكيل', kpiProgress: 'التقدم', kpiEta: 'الموعد المتوقع', kpiSub: (d, n) => `${d}/${n} مهام فرعية`, kpiOver: 'تجاوزت المدة المعتادة', kpiDone: 'أُنجزت', kpiShowDone: 'اعرض المنجزة', kpiRefresh: 'تحديث', kpiEmpty: 'لا توجد مهام من أشخاص بعد.',
@@ -917,6 +960,107 @@
   });
   kpiDlg.addEventListener('change', (e) => { if (e.target.dataset.k === 'done') { kpiShowDone = e.target.checked; renderKpi(); } });
 
+  // ---------- QR code (byte mode, error correction M, versions 1-10: up to 213 bytes) ----------
+  // A small encoder after the QR spec, so a phone can scan the Telegram link off the screen.
+  function qrMatrix(text) {
+    const data = [...new TextEncoder().encode(text)];
+    const ECC = [0, 10, 16, 26, 18, 24, 16, 18, 22, 22, 26], BLOCKS = [0, 1, 1, 1, 2, 2, 4, 4, 4, 5, 5];
+    const raw = (v) => { let r = (16 * v + 128) * v + 64; if (v >= 2) { const n = Math.floor(v / 7) + 2; r -= (25 * n - 10) * n - 55; if (v >= 7) r -= 36; } return r; };
+    let ver = 1;
+    for (; ver <= 10; ver++) if (4 + (ver < 10 ? 8 : 16) + data.length * 8 <= (Math.floor(raw(ver) / 8) - ECC[ver] * BLOCKS[ver]) * 8) break;
+    if (ver > 10) return null;
+    const cap = Math.floor(raw(ver) / 8) - ECC[ver] * BLOCKS[ver];
+    const bits = [], put = (v, n) => { for (let i = n - 1; i >= 0; i--) bits.push((v >>> i) & 1); };
+    put(4, 4); put(data.length, ver < 10 ? 8 : 16); data.forEach((b) => put(b, 8));
+    put(0, Math.min(4, cap * 8 - bits.length)); while (bits.length % 8) bits.push(0);
+    const words = []; for (let i = 0; i < bits.length; i += 8) words.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+    for (let p = 0xEC; words.length < cap; p ^= 0xEC ^ 0x11) words.push(p);
+    // Reed-Solomon over GF(256), polynomial 0x11D
+    const mul = (x, y) => { let z = 0; for (let i = 7; i >= 0; i--) { z = (z << 1) ^ ((z >>> 7) * 0x11D); z ^= ((y >>> i) & 1) * x; } return z; };
+    const deg = ECC[ver], div = Array(deg - 1).fill(0).concat([1]);
+    for (let i = 0, root = 1; i < deg; i++, root = mul(root, 2)) for (let j = 0; j < div.length; j++) { div[j] = mul(div[j], root); if (j + 1 < div.length) div[j] ^= div[j + 1]; }
+    const rem = (d) => { const r = div.map(() => 0); for (const b of d) { const f = b ^ r.shift(); r.push(0); div.forEach((c, i) => { r[i] ^= mul(c, f); }); } return r; };
+    const nb = BLOCKS[ver], total = Math.floor(raw(ver) / 8), nShort = nb - total % nb, shortLen = Math.floor(total / nb);
+    const blocks = [];
+    for (let i = 0, k = 0; i < nb; i++) {
+      const d = words.slice(k, k + shortLen - deg + (i < nShort ? 0 : 1)); k += d.length;
+      const e = rem(d); if (i < nShort) d.push(0); blocks.push(d.concat(e));
+    }
+    const code = [];
+    for (let i = 0; i < blocks[0].length; i++) blocks.forEach((b, j) => { if (i !== shortLen - deg || j >= nShort) code.push(b[i]); });
+    // the grid
+    const size = ver * 4 + 17, m = [...Array(size)].map(() => Array(size).fill(false)), fn = [...Array(size)].map(() => Array(size).fill(false));
+    const set = (x, y, dark) => { m[y][x] = dark; fn[y][x] = true; };
+    for (let i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+    for (const [cx, cy] of [[3, 3], [size - 4, 3], [3, size - 4]]) for (let dy = -4; dy <= 4; dy++) for (let dx = -4; dx <= 4; dx++) {
+      const d = Math.max(Math.abs(dx), Math.abs(dy)), x = cx + dx, y = cy + dy;
+      if (x >= 0 && x < size && y >= 0 && y < size) set(x, y, d !== 2 && d !== 4);
+    }
+    if (ver > 1) {
+      const n = Math.floor(ver / 7) + 2, step = Math.ceil((ver * 4 + 4) / (n * 2 - 2)) * 2, pos = [6];
+      for (let p = size - 7; pos.length < n; p -= step) pos.splice(1, 0, p);
+      pos.forEach((a, i) => pos.forEach((b, j) => {
+        if ((i === 0 && j === 0) || (i === 0 && j === n - 1) || (i === n - 1 && j === 0)) return;
+        for (let dy = -2; dy <= 2; dy++) for (let dx = -2; dx <= 2; dx++) set(a + dx, b + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+      }));
+    }
+    const format = (mask) => {
+      const d = (0 << 3) | mask; let r = d;                 // level M = 0b00
+      for (let i = 0; i < 10; i++) r = (r << 1) ^ ((r >>> 9) * 0x537);
+      const b = ((d << 10) | r) ^ 0x5412, bit = (i) => ((b >>> i) & 1) === 1;
+      for (let i = 0; i <= 5; i++) set(8, i, bit(i));
+      set(8, 7, bit(6)); set(8, 8, bit(7)); set(7, 8, bit(8));
+      for (let i = 9; i < 15; i++) set(14 - i, 8, bit(i));
+      for (let i = 0; i < 8; i++) set(size - 1 - i, 8, bit(i));
+      for (let i = 8; i < 15; i++) set(8, size - 15 + i, bit(i));
+      set(8, size - 8, true);
+    };
+    format(0);
+    if (ver >= 7) {
+      let r = ver; for (let i = 0; i < 12; i++) r = (r << 1) ^ ((r >>> 11) * 0x1F25);
+      const b = (ver << 12) | r;
+      for (let i = 0; i < 18; i++) { const bit = ((b >>> i) & 1) === 1, a = size - 11 + (i % 3), c = Math.floor(i / 3); set(a, c, bit); set(c, a, bit); }
+    }
+    let i = 0;
+    for (let right = size - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (let v = 0; v < size; v++) for (let j = 0; j < 2; j++) {
+        const x = right - j, y = ((right + 1) & 2) === 0 ? size - 1 - v : v;
+        if (!fn[y][x] && i < code.length * 8) { m[y][x] = ((code[i >>> 3] >>> (7 - (i & 7))) & 1) === 1; i++; }
+      }
+    }
+    const MASKS = [(x, y) => (x + y) % 2 === 0, (x, y) => y % 2 === 0, (x) => x % 3 === 0, (x, y) => (x + y) % 3 === 0,
+      (x, y) => (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0, (x, y) => (x * y) % 2 + (x * y) % 3 === 0,
+      (x, y) => ((x * y) % 2 + (x * y) % 3) % 2 === 0, (x, y) => ((x + y) % 2 + (x * y) % 3) % 2 === 0];
+    const apply = (k) => { for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) if (!fn[y][x] && MASKS[k](x, y)) m[y][x] = !m[y][x]; };
+    const penalty = () => {                                   // runs, 2x2 blocks and balance (enough to pick a good mask)
+      let p = 0, dark = 0;
+      for (let a = 0; a < size; a++) for (const row of [true, false]) {
+        let run = 1;
+        for (let b = 1; b <= size; b++) {
+          const same = b < size && (row ? m[a][b] === m[a][b - 1] : m[b][a] === m[b - 1][a]);
+          if (same) run++; else { if (run >= 5) p += run - 2; run = 1; }
+        }
+      }
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        if (m[y][x]) dark++;
+        if (x && y && m[y][x] === m[y - 1][x] && m[y][x] === m[y][x - 1] && m[y][x] === m[y - 1][x - 1]) p += 3;
+      }
+      return p + Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+    };
+    let best = 0, bestP = Infinity;
+    for (let k = 0; k < 8; k++) { apply(k); format(k); const p = penalty(); if (p < bestP) { bestP = p; best = k; } apply(k); }
+    apply(best); format(best);
+    return m;
+  }
+  // As an <svg>, dark on white with the quiet zone, for any colour scheme.
+  function qrSvg(text, px = 180) {
+    const m = qrMatrix(text); if (!m) return '';
+    const n = m.length, q = 4; let d = '';
+    for (let y = 0; y < n; y++) for (let x = 0; x < n; x++) if (m[y][x]) d += `M${x + q} ${y + q}h1v1h-1z`;
+    return `<svg class="qr" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${n + 2 * q} ${n + 2 * q}" width="${px}" height="${px}" shape-rendering="crispEdges" role="img"><rect width="100%" height="100%" fill="#fff"/><path d="${d}" fill="#000"/></svg>`;
+  }
+
   // ---------- Telegram: how to set it up, and whether this server has it on ----------
   const tgDlg = document.getElementById('tg');
   // A plain walk-through: create a bot, paste its token here, press one button in Telegram. The page
@@ -945,20 +1089,37 @@
       : st.canEdit ? `<div class="tgrow"><input type="password" data-tg="token" placeholder="${esc(L.tgTokenPh)}" autocomplete="off" spellcheck="false"><button type="button" class="act" data-tg="save">${esc(L.tgSave)}</button></div><p class="err" data-tg="err"></p>`
       : `<p class="muted">${esc(L.tgLocal)}</p>`;
     const link = st.on && st.username && st.code ? `https://t.me/${encodeURIComponent(st.username)}?start=${encodeURIComponent(st.code)}` : '';
-    const linkBox = !st.on ? '' : `<p>${esc(L.tg3Text)}</p>` + (link ? `<p><a class="act" href="${esc(link)}" target="_blank" rel="noopener">✈ ${esc(L.tgOpenBot)}</a></p>` : '')
-      + `<p class="${st.chats ? 'ok' : 'muted'}">${esc(st.chats ? L.tgLinked(st.chats) : L.tgWaitStart)}</p>`;
+    // Three ways in: the phone's camera (QR), the Telegram app on this computer (t.me does nothing
+    // without it), or Telegram Web; and the code itself, to send by hand if "Start" goes nowhere.
+    const web = st.username ? `https://web.telegram.org/k/#@${encodeURIComponent(st.username)}` : '';
+    const cmd = st.code ? `/start ${st.code}` : '';
+    const hint = st.chats ? '' : st.polling && st.polling !== 'ok' && st.polling !== 'starting' && L.tgPoll[st.polling] ? `<p class="err">${esc(L.tgPoll[st.polling])}</p>`
+      : st.unpaired ? `<p class="err">${esc(L.tgWrong)}</p>` : '';
+    const linkBox = !st.on ? '' : `<p>${esc(L.tg3Text)}</p>`
+      + (link ? `<div class="tgpair"><figure>${qrSvg(link, 168)}<figcaption>📱 ${esc(L.tgScan)}</figcaption></figure><div>`
+        + `<p><a class="act" href="${esc(link)}" target="_blank" rel="noopener">✈ ${esc(L.tgOpenBot)}</a></p>`
+        + `<p><a class="act" href="${esc(web)}" target="_blank" rel="noopener">🌐 ${esc(L.tgOpenWeb)}</a></p>`
+        + `<p class="muted small">${esc(L.tgNoApp)}</p></div></div>` : '')
+      + (cmd ? `<p>${esc(L.tgOrSend)}</p><div class="tgrow"><code class="tgcode">${esc(cmd)}</code><button type="button" data-tg="copy" data-copy="${esc(cmd)}">${esc(L.tgCopy)}</button></div>` : '')
+      + hint + `<p class="${st.chats ? 'ok' : 'muted'}">${esc(st.chats ? L.tgLinked(st.chats) : L.tgWaitStart)}</p>`;
     const replyBox = !st.on || !st.canReply ? '' : `<label class="check"><input type="checkbox" data-tg="replies"${st.replies ? ' checked' : ''}${st.canEdit ? '' : ' disabled'}> ${esc(L.tgRepliesLabel)}</label>`;
+    const remote = st.publicUrl && !/^https?:\/\/(127\.|localhost|\[::1\])/i.test(st.publicUrl);
+    const phoneBox = !st.on ? '' : `<p>${esc(L.tg5Text)}</p>` + (st.publicFixed ? `<p class="muted">${esc(L.tgPhoneFixed)}</p>`
+      : st.canEdit ? `<div class="tgrow"><input type="url" data-tg="url" placeholder="${esc(L.tgPhonePh)}" value="${esc(remote ? st.publicUrl : '')}" spellcheck="false"><button type="button" class="act" data-tg="saveurl">${esc(L.tgSave)}</button></div><p class="err" data-tg="urlerr"></p>` : '')
+      + (remote ? `<div class="tgpair"><figure>${qrSvg(st.publicUrl, 120)}<figcaption>${esc(L.tgPhoneTry)}</figcaption></figure><p class="ok">${esc(L.tgPhoneOk(st.publicUrl))}${st.canEdit && !st.publicFixed ? ` <button type="button" class="link" data-tg="clearurl">${esc(L.tgPhoneClear)}</button>` : ''}</p></div>` : '');
     tgDlg.innerHTML = head
       + step(1, L.tg1, `<p>${esc(L.tg1Text)}</p><p><a class="act" href="https://t.me/BotFather" target="_blank" rel="noopener">✈ @BotFather</a></p>`, st.on)
       + step(2, L.tg2, tokenBox, st.on)
       + (st.on ? step(3, L.tg3, linkBox, st.chats > 0) : '')
       + (replyBox ? step(4, L.tg4, replyBox, false) : '')
-      + `<p class="muted">${esc(L.tgCommands)} · ${esc(L.tgPhone)}</p>`;
+      + (phoneBox ? step(5, L.tg5, phoneBox, remote) : '')
+      + `<p class="muted">${esc(L.tgCommands)}${remote ? '' : ` · ${esc(L.tgPhone)}`}</p>`;
     if (!tgDlg.open) tgDlg.showModal();
     // Waiting for Start in Telegram: refresh until a chat is linked.
     if (st.on && !st.chats) tgTimer = setInterval(async () => {
       if (!tgDlg.open) { clearInterval(tgTimer); return; }
-      const now = await tgStatus(); if (now && now.chats) openTelegram();
+      const now = await tgStatus();
+      if (now && (now.chats || now.unpaired !== st.unpaired || now.polling !== st.polling)) openTelegram();
     }, 2500);
   }
   tgDlg.addEventListener('click', async (e) => {
@@ -972,6 +1133,18 @@
       if (r.ok) openTelegram(); else { err.textContent = (L.tgBad && L.tgBad[r.error]) || String(r.error); b.disabled = false; b.textContent = L.tgSave; }
     }
     if (k === 'remove') { await tgPut({ token: null }); openTelegram(); }
+    if (k === 'copy') {
+      try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = L.tgCopied; } catch (_) {
+        const r = document.createRange(); r.selectNodeContents(b.previousElementSibling); getSelection().removeAllRanges(); getSelection().addRange(r);
+      }
+    }
+    if (k === 'saveurl' || k === 'clearurl') {
+      const input = tgDlg.querySelector('[data-tg="url"]'), err = tgDlg.querySelector('[data-tg="urlerr"]');
+      let v = k === 'clearurl' ? '' : (input ? input.value.trim() : '');
+      if (v && !/^[a-z]+:\/\//i.test(v)) v = 'http://' + v;
+      const r = await tgPut({ publicUrl: v });
+      if (r.ok) openTelegram(); else if (err) err.textContent = (L.tgBad && L.tgBad[r.error]) || String(r.error);
+    }
   });
   tgDlg.addEventListener('change', async (e) => { if (e.target.dataset.tg === 'replies') await tgPut({ replies: e.target.checked }); });
   tgDlg.addEventListener('close', () => clearInterval(tgTimer));
