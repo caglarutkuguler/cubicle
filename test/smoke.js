@@ -433,6 +433,54 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { p.kill(); tg.close(); }
   }
 
+  // Telegram with Paperclip: an agent's questions (an interaction) come with the message, and a reply
+  // of just a number is posted as that option
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tgq-'));
+    const comments = []; let asking = false;
+    const pc = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/api/companies') return r.end(JSON.stringify([{ id: 'c1', name: 'Acme', issuePrefix: 'ACM' }]));
+        if (q.url === '/api/companies/c1/agents') return r.end(JSON.stringify([{ id: 'a1', name: 'WebDev', status: 'idle' }]));
+        if (q.url === '/api/companies/c1/issues') return r.end(JSON.stringify([{ identifier: 'ACM-7', title: 'Checkout', status: 'in_review', assigneeAgentId: 'a1',
+          reviewAttention: { paths: asking ? [{ kind: 'interaction', label: 'Pending ask user questions', responder: 'WebDev' }] : [] } }]));
+        if (q.url.startsWith('/api/companies/c1/heartbeat-runs')) return r.end('[]');
+        if (q.url === '/api/issues/ACM-7/interactions') return r.end(JSON.stringify([{ id: 'i1', kind: 'ask_user_questions', status: 'pending', title: 'One decision',
+          payload: { questions: [{ id: 'q', prompt: 'Which layout ships first?', allowOther: true, options: [{ id: 'a', label: 'One-page' }, { id: 'b', label: 'Two-step', description: 'better on mobile' }] }] } }]));
+        if (q.url === '/api/issues/ACM-7/comments' && q.method === 'POST') { comments.push(JSON.parse(b)); return r.end('{}'); }
+        r.end('[]');
+      });
+    });
+    await new Promise((ok) => pc.listen(0, '127.0.0.1', ok));
+    const updates = [], sent = []; let uid = 1;
+    const tg = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        const body = b ? JSON.parse(b) : {}; r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/botT0K/getUpdates') return setTimeout(() => r.end(JSON.stringify({ ok: true, result: updates.filter((u) => u.update_id >= (body.offset || 0)) })), 150);
+        if (q.url === '/botT0K/sendMessage') { sent.push(body); return r.end(JSON.stringify({ ok: true, result: { message_id: 100 + sent.length } })); }
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const port = 3400 + Math.floor(Math.random() * 500);
+    const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--paperclip', `http://127.0.0.1:${pc.address().port}`, '--telegram-replies'], { stdio: 'ignore',
+      env: { ...process.env, CUBICLE_TELEGRAM_TOKEN: 'T0K', CUBICLE_TELEGRAM_CHAT: '9', CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`,
+        CUBICLE_TELEGRAM_STATE: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_INTERVAL: '300', CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 's.json') } });
+    try {
+      await sleep(900);
+      const shaped = JSON.parse((await get(`http://127.0.0.1:${port}/api/issues/ACM-7/interactions`)).body);
+      assert.strictEqual(shaped[0].questions[0].options[1].label, 'Two-step'); assert.ok(!('payload' in shaped[0]), 'shaped, not passed through');
+      asking = true; await sleep(1000);
+      const note = sent.find((m) => /needs you|sizi bekliyor/.test(m.text));
+      assert.ok(note && note.text.includes('Which layout ships first?') && note.text.includes('<b>2.</b> Two-step'), note && note.text);
+      updates.push({ update_id: uid++, message: { message_id: 5, chat: { id: 9 }, from: { language_code: 'en' }, text: '2', reply_to_message: { message_id: 100 + sent.indexOf(note) + 1 } } });
+      await sleep(800);
+      assert.strictEqual(comments.length, 1, 'the reply became a comment'); assert.strictEqual(comments[0].body, 'Two-step', 'a number picks the option');
+    } finally { p.kill(); tg.close(); pc.close(); }
+  }
+
   // Telegram set up from the page: the token is checked with Telegram, saved privately, and the bot
   // starts without a restart; only JSON from this page on this machine is accepted
   {

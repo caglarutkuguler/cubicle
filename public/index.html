@@ -71,7 +71,7 @@
   .p-paused { background:#4d4221; color:#f3dc92; }
   .p-waiting { background:#5a4a12; color:#ffe08a; }
   #nav { display:inline-flex; gap:6px; margin-inline-end:10px; vertical-align:middle; }
-  .navb { background:none; border:1px solid var(--line); color:var(--muted); border-radius:6px; font:inherit; font-size:12px; line-height:1; padding:5px 8px; cursor:pointer; text-decoration:none !important; }
+  .navb { white-space:nowrap; background:none; border:1px solid var(--line); color:var(--muted); border-radius:6px; font:inherit; font-size:12px; line-height:1; padding:5px 8px; cursor:pointer; text-decoration:none !important; }
   .navb:hover { color:var(--text); border-color:#4a4f6b; }
   body.kiosk #nav { display:none; }
   #gear { background:none; border:1px solid var(--line); color:var(--muted); border-radius:6px; font-size:15px; line-height:1; padding:3px 7px; cursor:pointer; }
@@ -193,6 +193,13 @@
   #stage.zoomed { cursor:grab; }
   #stage.zoomed.panning { cursor:grabbing; }
   #detail { position:absolute; top:10px; left:10px; z-index:3; width:min(310px, 46%); max-height:calc(100% - 20px); overflow:auto; background:rgba(34,37,54,.96); border:1px solid var(--line); border-radius:10px; padding:10px 12px; box-shadow:0 8px 24px rgba(0,0,0,.4); }
+  #detail.sheet { position:fixed; left:8px; right:8px; top:auto; bottom:8px; width:auto; max-height:62vh; z-index:20; background:#222536; box-shadow:0 -6px 30px rgba(0,0,0,.55); }
+  .qs { margin-top:7px; padding:7px 9px; border-radius:8px; background:rgba(255,224,138,.08); border:1px solid rgba(255,224,138,.25); font-size:12.5px; line-height:1.4; }
+  .qs .qt { font-weight:700; color:#ffe08a; margin-bottom:3px; }
+  .qs .qp { margin:3px 0; }
+  .qs:not(.full) .qp { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .qs ol.qo { margin:3px 0 4px; padding-left:22px; } .qs ol.qo li { margin:2px 0; }
+  .qs ol.qo small { display:block; color:var(--muted); font-size:11.5px; }
   #detail .x { float:right; margin:-4px -6px 0 6px; width:26px; height:26px; border-radius:6px; background:none; border:1px solid transparent; color:var(--muted); cursor:pointer; font-size:14px; line-height:1; }
   #detail .x:hover { color:var(--text); border-color:var(--line); background:#2f3552; }
   #detail .top b { font-size:15px; }
@@ -938,7 +945,7 @@
       const raw = await getJSON(`/api/companies/${company.id}/issues`);
       return raw.map((i) => ({ id: i.id, identifier: i.identifier, title: i.title, status: i.status, parentId: i.parentId, assigneeAgentId: i.assigneeAgentId,
         createdAt: i.createdAt, startedAt: i.startedAt, completedAt: i.completedAt, cancelledAt: i.cancelledAt, human: !!i.createdByUserId, convo: !!i.conversationAgentId,
-        blockers: blockerInfo(i), asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some((x) => /board|user|human/i.test(String(x && x.responder || ''))) }));
+        blockers: blockerInfo(i), asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson) }));
     }
     return getJSON(`/api/kpi/${company.id}`);
   }
@@ -1495,13 +1502,16 @@
     return null;
   }
 
+  // A review path waiting on a person: the board or a user, or an interaction (questions,
+  // confirmations), whose responder Paperclip gives as the agent itself.
+  function asksPerson(x) { return !!x && (/board|user|human/i.test(String(x.responder || '')) || x.kind === 'interaction'); }
   // Paperclip: an open issue whose review is waiting on the board (a pending question or
   // interaction for a human) means the agent needs you, even though Paperclip reports it idle.
   function askingBoard(agentId, issues) {
     for (const i of issues) {
       if (i.assigneeAgentId !== agentId || ['done', 'cancelled'].includes(i.status)) continue;
       const paths = (i.reviewAttention && i.reviewAttention.paths) || [];
-      const p = paths.find((x) => /board|user|human/i.test(String(x && x.responder || '')));
+      const p = paths.find(asksPerson);
       if (p) return { issue: i, reason: String(p.label || '') };
     }
     return null;
@@ -1627,9 +1637,39 @@
     return ` · <span class="spend" style="color:${col}" title="${esc(L.spendTitle)}">${esc(text)}</span>`;
   }
 
+  // What an agent asks you (Paperclip interactions: questions with options), fetched once per
+  // half minute per issue and shown on its card and panel, so it can be read on any screen.
+  const qCache = new Map();
+  function questionsFor(s) {
+    const i = answerIssue(s);
+    if (!i || !i.identifier || DEMO || !paperclipUrl) return null;
+    const c = qCache.get(i.identifier), now = Date.now();
+    if (!c || (now - c.at > 30000 && !c.busy)) {
+      const entry = c || { at: 0, list: null }; entry.busy = true; qCache.set(i.identifier, entry);
+      fetch(`/api/issues/${encodeURIComponent(i.identifier)}/interactions`, { cache: 'no-store', credentials: 'same-origin' })
+        .then((r) => (r.ok ? r.json() : [])).catch(() => [])
+        .then((list) => {
+          entry.list = (Array.isArray(list) ? list : []).filter((x) => x && (x.status || 'pending') === 'pending').map((x) => ({
+            title: x.title || '', questions: ((x.questions || (x.payload && x.payload.questions)) || []).map((q) => ({ prompt: q.prompt || '', options: (q.options || []).map((o) => ({ label: o.label || '', description: o.description || '' })), other: !!q.allowOther })),
+          })).filter((x) => x.title || x.questions.length);
+          const changed = JSON.stringify(entry.list) !== entry.shown; entry.shown = JSON.stringify(entry.list);
+          entry.at = Date.now(); entry.busy = false;
+          if (changed) renderCards();
+        });
+    }
+    return c ? c.list : null;
+  }
+  function questionsHtml(list, full) {
+    if (!list || !list.length) return '';
+    return `<div class="qs${full ? ' full' : ''}">` + list.slice(0, 3).map((x) => (x.title ? `<div class="qt">❓ ${esc(x.title)}</div>` : '')
+      + x.questions.slice(0, full ? 6 : 2).map((q, n) => `<div class="qp">${x.questions.length > 1 ? `<b>${n + 1})</b> ` : ''}${esc(q.prompt)}</div>`
+        + (q.options.length ? `<ol class="qo">${q.options.map((o) => `<li>${esc(o.label)}${full && o.description ? `<small>${esc(o.description)}</small>` : ''}</li>`).join('')}</ol>` : '')).join('')).join('') + '</div>';
+  }
+
   function renderCards() {
     fitLayout();                           // the banner or the company list may have moved the office
-    const list = [...sprites.values()].sort((a, b) => a.idx - b.idx);
+    const rank = (s) => (narrow() ? (answerIssue(s) || s.status === 'waiting' ? 0 : s.status === 'error' ? 1 : 2) : 0);
+    const list = [...sprites.values()].sort((a, b) => rank(a) - rank(b) || a.idx - b.idx);
     const desks = !animOn() && cardsOn();
     cardsEl.innerHTML = list.map((s) => `<div class="card">${desks ? `<canvas class="desk" data-id="${esc(s.id)}"></canvas>` : ''}${cardHtml(s)}</div>`).join('');
     if (desks) cardsEl.querySelectorAll('canvas.desk').forEach((el) => { const s = sprites.get(el.dataset.id); if (s) drawDeskCard(el, s); });
@@ -1980,11 +2020,12 @@
       `<button type="button" class="act" data-act="look" data-id="${id}">✎ ${esc(L.looksName)}</button>`,
     ].join('')}</div>` : '';
     // Seen from a phone while Paperclip runs on 127.0.0.1: say why there is no Answer button.
-    const away = panel && pcLinkBase === '' && paperclipUrl && answerIssue(s) ? `<div class="st" style="color:var(--muted);font-size:12px;margin-top:6px">ⓘ ${esc(L.pcAway)}</div>` : '';
+    const qs = questionsHtml(questionsFor(s), panel);
+    const away = pcLinkBase === '' && paperclipUrl && answerIssue(s) ? `<div class="st" style="color:var(--muted);font-size:12px;margin-top:6px">ⓘ ${esc(L.pcAway)}</div>` : '';
     const nick = s.realName && s.realName !== s.name ? ` <span class="real">(${esc(s.realName)})</span>` : '';
     return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${id}">${esc(s.name)}</b>${nick}${panel ? '' : `<button type="button" class="edit" data-id="${id}" title="${esc(L.looksName)}" aria-label="${esc(L.looksName)}">✎</button>`}</div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
-        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${note}${errorBox(s)}${stepsHtml(s)}${acts}${away}`;
+        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${note}${qs}${errorBox(s)}${stepsHtml(s)}${acts}${away}`;
   }
   // The panel belongs to the selected agent (cam.sel), not to the camera: zooming, panning or the
   // wheel stop the camera from following but keep the panel next to its agent. It is placed right,
@@ -1992,6 +2033,9 @@
   function placeDetail() {
     const s = cam.sel && sprites.get(cam.sel);
     if (!s || detailEl.hidden) return;
+    // On a phone the panel is a sheet at the bottom of the screen, over the cards, not the office.
+    if (narrow()) { detailEl.classList.add('sheet'); detailEl.style.left = detailEl.style.top = ''; detailEl.style.visibility = ''; return; }
+    detailEl.classList.remove('sheet');
     const k = cv.clientWidth / CW, W = stageEl.clientWidth, H = stageEl.clientHeight, z = k * cam.z, m = 8, gap = 10;
     const box = { l: cam.x + (s.x - 8) * z, r: cam.x + (s.x + 8) * z, t: cam.y + (s.y - 30) * z, b: cam.y + (s.y + 2) * z };
     const seen = box.r > 0 && box.l < W && box.b > 0 && box.t < H;
@@ -2033,6 +2077,7 @@
   answerDlg.addEventListener('click', (e) => { if (e.target === answerDlg) answerDlg.close(); });   // backdrop
   answerDlg.addEventListener('close', () => { answerDlg.querySelector('iframe').src = 'about:blank'; poll(); });
 
+  function narrow() { return window.innerWidth <= 640 && !KIOSK; }
   function renderDetail() {
     const s = cam.sel && sprites.get(cam.sel);
     if (!s || KIOSK) { detailEl.hidden = true; if (cam.sel && !s) cam.sel = null; return; }
@@ -2261,7 +2306,9 @@
     const bubMax = Math.max(80, Math.floor(3.3 * T * k - 6)) + 'px';
     const talkMax = Math.max(110, Math.floor(5.2 * T * k)) + 'px';   // a sentence may wrap to two lines
     // In kiosk mode names and bubbles grow with the screen (11px at the default ~3x scale).
-    if (KIOSK) labelsEl.style.fontSize = Math.max(11, Math.round(11 * k / 3)) + 'px';
+    // On a small office (a phone) they shrink with it, down to 8 px.
+    labelsEl.style.fontSize = (KIOSK ? Math.max(11, Math.round(11 * k / 3)) : Math.max(8, Math.min(11, Math.round(11 * k / 2.6)))) + 'px';
+    const all = [];
     for (const s of sprites.values()) {
       s.el.style.left = (s.x * k) + 'px';
       s.el.style.top = ((s.y - 20) * k) + 'px';
@@ -2270,6 +2317,25 @@
       b.style.maxWidth = cls === 'talk' ? talkMax : bubMax;
       if (text) { b.textContent = text; b.className = 'bub ' + cls; b.style.display = ''; }
       else b.style.display = 'none';
+      s.el.style.visibility = '';
+      // who keeps its label when two would overlap: the one you picked, then who needs you, errors,
+      // conversations, work; idle names give way first
+      const rank = s.id === cam.sel ? 0 : cls === 'wait' || s.status === 'waiting' ? 1 : cls === 'err' || s.status === 'error' ? 2 : cls === 'talk' ? 3 : text ? 4 : 5;
+      all.push({ s, b, text, rank, x: s.x * k, y: (s.y - 20) * k });
+    }
+    if (all.length < 2) return;
+    // Measure once (one layout), then hide what would overlap: first the bubble, then the name.
+    for (const o of all) { o.w = o.s.el.offsetWidth; o.h = o.s.el.offsetHeight; const n = o.s.el.lastElementChild; o.nw = n.offsetWidth; o.nh = n.offsetHeight; }
+    all.sort((a, b) => a.rank - b.rank || a.y - b.y);
+    const placed = [];
+    const hits = (r) => placed.some((p) => r.l < p.r && r.r > p.l && r.t < p.b && r.b > p.t);
+    for (const o of all) {
+      const full = { l: o.x - o.w / 2, r: o.x + o.w / 2, t: o.y - o.h, b: o.y };
+      if (!hits(full)) { placed.push(full); continue; }
+      const name = { l: o.x - o.nw / 2, r: o.x + o.nw / 2, t: o.y - o.nh, b: o.y };
+      if (o.text && o.rank > 1) o.b.style.display = 'none';
+      if (o.rank <= 1 || !hits(name)) placed.push(o.rank <= 1 ? full : name);
+      else o.s.el.style.visibility = 'hidden';
     }
   }
 

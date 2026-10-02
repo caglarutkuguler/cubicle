@@ -166,6 +166,7 @@ const ALLOWED = [
   /^\/api\/health$/,
   /^\/api\/companies$/,
   /^\/api\/companies\/[\w-]+\/(agents|issues|heartbeat-runs)$/,
+  /^\/api\/issues\/[A-Za-z0-9-]+\/interactions$/,      // what an agent is asking you (shown, never answered here)
 ];
 // Heartbeat runs: only the latest few, so a failed run's error can be shown on the agent.
 const RUNS_QUERY = '?limit=60&summary=1';
@@ -184,6 +185,9 @@ const pick = (o, keys) => { const r = {}; for (const k of keys) if (o && o[k] !=
 // "Bash: rm -rf build" -> "Bash", "Edit secrets.env" -> "Edit", "allow Bash: git push?" -> "allow Bash"
 const toolOnly = (t) => { const x = String(t); return x.startsWith('allow ') ? x.split(':')[0] : x.split(/[:\s]/)[0]; };
 const CLOSED = new Set(['done', 'cancelled']);
+// A review path that waits on a person: the board or a user, or an interaction (questions,
+// confirmations) — Paperclip names the agent as the responder of those.
+const asksPerson = (x) => !!x && (/board|user|human/i.test(String(x.responder || '')) || x.kind === 'interaction');
 
 function shapePaperclip(pathname, data) {
   if (!Array.isArray(data)) return data;
@@ -201,6 +205,17 @@ function shapePaperclip(pathname, data) {
     ...pick(i, REDACT ? ['identifier', 'status', 'assigneeAgentId'] : ['identifier', 'title', 'status', 'assigneeAgentId']),
     reviewAttention: { paths: ((i.reviewAttention && i.reviewAttention.paths) || []).map((x) => pick(x, ['kind', 'responder', 'label'])) },
   }));
+  // Open questions to a person: the questions and their options, to read on any screen.
+  if (pathname.endsWith('/interactions')) return data.filter((x) => x && x.status === 'pending').map((x) => {
+    const qs = (x.payload && Array.isArray(x.payload.questions)) ? x.payload.questions : [];
+    return REDACT ? { id: x.id, kind: x.kind, status: x.status, count: qs.length } : {
+      ...pick(x, ['id', 'kind', 'status', 'title', 'summary', 'createdAt']),
+      questions: qs.slice(0, 10).map((q) => ({
+        ...pick(q, ['id', 'selectionMode', 'required', 'allowOther']), prompt: String(q.prompt || '').slice(0, 2000),
+        options: (Array.isArray(q.options) ? q.options : []).slice(0, 12).map((o) => ({ id: o.id, label: String(o.label || '').slice(0, 200), description: o.description ? String(o.description).slice(0, 400) : undefined })),
+      })),
+    };
+  });
   return data;
 }
 
@@ -218,7 +233,7 @@ function shapeKpi(data) {
     // what a blocked task is waiting for: how many open blockers, one of their ids, how many stalled
     blockers: i.blockerAttention && i.blockerAttention.unresolvedBlockerCount ? { n: i.blockerAttention.unresolvedBlockerCount,
       sample: i.blockerAttention.sampleBlockerIdentifier || '', stalled: i.blockerAttention.stalledBlockerCount || 0 } : null,
-    asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some((x) => /board|user|human/i.test(String(x && x.responder || ''))),
+    asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson),
   }));
 }
 

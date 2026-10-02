@@ -17,6 +17,7 @@ const TEXT = {
   en: {
     needs: (n) => `✋ <b>${n}</b> needs you`, why: 'Reason', open: 'See in Cubicle', inPaperclip: 'Open in Paperclip',
     replyHint: 'Reply to this message to answer; it becomes a comment on the issue.',
+    replyHintQ: 'Reply to this message with the option’s number, or write your own answer; it becomes a comment on the issue.', other: 'or write your own answer',
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
     paired: 'This chat is now linked to the office. You will get a message when an agent needs you.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
@@ -31,6 +32,7 @@ const TEXT = {
   tr: {
     needs: (n) => `✋ <b>${n}</b> sizi bekliyor`, why: 'Neden', open: 'Cubicle’da gör', inPaperclip: 'Paperclip’te aç',
     replyHint: 'Yanıtlamak için bu mesajı yanıtlayın; yanıtınız işe yorum olarak yazılır.',
+    replyHintQ: 'Bu mesajı seçeneğin numarasıyla ya da kendi cevabınızla yanıtlayın; yanıtınız işe yorum olarak yazılır.', other: 'ya da kendi cevabınızı yazın',
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
     paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde mesaj gelecek.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
@@ -51,6 +53,9 @@ function latestRuns(runs) {
   for (const r of Array.isArray(runs) ? runs : []) if (r && r.agentId && runTime(r) && (!latest.has(r.agentId) || runTime(r) > runTime(latest.get(r.agentId)))) latest.set(r.agentId, r);
   return latest;
 }
+// A review path that waits on a person: the board or a user, or an interaction (questions,
+// confirmations), whose responder Paperclip gives as the agent.
+const asksPerson = (x) => !!x && (/board|user|human/i.test(String(x.responder || '')) || x.kind === 'interaction');
 const tr = (lang) => TEXT[lang] || TEXT.en;
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const CLOSED = new Set(['done', 'cancelled']);
@@ -95,10 +100,10 @@ async function snapshot(self) {
         const latest = latestRuns(runs);
         for (const a of as || []) {
           const mine = (issues || []).filter((i) => i.assigneeAgentId === a.id && !CLOSED.has(i.status));
-          const ask = mine.find((i) => ((i.reviewAttention && i.reviewAttention.paths) || []).some((x) => /board|user|human/i.test(String(x && x.responder || ''))));
+          const ask = mine.find((i) => ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson));
           const task = mine.find((i) => i.status === 'in_progress') || mine[0] || null;
           const run = latest.get(a.id);
-          const askPath = ask && ask.reviewAttention.paths.find((x) => /board|user|human/i.test(String(x && x.responder || '')));
+          const askPath = ask && ask.reviewAttention.paths.find(asksPerson);
           agents.push({
             id: a.id, name: a.name, status: a.status, company: c, paperclip: cfg.paperclipUrl || src.paperclipUrl,
             needs: a.status === 'waiting' || (!!ask && a.status !== 'error'), issue: ask || (a.status === 'waiting' ? task : null), reason: askPath ? askPath.label : '',
@@ -182,18 +187,43 @@ function start(opts) {
   }
   const links = (pairs) => pairs.filter(([, u]) => u).map(([t, u]) => `<a href="${esc(u)}">${esc(t)}</a>`).join(' · ');
 
-  function needsText(a, lang) {
-    const t = tr(lang), i = a.issue;
+  // The questions an agent asks (Paperclip interactions), to read and answer right in the chat.
+  async function questionsOf(i) {
+    if (!i || !i.identifier) return [];
+    try { const b = await self(`/api/issues/${encodeURIComponent(i.identifier)}/interactions`); const list = JSON.parse(b || '[]'); return Array.isArray(list) ? list : []; } catch (_) { return []; }
+  }
+  function questionsText(list, lang) {
+    const out = [];
+    for (const x of list.slice(0, 3)) {
+      if (x.title) out.push(`❓ <b>${esc(x.title)}</b>`);
+      for (const [n, q] of (x.questions || []).slice(0, 4).entries()) {
+        if (q.prompt) out.push(`${(x.questions.length > 1) ? `<b>${n + 1})</b> ` : ''}${esc(q.prompt)}`);
+        (q.options || []).forEach((o, k) => out.push(`   <b>${k + 1}.</b> ${esc(o.label)}${o.description ? ` · <i>${esc(o.description.slice(0, 160))}</i>` : ''}`));
+        if (q.allowOther && (q.options || []).length) out.push(`   <i>${esc(tr(lang).other)}</i>`);
+      }
+    }
+    return out.join('\n').slice(0, 3200);
+  }
+  function needsText(a, lang, qs = []) {
+    const t = tr(lang), i = a.issue, q = qs.length ? questionsText(qs, lang) : '';
     return [t.needs(esc(a.name)),
       i && (i.identifier || i.title) ? `<b>${esc(i.identifier || '')}</b> ${esc(i.title || '')}` : '',
-      a.reason ? `${t.why}: ${esc(a.reason)}` : '',
-      '', links([[t.open, agentLink(a)], [t.inPaperclip, issueLink(a, i)]]),
-      opts.replies && a.company && i && i.identifier ? `<i>${esc(t.replyHint)}</i>` : ''].filter((x, k) => x || k === 3).join('\n');
+      a.reason && !q ? `${t.why}: ${esc(a.reason)}` : '',
+      q, '', links([[t.open, agentLink(a)], [t.inPaperclip, issueLink(a, i)]]),
+      opts.replies && a.company && i && i.identifier ? `<i>${esc(q ? t.replyHintQ : t.replyHint)}</i>` : ''].filter((x, k) => x || k === 4).join('\n');
+  }
+  // A reply of just a number picks that option when there is one question with options.
+  function answerFor(qs, text) {
+    const all = qs.flatMap((x) => x.questions || []);
+    const m = /^\s*(\d{1,2})\s*[.)]?\s*$/.exec(text);
+    if (m && all.length === 1) { const o = (all[0].options || [])[Number(m[1]) - 1]; if (o) return o.label; }
+    return text;
   }
   async function notifyNeeds(a) {
+    const qs = await questionsOf(a.issue);
     for (const [chat, c] of Object.entries(state.chats)) {
-      const m = await send(chat, needsText(a, c.lang));
-      if (m && a.issue && a.issue.identifier && a.company) sent.set(`${chat}:${m.message_id}`, { issue: a.issue.identifier, name: a.name });
+      const m = await send(chat, needsText(a, c.lang, qs));
+      if (m && a.issue && a.issue.identifier && a.company) sent.set(`${chat}:${m.message_id}`, { issue: a.issue.identifier, name: a.name, qs });
     }
     if (sent.size > 500) sent.delete(sent.keys().next().value);
   }
@@ -256,7 +286,7 @@ function start(opts) {
     if (m.reply_to_message && !command) {
       const ref = sent.get(`${chatId}:${m.reply_to_message.message_id}`);
       if (!ref) return send(chatId, esc(t.which));
-      return answer(chatId, lang, ref.issue, text);
+      return answer(chatId, lang, ref.issue, answerFor(ref.qs || [], text));
     }
     if (command === 'answer' || command === 'yanit' || command === 'yanıt') {
       if (rest.length < 2) return send(chatId, esc(t.which));
@@ -272,8 +302,9 @@ function start(opts) {
       const w = agents.filter((a) => a.needs);
       if (!w.length) return send(chatId, esc(t.nobody));
       for (const a of w.slice(0, 10)) {
-        const msg = await send(chatId, needsText(a, lang));
-        if (msg && a.issue && a.issue.identifier) sent.set(`${chatId}:${msg.message_id}`, { issue: a.issue.identifier, name: a.name });
+        const qs = await questionsOf(a.issue);
+        const msg = await send(chatId, needsText(a, lang, qs));
+        if (msg && a.issue && a.issue.identifier) sent.set(`${chatId}:${msg.message_id}`, { issue: a.issue.identifier, name: a.name, qs });
       }
       return null;
     }
