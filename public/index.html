@@ -10,6 +10,13 @@
   * { box-sizing: border-box; }
   body { margin:0; background:var(--bg); color:var(--text); font:13px/1.45 system-ui, "Segoe UI", sans-serif; }
   .wrap { max-width:1180px; margin:0 auto; padding:14px 16px 28px; }
+  /* Layout (⚙): the office keeps its shape and fits the window's height; on a wide window the
+     cards sit beside it instead of below. JS sets --stage-w / --stage-h. */
+  body.fit .wrap { max-width:1900px; }
+  body.fit #stage { width:var(--stage-w, 100%); margin:0 auto; }
+  body.side #main { display:grid; grid-template-columns:var(--stage-w) minmax(0, 1fr); gap:12px; align-items:start; }
+  body.side #stage { margin:0; }
+  body.side #cards { margin-top:0; max-height:var(--stage-h); overflow:auto; align-content:start; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); padding-right:2px; }
   header { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; margin-bottom:10px; }
   h1 { font-size:17px; margin:0; letter-spacing:.2px; }
   h1 small { color:var(--muted); font-weight:500; margin-left:8px; }
@@ -156,6 +163,7 @@
     </div>
   </header>
   <div id="banner"></div>
+  <div id="main">
   <div id="stage">
     <div id="view">
       <canvas id="c" width="352" height="208"></canvas>
@@ -164,8 +172,9 @@
     <div id="detail" hidden></div>
     <div id="zoomui" hidden><button type="button" data-z="in" aria-label="+">+</button><button type="button" data-z="out" aria-label="−">−</button><button type="button" data-z="reset" aria-label="1:1">⟲</button></div>
   </div>
-  <div id="news" hidden></div>
   <div id="cards"></div>
+  </div>
+  <div id="news" hidden></div>
   <dialog id="looks"></dialog>
   <dialog id="answer"><div class="head"><b></b><a target="_blank" rel="noopener"></a><button type="button" class="x"></button></div><iframe title="Paperclip"></iframe><div class="note"></div></dialog>
   <footer>
@@ -193,6 +202,7 @@
       notify: 'Desktop notification when an agent needs me', notifyBlocked: 'Notifications are blocked for this page in the browser settings.',
       sound: 'Sound', soundOff: 'Off', soundNeed: 'When an agent needs me', soundAll: 'Needs me, done and errors',
       fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
+      layout: 'Layout', layoutAuto: 'Automatic (fit the screen)', layoutSide: 'Office and cards side by side', layoutStack: 'Cards below the office',
       language: 'Language', languageAuto: 'Browser language',
       reply: 'Answer', replyTitle: (n) => `${n} is waiting for you`, openInPaperclip: 'Open in Paperclip ↗', replyNote: 'You answer on Paperclip’s own page; Cubicle itself stays read-only.', close: 'Close', anim: 'Office animation', cardsToggle: 'Agent cards', viewNote: 'With the animation off, the cards show each agent at its desk.',
       openTask: 'Open task', openRun: 'Open run log', looksName: 'Look & name', lastFail: (a) => `Last run failed · ${a}`, alias: 'Name in Cubicle', aliasHint: 'Only Cubicle shows this name; Paperclip keeps its own.', renameInPaperclip: 'Rename in Paperclip ↗',
@@ -240,6 +250,7 @@
       notify: 'Bir ajan beni beklediğinde masaüstü bildirimi', notifyBlocked: 'Bu sayfa için bildirimler tarayıcı ayarlarında engellenmiş.',
       sound: 'Ses', soundOff: 'Kapalı', soundNeed: 'Bir ajan beni beklediğinde', soundAll: 'Bekleyen, biten ve hata',
       fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
+      layout: 'Yerleşim', layoutAuto: 'Otomatik (ekrana sığdır)', layoutSide: 'Ofis ve kartlar yan yana', layoutStack: 'Kartlar ofisin altında',
       language: 'Dil', languageAuto: 'Tarayıcı dili',
       reply: 'Yanıtla', replyTitle: (n) => `${n} sizi bekliyor`, openInPaperclip: 'Paperclip’te aç ↗', replyNote: 'Yanıt Paperclip’in kendi sayfasından verilir; Cubicle salt okunur kalır.', close: 'Kapat', anim: 'Ofis animasyonu', cardsToggle: 'Ajan kartları', viewNote: 'Animasyon kapalıyken kartlar her ajanı masasında gösterir.',
       openTask: 'İşi aç', openRun: 'Çalıştırma kaydını aç', looksName: 'Görünüm ve ad', lastFail: (a) => `Son çalıştırma başarısız · ${a}`, alias: 'Cubicle’daki adı', aliasHint: 'Bu ad yalnızca Cubicle’da görünür; Paperclip kendi adını korur.', renameInPaperclip: 'Paperclip’te yeniden adlandır ↗',
@@ -287,6 +298,7 @@
       notify: 'Desktop-Benachrichtigung, wenn ein Agent mich braucht', notifyBlocked: 'Benachrichtigungen sind für diese Seite in den Browser-Einstellungen blockiert.',
       sound: 'Ton', soundOff: 'Aus', soundNeed: 'Wenn ein Agent mich braucht', soundAll: 'Braucht mich, fertig und Fehler',
       fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
+      layout: 'Anordnung', layoutAuto: 'Automatisch (an den Bildschirm anpassen)', layoutSide: 'Büro und Karten nebeneinander', layoutStack: 'Karten unter dem Büro',
       language: 'Sprache', languageAuto: 'Browsersprache',
       reply: 'Antworten', replyTitle: (n) => `${n} wartet auf Sie`, openInPaperclip: 'In Paperclip öffnen ↗', replyNote: 'Sie antworten auf der Seite von Paperclip selbst; Cubicle bleibt schreibgeschützt.', close: 'Schließen', anim: 'Büro-Animation', cardsToggle: 'Agentenkarten', viewNote: 'Ohne Animation zeigen die Karten jeden Agenten an seinem Schreibtisch.',
       openTask: 'Aufgabe öffnen', openRun: 'Lauf-Protokoll öffnen', looksName: 'Aussehen & Name', lastFail: (a) => `Letzter Lauf fehlgeschlagen · ${a}`, alias: 'Name in Cubicle', aliasHint: 'Nur Cubicle zeigt diesen Namen; Paperclip behält seinen eigenen.', renameInPaperclip: 'In Paperclip umbenennen ↗',
@@ -334,6 +346,7 @@
       notify: 'Notificación de escritorio cuando un agente me necesita', notifyBlocked: 'Las notificaciones están bloqueadas para esta página en los ajustes del navegador.',
       sound: 'Sonido', soundOff: 'Desactivado', soundNeed: 'Cuando un agente me necesita', soundAll: 'Me necesita, terminado y errores',
       fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
+      layout: 'Disposición', layoutAuto: 'Automática (ajustar a la pantalla)', layoutSide: 'Oficina y tarjetas lado a lado', layoutStack: 'Tarjetas debajo de la oficina',
       language: 'Idioma', languageAuto: 'Idioma del navegador',
       reply: 'Responder', replyTitle: (n) => `${n} te está esperando`, openInPaperclip: 'Abrir en Paperclip ↗', replyNote: 'Respondes en la propia página de Paperclip; Cubicle sigue siendo de solo lectura.', close: 'Cerrar', anim: 'Animación de la oficina', cardsToggle: 'Tarjetas de agentes', viewNote: 'Sin animación, las tarjetas muestran a cada agente en su escritorio.',
       openTask: 'Abrir tarea', openRun: 'Abrir registro de ejecución', looksName: 'Aspecto y nombre', lastFail: (a) => `La última ejecución falló · ${a}`, alias: 'Nombre en Cubicle', aliasHint: 'Solo Cubicle muestra este nombre; Paperclip conserva el suyo.', renameInPaperclip: 'Renombrar en Paperclip ↗',
@@ -381,6 +394,7 @@
       notify: 'Notification de bureau quand un agent a besoin de moi', notifyBlocked: 'Les notifications sont bloquées pour cette page dans les réglages du navigateur.',
       sound: 'Son', soundOff: 'Désactivé', soundNeed: 'Quand un agent a besoin de moi', soundAll: 'Besoin de moi, terminé et erreurs',
       fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
+      layout: 'Disposition', layoutAuto: 'Automatique (adapter à l’écran)', layoutSide: 'Bureau et cartes côte à côte', layoutStack: 'Cartes sous le bureau',
       language: 'Langue', languageAuto: 'Langue du navigateur',
       reply: 'Répondre', replyTitle: (n) => `${n} vous attend`, openInPaperclip: 'Ouvrir dans Paperclip ↗', replyNote: 'Vous répondez sur la page de Paperclip elle-même ; Cubicle reste en lecture seule.', close: 'Fermer', anim: 'Animation du bureau', cardsToggle: 'Cartes des agents', viewNote: 'Sans animation, les cartes montrent chaque agent à son bureau.',
       openTask: 'Ouvrir la tâche', openRun: 'Ouvrir le journal d’exécution', looksName: 'Apparence et nom', lastFail: (a) => `Dernière exécution en échec · ${a}`, alias: 'Nom dans Cubicle', aliasHint: 'Seul Cubicle affiche ce nom ; Paperclip garde le sien.', renameInPaperclip: 'Renommer dans Paperclip ↗',
@@ -428,6 +442,7 @@
       notify: '代理需要我时显示桌面通知', notifyBlocked: '浏览器设置中已阻止此页面的通知。',
       sound: '声音', soundOff: '关闭', soundNeed: '代理需要我时', soundAll: '需要我、完成和出错',
       fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
+      layout: '布局', layoutAuto: '自动（适应屏幕）', layoutSide: '办公室和卡片并排', layoutStack: '卡片在办公室下方',
       language: '语言', languageAuto: '浏览器语言',
       reply: '回复', replyTitle: (n) => `${n} 在等你`, openInPaperclip: '在 Paperclip 中打开 ↗', replyNote: '你在 Paperclip 自己的页面上回复；Cubicle 本身仍然只读。', close: '关闭', anim: '办公室动画', cardsToggle: '代理卡片', viewNote: '关闭动画时，卡片会显示每个代理坐在自己的桌前。',
       openTask: '打开任务', openRun: '打开运行日志', looksName: '外观和名称', lastFail: (a) => `上次运行失败 · ${a}`, alias: 'Cubicle 中的名称', aliasHint: '只有 Cubicle 显示这个名称；Paperclip 保留自己的名称。', renameInPaperclip: '在 Paperclip 中重命名 ↗',
@@ -475,6 +490,7 @@
       notify: 'إشعار على سطح المكتب عندما يحتاجني وكيل', notifyBlocked: 'الإشعارات محظورة لهذه الصفحة في إعدادات المتصفح.',
       sound: 'الصوت', soundOff: 'إيقاف', soundNeed: 'عندما يحتاجني وكيل', soundAll: 'يحتاجني، انتهى، وأخطاء',
       fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
+      layout: 'التخطيط', layoutAuto: 'تلقائي (ملاءمة الشاشة)', layoutSide: 'المكتب والبطاقات جنبًا إلى جنب', layoutStack: 'البطاقات أسفل المكتب',
       language: 'اللغة', languageAuto: 'لغة المتصفح',
       reply: 'رد', replyTitle: (n) => `${n} ينتظرك`, openInPaperclip: 'افتح في Paperclip ↗', replyNote: 'تجيب من صفحة Paperclip نفسها؛ ويبقى Cubicle للقراءة فقط.', close: 'إغلاق', anim: 'حركة المكتب', cardsToggle: 'بطاقات الوكلاء', viewNote: 'عند إيقاف الحركة، تعرض البطاقات كل وكيل على مكتبه.',
       openTask: 'افتح المهمة', openRun: 'افتح سجل التشغيل', looksName: 'المظهر والاسم', lastFail: (a) => `فشل التشغيل الأخير · ${a}`, alias: 'الاسم في Cubicle', aliasHint: 'يظهر هذا الاسم في Cubicle فقط؛ ويحتفظ Paperclip باسمه.', renameInPaperclip: 'أعد التسمية في Paperclip ↗',
@@ -569,7 +585,32 @@
     cv.style.imageRendering = theme && theme.smooth ? 'auto' : 'pixelated';
     stageEl.style.aspectRatio = `${CW} / ${CH}`;
     stageEl.style.setProperty('--ar', String(CW / CH));
+    fitLayout();
   }
+
+  // ---------- layout: the office fits the window ----------
+  // A big office grows taller (more desk rows). Instead of running off the bottom of the window,
+  // it keeps its shape and fits the height that is left; on a wide window the cards move beside
+  // it. ⚙ Layout: auto, side by side, or the old cards-below at full width.
+  const mainEl = document.getElementById('main');
+  function fitLayout() {
+    if (!mainEl) return;
+    const b = document.body;
+    let mode = 'auto'; try { mode = settings.layout || 'auto'; } catch (_) {}
+    if (KIOSK || !animOn() || mode === 'stack') { b.classList.remove('fit', 'side'); return; }
+    b.classList.add('fit');
+    const W = mainEl.clientWidth, ar = CW / CH, gap = 12, cardsMin = mode === 'side' ? 240 : 300;
+    const top = mainEl.getBoundingClientRect().top + window.scrollY;
+    const availH = Math.max(300, window.innerHeight - top - 14);
+    const fitW = Math.min(W, availH * ar + 4);                     // + the stage border
+    const side = cardsOn() && (mode === 'side' ? W >= 640 : W >= 980 && W - fitW - gap >= cardsMin);
+    const w = Math.max(240, side ? Math.min(fitW, W - gap - cardsMin) : fitW);
+    b.classList.toggle('side', side);
+    mainEl.style.setProperty('--stage-w', Math.floor(w) + 'px');
+    mainEl.style.setProperty('--stage-h', Math.floor((w - 4) / ar + 4) + 'px');
+    try { clampCam(); } catch (_) {}
+  }
+  window.addEventListener('resize', () => fitLayout());
   const SHIRTS = ['#e05d5d','#4f9dde','#57b86b','#e0a33b','#a66de0','#3bc4c4','#e07ab8','#9aa0b4','#f07b3f','#6fcf97','#c9b458','#5f7ee0'];
   const HAIRS  = ['#2b1d14','#111111','#6b3e1f','#c9a04a','#8b4513','#3b2a20','#d9d0c1','#4a2b1a'];
   const SKINS  = ['#f1c7a3','#d9a47a','#b87b52','#f5d5b8','#c68e62'];
@@ -678,8 +719,13 @@
     ];
     const tasks = ['Audit site health', 'Keyword research', 'Qualified leads shortlist', 'Review checkout flow', 'Refactor module', 'Write test checklist'];
     const spend = [[420, 2000], [1250, 2000], [2000, 2000], [1830, 2000], [0, 0], [610, 1000]];   // cents: spent, budget
+    // ?demo=20 shows a bigger office (up to 48 agents), e.g. to try the layout.
+    const want = Math.max(1, Math.min(48, parseInt(params.get('demo'), 10) || 6));
+    const ROLES = ['Backend Engineer', 'Frontend Engineer', 'Designer', 'Data Analyst', 'Support', 'DevOps', 'Researcher', 'Writer'];
+    for (let i = roster.length; i < want; i++) { roster.push([`Agent ${i + 1}`, ROLES[i % ROLES.length]]); tasks.push(`Task ${i + 1}`); spend.push([0, 0]); }
+    roster.length = tasks.length = spend.length = want;
     const agents = roster.map(([name, title], i) => ({
-      id: `demo-${i}`, name, title, createdAt: `2026-01-01T00:0${i}:00Z`, status: 'idle', errorReason: null,
+      id: `demo-${i}`, name, title, createdAt: `2026-01-01T00:${String(i).padStart(2, '0')}:00Z`, status: 'idle', errorReason: null,
       spentMonthlyCents: spend[i][0], budgetMonthlyCents: spend[i][1],
     }));
     function tick() {
@@ -941,6 +987,7 @@
   }
 
   function renderCards() {
+    fitLayout();                           // the banner or the company list may have moved the office
     const list = [...sprites.values()].sort((a, b) => a.idx - b.idx);
     const desks = !animOn() && cardsOn();
     cardsEl.innerHTML = list.map((s) => `<div class="card">${desks ? `<canvas class="desk" data-id="${esc(s.id)}"></canvas>` : ''}${cardHtml(s)}</div>`).join('');
@@ -1949,6 +1996,7 @@
   // URL parameters win, so a kiosk link always opens the same way.
   if (params.get('theme')) settings.theme = params.get('theme');
   if (['auto', '30', '15', '60'].includes(params.get('fps'))) settings.fps = params.get('fps');
+  if (['auto', 'side', 'stack'].includes(params.get('layout'))) settings.layout = params.get('layout');
   async function loadCatalog() {
     try {
       const list = await (await fetch('themes/index.json', { cache: 'no-store' })).json();
@@ -1966,7 +2014,7 @@
     document.body.classList.toggle('nocards', !cardsOn());
     if (!animOn()) select(null);
     renderCards();
-    if (animOn()) resizeCanvas();
+    if (animOn()) resizeCanvas(); else fitLayout();
   }
 
   const loadScript = (src) => new Promise((resolve) => {
@@ -2020,6 +2068,7 @@
       `<label class="check"><input type="checkbox" id="set-notify"${settings.notify ? ' checked' : ''}> ${esc(L.notify)}</label>` +
       own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
       own('fps', L.fps, [['auto', L.fpsAuto], ['30', L.fps30], ['15', L.fps15]], settings.fps || 'auto') +
+      (animOn() ? own('layout', L.layout, [['auto', L.layoutAuto], ['side', L.layoutSide], ['stack', L.layoutStack]], settings.layout || 'auto') : '') +
       own('lang', L.language, [['', L.languageAuto], ...Object.keys(STR).map((k) => [k, LANG_NAMES[k] || k])], settings.lang || '') +
       `<hr><label>${esc(L.logo)}</label><div class="row"><button type="button" id="set-logo">${esc(L.logoPick)}</button>` +
       (looks.logo ? `<button type="button" id="set-nologo">${esc(L.logoRemove)}</button>` : '') + '</div>' +
@@ -2028,6 +2077,7 @@
     panel.querySelectorAll('select').forEach((el) => el.addEventListener('change', () => {
       settings[el.dataset.key] = el.value; save();
       if (el.dataset.key === 'lang') { if (!el.value) delete settings.lang; save(); location.reload(); return; }
+      if (el.dataset.key === 'layout') { fitLayout(); clampCam(); return; }
       if (el.dataset.own) { if (el.dataset.key === 'sound' && el.value !== 'off') chime('need'); return; }
       applySettings();
     }));
