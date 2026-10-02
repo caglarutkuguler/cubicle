@@ -327,7 +327,9 @@ const server = http.createServer((req, res) => {
       : { kind: 'feed', label: x.label, path: `/api/feed/${n++}` });
     // `source`/`label`/`paperclipUrl` keep single-source pages from older versions working.
     const first = sources[0];
-    return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined, redact: REDACT, version: VERSION, build: build() }));
+    // Telegram status for the page's setup dialog; the pairing code only for a browser on this machine.
+    const telegram = TELEGRAM ? { on: true, chats: TELEGRAM.chats(), replies: TELEGRAM_REPLIES && HAS_PAPERCLIP, ...(isLoopback(req.socket.remoteAddress) ? { code: TELEGRAM.code } : {}) } : { on: false };
+    return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined, redact: REDACT, version: VERSION, build: build(), telegram }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -466,12 +468,13 @@ server.listen(PORT, HOST, () => {
     console.warn(`Warning: bound to ${HOST} with a Paperclip API key. Anyone who can reach this port can read what that key can read.`);
   }
   if (HAS_PAPERCLIP) console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
-  if (TELEGRAM_TOKEN) startTelegram();
+  if (TELEGRAM_TOKEN) TELEGRAM = startTelegram();
 });
 
+let TELEGRAM = null;
 function startTelegram() {
   const publicUrl = arg('public-url') || process.env.CUBICLE_PUBLIC_URL || `http://${['0.0.0.0', '::'].includes(HOST) ? '127.0.0.1' : HOST}:${PORT}`;
-  require('./cubicle-telegram.js').start({
+  const bot = require('./cubicle-telegram.js').start({
     token: TELEGRAM_TOKEN, self, publicUrl, replies: TELEGRAM_REPLIES && HAS_PAPERCLIP,
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
@@ -496,4 +499,5 @@ function startTelegram() {
     },
   });
   if (TELEGRAM_REPLIES && HAS_PAPERCLIP) console.log('Telegram: replies are on: a reply to a "needs you" message is posted as a comment on that Paperclip issue.');
+  return bot;
 }

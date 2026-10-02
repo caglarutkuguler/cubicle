@@ -173,7 +173,7 @@ The ⚙ menu also has:
 
 ## On Telegram (optional)
 
-The standalone server can run a Telegram bot for your office. It tells you when an agent starts needing you or a run fails, with a link that opens Cubicle on that agent and one to the issue in Paperclip, and it answers `/status`, `/waiting`, `/kpi` and `/office` (Turkish too: `/durum`, `/bekleyen`, `/ofis`).
+The standalone server can run a Telegram bot for your office. ⚙ → **📨 Telegram…** shows these steps on the page, whether this server has the bot on, and, on the machine Cubicle runs on, the pairing code. It tells you when an agent starts needing you or a run fails, with a link that opens Cubicle on that agent and one to the issue in Paperclip, and it answers `/status`, `/waiting`, `/kpi` and `/office` (Turkish too: `/durum`, `/bekleyen`, `/ofis`).
 
 1. In Telegram, talk to **@BotFather**, send `/newbot`, pick a name; it gives you a token.
 2. Start Cubicle with the token in the environment (never as a flag), and the address your phone can reach it at:

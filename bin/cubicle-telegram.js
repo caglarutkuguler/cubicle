@@ -279,7 +279,7 @@ function start(opts) {
     : `Telegram: on. To link your chat, send the bot: /start ${code}`);
   poll();
   watch();
-  return { code, stop() { stopped = true; }, snapshot: () => snapshot(self) };
+  return { code, chats: () => Object.keys(state.chats).length, stop() { stopped = true; }, snapshot: () => snapshot(self) };
 }
 
 module.exports = { start, snapshot, kpiSummary };
