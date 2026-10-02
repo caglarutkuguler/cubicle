@@ -1,7 +1,7 @@
 {
   "name": "@caglarutkuguler/cubicle",
-  "version": "0.18.0",
-  "description": "A live pixel-art office for your AI agents — Paperclip, Claude Code, or any JSON feed. Zero dependencies, read-only.",
+  "version": "0.19.0",
+  "description": "A live pixel-art office for your AI agents: Paperclip, Claude Code, Codex, Gemini CLI or any JSON feed. KPI board, Telegram alerts, HD themes. Zero dependencies, read-only.",
   "bin": {
     "cubicle": "bin/cubicle.js"
   },
@@ -31,7 +31,18 @@
     "dashboard",
     "visualization",
     "office",
-    "paperclip-plugin"
+    "paperclip-plugin",
+    "ai-office",
+    "agent-dashboard",
+    "agent-monitoring",
+    "multi-agent",
+    "llm-agents",
+    "gemini-cli",
+    "openai-codex",
+    "pixel-agents",
+    "telegram-bot",
+    "kpi-dashboard",
+    "zero-dependency"
   ],
   "repository": {
     "type": "git",

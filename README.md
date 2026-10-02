@@ -2,13 +2,13 @@
 
 **A live pixel-art office for your AI agents.** Works with [Paperclip](https://github.com/paperclipai/paperclip), [Claude Code](https://claude.com/claude-code), or any tool that can write a small JSON file.
 
-**[▶ Live demo](https://caglarutkuguler.github.io/cubicle/?lang=en)** — no install, fake agents.
+<p align="center"><a href="https://caglarutkuguler.github.io/cubicle/?lang=en"><img src="docs/demo-button.svg" alt="▶ Try the live demo" width="380"></a></p>
 
 [![npm](https://img.shields.io/npm/v/@caglarutkuguler/cubicle)](https://www.npmjs.com/package/@caglarutkuguler/cubicle) [![CI](https://github.com/caglarutkuguler/cubicle/actions/workflows/ci.yml/badge.svg)](https://github.com/caglarutkuguler/cubicle/actions/workflows/ci.yml) ![zero dependencies](https://img.shields.io/badge/dependencies-0-brightgreen) [![MIT](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 Your agents get a desk. When one starts working it walks over, sits down and starts typing, with its current task floating above its head. When it needs you, it raises a hand. When it finishes it goes back to the lounge for a coffee. If it hits an error, its screen flashes red.
 
-[![Cubicle: the same office in six themes](docs/tour.gif)](https://caglarutkuguler.github.io/cubicle/?lang=en)
+[![Cubicle: agents at their desks, a chat in the lounge, a raised hand, an error and the agent panel](docs/hero.gif)](https://caglarutkuguler.github.io/cubicle/?lang=en)
 
 - **Zero dependencies.** One small Node.js file plus one HTML page. No build step, no image assets.
 - **Read-only by design.** Cubicle only ever makes `GET` requests, and only to a short allowlist. It cannot change anything in your agent system.
@@ -17,6 +17,9 @@ Your agents get a desk. When one starts working it walks over, sits down and sta
 - **Themes.** The classic pixel office, or HD rooms: a holding HQ, a plaza office, a warehouse, a factory, a space base and a military operations room. Pick one from the ⚙ menu; a theme is one file anyone can add.
 - **Your people, your brand.** Give any agent a real face from a photo (a wizard crops the head), a hairstyle, a skirt or heels; put your logo on the wall.
 - **Tells you when you're needed.** Optional desktop notification and sound when an agent raises its hand, and a 30-second video recording of the office for sharing.
+- **Act on what you see.** Answer an agent that is waiting for you, chat with it, open its task or its failed run, all from a panel beside it, without leaving the office.
+- **A KPI board** for the tasks you gave: progress from subtasks, expected finish times, what each one waits on.
+- **Your own desk**, where agents that need you line up, and an optional **Telegram bot** that pings your phone and takes your answer.
 - **English, Turkish, German, Spanish, French, Chinese and Arabic UI** (right to left), picked from your browser language, the ⚙ menu or `?lang=xx`; words on the walls of the HD themes follow it.
 
 ## Quick start
@@ -103,6 +106,8 @@ URL parameters:
 
 ## Themes
 
+[![Cubicle: the same office in six themes](docs/tour.gif)](https://caglarutkuguler.github.io/cubicle/?lang=en&theme=plaza)
+
 [![HD themes: holding, plaza, warehouse, factory, space](docs/themes-hd.png)](https://caglarutkuguler.github.io/cubicle/?lang=en&theme=plaza)
 
 [![Military theme: land, air, naval and joint](docs/theme-military.png)](https://caglarutkuguler.github.io/cubicle/?lang=en&theme=military&branch=joint)
@@ -125,6 +130,8 @@ When a Paperclip issue moves from one agent to another, both walk to the lounge 
 
 ## Watching closely
 
+[![The agent panel: an agent waiting for your answer, with Answer, Chat and Look & name buttons](docs/panel.png)](docs/panel.png)
+
 - **Click an agent** (or its name on a card) to follow it: the office zooms in, keeps it in the middle, and a panel beside it shows its task, spend and last steps, with buttons for what you can do: ✋ answer, 📄 open the task, ⚠ open the failed run's log, ✎ look and name. The panel stays next to that agent (never on top of it) while you zoom, scroll or drag, and hides while the agent is out of view. Scroll or use the + and − buttons to zoom, drag to look around, double-click or Esc to go back.
 - **💬 Chat with an agent** without giving it a task ("how much is left on MEG-12?"): the panel's Chat button opens Paperclip's Agent Chat with that agent over the office. Paperclip ships it as an experiment; turn it on once in Paperclip → Instance settings → Experimental.
 - **Errors you can read.** When an agent's last Paperclip run failed, its card and panel show why: the error, its code, the end of the run's stderr and when it happened (with `--redact`, only the code). Issue ids open in the same dialog over the office.
@@ -139,6 +146,8 @@ When a Paperclip issue moves from one agent to another, both walk to the lounge 
 
 ## Tasks you gave: the KPI board
 
+[![The KPI board: open tasks, average progress, done in 7 days, typical time, and each task's progress and expected finish](docs/kpi.png)](https://caglarutkuguler.github.io/cubicle/?lang=en&demo&kpi)
+
 **📊 KPI** in the header opens a board of the tasks a person created in Paperclip (not the ones agents open for each other):
 
 - how many are open, their average progress, how many were finished in the last 7 days (with a 14-day bar chart), the usual time a task takes here, and how many are blocked;
@@ -147,6 +156,8 @@ When a Paperclip issue moves from one agent to another, both walk to the lounge 
 It reads the issues Paperclip already has; `?kpi` in a link opens the board directly.
 
 ## Your desk: agents queue for you
+
+[![Your desk in the plaza office: three agents that need you wait in line in front of it](docs/human-desk.png)](docs/human-desk.png)
 
 ⚙ **Your desk** (`?human=1`) puts you in the office, at the first desk. An agent that needs you no longer raises its hand at its own desk: it walks over and joins the line in front of yours, so the length of the line is how much is waiting for you. Click yourself to open the first one in line, or, when nobody is waiting, to change your own look (a photo works too).
 
@@ -171,7 +182,11 @@ The ⚙ menu also has:
 - **Record a 30 s video**: an MP4 (or WebM) of the office with names and bubbles, ready for a post. Combine it with a [replay](#sources) to get a whole day in 30 seconds.
 - **Office animation** and **Agent cards** turn either part of the page off (`?anim=0`, `?cards=0` in a link). With the animation off, nothing moves and the cards become desks: each agent sits at its desk in the current theme, drawn once per update, with the card's details below. Handy on a slow machine or a busy screen.
 
+[![With the animation off, each card shows the agent at its desk: working, or with a hand up when it needs you](docs/desk-cards.png)](docs/desk-cards.png)
+
 ## On Telegram (optional)
+
+<img src="docs/telegram.png" alt="The Telegram dialog: bot connected, a QR code to link your phone, the /start code, and one button to open the office on your phone with Tailscale" width="420" align="right">
 
 The standalone server can run a Telegram bot for your office. It tells you when an agent starts needing you or a run fails, with a link that opens Cubicle on that agent and one to the issue in Paperclip, and it answers `/status`, `/waiting`, `/kpi` and `/office` (Turkish too: `/durum`, `/bekleyen`, `/ofis`).
 
@@ -181,9 +196,16 @@ Setting it up takes three steps, all on the page (⚙ → **📨 Telegram…**, 
 2. **Paste the token** into the box and press Save. Cubicle checks it with Telegram, keeps it in `~/.cubicle/telegram-settings.json` (readable only by you) and starts the bot right away.
 3. **Link your chat.** Scan the QR code with your phone, or open the bot in the Telegram app or Telegram Web, and press *Start*. (The *Start Bot* button on a t.me page in the browser does nothing unless the Telegram app is installed on that computer.) Sending the bot the six digits shown, e.g. `/start 123456`, works too. That chat is now linked; the page shows it. Only linked chats get messages or answers. The code stays the same across restarts.
 
-**On your phone.** Links in the messages open on the computer Cubicle runs on until you give it an address your phone can reach. The simple private way is [Tailscale](https://tailscale.com) (free): install it on the computer and the phone, sign in with the same account, run `tailscale serve --bg --http 3200 http://127.0.0.1:3200` on the computer, and write the address (`http://<computer>.<tailnet>.ts.net:3200`) in step 5 of the dialog. Cubicle stays bound to 127.0.0.1; requests that come through such a proxy are never treated as "this machine", so the phone sees the office but not the settings or the pairing code. While Paperclip runs on 127.0.0.1 only, messages leave out the Paperclip link and you answer by replying in Telegram. `--public-url` sets the address from the command line instead. For a server without a browser, the token can also come from the environment: `CUBICLE_TELEGRAM_TOKEN=…`; Cubicle then prints a `/start 123456` line to send to the bot.
+**On your phone.** Links in the messages open on the computer Cubicle runs on until it has an address your phone can reach. Step 5 of the dialog sets that up with [Tailscale](https://tailscale.com) (free), which keeps the office private to your own devices:
+
+1. On the computer, install Tailscale from [tailscale.com/download](https://tailscale.com/download) and sign in (Google, Microsoft or Apple account).
+2. On the phone, install *Tailscale* from the App Store or Google Play, sign in with the same account and allow the VPN.
+3. In the dialog press **Check again**, then **Open the office on my phone**. Cubicle finds the computer's Tailscale name itself, runs `tailscale serve --bg --http 3200 http://127.0.0.1:3200` once, and from then on the links use `http://<computer>.<tailnet>.ts.net:3200`. The dialog shows the address and a QR code to try it.
+
+Cubicle stays bound to 127.0.0.1. Requests that come through such a proxy are never treated as "this machine": the phone sees the office, not the settings or the pairing code. While Paperclip runs on 127.0.0.1 only, messages leave out the Paperclip link; answer by replying in Telegram. `--public-url` sets the address from the command line instead. For a server without a browser, the token can also come from the environment: `CUBICLE_TELEGRAM_TOKEN=…`; Cubicle then prints a `/start 123456` line to send to the bot.
 
 **Answering from Telegram.** With the last switch in the dialog (or `--telegram-replies`), replying to a "needs you" message (or `/answer MEG-12 your text`) posts your text as a comment on that Paperclip issue, with the Paperclip key or as the board in Paperclip's local mode. It is the one thing Cubicle can write to Paperclip, and it is off unless you turn it on. For full conversations and Paperclip's own question forms on Telegram, Paperclip has a Telegram connection of its own (Connectors → Chat); give it a separate bot, because a bot's messages can be read by one program only.
+<br clear="right">
 
 ## Sources
 
@@ -306,6 +328,8 @@ Cubicle is a community project and is not affiliated with or endorsed by Papercl
 
 ### Türkçe
 
+**[▶ Canlı demoyu deneyin](https://caglarutkuguler.github.io/cubicle/?lang=tr)**: kurulum gerekmez, tarayıcıda sahte ajanlarla çalışır.
+
 **Cubicle**, AI ajanlarınızı canlı bir pixel ofiste gösterir: [Paperclip](https://github.com/paperclipai/paperclip) ve Claude Code hazır gelir; başka sistemler küçük bir [JSON feed](docs/FEED.md) ile bağlanır. Çalışan ajan masasına oturup yazar ve başının üstünde görevi görünür; sizi bekleyen ajan elini kaldırır; işi biten ajan dinlenme alanına döner; hata alan ajanın ekranı kırmızı yanar.
 
-Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Ofis pencerenin yüksekliğine sığar; geniş ekranda ajan kartları ofisin yanına geçer (⚙ menüsünde **Yerleşim**: otomatik, yan yana ya da kartlar altta). Arayüz tarayıcı diline göre Türkçe açılır; dil ⚙ menüsündeki **Dil** seçeneğinden ya da `?lang=tr` ile değiştirilir, HD temalardaki duvar yazıları da bu dile uyar. ⚙ menüsünden klasik piksel ofis ya da HD temalar seçilebilir: holding, plaza ofisi, depo, fabrika, uzay üssü ve askerî (Kara, Hava, Deniz veya Müşterek Kuvvetler); aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır. Her ajan kartındaki ✎ düğmesiyle ajana bir fotoğraftan kesilen gerçek bir yüz, saç modeli, etek ya da topuklu ayakkabı verilebilir; ⚙ menüsünden şirket logosu yüklenir, bir ajan sizi beklediğinde masaüstü bildirimi ve ses açılabilir, ofisin 30 saniyelik videosu kaydedilebilir. Sizi bekleyen ya da yönetime soru soran bir Paperclip ajanının kartında ✋ **Yanıtla** düğmesi çıkar: Paperclip'in kendi iş sayfası ofisin üstünde bir pencerede açılır, yanıt oradan verilir; Cubicle kendisi hiçbir şey göndermez. Bir ajana tıklayınca açılan panel ajanın hep yanında durur; yapılabilecekler düğme olarak görünür (Yanıtla, İşi aç, Çalıştırma kaydını aç, Görünüm ve ad). Son çalıştırması başarısız olan ajanın kartında hata mesajı, kodu ve çıktının sonu gösterilir. ✎ penceresinden ajana yalnızca Cubicle'da görünen bir ad verilebilir. Panelin 💬 **Sohbet** düğmesi, görev vermeden ajanla konuşmak için Paperclip'in Agent Chat'ini ofisin üstünde açar (Paperclip → Instance settings → Experimental'dan bir kez açılmalı). Başlıktaki **Paperclip ↗** Paperclip'i kendi sekmesinde açar; **📊 KPI**, bir kişinin verdiği görevlerin ilerlemesini (alt görevlerden), tahmini bitiş zamanlarını, 7 günde bitenleri ve tipik bitirme süresini gösterir. ⚙ menüsündeki **İnsan masası** açılırsa siz ilk masada oturursunuz ve sizi bekleyen ajanlar el kaldırmak yerine masanızın önünde sıraya girer. İsteğe bağlı Telegram botu ⚙ → **📨 Telegram…** penceresinden üç adımda kurulur: @BotFather'da *My Bots → Create a New Bot* ile bot oluşturulur, verdiği token pencereye yapıştırılır, penceredeki QR kodu telefonla okutulur (ya da bot Telegram uygulamasında veya Telegram Web'de açılır) ve *Başlat*'a basılır; olmazsa bota penceredeki `/start 123456` mesajı gönderilir. Bağlantıların telefonda da açılması için bilgisayara ve telefona ücretsiz Tailscale kurulup aynı hesapla girilir, Cubicle'ın Tailscale adresi pencerenin 5. adımına yazılır. Bot bir ajan sizi beklediğinde ya da çalıştırma hata verdiğinde Cubicle ve Paperclip bağlantılarıyla mesaj atar, `/durum`, `/bekleyen`, `/kpi` komutlarını yanıtlar; `--telegram-replies` açıksa mesaja verdiğiniz yanıt Paperclip'teki işe yorum olarak yazılır. ⚙ menüsündeki **Ofis animasyonu** ve **Ajan kartları** seçenekleriyle iki bölümden biri kapatılabilir; animasyon kapalıyken kartlar, her ajanı temaya uygun masasında oturur hâlde gösteren sabit masa kartlarına dönüşür.
+Paperclip içinde eklenti olarak: `npx paperclipai plugin install @caglarutkuguler/cubicle` komutundan sonra Paperclip menüsünde **Cubicle** sayfası açılır; ayrı bir sunucu gerekmez. Bağımsız kurulum: `npx @caglarutkuguler/cubicle` (Paperclip) veya `npx @caglarutkuguler/cubicle --source claude-code` (Claude Code) çalıştırın ve <http://127.0.0.1:3200> adresini açın. Kurmadan denemek için: [canlı demo](https://caglarutkuguler.github.io/cubicle/?lang=tr). Ofis pencerenin yüksekliğine sığar; geniş ekranda ajan kartları ofisin yanına geçer (⚙ menüsünde **Yerleşim**: otomatik, yan yana ya da kartlar altta). Arayüz tarayıcı diline göre Türkçe açılır; dil ⚙ menüsündeki **Dil** seçeneğinden ya da `?lang=tr` ile değiştirilir, HD temalardaki duvar yazıları da bu dile uyar. ⚙ menüsünden klasik piksel ofis ya da HD temalar seçilebilir: holding, plaza ofisi, depo, fabrika, uzay üssü ve askerî (Kara, Hava, Deniz veya Müşterek Kuvvetler); aynı seçim `?theme=military&branch=land` gibi bir linkle de yapılır. Her ajan kartındaki ✎ düğmesiyle ajana bir fotoğraftan kesilen gerçek bir yüz, saç modeli, etek ya da topuklu ayakkabı verilebilir; ⚙ menüsünden şirket logosu yüklenir, bir ajan sizi beklediğinde masaüstü bildirimi ve ses açılabilir, ofisin 30 saniyelik videosu kaydedilebilir. Sizi bekleyen ya da yönetime soru soran bir Paperclip ajanının kartında ✋ **Yanıtla** düğmesi çıkar: Paperclip'in kendi iş sayfası ofisin üstünde bir pencerede açılır, yanıt oradan verilir; Cubicle kendisi hiçbir şey göndermez. Bir ajana tıklayınca açılan panel ajanın hep yanında durur; yapılabilecekler düğme olarak görünür (Yanıtla, İşi aç, Çalıştırma kaydını aç, Görünüm ve ad). Son çalıştırması başarısız olan ajanın kartında hata mesajı, kodu ve çıktının sonu gösterilir. ✎ penceresinden ajana yalnızca Cubicle'da görünen bir ad verilebilir. Panelin 💬 **Sohbet** düğmesi, görev vermeden ajanla konuşmak için Paperclip'in Agent Chat'ini ofisin üstünde açar (Paperclip → Instance settings → Experimental'dan bir kez açılmalı). Başlıktaki **Paperclip ↗** Paperclip'i kendi sekmesinde açar; **📊 KPI**, bir kişinin verdiği görevlerin ilerlemesini (alt görevlerden), tahmini bitiş zamanlarını, 7 günde bitenleri ve tipik bitirme süresini gösterir. ⚙ menüsündeki **İnsan masası** açılırsa siz ilk masada oturursunuz ve sizi bekleyen ajanlar el kaldırmak yerine masanızın önünde sıraya girer. İsteğe bağlı Telegram botu ⚙ → **📨 Telegram…** penceresinden üç adımda kurulur: @BotFather'da *My Bots → Create a New Bot* ile bot oluşturulur, verdiği token pencereye yapıştırılır, penceredeki QR kodu telefonla okutulur (ya da bot Telegram uygulamasında veya Telegram Web'de açılır) ve *Başlat*'a basılır; olmazsa bota penceredeki `/start 123456` mesajı gönderilir. Bağlantıların telefonda da açılması için bilgisayara (tailscale.com/download) ve telefona (App Store / Google Play) ücretsiz Tailscale kurulup aynı hesapla girilir; pencerenin 5. adımındaki **Ofisi telefonumda aç** düğmesi bilgisayarın Tailscale adresini kendisi bulur ve bağlantıları o adrese çevirir. Bot bir ajan sizi beklediğinde ya da çalıştırma hata verdiğinde Cubicle ve Paperclip bağlantılarıyla mesaj atar, `/durum`, `/bekleyen`, `/kpi` komutlarını yanıtlar; `--telegram-replies` açıksa mesaja verdiğiniz yanıt Paperclip'teki işe yorum olarak yazılır. ⚙ menüsündeki **Ofis animasyonu** ve **Ajan kartları** seçenekleriyle iki bölümden biri kapatılabilir; animasyon kapalıyken kartlar, her ajanı temaya uygun masasında oturur hâlde gösteren sabit masa kartlarına dönüşür.

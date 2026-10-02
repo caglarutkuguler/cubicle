@@ -481,6 +481,41 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { tg.close(); }
   }
 
+  // Tailscale (for the phone): found and read with `tailscale status`; `tailscale serve` only on a PUT
+  // from this machine, after which the links in messages use the tailnet address
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-ts-'));
+    const port = 3400 + Math.floor(Math.random() * 500);
+    const bin = path.join(dir, 'tailscale');
+    fs.writeFileSync(bin, `#!/bin/sh
+case "$1 $2" in
+  "status --json") echo '{"BackendState":"Running","Self":{"DNSName":"pc.tail1.ts.net."},"Peer":{"x":{"OS":"android"}}}';;
+  "serve status") [ -f ${dir}/served ] && echo '{"Web":{"pc.tail1.ts.net:${port}":{"Handlers":{"/":{"Proxy":"http://127.0.0.1:${port}"}}}}}' || echo '{}';;
+  "serve --bg") echo "$@" > ${dir}/served;;
+esac
+`, { mode: 0o755 });
+    const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--source', path.join(dir, 'none.json')], { stdio: 'ignore',
+      env: { ...process.env, CUBICLE_TAILSCALE: bin, CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 'tg.json') } });
+    const base = `http://127.0.0.1:${port}`;
+    const req = (method, headers = {}) => new Promise((resolve) => {
+      const q = http.request(`${base}/api/tailscale`, { method, headers }, (r) => { let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve({ status: r.statusCode, body: b ? JSON.parse(b) : {} })); });
+      q.end(method === 'PUT' ? '{}' : undefined);
+    });
+    try {
+      await sleep(700);
+      const st = (await req('GET')).body;
+      assert.ok(st.found && st.running && !st.served && st.phones === 1 && st.dns === 'pc.tail1.ts.net', JSON.stringify(st));
+      assert.strictEqual((await req('GET', { 'x-forwarded-for': '100.64.0.9' })).status, 403, 'not through the proxy');
+      assert.strictEqual((await req('PUT', { 'content-type': 'application/json' })).status, 400, 'needs the page header');
+      assert.ok(!fs.existsSync(path.join(dir, 'served')));
+      const ok = await req('PUT', { 'content-type': 'application/json', 'x-cubicle': '1' });
+      assert.strictEqual(ok.status, 200); assert.strictEqual(ok.body.url, `http://pc.tail1.ts.net:${port}`);
+      assert.strictEqual(fs.readFileSync(path.join(dir, 'served'), 'utf8').trim(), `serve --bg --http ${port} http://127.0.0.1:${port}`);
+      assert.strictEqual(JSON.parse(fs.readFileSync(path.join(dir, 'tg.json'), 'utf8')).publicUrl, `http://pc.tail1.ts.net:${port}`);
+    } finally { p.kill(); }
+  }
+
   // --record writes what the page would read; replay:<file> serves it back (#4)
   {
     const fs = require('fs'); const os = require('os');

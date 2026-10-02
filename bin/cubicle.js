@@ -324,6 +324,7 @@ const server = http.createServer((req, res) => {
 
   if (url.pathname === '/api/appearance') return serveAppearance(req, res);
   if (url.pathname === '/api/telegram') return serveTelegram(req, res);
+  if (url.pathname === '/api/tailscale') return serveTailscale(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -544,6 +545,59 @@ function serveTelegram(req, res) {
     } catch (e) { return send(res, 500, JSON.stringify({ error: `cannot write ${TG_SETTINGS}` })); }
     if ('token' in data) restartTelegram(); else if (TELEGRAM) { TELEGRAM.setReplies(tgReplies()); TELEGRAM.setPublicUrl(tgPublicUrl()); }
     setTimeout(() => send(res, 200, JSON.stringify(telegramStatus(req))), 'token' in data && data.token ? 1200 : 0);   // let getMe fill in the name
+  });
+}
+
+// Tailscale, for opening the office (and the links in Telegram messages) on a phone. Cubicle only
+// looks: `tailscale status` and `tailscale serve status`. The one change, `tailscale serve` for this
+// port, runs only when someone presses the button on this machine (same rules as the settings).
+const TS_BINS = process.env.CUBICLE_TAILSCALE ? [process.env.CUBICLE_TAILSCALE]
+  : ['tailscale', '/mnt/c/Program Files/Tailscale/tailscale.exe', '/Applications/Tailscale.app/Contents/MacOS/Tailscale', 'C:\\Program Files\\Tailscale\\tailscale.exe'];
+function tsRun(bin, args) {
+  return new Promise((resolve) => require('child_process').execFile(bin, args, { timeout: 6000, windowsHide: true, maxBuffer: 2 * 1024 * 1024 },
+    (err, out) => resolve(err && !out ? null : String(out || ''))));
+}
+async function tailscaleInfo() {
+  for (const bin of TS_BINS) {
+    const raw = await tsRun(bin, ['status', '--json']);
+    if (raw == null) continue;
+    let st = {}; try { st = JSON.parse(raw); } catch (_) { return { found: true, bin, running: false }; }
+    const dns = String((st.Self && st.Self.DNSName) || '').replace(/\.$/, '');
+    const running = st.BackendState === 'Running' && !!dns;
+    let served = false;
+    if (running) {
+      let sv = {}; try { sv = JSON.parse((await tsRun(bin, ['serve', 'status', '--json'])) || '{}'); } catch (_) {}
+      served = Object.entries(sv.Web || {}).some(([host, w]) => host.endsWith(`:${PORT}`)
+        && Object.values((w && w.Handlers) || {}).some((h) => h && new RegExp(`^https?://(127\\.0\\.0\\.1|localhost):${PORT}/?$`).test(String(h.Proxy || ''))));
+    }
+    const devices = Object.values(st.Peer || {}).map((x) => x && x.OS).filter(Boolean);
+    return { found: true, bin, running, dns, served, url: running ? `http://${dns}:${PORT}` : '', phones: devices.filter((o) => /ios|android/i.test(o)).length };
+  }
+  return { found: false };
+}
+function serveTailscale(req, res) {
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    return tailscaleInfo().then((t) => { const { bin, ...pub } = t; send(res, 200, JSON.stringify({ ...pub, cmd: `tailscale serve --bg --http ${PORT} http://127.0.0.1:${PORT}` })); });
+  }
+  if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');
+  if (!/^application\/json/.test(req.headers['content-type'] || '') || req.headers['x-cubicle'] !== '1') return send(res, 400, '{"error":"bad request"}');
+  const origin = req.headers.origin;
+  if (origin && new URL(origin).host !== req.headers.host) return send(res, 403, '{"error":"cross-origin"}');
+  req.resume();
+  req.on('end', async () => {
+    const t = await tailscaleInfo();
+    if (!t.found || !t.running) return send(res, 409, '{"error":"tailscale"}');
+    if (!t.served) await tsRun(t.bin, ['serve', '--bg', '--http', String(PORT), `http://127.0.0.1:${PORT}`]);
+    const after = await tailscaleInfo();
+    if (!after.served) return send(res, 500, '{"error":"serve"}');
+    // the links in Telegram messages use it from now on (unless --public-url says otherwise)
+    if (!PUBLIC_URL_FLAG) {
+      try { fs.mkdirSync(path.dirname(TG_SETTINGS), { recursive: true }); fs.writeFileSync(TG_SETTINGS, JSON.stringify({ ...tgSettings(), publicUrl: after.url }), { mode: 0o600 }); fs.chmodSync(TG_SETTINGS, 0o600); } catch (_) {}
+      if (TELEGRAM) TELEGRAM.setPublicUrl(tgPublicUrl());
+    }
+    const { bin, ...pub } = after;
+    send(res, 200, JSON.stringify(pub));
   });
 }
 

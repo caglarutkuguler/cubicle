@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'public/**'
+      - 'docs/social.png'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -26,8 +27,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      # the page itself, plus what search engines and link previews look for
+      - name: Assemble the site
+        run: |
+          mkdir _site && cp -r public/. _site/ && cp docs/social.png _site/social.png
+          printf 'User-agent: *\nAllow: /\nSitemap: https://caglarutkuguler.github.io/cubicle/sitemap.xml\n' > _site/robots.txt
+          printf '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n<url><loc>https://caglarutkuguler.github.io/cubicle/</loc><lastmod>%s</lastmod></url>\n</urlset>\n' "$(date -u +%F)" > _site/sitemap.xml
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: public
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -3,7 +3,17 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cubicle</title>
+<title>Cubicle · a live pixel-art office for your AI agents</title>
+<meta name="description" content="Cubicle shows your AI agents (Paperclip, Claude Code, Codex, Gemini CLI) as people in a live pixel-art or HD office: who is working, who needs you, who failed. Open source, zero dependencies, read-only.">
+<link rel="canonical" href="https://caglarutkuguler.github.io/cubicle/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Cubicle">
+<meta property="og:title" content="Cubicle · a live pixel-art office for your AI agents">
+<meta property="og:description" content="Watch Paperclip, Claude Code, Codex or Gemini CLI agents work in a live office: desks, raised hands, errors, a KPI board and Telegram alerts. Open source, zero dependencies.">
+<meta property="og:url" content="https://caglarutkuguler.github.io/cubicle/">
+<meta property="og:image" content="https://caglarutkuguler.github.io/cubicle/social.png">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{"@context":"https://schema.org","@type":"SoftwareApplication","name":"Cubicle","applicationCategory":"DeveloperApplication","operatingSystem":"Windows, macOS, Linux","description":"A live pixel-art office for AI agents: Paperclip, Claude Code, Codex CLI, Gemini CLI or any JSON feed. Zero dependencies, read-only.","url":"https://caglarutkuguler.github.io/cubicle/","downloadUrl":"https://www.npmjs.com/package/@caglarutkuguler/cubicle","codeRepository":"https://github.com/caglarutkuguler/cubicle","license":"https://opensource.org/licenses/MIT","offers":{"@type":"Offer","price":"0","priceCurrency":"USD"},"author":{"@type":"Person","name":"Çağlar Utku Güler"}}</script>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%23222536'/%3E%3Crect x='3' y='3' width='10' height='6' fill='%235cc8f0'/%3E%3Crect x='2' y='11' width='12' height='2' fill='%238b5a2b'/%3E%3C/svg%3E">
 <style>
   :root { --bg:#171926; --panel:#222536; --line:#33374d; --text:#e9e7f2; --muted:#9a9bb3; --link:#9ec5ff; }
@@ -155,6 +165,8 @@
   #tg svg.qr { display:block; border-radius:6px; }
   #tg .tgcode { flex:1; background:#14161f; border:1px solid var(--line); border-radius:6px; padding:6px 8px; font-size:15px; letter-spacing:.5px; user-select:all; }
   #tg .small { font-size:12px; }
+  #tg ol.tssteps { margin:6px 0 8px; padding-left:20px; } #tg ol.tssteps li { margin:4px 0; }
+  #tg details summary { cursor:pointer; margin-top:6px; }
   #tg .tgrow input { flex:1; min-width:0; background:#14161f; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 8px; font:inherit; font-size:13px; }
   #tg .act { display:inline-block; text-decoration:none; }
   #tg .err { color:#ffb3b8; font-size:12px; min-height:1em; margin:4px 0 0; } #tg .ok { color:#9ff0b4; }
@@ -285,7 +297,12 @@
       tgOpenWeb: 'Telegram Web', tgScan: 'Scan with your phone', tgOrSend: 'If “Start” does nothing, send the bot this message:', tgCopy: 'Copy', tgCopied: 'Copied',
       tgNoApp: 'The “Start Bot” button on the t.me page works only if the Telegram app is installed on this computer. Otherwise use your phone or Telegram Web.',
       tgWrong: 'The bot got a message, but without the right code. Send it the message above.', tgPoll: { conflict: 'Another program is reading this bot (Paperclip’s own Telegram connection?). Give Cubicle a bot of its own.', unreachable: 'Telegram cannot be reached from this computer. Check the internet connection.', refused: 'Telegram refused the token. Disconnect and paste it again.' },
-      tg5: 'Optional: open the links on your phone', tg5Text: 'Right now the links in the messages open only on this computer. To open them on your phone too, use Tailscale (free): install it on this computer and on your phone and sign in with the same account on both. Then write Cubicle’s Tailscale address here.',
+      tg5: 'Optional: open the links on your phone', tg5Text: 'Right now the links in the messages open only on this computer. To open them on your phone, Cubicle uses Tailscale (free): the office then opens only on your own devices.',
+      ts1: 'On this computer: download Tailscale from tailscale.com/download and install it. It then opens a sign-in page; sign in with your Google, Microsoft or Apple account.', ts2: 'On your phone: search for “Tailscale” in the App Store or Google Play and install it. Open it, sign in with the same account as on the computer, and allow the VPN when asked.', ts3: 'Come back here and press “Check again”.',
+      tsDownload: 'Download Tailscale', tsCheck: 'Check again', tsChecking: 'Checking…', tsOff: 'Tailscale is installed but not connected. Click the Tailscale icon in the taskbar (next to the clock) and sign in or press “Connect”, then check again.',
+      tsOn: (d) => `✓ Tailscale is running on this computer (${d}).`, tsServe: 'Open the office on my phone', tsServeNote: 'Only devices signed in to your Tailscale account can open it; the settings and the pairing code stay on this computer.',
+      tsNoPhone: 'No phone in your Tailscale account yet: install Tailscale on the phone and sign in with the same account.', tsFail: 'Tailscale did not accept it. Run this once on this computer (PowerShell or Terminal):',
+      tsPhoneOn: 'On the phone, the Tailscale app must be on (connected).', tsManual: 'Or write an address yourself',
       tgPhonePh: 'e.g. http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links open at ${u}`, tgPhoneTry: 'Open it on your phone to try', tgPhoneFixed: 'The address was given when Cubicle started (--public-url).', tgPhoneClear: 'Remove',
       tgEmbed: 'The Telegram bot belongs to the standalone Cubicle running on this computer, not to the office inside Paperclip. Open it and press ⚙ → Telegram there:', tgOpenStandalone: 'Open Cubicle',
       iss: { backlog: 'backlog', todo: 'to do', in_progress: 'in progress', in_review: 'in review', blocked: 'blocked', done: 'done', cancelled: 'cancelled' },
@@ -355,7 +372,12 @@
       tgOpenWeb: 'Telegram Web', tgScan: 'Telefonla okutun', tgOrSend: '“Başlat” bir şey yapmazsa bota şu mesajı gönderin:', tgCopy: 'Kopyala', tgCopied: 'Kopyalandı',
       tgNoApp: 't.me sayfasındaki “Start Bot” düğmesi yalnızca bu bilgisayarda Telegram uygulaması kuruluysa çalışır. Değilse telefonu ya da Telegram Web’i kullanın.',
       tgWrong: 'Bot bir mesaj aldı ama doğru kod yoktu. Yukarıdaki mesajı gönderin.', tgPoll: { conflict: 'Bu botu başka bir program da okuyor (Paperclip’in kendi Telegram bağlantısı olabilir). Cubicle’a ayrı bir bot verin.', unreachable: 'Bu bilgisayardan Telegram’a ulaşılamıyor. İnternet bağlantısını kontrol edin.', refused: 'Telegram anahtarı reddetti. Bağlantıyı kesip yeniden yapıştırın.' },
-      tg5: 'İsteğe bağlı: bağlantılar telefonda da açılsın', tg5Text: 'Mesajlardaki bağlantılar şu an yalnızca bu bilgisayarda açılır. Telefonda da açılması için ücretsiz Tailscale’i kullanın: bu bilgisayara ve telefona kurun, ikisinde de aynı hesapla giriş yapın. Sonra Cubicle’ın Tailscale adresini buraya yazın.',
+      tg5: 'İsteğe bağlı: bağlantılar telefonda da açılsın', tg5Text: 'Mesajlardaki bağlantılar şu an yalnızca bu bilgisayarda açılır. Telefonda da açılması için Cubicle ücretsiz Tailscale’i kullanır; ofis yalnızca sizin cihazlarınızda açılır.',
+      ts1: 'Bu bilgisayarda: tailscale.com/download sayfasından Tailscale’i indirip kurun. Kurulumdan sonra bir giriş sayfası açılır; Google, Microsoft ya da Apple hesabınızla giriş yapın.', ts2: 'Telefonda: App Store’da ya da Google Play’de “Tailscale” aratıp yükleyin. Uygulamayı açın, bilgisayardakiyle aynı hesapla giriş yapın ve VPN izni sorulunca “İzin ver”e basın.', ts3: 'Bu pencereye dönüp “Yeniden kontrol et”e basın.',
+      tsDownload: 'Tailscale’i indir', tsCheck: 'Yeniden kontrol et', tsChecking: 'Kontrol ediliyor…', tsOff: 'Tailscale kurulu ama bağlı değil. Görev çubuğunda saatin yanındaki Tailscale simgesine tıklayıp giriş yapın ya da “Connect”e basın, sonra yeniden kontrol edin.',
+      tsOn: (d) => `✓ Tailscale bu bilgisayarda çalışıyor (${d}).`, tsServe: 'Ofisi telefonumda aç', tsServeNote: 'Ofisi yalnızca Tailscale hesabınıza bağlı cihazlar açabilir; ayarlar ve eşleme kodu bu bilgisayarda kalır.',
+      tsNoPhone: 'Tailscale hesabınızda henüz telefon görünmüyor: telefona Tailscale’i kurup aynı hesapla giriş yapın.', tsFail: 'Tailscale bunu kabul etmedi. Bu bilgisayarda bir kez şu komutu çalıştırın (PowerShell ya da Terminal):',
+      tsPhoneOn: 'Telefonda Tailscale uygulaması açık (bağlı) olmalı.', tsManual: 'Ya da adresi kendiniz yazın',
       tgPhonePh: 'ör. http://bilgisayarim.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Bağlantılar ${u} adresinde açılır`, tgPhoneTry: 'Denemek için telefonda açın', tgPhoneFixed: 'Adres, Cubicle başlatılırken verildi (--public-url).', tgPhoneClear: 'Kaldır',
       tgEmbed: 'Telegram botu, Paperclip içindeki ofise değil, bu bilgisayarda çalışan bağımsız Cubicle’a aittir. Onu açıp orada ⚙ → Telegram’a basın:', tgOpenStandalone: 'Cubicle’ı aç',
       iss: { backlog: 'bekleme listesi', todo: 'yapılacak', in_progress: 'sürüyor', in_review: 'incelemede', blocked: 'engelli', done: 'bitti', cancelled: 'iptal' },
@@ -425,7 +447,12 @@
       tgOpenWeb: 'Telegram Web', tgScan: 'Mit dem Handy scannen', tgOrSend: 'Wenn „Start“ nichts tut, schicken Sie dem Bot diese Nachricht:', tgCopy: 'Kopieren', tgCopied: 'Kopiert',
       tgNoApp: 'Der Knopf „Start Bot“ auf der t.me-Seite funktioniert nur, wenn die Telegram-App auf diesem Rechner installiert ist. Sonst nehmen Sie das Handy oder Telegram Web.',
       tgWrong: 'Der Bot hat eine Nachricht bekommen, aber ohne den richtigen Code. Schicken Sie die Nachricht oben.', tgPoll: { conflict: 'Ein anderes Programm liest diesen Bot (die eigene Telegram-Verbindung von Paperclip?). Geben Sie Cubicle einen eigenen Bot.', unreachable: 'Telegram ist von diesem Rechner aus nicht erreichbar. Prüfen Sie die Internetverbindung.', refused: 'Telegram hat den Token abgelehnt. Trennen und neu einfügen.' },
-      tg5: 'Optional: Links auf dem Handy öffnen', tg5Text: 'Im Moment öffnen sich die Links in den Nachrichten nur auf diesem Rechner. Damit sie auch auf dem Handy aufgehen, nutzen Sie Tailscale (kostenlos): auf diesem Rechner und dem Handy installieren und auf beiden mit demselben Konto anmelden. Dann die Tailscale-Adresse von Cubicle hier eintragen.',
+      tg5: 'Optional: Links auf dem Handy öffnen', tg5Text: 'Im Moment öffnen sich die Links in den Nachrichten nur auf diesem Rechner. Für das Handy nutzt Cubicle Tailscale (kostenlos): das Büro öffnet sich dann nur auf Ihren eigenen Geräten.',
+      ts1: 'Auf diesem Rechner: Tailscale von tailscale.com/download laden und installieren. Danach öffnet sich eine Anmeldeseite; mit dem Google-, Microsoft- oder Apple-Konto anmelden.', ts2: 'Auf dem Handy: im App Store oder bei Google Play „Tailscale“ suchen und installieren. Öffnen, mit demselben Konto wie am Rechner anmelden und das VPN erlauben.', ts3: 'Hierher zurückkommen und „Erneut prüfen“ drücken.',
+      tsDownload: 'Tailscale laden', tsCheck: 'Erneut prüfen', tsChecking: 'Wird geprüft…', tsOff: 'Tailscale ist installiert, aber nicht verbunden. Auf das Tailscale-Symbol in der Taskleiste (bei der Uhr) klicken und anmelden oder „Connect“ drücken, dann erneut prüfen.',
+      tsOn: (d) => `✓ Tailscale läuft auf diesem Rechner (${d}).`, tsServe: 'Büro auf meinem Handy öffnen', tsServeNote: 'Nur Geräte in Ihrem Tailscale-Konto können es öffnen; Einstellungen und Code bleiben auf diesem Rechner.',
+      tsNoPhone: 'Noch kein Handy in Ihrem Tailscale-Konto: Tailscale auf dem Handy installieren und mit demselben Konto anmelden.', tsFail: 'Tailscale hat es nicht angenommen. Einmal auf diesem Rechner ausführen (PowerShell oder Terminal):',
+      tsPhoneOn: 'Auf dem Handy muss die Tailscale-App eingeschaltet (verbunden) sein.', tsManual: 'Oder eine Adresse selbst eintragen',
       tgPhonePh: 'z. B. http://mein-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links öffnen sich unter ${u}`, tgPhoneTry: 'Zum Testen auf dem Handy öffnen', tgPhoneFixed: 'Die Adresse wurde beim Start angegeben (--public-url).', tgPhoneClear: 'Entfernen',
       tgEmbed: 'Der Telegram-Bot gehört zum eigenständigen Cubicle auf diesem Rechner, nicht zum Büro in Paperclip. Öffnen Sie es und drücken Sie dort ⚙ → Telegram:', tgOpenStandalone: 'Cubicle öffnen',
       iss: { backlog: 'Backlog', todo: 'offen', in_progress: 'in Arbeit', in_review: 'im Review', blocked: 'blockiert', done: 'erledigt', cancelled: 'abgebrochen' },
@@ -495,7 +522,12 @@
       tgOpenWeb: 'Telegram Web', tgScan: 'Escanéalo con el móvil', tgOrSend: 'Si «Iniciar» no hace nada, envía al bot este mensaje:', tgCopy: 'Copiar', tgCopied: 'Copiado',
       tgNoApp: 'El botón «Start Bot» de la página t.me solo funciona si la app de Telegram está instalada en este equipo. Si no, usa el móvil o Telegram Web.',
       tgWrong: 'El bot recibió un mensaje, pero sin el código correcto. Envía el mensaje de arriba.', tgPoll: { conflict: 'Otro programa está leyendo este bot (¿la conexión de Telegram de Paperclip?). Dale a Cubicle un bot propio.', unreachable: 'No se puede llegar a Telegram desde este equipo. Revisa la conexión a internet.', refused: 'Telegram rechazó el token. Desconecta y pégalo de nuevo.' },
-      tg5: 'Opcional: abrir los enlaces en el móvil', tg5Text: 'Ahora los enlaces de los mensajes solo se abren en este equipo. Para abrirlos también en el móvil, usa Tailscale (gratis): instálalo en este equipo y en el móvil e inicia sesión con la misma cuenta en ambos. Luego escribe aquí la dirección de Tailscale de Cubicle.',
+      tg5: 'Opcional: abrir los enlaces en el móvil', tg5Text: 'Ahora los enlaces de los mensajes solo se abren en este equipo. Para abrirlos en el móvil, Cubicle usa Tailscale (gratis): la oficina solo se abre en tus propios dispositivos.',
+      ts1: 'En este equipo: descarga Tailscale de tailscale.com/download e instálalo. Luego se abre una página de acceso; entra con tu cuenta de Google, Microsoft o Apple.', ts2: 'En el móvil: busca «Tailscale» en App Store o Google Play e instálalo. Ábrelo, entra con la misma cuenta que en el equipo y permite la VPN cuando lo pida.', ts3: 'Vuelve aquí y pulsa «Comprobar de nuevo».',
+      tsDownload: 'Descargar Tailscale', tsCheck: 'Comprobar de nuevo', tsChecking: 'Comprobando…', tsOff: 'Tailscale está instalado pero no conectado. Haz clic en el icono de Tailscale de la barra de tareas (junto al reloj) e inicia sesión o pulsa «Connect»; luego comprueba de nuevo.',
+      tsOn: (d) => `✓ Tailscale funciona en este equipo (${d}).`, tsServe: 'Abrir la oficina en mi móvil', tsServeNote: 'Solo los dispositivos de tu cuenta de Tailscale pueden abrirla; los ajustes y el código se quedan en este equipo.',
+      tsNoPhone: 'Aún no hay ningún móvil en tu cuenta de Tailscale: instálalo en el móvil y entra con la misma cuenta.', tsFail: 'Tailscale no lo aceptó. Ejecuta esto una vez en este equipo (PowerShell o Terminal):',
+      tsPhoneOn: 'En el móvil, la app de Tailscale debe estar activada (conectada).', tsManual: 'O escribe una dirección tú mismo',
       tgPhonePh: 'p. ej. http://mi-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Los enlaces se abren en ${u}`, tgPhoneTry: 'Ábrelo en el móvil para probar', tgPhoneFixed: 'La dirección se dio al iniciar Cubicle (--public-url).', tgPhoneClear: 'Quitar',
       tgEmbed: 'El bot de Telegram pertenece al Cubicle independiente de este equipo, no a la oficina dentro de Paperclip. Ábrelo y pulsa allí ⚙ → Telegram:', tgOpenStandalone: 'Abrir Cubicle',
       iss: { backlog: 'pendiente', todo: 'por hacer', in_progress: 'en curso', in_review: 'en revisión', blocked: 'bloqueada', done: 'terminada', cancelled: 'cancelada' },
@@ -565,7 +597,12 @@
       tgOpenWeb: 'Telegram Web', tgScan: 'Scannez avec le téléphone', tgOrSend: 'Si « Démarrer » ne fait rien, envoyez ce message au bot :', tgCopy: 'Copier', tgCopied: 'Copié',
       tgNoApp: 'Le bouton « Start Bot » de la page t.me ne marche que si l’application Telegram est installée sur cet ordinateur. Sinon, utilisez le téléphone ou Telegram Web.',
       tgWrong: 'Le bot a reçu un message, mais sans le bon code. Envoyez le message ci-dessus.', tgPoll: { conflict: 'Un autre programme lit ce bot (la connexion Telegram de Paperclip ?). Donnez à Cubicle son propre bot.', unreachable: 'Telegram est injoignable depuis cet ordinateur. Vérifiez la connexion internet.', refused: 'Telegram a refusé le jeton. Déconnectez et collez-le à nouveau.' },
-      tg5: 'Facultatif : ouvrir les liens sur le téléphone', tg5Text: 'Pour l’instant les liens des messages ne s’ouvrent que sur cet ordinateur. Pour les ouvrir aussi sur le téléphone, utilisez Tailscale (gratuit) : installez-le sur cet ordinateur et sur le téléphone, et connectez-vous avec le même compte sur les deux. Puis écrivez ici l’adresse Tailscale de Cubicle.',
+      tg5: 'Facultatif : ouvrir les liens sur le téléphone', tg5Text: 'Pour l’instant les liens des messages ne s’ouvrent que sur cet ordinateur. Pour le téléphone, Cubicle utilise Tailscale (gratuit) : le bureau ne s’ouvre alors que sur vos propres appareils.',
+      ts1: 'Sur cet ordinateur : téléchargez Tailscale sur tailscale.com/download et installez-le. Une page de connexion s’ouvre ensuite ; connectez-vous avec votre compte Google, Microsoft ou Apple.', ts2: 'Sur le téléphone : cherchez « Tailscale » dans l’App Store ou Google Play et installez-le. Ouvrez-le, connectez-vous avec le même compte que sur l’ordinateur et autorisez le VPN.', ts3: 'Revenez ici et appuyez sur « Vérifier à nouveau ».',
+      tsDownload: 'Télécharger Tailscale', tsCheck: 'Vérifier à nouveau', tsChecking: 'Vérification…', tsOff: 'Tailscale est installé mais pas connecté. Cliquez sur l’icône Tailscale de la barre des tâches (près de l’horloge) et connectez-vous ou appuyez sur « Connect », puis vérifiez à nouveau.',
+      tsOn: (d) => `✓ Tailscale fonctionne sur cet ordinateur (${d}).`, tsServe: 'Ouvrir le bureau sur mon téléphone', tsServeNote: 'Seuls les appareils de votre compte Tailscale peuvent l’ouvrir ; les réglages et le code restent sur cet ordinateur.',
+      tsNoPhone: 'Aucun téléphone dans votre compte Tailscale pour l’instant : installez Tailscale sur le téléphone et connectez-vous avec le même compte.', tsFail: 'Tailscale ne l’a pas accepté. Lancez ceci une fois sur cet ordinateur (PowerShell ou Terminal) :',
+      tsPhoneOn: 'Sur le téléphone, l’application Tailscale doit être activée (connectée).', tsManual: 'Ou écrivez une adresse vous-même',
       tgPhonePh: 'ex. http://mon-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Les liens s’ouvrent sur ${u}`, tgPhoneTry: 'Ouvrez-la sur le téléphone pour essayer', tgPhoneFixed: 'L’adresse a été donnée au démarrage (--public-url).', tgPhoneClear: 'Retirer',
       tgEmbed: 'Le bot Telegram appartient au Cubicle autonome de cet ordinateur, pas au bureau dans Paperclip. Ouvrez-le et appuyez sur ⚙ → Telegram :', tgOpenStandalone: 'Ouvrir Cubicle',
       iss: { backlog: 'en attente', todo: 'à faire', in_progress: 'en cours', in_review: 'en revue', blocked: 'bloquée', done: 'terminée', cancelled: 'annulée' },
@@ -635,7 +672,12 @@
       tgOpenWeb: 'Telegram 网页版', tgScan: '用手机扫描', tgOrSend: '如果点“开始”没有反应，就给机器人发这条消息：', tgCopy: '复制', tgCopied: '已复制',
       tgNoApp: 't.me 页面上的 “Start Bot” 按钮只有在这台电脑装了 Telegram 应用时才有用。否则请用手机或 Telegram 网页版。',
       tgWrong: '机器人收到了消息，但没有正确的代码。请发送上面的消息。', tgPoll: { conflict: '另一个程序也在读取这个机器人（可能是 Paperclip 自己的 Telegram 连接）。请给 Cubicle 单独建一个机器人。', unreachable: '这台电脑连不上 Telegram。请检查网络连接。', refused: 'Telegram 拒绝了这个令牌。请断开后重新粘贴。' },
-      tg5: '可选：在手机上打开链接', tg5Text: '现在消息中的链接只能在这台电脑上打开。想在手机上也能打开，请使用免费的 Tailscale：在这台电脑和手机上都安装，并用同一个账号登录。然后在这里填写 Cubicle 的 Tailscale 地址。',
+      tg5: '可选：在手机上打开链接', tg5Text: '现在消息中的链接只能在这台电脑上打开。要在手机上打开，Cubicle 使用免费的 Tailscale：办公室只会在你自己的设备上打开。',
+      ts1: '在这台电脑上：从 tailscale.com/download 下载并安装 Tailscale。安装后会打开登录页面，用 Google、Microsoft 或 Apple 账号登录。', ts2: '在手机上：在 App Store 或 Google Play 搜索 “Tailscale” 并安装。打开后用与电脑相同的账号登录，系统询问时允许 VPN。', ts3: '回到这里，点“重新检查”。',
+      tsDownload: '下载 Tailscale', tsCheck: '重新检查', tsChecking: '正在检查…', tsOff: 'Tailscale 已安装但未连接。点任务栏（时钟旁）的 Tailscale 图标登录或点 “Connect”，然后重新检查。',
+      tsOn: (d) => `✓ Tailscale 正在这台电脑上运行（${d}）。`, tsServe: '在我的手机上打开办公室', tsServeNote: '只有登录你 Tailscale 账号的设备才能打开；设置和配对代码只留在这台电脑上。',
+      tsNoPhone: '你的 Tailscale 账号里还没有手机：在手机上安装 Tailscale，并用同一账号登录。', tsFail: 'Tailscale 没有接受。请在这台电脑上运行一次（PowerShell 或终端）：',
+      tsPhoneOn: '手机上的 Tailscale 应用必须开启（已连接）。', tsManual: '或者自己填写地址',
       tgPhonePh: '例如 http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ 链接将在 ${u} 打开`, tgPhoneTry: '在手机上打开试试', tgPhoneFixed: '地址是在启动 Cubicle 时指定的（--public-url）。', tgPhoneClear: '移除',
       tgEmbed: 'Telegram 机器人属于这台电脑上独立运行的 Cubicle，而不是 Paperclip 里的办公室。打开它，并在那里点 ⚙ → Telegram：', tgOpenStandalone: '打开 Cubicle',
       iss: { backlog: '待办池', todo: '待办', in_progress: '进行中', in_review: '审核中', blocked: '受阻', done: '已完成', cancelled: '已取消' },
@@ -705,7 +747,12 @@
       tgOpenWeb: 'Telegram Web', tgScan: 'امسحه بالهاتف', tgOrSend: 'إذا لم يفعل «ابدأ» شيئًا، أرسل إلى البوت هذه الرسالة:', tgCopy: 'نسخ', tgCopied: 'تم النسخ',
       tgNoApp: 'زر «Start Bot» في صفحة t.me يعمل فقط إذا كان تطبيق Telegram مثبتًا على هذا الحاسوب. وإلا فاستخدم الهاتف أو Telegram Web.',
       tgWrong: 'وصلت إلى البوت رسالة لكن بدون الرمز الصحيح. أرسل الرسالة أعلاه.', tgPoll: { conflict: 'برنامج آخر يقرأ هذا البوت (ربما اتصال Telegram الخاص بـ Paperclip). أعطِ Cubicle بوتًا خاصًا به.', unreachable: 'لا يمكن الوصول إلى Telegram من هذا الحاسوب. تحقق من اتصال الإنترنت.', refused: 'رفض Telegram الرمز المميز. افصل البوت والصقه من جديد.' },
-      tg5: 'اختياري: فتح الروابط على الهاتف', tg5Text: 'حاليًا تُفتح الروابط في الرسائل على هذا الحاسوب فقط. لفتحها على الهاتف أيضًا استخدم Tailscale المجاني: ثبّته على هذا الحاسوب وعلى الهاتف وسجّل الدخول بالحساب نفسه في كليهما. ثم اكتب هنا عنوان Cubicle في Tailscale.',
+      tg5: 'اختياري: فتح الروابط على الهاتف', tg5Text: 'حاليًا تُفتح الروابط في الرسائل على هذا الحاسوب فقط. لفتحها على الهاتف يستخدم Cubicle خدمة Tailscale المجانية، فيُفتح المكتب على أجهزتك أنت فقط.',
+      ts1: 'على هذا الحاسوب: نزّل Tailscale من tailscale.com/download وثبّته. ستُفتح بعدها صفحة تسجيل دخول؛ سجّل الدخول بحساب Google أو Microsoft أو Apple.', ts2: 'على الهاتف: ابحث عن «Tailscale» في App Store أو Google Play وثبّته. افتحه وسجّل الدخول بالحساب نفسه المستخدم على الحاسوب، واسمح بالـ VPN عند السؤال.', ts3: 'عد إلى هنا واضغط «تحقق مجددًا».',
+      tsDownload: 'تنزيل Tailscale', tsCheck: 'تحقق مجددًا', tsChecking: 'جارٍ التحقق…', tsOff: 'Tailscale مثبّت لكنه غير متصل. اضغط أيقونة Tailscale في شريط المهام (بجانب الساعة) وسجّل الدخول أو اضغط «Connect»، ثم تحقق مجددًا.',
+      tsOn: (d) => `✓ يعمل Tailscale على هذا الحاسوب (${d}).`, tsServe: 'افتح المكتب على هاتفي', tsServeNote: 'لا يفتحه إلا الأجهزة المسجّلة في حساب Tailscale الخاص بك؛ وتبقى الإعدادات ورمز الربط على هذا الحاسوب.',
+      tsNoPhone: 'لا يوجد هاتف في حساب Tailscale بعد: ثبّت Tailscale على الهاتف وسجّل الدخول بالحساب نفسه.', tsFail: 'لم يقبل Tailscale ذلك. شغّل هذا الأمر مرة واحدة على هذا الحاسوب (PowerShell أو Terminal):',
+      tsPhoneOn: 'يجب أن يكون تطبيق Tailscale على الهاتف قيد التشغيل (متصلًا).', tsManual: 'أو اكتب عنوانًا بنفسك',
       tgPhonePh: 'مثال: http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ تُفتح الروابط على ${u}`, tgPhoneTry: 'افتحه على الهاتف للتجربة', tgPhoneFixed: 'تم تحديد العنوان عند تشغيل Cubicle (--public-url).', tgPhoneClear: 'إزالة',
       tgEmbed: 'بوت Telegram تابع لـ Cubicle المستقل على هذا الحاسوب، لا للمكتب داخل Paperclip. افتحه واضغط هناك ⚙ ← Telegram:', tgOpenStandalone: 'افتح Cubicle',
       iss: { backlog: 'قائمة الانتظار', todo: 'للتنفيذ', in_progress: 'قيد التنفيذ', in_review: 'قيد المراجعة', blocked: 'متوقفة', done: 'منجزة', cancelled: 'ملغاة' },
@@ -1073,6 +1120,7 @@
     const j = await r.json().catch(() => ({}));
     return r.ok ? { ok: true, status: j } : { ok: false, error: j.error || r.status };
   }
+  async function tsInfo() { try { const r = await fetch('/api/tailscale', { cache: 'no-store' }); return r.ok ? await r.json() : { found: false }; } catch (_) { return { found: false }; } }
   async function openTelegram() {
     clearInterval(tgTimer);
     const head = `<h2>📨 Telegram <button type="button" data-tg="close" aria-label="${esc(L.close)}">✕</button></h2><p>${esc(L.tgIntro)}</p>`;
@@ -1104,9 +1152,19 @@
       + hint + `<p class="${st.chats ? 'ok' : 'muted'}">${esc(st.chats ? L.tgLinked(st.chats) : L.tgWaitStart)}</p>`;
     const replyBox = !st.on || !st.canReply ? '' : `<label class="check"><input type="checkbox" data-tg="replies"${st.replies ? ' checked' : ''}${st.canEdit ? '' : ' disabled'}> ${esc(L.tgRepliesLabel)}</label>`;
     const remote = st.publicUrl && !/^https?:\/\/(127\.|localhost|\[::1\])/i.test(st.publicUrl);
-    const phoneBox = !st.on ? '' : `<p>${esc(L.tg5Text)}</p>` + (st.publicFixed ? `<p class="muted">${esc(L.tgPhoneFixed)}</p>`
-      : st.canEdit ? `<div class="tgrow"><input type="url" data-tg="url" placeholder="${esc(L.tgPhonePh)}" value="${esc(remote ? st.publicUrl : '')}" spellcheck="false"><button type="button" class="act" data-tg="saveurl">${esc(L.tgSave)}</button></div><p class="err" data-tg="urlerr"></p>` : '')
-      + (remote ? `<div class="tgpair"><figure>${qrSvg(st.publicUrl, 120)}<figcaption>${esc(L.tgPhoneTry)}</figcaption></figure><p class="ok">${esc(L.tgPhoneOk(st.publicUrl))}${st.canEdit && !st.publicFixed ? ` <button type="button" class="link" data-tg="clearurl">${esc(L.tgPhoneClear)}</button>` : ''}</p></div>` : '');
+    // Step 5, the phone: find Tailscale on this computer and walk through what is missing.
+    const ts = st.on && st.canEdit && !st.publicFixed && !remote ? await tsInfo() : null;
+    const manual = st.canEdit && !st.publicFixed ? `<details${remote ? '' : ''}><summary class="muted small">${esc(L.tsManual)}</summary><div class="tgrow"><input type="url" data-tg="url" placeholder="${esc(L.tgPhonePh)}" value="${esc(remote ? st.publicUrl : '')}" spellcheck="false"><button type="button" class="act" data-tg="saveurl">${esc(L.tgSave)}</button></div><p class="err" data-tg="urlerr"></p></details>` : '';
+    const checkBtn = `<button type="button" data-tg="tscheck">${esc(L.tsCheck)}</button>`;
+    const howTo = `<ol class="tssteps"><li>${esc(L.ts1)}</li><li>${esc(L.ts2)}</li><li>${esc(L.ts3)}</li></ol>`;
+    let tsBox = '';
+    if (st.publicFixed) tsBox = `<p class="muted">${esc(L.tgPhoneFixed)}</p>`;
+    else if (remote) tsBox = `<div class="tgpair"><figure>${qrSvg(st.publicUrl, 120)}<figcaption>${esc(L.tgPhoneTry)}</figcaption></figure><div><p class="ok">${esc(L.tgPhoneOk(st.publicUrl))}</p><p class="muted small">${esc(L.tsPhoneOn)}</p>${st.canEdit ? `<p><button type="button" class="link" data-tg="clearurl">${esc(L.tgPhoneClear)}</button></p>` : ''}</div></div>`;
+    else if (ts && ts.found && ts.running) tsBox = `<p class="ok">${esc(L.tsOn(ts.dns))}</p>` + (ts.phones ? '' : `<p class="err">${esc(L.tsNoPhone)}</p><p class="muted small">${esc(L.ts2)}</p>`)
+      + `<p><button type="button" class="act" data-tg="tsserve">📱 ${esc(L.tsServe)}</button></p><p class="muted small">${esc(L.tsServeNote)}</p><div data-tg="tsfail"></div>`;
+    else if (ts && ts.found) tsBox = `<p class="err">${esc(L.tsOff)}</p><p>${checkBtn}</p>`;
+    else if (ts) tsBox = howTo + `<p><a class="act" href="https://tailscale.com/download" target="_blank" rel="noopener">⬇ ${esc(L.tsDownload)}</a> ${checkBtn}</p>`;
+    const phoneBox = !st.on ? '' : (remote ? '' : `<p>${esc(L.tg5Text)}</p>`) + tsBox + manual;
     tgDlg.innerHTML = head
       + step(1, L.tg1, `<p>${esc(L.tg1Text)}</p><p><a class="act" href="https://t.me/BotFather" target="_blank" rel="noopener">✈ @BotFather</a></p>`, st.on)
       + step(2, L.tg2, tokenBox, st.on)
@@ -1137,6 +1195,15 @@
       try { await navigator.clipboard.writeText(b.dataset.copy); b.textContent = L.tgCopied; } catch (_) {
         const r = document.createRange(); r.selectNodeContents(b.previousElementSibling); getSelection().removeAllRanges(); getSelection().addRange(r);
       }
+    }
+    if (k === 'tscheck') { b.disabled = true; b.textContent = L.tsChecking; openTelegram(); }
+    if (k === 'tsserve') {
+      b.disabled = true;
+      const r = await fetch('/api/tailscale', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: '{}' }).catch(() => null);
+      if (r && r.ok) { openTelegram(); return; }
+      const t = await tsInfo(), box = tgDlg.querySelector('[data-tg="tsfail"]');
+      b.disabled = false;
+      if (box) box.innerHTML = `<p class="err">${esc(L.tsFail)}</p><div class="tgrow"><code class="tgcode small">${esc(t.cmd || '')}</code><button type="button" data-tg="copy" data-copy="${esc(t.cmd || '')}">${esc(L.tgCopy)}</button></div>`;
     }
     if (k === 'saveurl' || k === 'clearurl') {
       const input = tgDlg.querySelector('[data-tg="url"]'), err = tgDlg.querySelector('[data-tg="urlerr"]');
@@ -1386,6 +1453,7 @@
       return;
     }
     document.getElementById('co').textContent = labels.join(' · ');
+    if (!/github\.io$/.test(location.hostname)) document.title = labels.length ? `Cubicle · ${labels.join(' · ')}` : 'Cubicle';
     officeName = labels[0] || '';
     renderNav();
     sync(agents, issues);
