@@ -266,6 +266,11 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     assert.strictEqual((await get(`${base}/api/feed/1`)).status, 404);
     assert.strictEqual((await get(`${base}/api/companies/x/secrets`)).status, 403);
   });
+  // a feed file that does not exist yet is an empty office, not an error
+  await withServer(['--source', path.join(require('os').tmpdir(), 'cubicle-not-there-yet.json')], async (base) => {
+    const r = await get(`${base}/api/feed/0`);
+    assert.strictEqual(r.status, 200); assert.deepStrictEqual(JSON.parse(r.body).agents, []);
+  });
 
   // authenticated Paperclip: the proxy adds the key; browser credentials never pass through
   {

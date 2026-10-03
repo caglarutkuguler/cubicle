@@ -135,7 +135,9 @@ function parseSource(raw) {
   if (raw === 'codex') return { kind: 'file', file: path.join(os.homedir(), '.cubicle', 'codex.json'), label: 'Codex', emptyIfMissing: true };
   if (raw === 'gemini') return { kind: 'file', file: path.join(os.homedir(), '.cubicle', 'gemini.json'), label: 'Gemini CLI', emptyIfMissing: true };
   if (/^https?:\/\//.test(raw)) return { kind: 'url', url: new URL(raw), label: raw };
-  return { kind: 'file', file: path.resolve(raw), label: path.basename(raw) };
+  // A file that is not there yet (a hook that has not fired, a tool not used on this machine yet)
+  // is an empty office until it appears, not an error on the page.
+  return { kind: 'file', file: path.resolve(raw), label: path.basename(raw), emptyIfMissing: true };
 }
 const SOURCES = (arg('source') || process.env.CUBICLE_SOURCE || 'paperclip')
   .split(',').map((x) => x.trim()).filter(Boolean).map(parseSource);
@@ -497,6 +499,7 @@ server.listen(PORT, HOST, () => {
     console.warn(`Warning: bound to ${HOST} with a Paperclip API key. Anyone who can reach this port can read what that key can read.`);
   }
   if (HAS_PAPERCLIP) console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
+  for (const x of SOURCES) if (x.kind === 'file' && !fs.existsSync(x.file)) console.log(`Note: ${x.file} does not exist yet; it counts as no agents until something writes it.`);
   restartTelegram();
 });
 
