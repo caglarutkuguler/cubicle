@@ -1203,6 +1203,7 @@
   // server starts the bot at once; no files, no restarts.
   let tgTimer = null;
   let tgAccessState = { allowEveryone: true, allowedUsers: [] };
+  let tgRenderVersion = 0, tgTailscale = null;
   async function tgStatus() { try { const r = await fetch('/api/telegram', { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (_) { return null; } }
   async function tgPut(body) {
     const r = await fetch('/api/telegram', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify(body) });
@@ -1210,7 +1211,8 @@
     return r.ok ? { ok: true, status: j } : { ok: false, error: j.error || r.status };
   }
   async function tsInfo() { try { const r = await fetch('/api/tailscale', { cache: 'no-store' }); return r.ok ? await r.json() : { found: false }; } catch (_) { return { found: false }; } }
-  async function openTelegram() {
+  async function openTelegram(savedStatus = null) {
+    const version = ++tgRenderVersion;
     clearInterval(tgTimer);
     const head = `<h2>📨 Telegram <button type="button" data-tg="close" aria-label="${esc(L.close)}">✕</button></h2><p>${esc(L.tgIntro)}</p>`;
     if (EMBED || DEMO) {
@@ -1218,8 +1220,9 @@
       if (!tgDlg.open) tgDlg.showModal();
       return;
     }
-    const st = (await tgStatus()) || { on: false, canEdit: false };
-    tgAccessState = { allowEveryone: st.allowEveryone !== false, allowedUsers: st.allowedUsers || [] };
+    const st = savedStatus || (await tgStatus()) || { on: false, canEdit: false };
+    if (version !== tgRenderVersion) return;
+    const accessState = { allowEveryone: st.allowEveryone !== false, allowedUsers: st.allowedUsers || [] };
     const bot = st.username ? `@${st.username}` : '';
     const step = (n, title, body, done) => `<div class="tgstep${done ? ' done' : ''}"><b><span class="num">${done ? '✓' : n}</span>${esc(title)}</b>${body}</div>`;
     const tokenBox = st.fromEnv ? `<p class="muted">${esc(L.tgFromEnv)}</p>`
@@ -1242,18 +1245,22 @@
       + hint + `<p class="${st.chats ? 'ok' : 'muted'}">${esc(st.chats ? L.tgLinked(st.chats) : L.tgWaitStart)}</p>`;
     const replyBox = !st.on || !st.canReply ? '' : `<label class="check"><input type="checkbox" data-tg="replies"${st.replies ? ' checked' : ''}${st.canEdit ? '' : ' disabled'}> ${esc(L.tgRepliesLabel)}</label>`;
     const userRow = (id, action, label) => `<li><code dir="ltr">${esc(id)}</code><button type="button" class="act" data-tg="${action}" data-user="${esc(id)}" aria-label="${esc(label + ': ' + id)}">${esc(label)}</button></li>`;
-    const candidates = (st.linkedUsers || []).filter((id) => !tgAccessState.allowedUsers.includes(id));
+    const candidates = (st.linkedUsers || []).filter((id) => !accessState.allowedUsers.includes(id));
     const accessBox = !st.canEdit ? '' : `<div class="tgstep" data-tg-access><b>${esc(L.tgAccess)}</b>`
-      + `<label class="check"><input type="checkbox" data-tg="everyone"${tgAccessState.allowEveryone ? ' checked' : ''}> ${esc(L.tgAllowEveryone)}</label>`
-      + (tgAccessState.allowEveryone ? `<p class="muted small">${esc(L.tgAllowEveryoneHint)}</p>`
+      + `<label class="check"><input type="checkbox" data-tg="everyone"${accessState.allowEveryone ? ' checked' : ''}> ${esc(L.tgAllowEveryone)}</label>`
+      + (accessState.allowEveryone ? `<p class="muted small">${esc(L.tgAllowEveryoneHint)}</p>`
         : `<p class="muted small">${esc(L.tgRestrictedHint)}</p>`
           + `<label for="tg-user-id">${esc(L.tgUserId)}</label><div class="tgrow"><input id="tg-user-id" type="text" inputmode="numeric" data-tg="userid" placeholder="123456789" autocomplete="off" spellcheck="false"><button type="button" class="act" data-tg="adduser">${esc(L.tgAddUser)}</button></div>`
-          + (tgAccessState.allowedUsers.length ? `<ul class="tgusers">${tgAccessState.allowedUsers.map((id) => userRow(id, 'removeuser', L.tgRemoveUser)).join('')}</ul>` : `<p class="muted" role="status">${esc(L.tgNoUsers)}</p>`)
+          + (accessState.allowedUsers.length ? `<ul class="tgusers">${accessState.allowedUsers.map((id) => userRow(id, 'removeuser', L.tgRemoveUser)).join('')}</ul>` : `<p class="muted" role="status">${esc(L.tgNoUsers)}</p>`)
           + (candidates.length ? `<details><summary>${esc(L.tgLinkedUsers)}</summary><ul class="tgusers">${candidates.map((id) => userRow(id, 'allowuser', L.tgAddUser)).join('')}</ul></details>` : ''))
       + `<p class="err" data-tg="accesserr" role="alert"></p></div>`;
     const remote = st.publicUrl && !/^https?:\/\/(127\.|localhost|\[::1\])/i.test(st.publicUrl);
     // Step 5, the phone: find Tailscale on this computer and walk through what is missing.
-    const ts = st.on && st.canEdit && !st.publicFixed && !remote ? await tsInfo() : null;
+    // A saved response already contains the current list. Reuse the phone setup information so
+    // adding/removing a user never waits for another GET or a slow Tailscale lookup.
+    const ts = st.on && st.canEdit && !st.publicFixed && !remote ? (savedStatus ? tgTailscale : await tsInfo()) : null;
+    if (version !== tgRenderVersion) return;
+    if (!savedStatus) tgTailscale = ts;
     const manual = st.canEdit && !st.publicFixed ? `<details${remote ? '' : ''}><summary class="muted small">${esc(L.tsManual)}</summary><div class="tgrow"><input type="url" data-tg="url" placeholder="${esc(L.tgPhonePh)}" value="${esc(remote ? st.publicUrl : '')}" spellcheck="false"><button type="button" class="act" data-tg="saveurl">${esc(L.tgSave)}</button></div><p class="err" data-tg="urlerr"></p></details>` : '';
     const checkBtn = `<button type="button" data-tg="tscheck">${esc(L.tsCheck)}</button>`;
     const howTo = `<ol class="tssteps"><li>${esc(L.ts1)}</li><li>${esc(L.ts2)}</li><li>${esc(L.ts3)}</li></ol>`;
@@ -1265,6 +1272,8 @@
     else if (ts && ts.found) tsBox = `<p class="err">${esc(L.tsOff)}</p><p>${checkBtn}</p>`;
     else if (ts) tsBox = howTo + `<p><a class="act" href="https://tailscale.com/download" target="_blank" rel="noopener">⬇ ${esc(L.tsDownload)}</a> ${checkBtn}</p>`;
     const phoneBox = !st.on ? '' : (remote ? '' : `<p>${esc(L.tg5Text)}</p>`) + tsBox + manual;
+    const scrollTop = tgDlg.scrollTop;
+    tgAccessState = accessState;
     tgDlg.innerHTML = head
       + step(1, L.tg1, `<p>${esc(L.tg1Text)}</p><p><a class="act" href="https://t.me/BotFather" target="_blank" rel="noopener">✈ @BotFather</a></p>`, st.on)
       + step(2, L.tg2, tokenBox, st.on)
@@ -1274,21 +1283,25 @@
       + (phoneBox ? step(5, L.tg5, phoneBox, remote) : '')
       + `<p class="muted">${esc(L.tgCommands)}${remote ? '' : ` · ${esc(L.tgPhone)}`}</p>`;
     if (!tgDlg.open) tgDlg.showModal();
+    if (savedStatus) tgDlg.scrollTop = scrollTop;
     // Waiting for Start in Telegram: refresh until a chat is linked.
     if (st.on && !st.chats) tgTimer = setInterval(async () => {
-      if (!tgDlg.open) { clearInterval(tgTimer); return; }
+      if (!tgDlg.open || version !== tgRenderVersion) return;
       const now = await tgStatus();
-      if (now && (now.chats || now.unpaired !== st.unpaired || now.polling !== st.polling)) openTelegram();
+      if (!tgDlg.open || version !== tgRenderVersion) return;
+      if (now && (now.chats || now.unpaired !== st.unpaired || now.polling !== st.polling)) openTelegram(now);
     }, 2500);
   }
   async function saveTgAccess(change) {
+    const version = ++tgRenderVersion;
     clearInterval(tgTimer);
     const box = tgDlg.querySelector('[data-tg-access]'), err = box.querySelector('[data-tg="accesserr"]');
     err.textContent = '';
     const controls = [...box.querySelectorAll('input, button')];
     controls.forEach((c) => { c.disabled = true; });
     const r = await tgPut(change).catch(() => ({ ok: false }));
-    if (r.ok) { await openTelegram(); return; }
+    if (version !== tgRenderVersion || !tgDlg.open) return;
+    if (r.ok) { await openTelegram(r.status); return; }
     controls.forEach((c) => { c.disabled = false; });
     box.querySelector('[data-tg="everyone"]').checked = tgAccessState.allowEveryone;
     err.textContent = r.error === 'users' ? L.tgUserInvalid : L.tgAccessFailed;
@@ -1340,7 +1353,7 @@
   tgDlg.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.dataset.tg === 'userid') { e.preventDefault(); tgDlg.querySelector('[data-tg="adduser"]').click(); }
   });
-  tgDlg.addEventListener('close', () => clearInterval(tgTimer));
+  tgDlg.addEventListener('close', () => { ++tgRenderVersion; clearInterval(tgTimer); });
   tgDlg.addEventListener('click', (e) => { if (e.target === tgDlg) tgDlg.close(); });
 
   // ---------- layout: the office fits the window ----------
