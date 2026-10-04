@@ -138,7 +138,7 @@ async function test() {
     try {
       let ready = false;
       for (let i = 0; i < 60; i++) {
-        try { await get('/api/config'); ready = true; break; } catch (_) { await new Promise((r) => setTimeout(r, 50)); }
+        try { assert.equal((await get('/config.json')).status, 200); ready = true; break; } catch (_) { await new Promise((r) => setTimeout(r, 50)); }
       }
       assert.ok(ready, 'server starts');
       await run('preToolUse', { sessionId: 'http', cwd: '/work/project', toolName: 'view' });
