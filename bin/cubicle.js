@@ -243,6 +243,12 @@ function shapeFeed(data) {
   const list = Array.isArray(data) ? data : Array.isArray(data && data.agents) ? data.agents : [];
   const agents = list.map((a) => {
     const r = pick(a, ['id', 'name', 'role', 'title', 'status', 'since', 'createdAt']);
+    // An explicit completion timestamp survives idle/running transitions between polls. Null
+    // means this source reports completions, but has not completed a turn yet.
+    if (Object.hasOwn(a, 'completedAt')) {
+      const t = typeof a.completedAt === 'number' ? a.completedAt : typeof a.completedAt === 'string' ? Date.parse(a.completedAt) : NaN;
+      r.completedAt = Number.isFinite(t) && t > 0 && t <= 8640000000000000 ? new Date(t).toISOString() : null;
+    }
     if (a.task) {
       if (typeof a.task === 'string') r.task = REDACT ? toolOnly(a.task) : a.task;
       else r.task = REDACT ? pick(a.task, ['id', 'identifier']) : pick(a.task, ['id', 'identifier', 'title', 'url']);
@@ -510,6 +516,7 @@ const TG_SETTINGS = process.env.CUBICLE_TELEGRAM_SETTINGS || path.join(path.dirn
 function tgSettings() { try { return JSON.parse(fs.readFileSync(TG_SETTINGS, 'utf8')) || {}; } catch (_) { return {}; } }
 function tgToken() { return TELEGRAM_TOKEN || String(tgSettings().token || '').trim(); }
 function tgReplies() { return HAS_PAPERCLIP && (TELEGRAM_REPLIES || !!tgSettings().replies); }
+function tgNotifications() { return require('./cubicle-telegram.js').notificationSettings(tgSettings().notifications); }
 function tgAccess() {
   const s = tgSettings(), { isUserId } = require('./cubicle-telegram.js');
   return { allowEveryone: s.allowEveryone === undefined || s.allowEveryone === true,
@@ -536,7 +543,7 @@ function telegramStatus(req) {
     polling: TELEGRAM ? TELEGRAM.polling() : '', heard: !!seen.any, unpaired: !!seen.unpaired,
     publicUrl: tgPublicUrl(), publicFixed: !!PUBLIC_URL_FLAG,
     ...(local && TELEGRAM ? { code: TELEGRAM.code } : {}),
-    ...(local ? { ...tgAccess(), linkedUsers: TELEGRAM ? TELEGRAM.linkedUsers() : [] } : {}),
+    ...(local ? { ...tgAccess(), notifications: tgNotifications(), linkedUsers: TELEGRAM ? TELEGRAM.linkedUsers() : [] } : {}),
   };
 }
 function serveTelegram(req, res) {
@@ -553,6 +560,12 @@ function serveTelegram(req, res) {
     let data; try { data = JSON.parse(body); } catch (_) { return send(res, 400, '{"error":"not JSON"}'); }
     if (!data || typeof data !== 'object' || Array.isArray(data)) return send(res, 400, '{"error":"bad request"}');
     const next = { ...tgSettings() };
+    if ('notifications' in data) {
+      const { NOTIFICATION_KEYS, notificationSettings } = require('./cubicle-telegram.js');
+      if (!data.notifications || typeof data.notifications !== 'object' || Array.isArray(data.notifications)
+        || !Object.entries(data.notifications).every(([key, value]) => NOTIFICATION_KEYS.includes(key) && typeof value === 'boolean')) return send(res, 400, '{"error":"notifications"}');
+      next.notifications = { ...notificationSettings(next.notifications), ...data.notifications };
+    }
     if ('allowEveryone' in data) {
       if (typeof data.allowEveryone !== 'boolean') return send(res, 400, '{"error":"access"}');
       next.allowEveryone = data.allowEveryone;
@@ -583,7 +596,7 @@ function serveTelegram(req, res) {
       fs.mkdirSync(path.dirname(TG_SETTINGS), { recursive: true });
       fs.writeFileSync(TG_SETTINGS, JSON.stringify(next), { mode: 0o600 }); fs.chmodSync(TG_SETTINGS, 0o600);
     } catch (e) { return send(res, 500, JSON.stringify({ error: `cannot write ${TG_SETTINGS}` })); }
-    if ('token' in data) restartTelegram(); else if (TELEGRAM) { TELEGRAM.setReplies(tgReplies()); TELEGRAM.setPublicUrl(tgPublicUrl()); TELEGRAM.setAccess(tgAccess()); }
+    if ('token' in data) restartTelegram(); else if (TELEGRAM) { TELEGRAM.setReplies(tgReplies()); TELEGRAM.setPublicUrl(tgPublicUrl()); TELEGRAM.setAccess(tgAccess()); TELEGRAM.setNotifications(tgNotifications()); }
     setTimeout(() => send(res, 200, JSON.stringify(telegramStatus(req))), 'token' in data && data.token ? 1200 : 0);   // let getMe fill in the name
   });
 }
@@ -643,7 +656,7 @@ function serveTailscale(req, res) {
 
 function startTelegram(token) {
   const bot = require('./cubicle-telegram.js').start({
-    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(),
+    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), notifications: tgNotifications(), ...tgAccess(),
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),

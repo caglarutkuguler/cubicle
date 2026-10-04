@@ -13,6 +13,8 @@ const crypto = require('crypto');
 
 const API = process.env.CUBICLE_TELEGRAM_API || 'https://api.telegram.org';   // tests point this at a fake
 const isUserId = (id) => typeof id === 'string' && /^[1-9]\d{0,15}$/.test(id) && Number.isSafeInteger(Number(id));
+const NOTIFICATION_KEYS = ['enabled', 'errors', 'waiting', 'completed'];
+const notificationSettings = (value = {}) => Object.fromEntries(NOTIFICATION_KEYS.map((key) => [key, value?.[key] !== false]));
 
 const TEXT = {
   en: {
@@ -20,7 +22,8 @@ const TEXT = {
     replyHint: 'Reply to this message to answer; it becomes a comment on the issue.',
     replyHintQ: 'Reply to this message with the option’s number, or write your own answer; it becomes a comment on the issue.', other: 'or write your own answer',
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
-    paired: 'This chat is now linked to the office. You will get a message when an agent needs you.',
+    completed: (n) => `✓ <b>${n}</b> finished its work`,
+    paired: 'This chat is now linked to the office. Notifications follow your settings in Cubicle.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
     help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\nOr reply to a “needs you” message.',
     status: (n, run, wait, err) => `${n} agents · ${run} working · ${wait} need you${err ? ` · ${err} in error` : ''}`,
@@ -35,7 +38,8 @@ const TEXT = {
     replyHint: 'Yanıtlamak için bu mesajı yanıtlayın; yanıtınız işe yorum olarak yazılır.',
     replyHintQ: 'Bu mesajı seçeneğin numarasıyla ya da kendi cevabınızla yanıtlayın; yanıtınız işe yorum olarak yazılır.', other: 'ya da kendi cevabınızı yazın',
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
-    paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde mesaj gelecek.',
+    completed: (n) => `✓ <b>${n}</b> işini tamamladı`,
+    paired: 'Bu sohbet ofise bağlandı. Bildirimler Cubicle’daki tercihlerinize göre gönderilir.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
     help: '/durum – ofisin şu anki hâli\n/bekleyen – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/ofis – Cubicle’ı aç\n/yanit ID metin – bir işi yanıtla\nYa da “sizi bekliyor” mesajını yanıtlayın.',
     status: (n, run, wait, err) => `${n} ajan · ${run} çalışıyor · ${wait} sizi bekliyor${err ? ` · ${err} hatada` : ''}`,
@@ -99,6 +103,7 @@ async function snapshot(self) {
         const [as, issues, runs] = await Promise.all([
           getJSON(`/api/companies/${c.id}/agents`), getJSON(`/api/companies/${c.id}/issues`), getJSON(`/api/companies/${c.id}/heartbeat-runs`)]);
         const latest = latestRuns(runs);
+        const completed = latestRuns((Array.isArray(runs) ? runs : []).filter((r) => r && r.status === 'succeeded'));
         for (const a of as || []) {
           const mine = (issues || []).filter((i) => i.assigneeAgentId === a.id && !CLOSED.has(i.status));
           const ask = mine.find((i) => ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson));
@@ -109,6 +114,7 @@ async function snapshot(self) {
             id: a.id, name: a.name, status: a.status, company: c, paperclip: cfg.paperclipUrl || src.paperclipUrl,
             needs: a.status === 'waiting' || (!!ask && a.status !== 'error'), issue: ask || (a.status === 'waiting' ? task : null), reason: askPath ? askPath.label : '',
             task, error: a.errorReason || '', fail: run && FAILED_RUNS.has(run.status) ? { id: run.id, code: run.errorCode || run.status, error: run.error || '' } : null,
+            completionId: completed.get(a.id)?.id || null, explicitCompletion: true,
           });
         }
       }
@@ -118,10 +124,11 @@ async function snapshot(self) {
       list.forEach((a, i) => {
         const st = String(a.status || '').toLowerCase();
         const waiting = /wait|blocked|needs|input|approval|permission/.test(st);
-        const status = waiting ? 'waiting' : /error|fail/.test(st) ? 'error' : /work|run|busy|active/.test(st) ? 'running' : st;
+        const status = waiting ? 'waiting' : /error|fail/.test(st) ? 'error' : /work|run|busy|active/.test(st) ? 'running' : /^(done|finished|completed)$/.test(st) ? 'idle' : st;
         const task = a.task ? { identifier: a.task.identifier || a.task.id || '', title: a.task.title || '' } : null;
         // The page names feed agents "<feed path>#<id>", so links select the same one.
-        agents.push({ id: `${src.path}#${a.id ?? a.name ?? i}`, name: a.name || a.id, status, needs: waiting, issue: task, reason: '', task, error: a.error || '', fail: null });
+        agents.push({ id: `${src.path}#${a.id ?? a.name ?? i}`, name: a.name || a.id, status, needs: waiting, issue: task, reason: '', task, error: a.error || '', fail: null,
+          completionId: a.completedAt ? String(a.completedAt) : null, explicitCompletion: Object.hasOwn(a, 'completedAt') });
       });
     }
   }
@@ -159,6 +166,8 @@ function start(opts) {
   let allowEveryone = opts.allowEveryone !== false;
   let allowedUsers = new Set((opts.allowedUsers || []).filter(isUserId));
   const canSend = (chatId) => allowEveryone || allowedUsers.has(String(chatId));
+  let notifications = notificationSettings(opts.notifications);
+  const wantsNotification = (kind) => notifications.enabled && notifications[kind];
   let state = { chats: {}, offset: 0 };
   try { state = { ...state, ...JSON.parse(fs.readFileSync(stateFile, 'utf8')) }; } catch (_) {}
   for (const id of String(process.env.CUBICLE_TELEGRAM_CHAT || '').split(',').map((x) => x.trim()).filter(Boolean)) state.chats[id] = state.chats[id] || { lang: 'tr' };
@@ -183,12 +192,12 @@ function start(opts) {
   const issueLink = (a, i) => (a.company && a.paperclip && i && i.identifier && !(local(opts.paperclipPublicUrl || a.paperclip) && !local(opts.publicUrl)) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/issues/${encodeURIComponent(i.identifier)}` : '');
   const agentLink = (a) => cubicleLink(`?agent=${encodeURIComponent(a.id)}${a.company ? `&company=${encodeURIComponent(a.company.issuePrefix)}` : ''}`);
 
-  async function send(chatId, html, extra = {}) {
+  async function send(chatId, html, extra = {}, notification = null) {
     // Check here too: a linked chat may have been removed while a snapshot was loading.
-    if (stopped || !canSend(chatId)) return null;
+    if (stopped || !canSend(chatId) || (notification && !wantsNotification(notification))) return null;
     let r = await call('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...extra });
     // Some links (e.g. 127.0.0.1) can be refused: send it again as plain text, links written out.
-    if (r.status === 400 && !stopped && canSend(chatId)) r = await call('sendMessage', { chat_id: chatId, text: html.replace(/<a href="([^"]*)">([^<]*)<\/a>/g, '$2: $1').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'), disable_web_page_preview: true, ...extra });
+    if (r.status === 400 && !stopped && canSend(chatId) && (!notification || wantsNotification(notification))) r = await call('sendMessage', { chat_id: chatId, text: html.replace(/<a href="([^"]*)">([^<]*)<\/a>/g, '$2: $1').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'), disable_web_page_preview: true, ...extra });
     return r.json && r.json.ok ? r.json.result : null;
   }
   const links = (pairs) => pairs.filter(([, u]) => u).map(([t, u]) => `<a href="${esc(u)}">${esc(t)}</a>`).join(' · ');
@@ -228,7 +237,7 @@ function start(opts) {
   async function notifyNeeds(a) {
     const qs = await questionsOf(a.issue);
     for (const [chat, c] of Object.entries(state.chats)) {
-      const m = await send(chat, needsText(a, c.lang, qs));
+      const m = await send(chat, needsText(a, c.lang, qs), {}, 'waiting');
       if (m && a.issue && a.issue.identifier && a.company) sent.set(`${chat}:${m.message_id}`, { issue: a.issue.identifier, name: a.name, qs });
     }
     if (sent.size > 500) sent.delete(sent.keys().next().value);
@@ -236,11 +245,17 @@ function start(opts) {
   async function notifyFail(a) {
     for (const [chat, c] of Object.entries(state.chats)) {
       const t = tr(c.lang), f = a.fail;
-      await send(chat, [f ? t.failed(esc(a.name)) : t.errored(esc(a.name)), esc((f && f.error) || a.error), f && f.code ? `<code>${esc(f.code)}</code>` : '', '', links([[t.open, agentLink(a)]])].filter((x, k, all) => x || k === all.length - 2).join('\n'));
+      await send(chat, [f ? t.failed(esc(a.name)) : t.errored(esc(a.name)), esc((f && f.error) || a.error), f && f.code ? `<code>${esc(f.code)}</code>` : '', '', links([[t.open, agentLink(a)]])].filter((x, k, all) => x || k === all.length - 2).join('\n'), {}, 'errors');
+    }
+  }
+  async function notifyCompleted(a) {
+    for (const [chat, c] of Object.entries(state.chats)) {
+      const t = tr(c.lang);
+      await send(chat, `${t.completed(esc(a.name))}\n${links([[t.open, agentLink(a)]])}`, {}, 'completed');
     }
   }
 
-  // Watch the office: tell paired chats when an agent starts needing you or fails.
+  // Track transitions even while notifications are off, so enabling them does not replay old events.
   let known = null;
   async function watch() {
     if (stopped) return;
@@ -251,12 +266,18 @@ function start(opts) {
         for (const a of agents) {
           const before = known.get(a.id);
           const needKey = a.needs ? `${a.issue && a.issue.identifier || ''}` : null;
-          if (needKey !== null && (!before || before.needKey !== needKey)) await notifyNeeds(a);
-          if (a.fail && (!before || before.failId !== a.fail.id)) await notifyFail(a);
-          else if (!a.fail && a.status === 'error' && before && before.status !== 'error') await notifyFail(a);
+          if (wantsNotification('waiting') && needKey !== null && (!before || before.needKey !== needKey)) await notifyNeeds(a);
+          if (wantsNotification('errors')) {
+            if (a.fail && (!before || before.failId !== a.fail.id)) await notifyFail(a);
+            else if (!a.fail && a.status === 'error' && before && before.status !== 'error') await notifyFail(a);
+          }
+          const finished = before && (a.explicitCompletion
+            ? a.completionId && a.completionId !== before.completionId
+            : before.status === 'running' && a.status === 'idle' && !a.error && !a.needs);
+          if (finished && wantsNotification('completed')) await notifyCompleted(a);
         }
       }
-      known = new Map([...now].map(([id, a]) => [id, { needKey: a.needs ? `${a.issue && a.issue.identifier || ''}` : null, failId: a.fail && a.fail.id, status: a.status }]));
+      known = new Map([...now].map(([id, a]) => [id, { needKey: a.needs ? `${a.issue && a.issue.identifier || ''}` : null, failId: a.fail && a.fail.id, completionId: a.completionId, status: a.status }]));
     } catch (e) { log(`Telegram: ${e.message}`); }
     if (!stopped) setTimeout(watch, opts.interval || 10000).unref();
   }
@@ -359,6 +380,7 @@ function start(opts) {
     code, username: '', chats: () => Object.keys(state.chats).filter(canSend).length, seen: () => ({ ...seen }), polling: () => polling,
     linkedUsers: () => Object.keys(state.chats).filter(isUserId),
     setAccess(access) { allowEveryone = access.allowEveryone !== false; allowedUsers = new Set((access.allowedUsers || []).filter(isUserId)); },
+    setNotifications(value) { notifications = notificationSettings(value); },
     setReplies(v) { opts.replies = !!v; },
     setPublicUrl(u) { opts.publicUrl = u; },
     stop() { stopped = true; if (pending) pending.destroy(new Error('stopped')); },
@@ -368,4 +390,4 @@ function start(opts) {
   return bot;
 }
 
-module.exports = { start, snapshot, kpiSummary, getMe, isUserId };
+module.exports = { start, snapshot, kpiSummary, getMe, isUserId, notificationSettings, NOTIFICATION_KEYS };
