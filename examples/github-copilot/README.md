@@ -1,4 +1,51 @@
-# Cubicle for GitHub Copilot CLI
+# Cubicle for GitHub Copilot
+
+Choose the Desktop exporter for the **GitHub Copilot desktop app**, or the CLI
+hooks below for **Copilot in a terminal**. Adding these examples to a checkout
+does not install them into an already running Cubicle office: its `--source`
+or existing feed collector must also include the new feed.
+
+## GitHub Copilot Desktop
+
+The desktop app uses its own session database; terminal CLI hooks alone do not
+show its agents. `desktop.py` reads `~/.copilot/data.db` with SQLite's read-only
+mode and writes a normal Cubicle feed. It needs Python 3.9+ with the standard
+`sqlite3` module, without additional packages.
+
+```sh
+python3 examples/github-copilot/desktop.py
+```
+
+In another terminal, start Cubicle with the generated feed:
+
+```sh
+node bin/cubicle.js --source "$HOME/.cubicle/github-copilot-desktop.json"
+# Or include it alongside an existing office feed:
+node bin/cubicle.js --source "/path/to/agents.json,$HOME/.cubicle/github-copilot-desktop.json"
+```
+
+The exporter polls every three seconds. `--once` writes one snapshot, `--stdout`
+prints one snapshot for an existing collector, and `--database`, `--output`,
+and `--interval` override its paths and poll interval. An existing service must
+be configured to run this exporter and read its output; restart that service
+after changing its source list. Copilot itself does not need a restart.
+
+Each unarchived local session gets its own character. Desktop's `is_running`
+flag maps to working, `was_interrupted` to paused, and a settled session to idle.
+Inactive sessions older than two hours, provisional sessions and remote
+sessions are excluded. Up to 40 sessions are included. Names use only the first
+eight characters of the session id; chat titles and contents are never read.
+The exporter does not infer permission waits, errors or successful completion
+timestamps from metadata changes. These are persisted app flags, so a crashed
+app may leave a stale running flag until it recovers.
+
+This targets the inspected Desktop `sessions` schema. A missing database gives
+an empty office; an unreadable or changed schema reports an error and preserves
+the last feed. Run `python3 test/github-copilot-desktop.py` for read-only WAL,
+privacy, filtering, state changes and failure checks. The desktop schema is an
+internal app format and may change in later releases.
+
+## GitHub Copilot CLI
 
 One character per local Copilot CLI session, using its command hooks and the
 [Cubicle feed format](../../docs/FEED.md). No dependencies or model calls in the
@@ -6,7 +53,7 @@ hook. This example watches CLI sessions, including sessions started with
 `copilot --agent NAME`. It does not connect to GitHub's cloud coding agent or
 VS Code chat sessions.
 
-## Setup
+### Setup
 
 From a stable checkout of Cubicle, generate a hook configuration with absolute
 paths to Node and this script:
