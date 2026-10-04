@@ -1328,9 +1328,10 @@
     const scrollTop = tgDlg.scrollTop;
     tgAccessState = accessState;
     tgNotificationState = notifications;
-    tgDlg.innerHTML = head + notificationBox
+    tgDlg.innerHTML = head
       + step(1, L.tg1, `<p>${esc(L.tg1Text)}</p><p><a class="act" href="https://t.me/BotFather" target="_blank" rel="noopener">✈ @BotFather</a></p>`, st.on)
       + step(2, L.tg2, tokenBox, st.on)
+      + notificationBox
       + accessBox
       + (st.on ? step(3, L.tg3, linkBox, st.chats > 0) : '')
       + (replyBox ? step(4, L.tg4, replyBox, false) : '')
