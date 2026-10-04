@@ -112,6 +112,9 @@ function applySubagent(feed, agents, ev, now) {
 }
 
 function apply(feed, ev, runtime = 'claude') {
+  // Grok discovers Claude settings too, but has its own feed example. Do not
+  // combine its camelCase sessions under Claude's fallback "unknown" id.
+  if (runtime === 'claude' && (ev.sessionId || ev.hookEventName)) return feed;
   ev = normalize(ev, runtime);
   const role = RUNTIMES[runtimeOf(runtime)].label;
   const id = ev.session_id || 'unknown';
@@ -223,6 +226,11 @@ function withLock(file, fn) {
 
 function main(runtimeName = process.argv[2]) {
   const runtime = runtimeOf(runtimeName);
+  // SDK payloads may be fully snake_case; the hook environment still identifies Grok.
+  if (runtime === 'claude' && process.env.GROK_SESSION_ID && process.env.GROK_HOOK_EVENT) {
+    process.stdin.resume();
+    return;
+  }
   const { file, label, reply } = RUNTIMES[runtime];
   const FEED = path.join(DIR, file);
   let input = '';

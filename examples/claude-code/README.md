@@ -32,6 +32,10 @@ To keep it running in the background next to a Paperclip office, see [`../system
 
 Other notifications — the "waiting for your input" reminder after a minute of idling, auth and quota messages — are ignored, so an idle session stays in the lounge.
 
+Using Grok alongside Claude Code? Grok discovers Claude hook settings too. The
+Cubicle hook ignores those foreign invocations; use the dedicated
+[`../grok/`](../grok/) example to display Grok without duplicate Claude characters.
+
 The character is named after the working directory, so two sessions in different repos are easy to tell apart. Subagents started through the Agent (Task) tool get their own character next to the session that started them, so a session fanning out to four subagents shows five people at work; the session's own bubble keeps showing what it asked them to do. Claude Code versions that don't send `agent_id` on hook events fall back to one character per session. Sessions with no events for 12 hours are dropped.
 
 ## Cost and safety

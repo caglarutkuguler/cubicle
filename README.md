@@ -233,6 +233,9 @@ Use a board API key with the narrowest read-only scope Paperclip lets you create
 
 **Several at once.** `--source paperclip,claude-code,./other.json` puts every source in the same office. Each source keeps its own block of desks, so agents don't shuffle when a session starts or ends, and if one source goes down the others keep showing while the header names the one that is unreachable.
 
+**Grok CLI.** A passive hook example handles Grok's event fields, cancellations and
+permission notifications. Setup and limitations: [`examples/grok/`](examples/grok/).
+
 **Feed.** Any process can write `{ "company": "…", "agents": [{ "id", "name", "role", "status", "task", "error" }] }` to a file or serve it over HTTP. Full spec with status aliases: [`docs/FEED.md`](docs/FEED.md). A sample is in [`examples/feed.json`](examples/feed.json).
 
 ## Inside Paperclip
