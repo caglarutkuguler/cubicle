@@ -190,7 +190,7 @@ The ⚙ menu also has:
 
 <img src="docs/telegram.png" alt="The Telegram dialog: bot connected, a QR code to link your phone, the /start code, and one button to open the office on your phone with Tailscale" width="420" align="right">
 
-The standalone server can run a Telegram bot for your office. It tells you when an agent starts needing you or a run fails, with a link that opens Cubicle on that agent and one to the issue in Paperclip, and it answers `/status`, `/waiting`, `/kpi` and `/office`.
+The standalone server can run a Telegram bot for your office. It tells you when an agent starts needing you, a run fails or work completes, with a link that opens Cubicle on that agent and one to the issue in Paperclip when available, and it answers `/status`, `/waiting`, `/kpi` and `/office`.
 
 Setting it up takes three steps, all on the page (⚙ → **📨 Telegram…**, on the computer Cubicle runs on):
 
@@ -208,7 +208,9 @@ Setting it up takes three steps, all on the page (⚙ → **📨 Telegram…**, 
 
 Cubicle stays bound to 127.0.0.1. Requests that come through such a proxy are never treated as "this machine": the phone sees the office, not the settings or the pairing code. While Paperclip runs on 127.0.0.1 only, it cannot open on the phone: messages and the office page there leave out the Paperclip links and buttons (instead of opening blank pages), and you answer by replying in Telegram. To open Paperclip on the phone too, it must accept the Tailscale name (`npx paperclipai allowed-hostname <computer>.<tailnet>.ts.net`) and be served the same way; Cubicle then takes its address from `--paperclip-public-url`. In Paperclip's default `local_trusted` mode anyone who can reach it acts as the board, so do this only on a tailnet with your own devices. `--public-url` sets the address from the command line instead. For a server without a browser, the token can also come from the environment: `CUBICLE_TELEGRAM_TOKEN=…`; Cubicle then prints a `/start 123456` line to send to the bot.
 
-**Choose what reaches you.** `/mute WebDev` stops alerts for one agent (`/unmute WebDev` brings them back, `/mute` lists who is muted); `/alerts questions` sends only agents that need you, `/alerts failures` only failed runs, `/alerts all` both (or just `/questions`, `/errors`, `/all`). Each linked chat keeps its own choice.
+**Choose what reaches you.** `/mute WebDev` stops alerts for one agent (`/unmute WebDev` brings them back, `/mute` lists who is muted); `/alerts questions` sends only agents that need you, `/alerts failures` only failed runs and errors, `/alerts all` includes both plus completed work (or just `/questions`, `/errors`, `/all`). Each linked chat keeps its own choice; new chats default to all alerts.
+
+**Completed work.** Successful Paperclip runs and new feed `completedAt` timestamps produce one completion alert. Feeds without that field use an observed running-to-idle transition. Existing completions are not announced at startup, and changing a chat's filter or unmuting an agent does not replay completions it skipped. Completion alerts follow the same per-chat filters, muted agents and access restrictions as other alerts.
 
 **One at a time.** With replies on, agents waiting for you come one by one: only the first is sent, and each of its questions arrives as its own message. Just write your answer (the option's number or your own words); when the issue's last question is answered, all answers go to Paperclip as one comment and the next agent comes. `/skip` moves on, `/waiting` lines up everyone waiting now. The queue survives restarts, and something answered in Paperclip meanwhile drops out of it.
 
