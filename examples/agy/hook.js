@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Passive Antigravity CLI hook. Never makes permission or continuation decisions.
+// Passive Antigravity hook. Never makes permission or continuation decisions.
 'use strict';
 const fs = require('node:fs');
 const os = require('node:os');
@@ -14,25 +14,43 @@ function config() {
   }
   return { 'cubicle-feed': events };
 }
+function roleOf(input) {
+  // Product-specific paths are documented in Antigravity's shared hook contract.
+  // Inspect path segments only; never read or export the referenced files.
+  const roles = new Set();
+  for (const value of [input.transcriptPath, input.artifactDirectoryPath]) {
+    if (typeof value !== 'string') continue;
+    const parts = value.replace(/\\/g, '/').split('/');
+    for (let i = 0; i < parts.length - 1; i++) {
+      if (parts[i] !== '.gemini') continue;
+      const role = { 'antigravity-cli': 'Agy CLI', antigravity: 'Antigravity Desktop', 'antigravity-ide': 'Antigravity IDE' }[parts[i + 1]];
+      if (typeof role === 'string') roles.add(role);
+    }
+  }
+  return roles.size === 1 ? [...roles][0] : 'Antigravity';
+}
 function apply(feed, input, event, now = Date.now()) {
   if (!input || typeof input.conversationId !== 'string' || !input.conversationId || !EVENTS.includes(event)) return feed;
   const agents = (feed.agents || []).filter((a) => now - a.updated < 12 * 60 * 60 * 1000).map((a) => ({ ...a }));
   let a = agents.find((item) => item.id === input.conversationId);
   if (!a) {
     const cwd = input.workspacePaths?.[0];
-    a = { id: input.conversationId, name: typeof cwd === 'string' ? path.basename(cwd) || 'Agy' : 'Agy', role: 'Agy', since: now };
+    a = { id: input.conversationId, name: typeof cwd === 'string' ? path.basename(cwd) || 'Antigravity' : 'Antigravity', role: roleOf(input), since: now };
     agents.push(a);
   }
+  const role = roleOf(input);
+  // Refresh old Agy-labelled feeds when a later event identifies the surface.
+  if (role !== 'Antigravity' || !a.role || a.role === 'Agy') a.role = role;
   let status = 'running'; let task = event === 'PostToolUse' ? 'Tool completed' : 'Working'; let error = null;
   if (event === 'Stop') {
     if (input.error || input.terminationReason === 'error') {
-      status = 'error'; task = null; error = 'Execution failed; see Agy for details.';
+      status = 'error'; task = null; error = 'Execution failed; see Antigravity for details.';
     } else if (input.fullyIdle === false) {
       task = 'Background work remains';
     } else { status = 'idle'; task = null; }
   }
   Object.assign(a, { status, task, error, updated: now });
-  return { company: 'Agy', agents };
+  return { company: 'Antigravity', agents };
 }
 
 function save(input, event, file) {
@@ -49,7 +67,7 @@ function save(input, event, file) {
   }
   const tmp = `${file}.${process.pid}.tmp`;
   try {
-    let feed = { company: 'Agy', agents: [] };
+    let feed = { company: 'Antigravity', agents: [] };
     try { const value = JSON.parse(fs.readFileSync(file, 'utf8')); if (Array.isArray(value.agents)) feed = value; } catch (_) {}
     const next = apply(feed, input, event);
     if (next === feed) return;
@@ -75,4 +93,4 @@ function main() {
   });
 }
 if (require.main === module) main();
-module.exports = { apply, save, config };
+module.exports = { apply, save, config, roleOf };

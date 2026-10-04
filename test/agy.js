@@ -4,8 +4,23 @@ const fs = require('node:fs');
 const os = require('node:os');
 const path = require('node:path');
 const { spawn, spawnSync } = require('node:child_process');
-const { apply, config } = require('../examples/agy/hook.js');
+const { apply, config, roleOf } = require('../examples/agy/hook.js');
 async function test() {
+  for (const [product, role] of [['antigravity-cli', 'Agy CLI'], ['antigravity', 'Antigravity Desktop'], ['antigravity-ide', 'Antigravity IDE']]) {
+    const input = { conversationId: product, workspacePaths: ['/work/shared'], transcriptPath: `/private/work/.gemini/${product}/transcript.jsonl` };
+    const feed = apply({ agents: [] }, input, 'PreInvocation');
+    assert.equal(feed.agents[0].role, role);
+    assert.equal(roleOf({ artifactDirectoryPath: `C:\\work\\.gemini\\${product}\\artifacts` }), role);
+    assert.ok(!JSON.stringify(feed).includes('transcript.jsonl'));
+    assert.equal(apply(feed, { conversationId: product, fullyIdle: true }, 'Stop').agents[0].role, role);
+  }
+  assert.equal(roleOf({ transcriptPath: '/work/antigravity/repo.jsonl' }), 'Antigravity');
+  assert.equal(roleOf({ transcriptPath: '/work/.gemini/toString/repo.jsonl' }), 'Antigravity');
+  assert.equal(roleOf({ transcriptPath: '/work/.gemini/antigravity-cli-extra/repo.jsonl' }), 'Antigravity');
+  assert.equal(roleOf({ transcriptPath: '/.gemini/antigravity/x', artifactDirectoryPath: '/.gemini/antigravity-cli/y' }), 'Antigravity');
+  let combined = { agents: [] };
+  for (const product of ['antigravity', 'antigravity-cli']) combined = apply(combined, { conversationId: product, workspacePaths: ['/work/shared'], transcriptPath: `/.gemini/${product}/t` }, 'PreInvocation');
+  assert.equal(combined.agents.length, 2, 'Desktop and CLI conversations in one workspace stay separate');
   let f = { company: 'Agy', agents: [] };
   const input = { conversationId: 'a', workspacePaths: ['/work/project'], transcriptPath: 'PRIVATE' };
   const send = (event, extra = {}) => { f = apply(f, { ...input, ...extra }, event); };

@@ -235,9 +235,10 @@ Use a board API key with the narrowest read-only scope Paperclip lets you create
 
 **Feed.** Any process can write `{ "company": "…", "agents": [{ "id", "name", "role", "status", "task", "error" }] }` to a file or serve it over HTTP. Full spec with status aliases: [`docs/FEED.md`](docs/FEED.md). A sample is in [`examples/feed.json`](examples/feed.json).
 
-**Antigravity CLI (agy).** A passive [hook example](examples/agy/) writes a local
-feed from invocation and stop events, including execution failures and background
-work. See its README for setup, privacy and permission-detection limits.
+**Antigravity Desktop and CLI (agy).** A passive [hook example](examples/agy/)
+writes a shared local feed, labels Desktop and CLI conversations separately, and
+tracks invocation, stop, failure and background-work events. See its README for
+setup, privacy and permission-detection limits.
 
 ## Inside Paperclip
 
