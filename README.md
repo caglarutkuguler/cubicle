@@ -292,6 +292,8 @@ systemctl --user enable --now cubicle-update.timer
 journalctl --user -u cubicle-update.service   # what it did
 ```
 
+For automatic startup at macOS login, see the [LaunchAgent example](examples/launchd/).
+
 ## Security notes
 
 - Cubicle binds to `127.0.0.1` by default. Keep it that way unless you put it behind your own authentication, because anyone who can reach it can see your agent names, statuses and task titles.
