@@ -35,15 +35,20 @@ test('completion alerts follow the existing per-chat filters, mutes and access p
   fs.writeFileSync(settingsFile, JSON.stringify({ allowEveryone: false, allowedUsers }));
   const run = (id, status, startedAt) => ({ id, agentId: 'p1', status, startedAt, finishedAt: status === 'running' ? null : startedAt });
   let agent = { id: 'f1', name: 'Feed agent', status: 'idle', completedAt: 1000 }, runs = [run('old', 'succeeded', '2026-10-04T11:00:00Z')];
-  let watches = 0, uid = 0, child, rejectCompletion = false, releaseCompletion = null;
+  let watches = 0, uid = 0, polledOffset = 0, child, rejectCompletion = false, releaseCompletion = null;
   const sent = [], attempts = [], updates = [];
   const completed = (messages) => messages.filter((m) => /finished its work|işini tamamladı/.test(m.text));
-  const writeFeed = () => fs.writeFileSync(feedFile, JSON.stringify({ agents: [agent] }));
+  // Whole or not at all, as the hook writes it: a half-written feed reads as an empty office for a
+  // tick, and the agent's next change would then look like its first appearance.
+  const writeFeed = () => { fs.writeFileSync(`${feedFile}.tmp`, JSON.stringify({ agents: [agent] })); fs.renameSync(`${feedFile}.tmp`, feedFile); };
   writeFeed();
   const mock = http.createServer((q, r) => {
     let raw = ''; q.on('data', (d) => { raw += d; }); q.on('end', () => {
       const body = raw ? JSON.parse(raw) : {}, json = (data) => { r.setHeader('content-type', 'application/json'); r.end(JSON.stringify(data)); };
-      if (q.url === '/botT0K/getUpdates') return setTimeout(() => json({ ok: true, result: updates.filter((u) => u.update_id >= (body.offset || 0)) }), 15);
+      if (q.url === '/botT0K/getUpdates') {
+        polledOffset = body.offset || 0;
+        return setTimeout(() => json({ ok: true, result: updates.filter((u) => u.update_id >= polledOffset) }), 15);
+      }
       if (q.url === '/botT0K/sendMessage') {
         attempts.push(body);
         if (rejectCompletion && completed([body]).length) {
@@ -79,7 +84,8 @@ test('completion alerts follow the existing per-chat filters, mutes and access p
   const deliver = async (id, text) => {
     const before = sent.length;
     updates.push({ update_id: ++uid, message: { chat: { id, type: 'private' }, from: { id, language_code: id === 104 ? 'tr' : 'en' }, text } });
-    await until(() => JSON.parse(fs.readFileSync(stateFile, 'utf8')).offset === uid + 1);
+    // The bot asks for the next updates only after it has handled (and answered) every one of these.
+    await until(() => polledOffset === uid + 1);
     return sent.slice(before);
   };
   const recipients = (messages, expected) => assert.deepEqual(messages.map((m) => String(m.chat_id)).sort(), expected);
