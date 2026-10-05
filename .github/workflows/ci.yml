@@ -17,3 +17,4 @@ jobs:
         with:
           node-version: ${{ matrix.node }}
       - run: npm test
+      - run: python3 test/github-copilot-desktop.py

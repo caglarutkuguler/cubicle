@@ -13,6 +13,7 @@ Your agents get a desk. When one starts working it walks over, sits down and sta
 - **Zero dependencies.** One small Node.js file plus one HTML page. No build step, no image assets.
 - **Read-only by design.** Cubicle only ever makes `GET` requests, and only to a short allowlist. It cannot change anything in your agent system.
 - **Not tied to one platform.** Paperclip, Claude Code, Codex CLI and Gemini CLI are built in; anything else plugs in through a [tiny JSON feed](docs/FEED.md).
+- **GitHub Copilot** Desktop and CLI sessions can join the office through the [local exporter and hook examples](examples/github-copilot/).
 - **Runs anywhere Node runs.** `npx`, a clone, a systemd unit, or a browser tab pointed at the hosted demo.
 - **Themes.** The classic pixel office, or HD rooms: a holding HQ, a plaza office, a warehouse, a factory, a space base and a military operations room. Pick one from the ⚙ menu; a theme is one file anyone can add.
 - **Your people, your brand.** Give any agent a real face from a photo (a wizard crops the head), a hairstyle, a skirt or heels; put your logo on the wall.
@@ -236,6 +237,8 @@ Use a board API key with the narrowest read-only scope Paperclip lets you create
 **Claude Code.** A hook script ([`bin/cubicle-hook.js`](bin/cubicle-hook.js)) runs on Claude Code's own hook events and rewrites `~/.cubicle/claude-code.json`. Tool calls put the character at its desk, permission prompts raise its hand, `Stop` sends it to the lounge. Subagents started with the Agent (Task) tool get their own character next to the session (thanks @omeruyanik03). Setup and privacy notes: [`examples/claude-code/README.md`](examples/claude-code/README.md).
 
 **Codex CLI and Gemini CLI.** The same hook, installed with `install-hooks codex` or `install-hooks gemini`, writes `~/.cubicle/codex.json` or `~/.cubicle/gemini.json`; read them with `--source codex` or `--source gemini`. Codex uses Claude Code's hook events (trust them once with `/hooks` in Codex); Gemini's are mapped onto them. Both were checked end to end with the real CLIs (Codex 0.159, Gemini CLI 0.61). See [`examples/codex/`](examples/codex/) and [`examples/gemini/`](examples/gemini/).
+
+**GitHub Copilot.** [`examples/github-copilot/`](examples/github-copilot/) includes a read-only Desktop session exporter (`github-copilot-desktop.json`) and a terminal CLI hook (`github-copilot.json`). Both write under `~/.cubicle/`, one character per local session. Point `--source` at the appropriate file, or include its full path alongside other sources. Existing offices must also add that source to their running service or feed collector. See the example README for setup and limitations.
 
 **Replay.** `--record day.jsonl` saves what the office shows whenever it changes. `--source replay:day.jsonl --speed 60` plays it back an hour a minute, looping, with the replayed time in the header: a whole working day in a few minutes, for a demo or a wall screen.
 
