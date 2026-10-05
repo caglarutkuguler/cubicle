@@ -365,7 +365,9 @@ function start(opts) {
           if (finished) await notifyCompleted(a);
         }
       }
-      known = new Map([...now].map(([id, a]) => [id, { needKey: a.needs ? `${a.issue && a.issue.identifier || ''}` : null, failId: a.fail && a.fail.id, completionId: a.completionId, status: a.status }]));
+      // An agent missing from one snapshot (a feed file read mid-write, a source that did not answer)
+      // keeps what was known about it, so its next change is still compared with the last one seen.
+      known = new Map([...(known || []), ...[...now].map(([id, a]) => [id, { needKey: a.needs ? `${a.issue && a.issue.identifier || ''}` : null, failId: a.fail && a.fail.id, completionId: a.completionId, status: a.status }])]);
       // Answered in Paperclip (or no longer waiting): drop it from the queues, move on if it was on screen.
       const open = new Set(agents.filter((a) => a.needs).map((a) => (a.issue && a.issue.identifier ? a.issue.identifier : `agent:${a.id}`)));
       for (const [chat, c] of agents.length ? Object.entries(state.chats) : []) {      // nothing read: change nothing
@@ -497,8 +499,10 @@ function start(opts) {
       polling = r.json && r.json.ok ? 'ok' : r.status === 401 ? 'refused' : 'unreachable';
       if (!r.json || !r.json.ok) { await new Promise((res) => setTimeout(res, r.status === 401 ? 300000 : 5000).unref()); if (r.status === 401) log('Telegram: the bot token was refused'); continue; }
       for (const u of r.json.result || []) {
-        state.offset = u.update_id + 1;
+        // The message counts as handled once its answer is out: a state save made while handling it
+        // (a setting changed) does not mark it done before the reply is sent.
         if (u.message) { try { await onMessage(u.message); } catch (e) { log(`Telegram: ${e.message}`); } }
+        state.offset = u.update_id + 1;
       }
       if ((r.json.result || []).length) saveState();
     }
