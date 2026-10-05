@@ -243,6 +243,11 @@ function shapeFeed(data) {
   const list = Array.isArray(data) ? data : Array.isArray(data && data.agents) ? data.agents : [];
   const agents = list.map((a) => {
     const r = pick(a, ['id', 'name', 'role', 'title', 'status', 'since', 'createdAt']);
+    // Null marks sources that report completion explicitly but have not finished a turn yet.
+    if (Object.hasOwn(a, 'completedAt')) {
+      const t = typeof a.completedAt === 'number' ? a.completedAt : typeof a.completedAt === 'string' ? Date.parse(a.completedAt) : NaN;
+      r.completedAt = Number.isFinite(t) && t > 0 && t <= 8640000000000000 ? new Date(t).toISOString() : null;
+    }
     if (a.task) {
       if (typeof a.task === 'string') r.task = REDACT ? toolOnly(a.task) : a.task;
       else r.task = REDACT ? pick(a.task, ['id', 'identifier']) : pick(a.task, ['id', 'identifier', 'title', 'url']);
