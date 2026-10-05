@@ -12,6 +12,14 @@ const path = require('path');
 const crypto = require('crypto');
 
 const API = process.env.CUBICLE_TELEGRAM_API || 'https://api.telegram.org';   // tests point this at a fake
+// Write a file whole or not at all: a reader (or a crash) never sees half of it. The temporary
+// file sits next to the target so the rename stays on one filesystem.
+function writeFileAtomic(file, text, mode = 0o600) {
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  const tmp = `${file}.${process.pid}.${crypto.randomBytes(4).toString('hex')}.tmp`;
+  try { fs.writeFileSync(tmp, text, { mode }); fs.chmodSync(tmp, mode); fs.renameSync(tmp, file); }
+  catch (e) { try { fs.unlinkSync(tmp); } catch (_) {} throw e; }
+}
 const isUserId = (id) => typeof id === 'string' && /^[1-9]\d{0,15}$/.test(id) && Number.isSafeInteger(Number(id));
 
 const TEXT = {
@@ -177,7 +185,7 @@ function start(opts) {
   try { state = { ...state, ...JSON.parse(fs.readFileSync(stateFile, 'utf8')) }; } catch (_) {}
   for (const id of String(process.env.CUBICLE_TELEGRAM_CHAT || '').split(',').map((x) => x.trim()).filter(Boolean)) state.chats[id] = state.chats[id] || { lang: 'tr' };
   const saveState = () => {
-    try { fs.mkdirSync(path.dirname(stateFile), { recursive: true }); fs.writeFileSync(stateFile, JSON.stringify(state), { mode: 0o600 }); } catch (_) {}
+    try { writeFileAtomic(stateFile, JSON.stringify(state)); } catch (_) {}
   };
   // The pairing code stays the same across restarts (it lives in the state file), so a link or QR
   // code made before an update still works.
@@ -496,4 +504,4 @@ function start(opts) {
   return bot;
 }
 
-module.exports = { start, snapshot, kpiSummary, getMe, isUserId };
+module.exports = { start, snapshot, kpiSummary, getMe, isUserId, writeFileAtomic };

@@ -29,13 +29,16 @@ test('Telegram access policy applies to pairing, commands, comments and notifica
   const stateFile = path.join(dir, 'state.json'), settingsFile = path.join(dir, 'settings.json');
   fs.writeFileSync(stateFile, JSON.stringify({ code: '123456', offset: 0, chats: { 101: { lang: 'en' }, 102: { lang: 'en' }, '-900': { lang: 'en' } } }));
   const updates = [], sent = [], comments = [];
-  let uid = 0, agentStatus = 'running', watches = 0, child;
+  let uid = 0, agentStatus = 'running', watches = 0, polledOffset = 0, child;
   const mock = http.createServer((q, r) => {
     let raw = ''; q.on('data', (d) => { raw += d; }); q.on('end', () => {
       const body = raw ? JSON.parse(raw) : {};
       r.setHeader('content-type', 'application/json');
       const json = (value) => r.end(JSON.stringify(value));
-      if (q.url === '/botT0K/getUpdates') return setTimeout(() => json({ ok: true, result: updates.filter((u) => u.update_id >= (body.offset || 0)) }), 15);
+      if (q.url === '/botT0K/getUpdates') {
+        polledOffset = body.offset || 0;
+        return setTimeout(() => json({ ok: true, result: updates.filter((u) => u.update_id >= polledOffset) }), 15);
+      }
       if (q.url === '/botT0K/sendMessage') { sent.push(body); return json({ ok: true, result: { message_id: sent.length } }); }
       if (q.url === '/api/companies') return json([{ id: 'c1', name: 'Test office', issuePrefix: 'T' }]);
       if (q.url === '/api/companies/c1/agents') { watches++; return json([{ id: 'a1', name: 'Test agent', status: agentStatus }]); }
@@ -64,7 +67,8 @@ test('Telegram access policy applies to pairing, commands, comments and notifica
   const deliver = async (...messages) => {
     const before = sent.length;
     for (const m of messages) updates.push({ update_id: ++uid, message: { message_id: uid, ...m } });
-    await until(() => JSON.parse(fs.readFileSync(stateFile, 'utf8')).offset === uid + 1);
+    // The bot asks for the next updates only after it has handled (and answered) every one of these.
+    await until(() => polledOffset === uid + 1);
     return sent.slice(before);
   };
   const put = async (body) => { const r = await request(base, 'PUT', body); assert.equal(r.status, 200); return r.data; };
