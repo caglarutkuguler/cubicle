@@ -519,7 +519,8 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       say('/unmute feeder'); say('/alerts failures'); await sleep(500);
       setFeed('working'); await sleep(500); setFeed('waiting'); await sleep(700);
       assert.strictEqual(needs(), 0, 'failures only: no needs-you alerts');
-      say('/alerts all'); await sleep(400);
+      say('/questions'); await sleep(400); assert.ok(/only agents that need you/.test(sent.at(-1).text), 'short form');
+      say('/all'); await sleep(400);
       setFeed('working'); await sleep(500); setFeed('waiting'); await sleep(700);
       assert.strictEqual(needs(), 1, 'all alerts again');
       say('/mute nobody'); await sleep(400); assert.ok(/No agent called “nobody”/.test(sent.at(-1).text));

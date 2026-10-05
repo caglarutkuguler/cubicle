@@ -22,7 +22,7 @@ const TEXT = {
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
     paired: 'This chat is now linked to the office. You will get a message when an agent needs you.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
-    help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
+    help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get (or just /questions, /errors, /all)\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
     muted: (n) => `🔕 No more alerts for <b>${n}</b>. /unmute ${n} turns them back on.`, unmuted: (n) => `🔔 Alerts for <b>${n}</b> are back on.`,
     mutedList: (l) => (l.length ? `🔕 Muted: ${l.join(', ')}` : '🔔 No agent is muted.'), noAgent: (q, l) => `No agent called “${q}”. Agents: ${l.join(', ')}`,
     alerts: { all: '🔔 You get every alert: questions and waiting agents, and failed runs.', questions: '🔔 You get only agents that need you (questions, approvals).', failures: '🔔 You get only failed runs and errors.' },
@@ -443,8 +443,10 @@ function start(opts) {
       saveState();
       return send(chatId, off ? t.muted(esc(hit)) : t.unmuted(esc(hit)));
     }
-    if (command === 'alerts' || command === 'bildirim') {
-      const pick = { all: 'all', hepsi: 'all', questions: 'questions', sorular: 'questions', failures: 'failures', errors: 'failures', hatalar: 'failures' }[String(rest[0] || '').toLowerCase()];
+    // /alerts questions, or the short forms /questions, /errors, /all
+    const short = { questions: 'questions', sorular: 'questions', errors: 'failures', failures: 'failures', hatalar: 'failures', all: 'all', hepsi: 'all' }[command];
+    if (command === 'alerts' || command === 'bildirim' || short) {
+      const pick = short || { all: 'all', hepsi: 'all', questions: 'questions', sorular: 'questions', failures: 'failures', errors: 'failures', hatalar: 'failures' }[String(rest[0] || '').toLowerCase()];
       if (!pick) return send(chatId, `${esc(t.alerts[me.only || 'all'])}\n${esc(t.alertsHelp)}`);
       me.only = pick; saveState();
       return send(chatId, esc(t.alerts[pick]));
