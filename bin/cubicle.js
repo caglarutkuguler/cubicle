@@ -580,8 +580,7 @@ function serveTelegram(req, res) {
       }
     }
     try {
-      fs.mkdirSync(path.dirname(TG_SETTINGS), { recursive: true });
-      fs.writeFileSync(TG_SETTINGS, JSON.stringify(next), { mode: 0o600 }); fs.chmodSync(TG_SETTINGS, 0o600);
+      require('./cubicle-telegram.js').writeFileAtomic(TG_SETTINGS, JSON.stringify(next));
     } catch (e) { return send(res, 500, JSON.stringify({ error: `cannot write ${TG_SETTINGS}` })); }
     if ('token' in data) restartTelegram(); else if (TELEGRAM) { TELEGRAM.setReplies(tgReplies()); TELEGRAM.setPublicUrl(tgPublicUrl()); TELEGRAM.setAccess(tgAccess()); }
     setTimeout(() => send(res, 200, JSON.stringify(telegramStatus(req))), 'token' in data && data.token ? 1200 : 0);   // let getMe fill in the name
@@ -633,7 +632,7 @@ function serveTailscale(req, res) {
     if (!after.served) return send(res, 500, '{"error":"serve"}');
     // the links in Telegram messages use it from now on (unless --public-url says otherwise)
     if (!PUBLIC_URL_FLAG) {
-      try { fs.mkdirSync(path.dirname(TG_SETTINGS), { recursive: true }); fs.writeFileSync(TG_SETTINGS, JSON.stringify({ ...tgSettings(), publicUrl: after.url }), { mode: 0o600 }); fs.chmodSync(TG_SETTINGS, 0o600); } catch (_) {}
+      try { require('./cubicle-telegram.js').writeFileAtomic(TG_SETTINGS, JSON.stringify({ ...tgSettings(), publicUrl: after.url })); } catch (_) {}
       if (TELEGRAM) TELEGRAM.setPublicUrl(tgPublicUrl());
     }
     const { bin, ...pub } = after;
