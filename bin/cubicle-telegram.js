@@ -21,13 +21,20 @@ const TEXT = {
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
     paired: 'This chat is now linked to the office. You will get a message when an agent needs you.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
-    help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\nOr reply to a “needs you” message.',
+    help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
+    muted: (n) => `🔕 No more alerts for <b>${n}</b>. /unmute ${n} turns them back on.`, unmuted: (n) => `🔔 Alerts for <b>${n}</b> are back on.`,
+    mutedList: (l) => (l.length ? `🔕 Muted: ${l.join(', ')}` : '🔔 No agent is muted.'), noAgent: (q, l) => `No agent called “${q}”. Agents: ${l.join(', ')}`,
+    alerts: { all: '🔔 You get every alert: questions and waiting agents, and failed runs.', questions: '🔔 You get only agents that need you (questions, approvals).', failures: '🔔 You get only failed runs and errors.' },
+    alertsHelp: 'Write /alerts all, /alerts questions or /alerts failures.',
     status: (n, run, wait, err) => `${n} agents · ${run} working · ${wait} need you${err ? ` · ${err} in error` : ''}`,
     nobody: 'Nobody is waiting for you.', office: 'Open the office', kpi: 'Tasks you gave',
     kpiLine: (open, avg, done7) => `${open} open · average progress ${avg === null ? '–' : avg + '%'} · ${done7} done in 7 days`,
     sent: (id) => `✓ Sent to ${id}.`, sendFail: (id, e) => `Could not write to ${id}: ${e}`,
     repliesOff: 'Answering from Telegram is off (start Cubicle with --telegram-replies). Open the issue instead:',
     which: 'Reply to a “needs you” message, or write /answer ID text.',
+    step: (i, n) => `question ${i} of ${n}`, more: (n) => `${n} more waiting after this one.`, skipHint: '/skip moves on to the next one.',
+    answerHere: 'Write your answer here (the option’s number, or your own words).', skipped: 'Skipped.', queued: (n) => `${n} waiting; here is the first. The next one comes when you answer.`,
+    elsewhere: (id) => `${id} was answered elsewhere; moving on.`, allDone: '✓ That was the last one; nobody else is waiting for you.',
   },
   tr: {
     needs: (n) => `✋ <b>${n}</b> sizi bekliyor`, why: 'Neden', open: 'Cubicle’da gör', inPaperclip: 'Paperclip’te aç',
@@ -36,13 +43,20 @@ const TEXT = {
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
     paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde mesaj gelecek.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
-    help: '/durum – ofisin şu anki hâli\n/bekleyen – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/ofis – Cubicle’ı aç\n/yanit ID metin – bir işi yanıtla\nYa da “sizi bekliyor” mesajını yanıtlayın.',
+    help: '/durum – ofisin şu anki hâli\n/bekleyen – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/ofis – Cubicle’ı aç\n/yanit ID metin – bir işi yanıtla\n/sustur ad, /ac ad – bir ajan için bildirim kapat / aç\n/bildirim hepsi | sorular | hatalar – hangi bildirimler gelsin\n/atla – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
+    muted: (n) => `🔕 <b>${n}</b> için bildirim gelmeyecek. Yeniden açmak için: /ac ${n}`, unmuted: (n) => `🔔 <b>${n}</b> için bildirimler yeniden açık.`,
+    mutedList: (l) => (l.length ? `🔕 Susturulan: ${l.join(', ')}` : '🔔 Susturulan ajan yok.'), noAgent: (q, l) => `“${q}” adında ajan yok. Ajanlar: ${l.join(', ')}`,
+    alerts: { all: '🔔 Bütün bildirimler gelir: sizi bekleyen ajanlar, sorular ve başarısız çalıştırmalar.', questions: '🔔 Yalnızca sizi bekleyen ajanlar (sorular, onaylar) bildirilir.', failures: '🔔 Yalnızca başarısız çalıştırmalar ve hatalar bildirilir.' },
+    alertsHelp: '/bildirim hepsi, /bildirim sorular ya da /bildirim hatalar yazın.',
     status: (n, run, wait, err) => `${n} ajan · ${run} çalışıyor · ${wait} sizi bekliyor${err ? ` · ${err} hatada` : ''}`,
     nobody: 'Sizi bekleyen yok.', office: 'Ofisi aç', kpi: 'Verdiğiniz görevler',
     kpiLine: (open, avg, done7) => `${open} açık · ortalama ilerleme ${avg === null ? '–' : '%' + avg} · 7 günde ${done7} bitti`,
     sent: (id) => `✓ ${id} işine yazıldı.`, sendFail: (id, e) => `${id} işine yazılamadı: ${e}`,
     repliesOff: 'Telegram’dan yanıt kapalı (Cubicle’ı --telegram-replies ile başlatın). İşi buradan açın:',
     which: '“Sizi bekliyor” mesajını yanıtlayın ya da /yanit ID metin yazın.',
+    step: (i, n) => `soru ${i}/${n}`, more: (n) => `Bundan sonra ${n} tane daha sizi bekliyor.`, skipHint: '/atla ile sıradakine geçersiniz.',
+    answerHere: 'Cevabınızı buraya yazın (seçeneğin numarası ya da kendi cümleniz).', skipped: 'Geçildi.', queued: (n) => `${n} tane sizi bekliyor; ilki geliyor. Cevapladıkça sıradaki gelir.`,
+    elsewhere: (id) => `${id} başka yerden yanıtlanmış; sıradakine geçiliyor.`, allDone: '✓ Sonuncusuydu; sizi bekleyen kalmadı.',
   },
 };
 // Each agent's newest run, finished or not (by when it started): a failure counts only while no
@@ -169,7 +183,6 @@ function start(opts) {
   let pending = null;               // the long poll in flight, cancelled by stop()
   const call = (method, body) => request(`${API}/bot${token}/${method}`, { method: 'POST', body, timeout: method === 'getUpdates' ? 70000 : 20000,
     onRequest: method === 'getUpdates' ? (q) => { pending = q; } : null });
-  const sent = new Map();          // telegram message id -> { issue, prefix }  (for replies)
   let stopped = false;
 
   const cubicleLink = (q = '') => `${opts.publicUrl.replace(/\/$/, '')}/${q}`;
@@ -212,23 +225,93 @@ function start(opts) {
       q, '', links([[t.open, agentLink(a)], [t.inPaperclip, issueLink(a, i)]]),
       opts.replies && a.company && i && i.identifier ? `<i>${esc(q ? t.replyHintQ : t.replyHint)}</i>` : ''].filter((x, k) => x || k === 4).join('\n');
   }
-  // A reply of just a number picks that option when there is one question with options.
-  function answerFor(qs, text) {
-    const all = qs.flatMap((x) => x.questions || []);
+  // A reply of just a number picks that option.
+  function pickOption(q, text) {
     const m = /^\s*(\d{1,2})\s*[.)]?\s*$/.exec(text);
-    if (m && all.length === 1) { const o = (all[0].options || [])[Number(m[1]) - 1]; if (o) return o.label; }
-    return text;
+    const o = m && q && (q.options || [])[Number(m[1]) - 1];
+    return o ? o.label : text;
+  }
+  // Per chat: agents muted by name, and which kinds of alerts it wants (all, questions, failures).
+  const wants = (c, a, kind) => !(c.muted || []).includes(String(a.name).toLowerCase()) && (!c.only || c.only === 'all' || c.only === kind);
+
+  // One thing at a time. Each chat has a queue of agents waiting for it; only the first is sent,
+  // and each of its questions comes as its own message. Your answer (a reply, or just the next
+  // message you write) goes to that question; when all of an issue's questions are answered they
+  // are posted as one comment, and the next agent in the queue comes. Kept in the state file, so a
+  // restart picks up where it was. Without replies turned on, nothing can be answered here: the
+  // messages simply come as they happen.
+  const compact = (qs) => qs.slice(0, 3).flatMap((x) => (x.questions || []).slice(0, 6).map((q, n) => ({
+    title: n === 0 ? String(x.title || '').slice(0, 200) : '', prompt: String(q.prompt || '').slice(0, 1500), other: !!q.allowOther,
+    options: (q.options || []).slice(0, 12).map((o) => ({ label: String(o.label || '').slice(0, 200), description: String(o.description || '').slice(0, 200) })) })));
+  function stepText(c, cur) {
+    const t = tr(c.lang), a = cur.agent, q = cur.steps[cur.at];
+    const head = [t.needs(esc(a.name)), cur.issue ? `<b>${esc(cur.issue)}</b> ${esc(cur.title || '')}` : ''];
+    let body = [];
+    if (q) {
+      if (q.title) body.push(`❓ <b>${esc(q.title)}</b>`);
+      if (cur.steps.length > 1) body.push(`<i>${esc(t.step(cur.at + 1, cur.steps.length))}</i>`);
+      if (q.prompt) body.push(esc(q.prompt));
+      q.options.forEach((o, k) => body.push(`   <b>${k + 1}.</b> ${esc(o.label)}${o.description ? ` · <i>${esc(o.description.slice(0, 160))}</i>` : ''}`));
+      if (q.other && q.options.length) body.push(`   <i>${esc(t.other)}</i>`);
+    } else if (cur.reason) body.push(`${t.why}: ${esc(cur.reason)}`);
+    const tail = ['', links([[t.open, agentLink(a)], [t.inPaperclip, issueLink(a, { identifier: cur.issue })]])];
+    if (opts.replies && cur.issue) tail.push(`<i>${esc(t.answerHere)}</i>`);
+    const left = (c.queue || []).length;
+    if (left) tail.push(`<i>${esc(t.more(left))} ${esc(t.skipHint)}</i>`);
+    return [...head.filter(Boolean), ...body, ...tail].join('\n').slice(0, 3900);
+  }
+  async function showCurrent(chat) {
+    const c = state.chats[chat], cur = c && c.current; if (!cur) return;
+    const m = await send(chat, stepText(c, cur));
+    if (m) { cur.msg = m.message_id; saveState(); }
+  }
+  async function nextFor(chat) {
+    const c = state.chats[chat]; if (!c) return;
+    c.current = null;
+    while ((c.queue || []).length) {
+      const item = c.queue.shift();
+      const qs = item.issue ? await questionsOf({ identifier: item.issue }) : [];
+      c.current = { ...item, steps: compact(qs), at: 0, answers: [] };
+      break;
+    }
+    saveState();
+    if (c.current) await showCurrent(chat);
+  }
+  function enqueue(chat, a) {
+    const c = state.chats[chat]; c.queue = c.queue || [];
+    const key = a.issue && a.issue.identifier ? a.issue.identifier : `agent:${a.id}`;
+    if ((c.current && c.current.key === key) || c.queue.some((x) => x.key === key)) return false;
+    c.queue.push({ key, issue: a.issue && a.issue.identifier ? a.issue.identifier : '', title: a.issue && a.issue.title ? String(a.issue.title).slice(0, 200) : '',
+      reason: String(a.reason || '').slice(0, 300), agent: { id: a.id, name: a.name, company: a.company ? { issuePrefix: a.company.issuePrefix } : null, paperclip: a.paperclip } });
+    return true;
   }
   async function notifyNeeds(a) {
-    const qs = await questionsOf(a.issue);
     for (const [chat, c] of Object.entries(state.chats)) {
-      const m = await send(chat, needsText(a, c.lang, qs));
-      if (m && a.issue && a.issue.identifier && a.company) sent.set(`${chat}:${m.message_id}`, { issue: a.issue.identifier, name: a.name, qs });
+      if (!wants(c, a, 'questions')) continue;
+      if (!opts.replies) { const qs = await questionsOf(a.issue); await send(chat, needsText(a, c.lang, qs)); continue; }
+      if (enqueue(chat, a) && !c.current) await nextFor(chat);
+      else saveState();
     }
-    if (sent.size > 500) sent.delete(sent.keys().next().value);
+  }
+  // An answer to the question on screen: one step at a time, posted once the issue's last question is answered.
+  async function answerCurrent(chat, text) {
+    const c = state.chats[chat], cur = c.current, t = tr(c.lang);
+    if (!cur.issue) { await nextFor(chat); return; }
+    const q = cur.steps[cur.at];
+    cur.answers.push(q ? pickOption(q, text) : text);
+    if (q && cur.at + 1 < cur.steps.length) { cur.at++; saveState(); return showCurrent(chat); }
+    const body = cur.steps.length > 1
+      ? cur.steps.map((s2, k) => `**${(s2.prompt || s2.title || `${k + 1}`).replace(/\s+/g, ' ').slice(0, 140)}**\n${cur.answers[k]}`).join('\n\n')
+      : cur.answers[0];
+    const r = opts.postComment ? await opts.postComment(cur.issue, body) : { ok: false, error: 'off' };
+    if (!r.ok) { cur.answers.pop(); saveState(); return send(chat, esc(t.sendFail(cur.issue, r.error || r.status))); }
+    await send(chat, esc(t.sent(cur.issue)));
+    await nextFor(chat);
+    if (!c.current) await send(chat, esc(t.allDone));
   }
   async function notifyFail(a) {
     for (const [chat, c] of Object.entries(state.chats)) {
+      if (!wants(c, a, 'failures')) continue;
       const t = tr(c.lang), f = a.fail;
       await send(chat, [f ? t.failed(esc(a.name)) : t.errored(esc(a.name)), esc((f && f.error) || a.error), f && f.code ? `<code>${esc(f.code)}</code>` : '', '', links([[t.open, agentLink(a)]])].filter((x, k, all) => x || k === all.length - 2).join('\n'));
     }
@@ -251,6 +334,16 @@ function start(opts) {
         }
       }
       known = new Map([...now].map(([id, a]) => [id, { needKey: a.needs ? `${a.issue && a.issue.identifier || ''}` : null, failId: a.fail && a.fail.id, status: a.status }]));
+      // Answered in Paperclip (or no longer waiting): drop it from the queues, move on if it was on screen.
+      const open = new Set(agents.filter((a) => a.needs).map((a) => (a.issue && a.issue.identifier ? a.issue.identifier : `agent:${a.id}`)));
+      for (const [chat, c] of agents.length ? Object.entries(state.chats) : []) {      // nothing read: change nothing
+        const before2 = (c.queue || []).length;
+        c.queue = (c.queue || []).filter((x) => open.has(x.key));
+        if (c.current && !open.has(c.current.key) && !(c.current.answers || []).length) {
+          const id = c.current.issue || c.current.agent.name;
+          c.current = null; await send(chat, esc(tr(c.lang).elsewhere(id))); await nextFor(chat);
+        } else if (before2 !== c.queue.length) saveState();
+      }
     } catch (e) { log(`Telegram: ${e.message}`); }
     if (!stopped) setTimeout(watch, opts.interval || 10000).unref();
   }
@@ -283,10 +376,17 @@ function start(opts) {
     if (!paired) { seen.unpaired = Date.now(); return send(chatId, esc(tr(lang).pairFirst)); }
     if (state.chats[chatId].lang !== lang) { state.chats[chatId].lang = lang; saveState(); }
     const t = tr(lang);
-    if (m.reply_to_message && !command) {
-      const ref = sent.get(`${chatId}:${m.reply_to_message.message_id}`);
-      if (!ref) return send(chatId, esc(t.which));
-      return answer(chatId, lang, ref.issue, answerFor(ref.qs || [], text));
+    const me0 = state.chats[chatId];
+    // Any message that is not a command answers the question on screen (a reply works too).
+    if (!command && text && me0.current && opts.replies) return answerCurrent(chatId, text);
+    if (!command && m.reply_to_message) return send(chatId, esc(t.which));
+    if (command === 'skip' || command === 'atla' || command === 'gec' || command === 'geç') {
+      if (!me0.current) return send(chatId, esc(t.nobody));
+      if (me0.current.answers && me0.current.answers.length) me0.current.answers = [];
+      await send(chatId, esc(t.skipped));
+      await nextFor(chatId);
+      if (!me0.current) return send(chatId, esc(t.allDone));
+      return null;
     }
     if (command === 'answer' || command === 'yanit' || command === 'yanıt') {
       if (rest.length < 2) return send(chatId, esc(t.which));
@@ -301,18 +401,44 @@ function start(opts) {
       const { agents } = await snapshot(self);
       const w = agents.filter((a) => a.needs);
       if (!w.length) return send(chatId, esc(t.nobody));
-      for (const a of w.slice(0, 10)) {
-        const qs = await questionsOf(a.issue);
-        const msg = await send(chatId, needsText(a, lang, qs));
-        if (msg && a.issue && a.issue.identifier) sent.set(`${chatId}:${msg.message_id}`, { issue: a.issue.identifier, name: a.name, qs });
+      if (!opts.replies) {
+        for (const a of w.slice(0, 10)) await send(chatId, needsText(a, lang, await questionsOf(a.issue)));
+        return null;
       }
-      return null;
+      for (const a of w) enqueue(chatId, a);
+      saveState();
+      if (me0.current) return showCurrent(chatId);           // show again what is waiting for an answer
+      const n = me0.queue.length;
+      if (n > 1) await send(chatId, esc(t.queued(n)));
+      return nextFor(chatId);
     }
     if (command === 'kpi') {
       const k = await kpiSummary(self).catch(() => null);
       return send(chatId, `📊 <b>${esc(t.kpi)}</b>\n${k ? esc(t.kpiLine(k.open, k.avg, k.done7)) : ''}\n${links([[t.kpi, cubicleLink('?kpi')]])}`);
     }
     if (command === 'office' || command === 'ofis' || command === 'cubicle') return send(chatId, links([[t.office, cubicleLink()]]));
+    const me = state.chats[chatId];
+    if (['mute', 'unmute', 'muted', 'sustur', 'ac', 'aç', 'susturulan'].includes(command)) {
+      const off = ['mute', 'sustur'].includes(command), on = ['unmute', 'ac', 'aç'].includes(command);
+      me.muted = me.muted || [];
+      const q = rest.join(' ').trim().toLowerCase();
+      if (!q || (!off && !on)) return send(chatId, esc(t.mutedList(me.muted)));
+      const { agents } = await snapshot(self);
+      const names = [...new Set(agents.map((a) => String(a.name)))];
+      const hit = names.find((n) => n.toLowerCase() === q) || names.find((n) => n.toLowerCase().startsWith(q))
+        || (on ? me.muted.find((n) => n === q || n.startsWith(q)) : null);
+      if (!hit) return send(chatId, esc(t.noAgent(rest.join(' '), names)));
+      const key = hit.toLowerCase();
+      me.muted = off ? [...new Set([...me.muted, key])] : me.muted.filter((n) => n !== key);
+      saveState();
+      return send(chatId, off ? t.muted(esc(hit)) : t.unmuted(esc(hit)));
+    }
+    if (command === 'alerts' || command === 'bildirim') {
+      const pick = { all: 'all', hepsi: 'all', questions: 'questions', sorular: 'questions', failures: 'failures', errors: 'failures', hatalar: 'failures' }[String(rest[0] || '').toLowerCase()];
+      if (!pick) return send(chatId, `${esc(t.alerts[me.only || 'all'])}\n${esc(t.alertsHelp)}`);
+      me.only = pick; saveState();
+      return send(chatId, esc(t.alerts[pick]));
+    }
     return send(chatId, esc(t.help));
   }
 

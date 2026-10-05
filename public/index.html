@@ -289,12 +289,12 @@
       notify: 'Desktop notification when an agent needs me', notifyBlocked: 'Notifications are blocked for this page in the browser settings.',
       sound: 'Sound', soundOff: 'Off', soundNeed: 'When an agent needs me', soundAll: 'Needs me, done and errors',
       fps: 'Frame rate', fpsAuto: 'Automatic', fps30: '30 fps (lighter)', fps15: '15 fps (lightest)',
-      layout: 'Layout', layoutAuto: 'Automatic (fit the screen)', layoutSide: 'Office and cards side by side', layoutStack: 'Cards below the office',
+      layout: 'Layout', layoutAuto: 'Automatic (fill the page width)', layoutHeight: 'Fit the window height', layoutSide: 'Office and cards side by side', layoutStack: 'Cards below the office',
       openPaperclip: 'Open Paperclip in its own tab', kpiTitle: 'Progress of the tasks you gave', kpi: 'Tasks you gave', kpiOpen: 'Open', kpiAvg: 'Average progress', kpiDone7: 'Done in 7 days', kpiLead: 'Typical time to finish', kpiBlocked: 'Waiting on other tasks',
       waitsOn1: (id) => `waiting for ${id}`, waitsOnN: (n, id) => `waiting for ${n} tasks (${id}…)`, waitsSubs: (n) => `waiting for ${n} subtasks`, waitsYou: 'waiting for you', stalled: (n) => `${n} stalled`,
       sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sHuman: 'Your desk', sNotify: 'Desktop notification',
       tgButton: '📨 Telegram…', tgIntro: 'Get a message on your phone when an agent needs you or a run fails, with links to the agent and the issue, and ask the office how it is doing.',
-      tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text',
+      tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text, /mute name, /alerts all|questions|failures',
       tg1: 'Create a bot', tg1Text: 'In Telegram, open @BotFather, go to My Bots and press “Create a New Bot”. Give it a name and a username ending in “bot”. BotFather then sends you a token, a long line like 123456789:AAH…; copy it.',
       tg2: 'Paste the token here', tgTokenPh: 'e.g. 123456789:AAH…', tgSave: 'Save', tgSaving: 'Checking…', tgBad: { format: 'That does not look like a bot token. Copy the whole line BotFather sent.', refused: 'Telegram refused this token. Copy it again from BotFather.', unreachable: 'Telegram could not be reached from this computer. Check the internet connection.', url: 'That is not a web address; it should start with http:// or https://.' },
       tgBotOk: (u) => `✓ Connected to ${u}`, tgRemove: 'Disconnect', tgFromEnv: 'The token is set in the server’s environment.',
@@ -364,12 +364,12 @@
       notify: 'Bir ajan beni beklediğinde masaüstü bildirimi', notifyBlocked: 'Bu sayfa için bildirimler tarayıcı ayarlarında engellenmiş.',
       sound: 'Ses', soundOff: 'Kapalı', soundNeed: 'Bir ajan beni beklediğinde', soundAll: 'Bekleyen, biten ve hata',
       fps: 'Kare hızı', fpsAuto: 'Otomatik', fps30: '30 fps (daha hafif)', fps15: '15 fps (en hafif)',
-      layout: 'Yerleşim', layoutAuto: 'Otomatik (ekrana sığdır)', layoutSide: 'Ofis ve kartlar yan yana', layoutStack: 'Kartlar ofisin altında',
+      layout: 'Yerleşim', layoutAuto: 'Otomatik (sayfa genişliğine sığdır)', layoutHeight: 'Ekran yüksekliğine sığdır', layoutSide: 'Ofis ve kartlar yan yana', layoutStack: 'Kartlar ofisin altında',
       openPaperclip: 'Paperclip’i kendi sekmesinde aç', kpiTitle: 'Verdiğiniz görevlerin ilerlemesi', kpi: 'Verdiğiniz görevler', kpiOpen: 'Açık', kpiAvg: 'Ortalama ilerleme', kpiDone7: '7 günde biten', kpiLead: 'Tipik bitirme süresi', kpiBlocked: 'Başka görevi bekleyen',
       waitsOn1: (id) => `başka bir görevi bekliyor (${id})`, waitsOnN: (n, id) => `${n} görevin bitmesini bekliyor (${id}…)`, waitsSubs: (n) => `${n} alt görevin bitmesini bekliyor`, waitsYou: 'sizi bekliyor', stalled: (n) => `${n} tanesi takıldı`,
       sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
       tgButton: '📨 Telegram…', tgIntro: 'Bir ajan sizi beklediğinde ya da bir çalıştırma hata verdiğinde telefonunuza ajan ve iş bağlantılarıyla mesaj gelir; ofisin durumunu da oradan sorabilirsiniz.',
-      tgCommands: 'Komutlar: /durum, /bekleyen, /kpi, /ofis, /yanit ID metin',
+      tgCommands: 'Komutlar: /durum, /bekleyen, /kpi, /ofis, /yanit ID metin, /sustur ad, /bildirim hepsi|sorular|hatalar',
       tg1: 'Bot oluşturun', tg1Text: 'Telegram’da @BotFather’ı açın, My Bots menüsüne girip “Create a New Bot” düğmesine basın. Bota bir ad ve sonu “bot” ile biten bir kullanıcı adı verin. BotFather size 123456789:AAH… gibi uzun bir satır (token) gönderir; onu kopyalayın.',
       tg2: 'Token’ı buraya yapıştırın', tgTokenPh: 'örn. 123456789:AAH…', tgSave: 'Kaydet', tgSaving: 'Kontrol ediliyor…', tgBad: { format: 'Bu bir bot token’ına benzemiyor. BotFather’ın gönderdiği satırın tamamını kopyalayın.', refused: 'Telegram bu token’ı kabul etmedi. BotFather’dan yeniden kopyalayın.', unreachable: 'Bu bilgisayardan Telegram’a ulaşılamadı. İnternet bağlantısını kontrol edin.', url: 'Bu bir web adresi değil; http:// ya da https:// ile başlamalı.' },
       tgBotOk: (u) => `✓ ${u} bağlandı`, tgRemove: 'Bağlantıyı kaldır', tgFromEnv: 'Token sunucu ortamında tanımlı.',
@@ -439,12 +439,12 @@
       notify: 'Desktop-Benachrichtigung, wenn ein Agent mich braucht', notifyBlocked: 'Benachrichtigungen sind für diese Seite in den Browser-Einstellungen blockiert.',
       sound: 'Ton', soundOff: 'Aus', soundNeed: 'Wenn ein Agent mich braucht', soundAll: 'Braucht mich, fertig und Fehler',
       fps: 'Bildrate', fpsAuto: 'Automatisch', fps30: '30 fps (leichter)', fps15: '15 fps (am leichtesten)',
-      layout: 'Anordnung', layoutAuto: 'Automatisch (an den Bildschirm anpassen)', layoutSide: 'Büro und Karten nebeneinander', layoutStack: 'Karten unter dem Büro',
+      layout: 'Anordnung', layoutAuto: 'Automatisch (Seitenbreite füllen)', layoutHeight: 'An die Fensterhöhe anpassen', layoutSide: 'Büro und Karten nebeneinander', layoutStack: 'Karten unter dem Büro',
       openPaperclip: 'Paperclip in eigenem Tab öffnen', kpiTitle: 'Fortschritt Ihrer Aufgaben', kpi: 'Ihre Aufgaben', kpiOpen: 'Offen', kpiAvg: 'Durchschnittlicher Fortschritt', kpiDone7: 'In 7 Tagen erledigt', kpiLead: 'Übliche Dauer', kpiBlocked: 'Wartet auf andere Aufgaben',
       waitsOn1: (id) => `wartet auf ${id}`, waitsOnN: (n, id) => `wartet auf ${n} Aufgaben (${id} …)`, waitsSubs: (n) => `wartet auf ${n} Teilaufgaben`, waitsYou: 'wartet auf Sie', stalled: (n) => `${n} hängen`,
       sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
       tgButton: '📨 Telegram…', tgIntro: 'Eine Nachricht aufs Handy, wenn ein Agent Sie braucht oder ein Lauf fehlschlägt, mit Links zum Agenten und zur Aufgabe; und fragen Sie das Büro, wie es läuft.',
-      tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text',
+      tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text, /mute Name, /alerts all|questions|failures',
       tg1: 'Bot anlegen', tg1Text: 'Öffnen Sie in Telegram @BotFather, gehen Sie zu „My Bots“ und drücken Sie „Create a New Bot“. Geben Sie einen Namen und einen Benutzernamen, der auf „bot“ endet. BotFather schickt Ihnen ein Token, eine lange Zeile wie 123456789:AAH…; kopieren Sie es.',
       tg2: 'Token hier einfügen', tgTokenPh: 'z. B. 123456789:AAH…', tgSave: 'Speichern', tgSaving: 'Wird geprüft…', tgBad: { format: 'Das sieht nicht wie ein Bot-Token aus. Kopieren Sie die ganze Zeile von BotFather.', refused: 'Telegram hat dieses Token abgelehnt. Kopieren Sie es erneut von BotFather.', unreachable: 'Telegram ist von diesem Rechner aus nicht erreichbar. Prüfen Sie die Internetverbindung.', url: 'Das ist keine Webadresse; sie sollte mit http:// oder https:// beginnen.' },
       tgBotOk: (u) => `✓ Verbunden mit ${u}`, tgRemove: 'Trennen', tgFromEnv: 'Das Token ist in der Serverumgebung gesetzt.',
@@ -514,12 +514,12 @@
       notify: 'Notificación de escritorio cuando un agente me necesita', notifyBlocked: 'Las notificaciones están bloqueadas para esta página en los ajustes del navegador.',
       sound: 'Sonido', soundOff: 'Desactivado', soundNeed: 'Cuando un agente me necesita', soundAll: 'Me necesita, terminado y errores',
       fps: 'Fotogramas por segundo', fpsAuto: 'Automático', fps30: '30 fps (más ligero)', fps15: '15 fps (lo más ligero)',
-      layout: 'Disposición', layoutAuto: 'Automática (ajustar a la pantalla)', layoutSide: 'Oficina y tarjetas lado a lado', layoutStack: 'Tarjetas debajo de la oficina',
+      layout: 'Disposición', layoutAuto: 'Automática (llenar el ancho de la página)', layoutHeight: 'Ajustar a la altura de la ventana', layoutSide: 'Oficina y tarjetas lado a lado', layoutStack: 'Tarjetas debajo de la oficina',
       openPaperclip: 'Abrir Paperclip en su propia pestaña', kpiTitle: 'Progreso de las tareas que diste', kpi: 'Tareas que diste', kpiOpen: 'Abiertas', kpiAvg: 'Progreso medio', kpiDone7: 'Terminadas en 7 días', kpiLead: 'Tiempo habitual', kpiBlocked: 'Esperan otras tareas',
       waitsOn1: (id) => `espera a ${id}`, waitsOnN: (n, id) => `espera ${n} tareas (${id}…)`, waitsSubs: (n) => `espera ${n} subtareas`, waitsYou: 'te espera', stalled: (n) => `${n} atascadas`,
       sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
       tgButton: '📨 Telegram…', tgIntro: 'Recibe un mensaje en el móvil cuando un agente te necesita o una ejecución falla, con enlaces al agente y a la tarea, y pregunta a la oficina cómo va.',
-      tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto',
+      tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto, /mute nombre, /alerts all|questions|failures',
       tg1: 'Crea un bot', tg1Text: 'En Telegram, abre @BotFather, entra en My Bots y pulsa «Create a New Bot». Dale un nombre y un usuario que termine en «bot». BotFather te envía un token, una línea larga como 123456789:AAH…; cópiala.',
       tg2: 'Pega el token aquí', tgTokenPh: 'p. ej. 123456789:AAH…', tgSave: 'Guardar', tgSaving: 'Comprobando…', tgBad: { format: 'Eso no parece un token de bot. Copia la línea completa que envió BotFather.', refused: 'Telegram rechazó este token. Vuelve a copiarlo de BotFather.', unreachable: 'No se pudo conectar con Telegram desde este equipo. Revisa la conexión a internet.', url: 'No es una dirección web; debe empezar por http:// o https://.' },
       tgBotOk: (u) => `✓ Conectado a ${u}`, tgRemove: 'Desconectar', tgFromEnv: 'El token está definido en el entorno del servidor.',
@@ -589,12 +589,12 @@
       notify: 'Notification de bureau quand un agent a besoin de moi', notifyBlocked: 'Les notifications sont bloquées pour cette page dans les réglages du navigateur.',
       sound: 'Son', soundOff: 'Désactivé', soundNeed: 'Quand un agent a besoin de moi', soundAll: 'Besoin de moi, terminé et erreurs',
       fps: 'Images par seconde', fpsAuto: 'Automatique', fps30: '30 i/s (plus léger)', fps15: '15 i/s (le plus léger)',
-      layout: 'Disposition', layoutAuto: 'Automatique (adapter à l’écran)', layoutSide: 'Bureau et cartes côte à côte', layoutStack: 'Cartes sous le bureau',
+      layout: 'Disposition', layoutAuto: 'Automatique (remplir la largeur de la page)', layoutHeight: 'Adapter à la hauteur de la fenêtre', layoutSide: 'Bureau et cartes côte à côte', layoutStack: 'Cartes sous le bureau',
       openPaperclip: 'Ouvrir Paperclip dans son propre onglet', kpiTitle: 'Avancement des tâches que vous avez données', kpi: 'Vos tâches', kpiOpen: 'Ouvertes', kpiAvg: 'Avancement moyen', kpiDone7: 'Terminées en 7 jours', kpiLead: 'Durée habituelle', kpiBlocked: 'En attente d’autres tâches',
       waitsOn1: (id) => `attend ${id}`, waitsOnN: (n, id) => `attend ${n} tâches (${id}…)`, waitsSubs: (n) => `attend ${n} sous-tâches`, waitsYou: 'vous attend', stalled: (n) => `${n} bloquées`,
       sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
       tgButton: '📨 Telegram…', tgIntro: 'Recevez un message sur votre téléphone quand un agent a besoin de vous ou qu’une exécution échoue, avec des liens vers l’agent et la tâche, et demandez au bureau où il en est.',
-      tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte',
+      tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte, /mute nom, /alerts all|questions|failures',
       tg1: 'Créez un bot', tg1Text: 'Dans Telegram, ouvrez @BotFather, allez dans My Bots et appuyez sur « Create a New Bot ». Donnez-lui un nom et un nom d’utilisateur finissant par « bot ». BotFather vous envoie un jeton, une longue ligne comme 123456789:AAH… ; copiez-la.',
       tg2: 'Collez le jeton ici', tgTokenPh: 'ex. 123456789:AAH…', tgSave: 'Enregistrer', tgSaving: 'Vérification…', tgBad: { format: 'Cela ne ressemble pas à un jeton de bot. Copiez toute la ligne envoyée par BotFather.', refused: 'Telegram a refusé ce jeton. Copiez-le à nouveau depuis BotFather.', unreachable: 'Impossible de joindre Telegram depuis cet ordinateur. Vérifiez la connexion internet.', url: 'Ce n’est pas une adresse web ; elle doit commencer par http:// ou https://.' },
       tgBotOk: (u) => `✓ Connecté à ${u}`, tgRemove: 'Déconnecter', tgFromEnv: 'Le jeton est défini dans l’environnement du serveur.',
@@ -664,12 +664,12 @@
       notify: '代理需要我时显示桌面通知', notifyBlocked: '浏览器设置中已阻止此页面的通知。',
       sound: '声音', soundOff: '关闭', soundNeed: '代理需要我时', soundAll: '需要我、完成和出错',
       fps: '帧率', fpsAuto: '自动', fps30: '30 fps（较省）', fps15: '15 fps（最省）',
-      layout: '布局', layoutAuto: '自动（适应屏幕）', layoutSide: '办公室和卡片并排', layoutStack: '卡片在办公室下方',
+      layout: '布局', layoutAuto: '自动（铺满页面宽度）', layoutHeight: '适应窗口高度', layoutSide: '办公室和卡片并排', layoutStack: '卡片在办公室下方',
       openPaperclip: '在单独的标签页中打开 Paperclip', kpiTitle: '你分配的任务进度', kpi: '你分配的任务', kpiOpen: '进行中', kpiAvg: '平均进度', kpiDone7: '7 天内完成', kpiLead: '通常完成时间', kpiBlocked: '等待其他任务',
       waitsOn1: (id) => `等待 ${id}`, waitsOnN: (n, id) => `等待 ${n} 个任务（${id}…）`, waitsSubs: (n) => `等待 ${n} 个子任务`, waitsYou: '在等你', stalled: (n) => `${n} 个停滞`,
       sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sHuman: '你的办公桌', sNotify: '桌面通知',
       tgButton: '📨 Telegram…', tgIntro: '当代理需要你或运行失败时，手机上会收到带有代理和任务链接的消息，也可以随时询问办公室状态。',
-      tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本',
+      tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本、/mute 名称、/alerts all|questions|failures',
       tg1: '创建机器人', tg1Text: '在 Telegram 中打开 @BotFather，进入 My Bots 并点“Create a New Bot”。给它起个名字和以“bot”结尾的用户名。BotFather 会发给你一个 token，形如 123456789:AAH… 的长字符串，复制它。',
       tg2: '把 token 粘贴到这里', tgTokenPh: '例如 123456789:AAH…', tgSave: '保存', tgSaving: '正在检查…', tgBad: { format: '这看起来不像机器人 token。请复制 BotFather 发来的完整一行。', refused: 'Telegram 拒绝了这个 token。请从 BotFather 重新复制。', unreachable: '这台电脑连不上 Telegram，请检查网络。', url: '这不是网址；应以 http:// 或 https:// 开头。' },
       tgBotOk: (u) => `✓ 已连接 ${u}`, tgRemove: '断开', tgFromEnv: 'token 已在服务器环境中设置。',
@@ -739,12 +739,12 @@
       notify: 'إشعار على سطح المكتب عندما يحتاجني وكيل', notifyBlocked: 'الإشعارات محظورة لهذه الصفحة في إعدادات المتصفح.',
       sound: 'الصوت', soundOff: 'إيقاف', soundNeed: 'عندما يحتاجني وكيل', soundAll: 'يحتاجني، انتهى، وأخطاء',
       fps: 'معدل الإطارات', fpsAuto: 'تلقائي', fps30: '30 إطارًا (أخف)', fps15: '15 إطارًا (الأخف)',
-      layout: 'التخطيط', layoutAuto: 'تلقائي (ملاءمة الشاشة)', layoutSide: 'المكتب والبطاقات جنبًا إلى جنب', layoutStack: 'البطاقات أسفل المكتب',
+      layout: 'التخطيط', layoutAuto: 'تلقائي (ملء عرض الصفحة)', layoutHeight: 'ملاءمة ارتفاع النافذة', layoutSide: 'المكتب والبطاقات جنبًا إلى جنب', layoutStack: 'البطاقات أسفل المكتب',
       openPaperclip: 'افتح Paperclip في علامة تبويب مستقلة', kpiTitle: 'تقدم المهام التي أسندتها', kpi: 'المهام التي أسندتها', kpiOpen: 'مفتوحة', kpiAvg: 'متوسط التقدم', kpiDone7: 'أُنجزت خلال 7 أيام', kpiLead: 'المدة المعتادة', kpiBlocked: 'تنتظر مهام أخرى',
       waitsOn1: (id) => `ينتظر ${id}`, waitsOnN: (n, id) => `ينتظر ${n} مهام (${id}…)`, waitsSubs: (n) => `ينتظر ${n} مهام فرعية`, waitsYou: 'ينتظرك', stalled: (n) => `${n} متعثرة`,
       sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
       tgButton: '📨 Telegram…', tgIntro: 'تصلك رسالة على هاتفك عندما يحتاجك وكيل أو يفشل تشغيل، مع روابط للوكيل والمهمة، ويمكنك سؤال المكتب عن حاله.',
-      tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص',
+      tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص ‎/mute اسم ‎/alerts all|questions|failures',
       tg1: 'أنشئ بوتًا', tg1Text: 'في Telegram افتح ‎@BotFather، وادخل My Bots واضغط «Create a New Bot». أعطه اسمًا واسم مستخدم ينتهي بـ «bot». سيرسل لك BotFather رمزًا (token) طويلًا مثل 123456789:AAH…؛ انسخه.',
       tg2: 'الصق الرمز هنا', tgTokenPh: 'مثال: 123456789:AAH…', tgSave: 'حفظ', tgSaving: 'جارٍ التحقق…', tgBad: { format: 'لا يبدو هذا رمز بوت. انسخ السطر كاملًا من BotFather.', refused: 'رفض Telegram هذا الرمز. انسخه مجددًا من BotFather.', unreachable: 'تعذر الوصول إلى Telegram من هذا الحاسوب. تحقق من الاتصال بالإنترنت.', url: 'هذا ليس عنوان ويب؛ يجب أن يبدأ بـ http:// أو https://.' },
       tgBotOk: (u) => `✓ متصل بـ ${u}`, tgRemove: 'قطع الاتصال', tgFromEnv: 'الرمز محدد في بيئة الخادم.',
@@ -1238,6 +1238,15 @@
     const W = mainEl.clientWidth, ar = CW / CH, gap = 12, cardsMin = mode === 'side' ? 240 : 300;
     const top = mainEl.getBoundingClientRect().top + window.scrollY;
     const availH = Math.max(300, window.innerHeight - top - 14);
+    // auto: the office fills the page's width and the cards follow below; 'height' keeps it within
+    // the window's height (cards beside it when there is room); 'side' always puts them beside.
+    if (mode === 'auto') {
+      b.classList.remove('side');
+      mainEl.style.setProperty('--stage-w', Math.floor(W) + 'px');
+      mainEl.style.setProperty('--stage-h', Math.floor((W - 4) / ar + 4) + 'px');
+      try { clampCam(); } catch (_) {}
+      return;
+    }
     const fitW = Math.min(W, availH * ar + 4);                     // + the stage border
     const side = cardsOn() && (mode === 'side' ? W >= 640 : W >= 980 && W - fitW - gap >= cardsMin);
     const w = Math.max(240, side ? Math.min(fitW, W - gap - cardsMin) : fitW);
@@ -2766,7 +2775,7 @@
   // URL parameters win, so a kiosk link always opens the same way.
   if (params.get('theme')) settings.theme = params.get('theme');
   if (['auto', '30', '15', '60'].includes(params.get('fps'))) settings.fps = params.get('fps');
-  if (['auto', 'side', 'stack'].includes(params.get('layout'))) settings.layout = params.get('layout');
+  if (['auto', 'height', 'side', 'stack'].includes(params.get('layout'))) settings.layout = params.get('layout');
   if (['0', '1'].includes(params.get('human'))) settings.human = params.get('human') === '1';
   async function loadCatalog() {
     try {
@@ -2836,7 +2845,7 @@
     panel.innerHTML = `<div class="shead">${esc(L.sView)}</div>` +
       sel('theme', L.theme, CATALOG.map((c) => [c.id, c.name]), entry.id) +
       entry.options.map((o) => sel(o.key, tr(o.label), o.values, themeOpts[o.key])).join('') +
-      (animOn() ? own('layout', L.layout, [['auto', L.layoutAuto], ['side', L.layoutSide], ['stack', L.layoutStack]], settings.layout || 'auto') : '') +
+      (animOn() ? own('layout', L.layout, [['auto', L.layoutAuto], ['height', L.layoutHeight], ['side', L.layoutSide], ['stack', L.layoutStack]], settings.layout || 'auto') : '') +
       own('lang', L.language, [['', L.languageAuto], ...Object.keys(STR).map((k) => [k, LANG_NAMES[k] || k])], settings.lang || '') +
       own('fps', L.fps, [['auto', L.fpsAuto], ['30', L.fps30], ['15', L.fps15]], settings.fps || 'auto') +
       `<div class="checks">${check('set-anim', animOn(), L.anim, L.viewNote, !cardsOn())}${check('set-cards', cardsOn(), L.cardsToggle, L.viewNote, !animOn())}` +

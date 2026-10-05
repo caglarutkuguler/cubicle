@@ -486,6 +486,111 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { p.kill(); tg.close(); pc.close(); }
   }
 
+  // Telegram filters: /mute an agent, /alerts questions|failures|all; each chat keeps its own
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tgm-'));
+    const feed = path.join(dir, 'a.json');
+    const setFeed = (status) => fs.writeFileSync(feed, JSON.stringify({ agents: [{ id: 'f1', name: 'Feeder', status, task: { id: 'T-1', title: 'Docs' } }] }));
+    setFeed('working');
+    const updates = [], sent = []; let uid = 1;
+    const tg = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        const body = b ? JSON.parse(b) : {}; r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/botT0K/getUpdates') return setTimeout(() => r.end(JSON.stringify({ ok: true, result: updates.filter((u) => u.update_id >= (body.offset || 0)) })), 120);
+        if (q.url === '/botT0K/sendMessage') { sent.push(body); return r.end(JSON.stringify({ ok: true, result: { message_id: sent.length } })); }
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const say = (text) => updates.push({ update_id: uid++, message: { message_id: 1, chat: { id: 9 }, from: { language_code: 'en' }, text } });
+    const needs = () => sent.filter((m) => /needs you/.test(m.text)).length;
+    const port = 3400 + Math.floor(Math.random() * 500);
+    const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--source', feed], { stdio: 'ignore',
+      env: { ...process.env, CUBICLE_TELEGRAM_TOKEN: 'T0K', CUBICLE_TELEGRAM_CHAT: '9', CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`,
+        CUBICLE_TELEGRAM_STATE: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_INTERVAL: '250', CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 's.json') } });
+    try {
+      await sleep(700);
+      say('/mute feed'); await sleep(500);
+      assert.ok(/No more alerts for <b>Feeder<\/b>/.test(sent.at(-1).text), sent.at(-1).text);
+      setFeed('waiting'); await sleep(700);
+      assert.strictEqual(needs(), 0, 'a muted agent sends nothing');
+      say('/mute'); await sleep(400); assert.ok(/Muted: feeder/.test(sent.at(-1).text));
+      say('/unmute feeder'); say('/alerts failures'); await sleep(500);
+      setFeed('working'); await sleep(500); setFeed('waiting'); await sleep(700);
+      assert.strictEqual(needs(), 0, 'failures only: no needs-you alerts');
+      say('/alerts all'); await sleep(400);
+      setFeed('working'); await sleep(500); setFeed('waiting'); await sleep(700);
+      assert.strictEqual(needs(), 1, 'all alerts again');
+      say('/mute nobody'); await sleep(400); assert.ok(/No agent called “nobody”/.test(sent.at(-1).text));
+      const st = JSON.parse(fs.readFileSync(path.join(dir, 'tg.json'), 'utf8')).chats['9'];
+      assert.deepStrictEqual([st.muted, st.only], [[], 'all'], 'kept in the state file');
+    } finally { p.kill(); tg.close(); }
+  }
+
+  // Telegram with replies: one question at a time. /waiting queues everyone, only the first comes;
+  // each question of an issue is its own message; the answers go as one comment, then the next agent
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tgq2-'));
+    const comments = [];
+    const ask = [{ kind: 'interaction', label: 'Pending ask user questions', responder: 'X' }];
+    const pc = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/api/companies') return r.end(JSON.stringify([{ id: 'c1', name: 'Acme', issuePrefix: 'ACM' }]));
+        if (q.url === '/api/companies/c1/agents') return r.end(JSON.stringify([{ id: 'a1', name: 'WebDev', status: 'idle' }, { id: 'a2', name: 'QA', status: 'idle' }]));
+        if (q.url === '/api/companies/c1/issues') return r.end(JSON.stringify([
+          { identifier: 'ACM-7', title: 'Checkout', status: 'in_review', assigneeAgentId: 'a1', reviewAttention: { paths: ask } },
+          { identifier: 'ACM-8', title: 'Release', status: 'in_review', assigneeAgentId: 'a2', reviewAttention: { paths: [{ kind: 'x', label: 'Board approval', responder: 'Board' }] } }]));
+        if (q.url.startsWith('/api/companies/c1/heartbeat-runs')) return r.end('[]');
+        if (q.url === '/api/issues/ACM-7/interactions') return r.end(JSON.stringify([{ id: 'i1', kind: 'ask_user_questions', status: 'pending', title: 'Two decisions',
+          payload: { questions: [{ id: 'q1', prompt: 'Which layout?', options: [{ id: 'a', label: 'One-page' }, { id: 'b', label: 'Two-step' }] },
+            { id: 'q2', prompt: 'Ship when?', options: [{ id: 'a', label: 'Today' }, { id: 'b', label: 'Monday' }] }] } }]));
+        if (q.url.endsWith('/comments') && q.method === 'POST') { comments.push({ url: q.url, ...JSON.parse(b) }); return r.end('{}'); }
+        r.end('[]');
+      });
+    });
+    await new Promise((ok) => pc.listen(0, '127.0.0.1', ok));
+    const updates = [], sent = []; let uid = 1;
+    const tg = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        const body = b ? JSON.parse(b) : {}; r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/botT0K/getUpdates') return setTimeout(() => r.end(JSON.stringify({ ok: true, result: updates.filter((u) => u.update_id >= (body.offset || 0)) })), 120);
+        if (q.url === '/botT0K/sendMessage') { sent.push(body); return r.end(JSON.stringify({ ok: true, result: { message_id: sent.length } })); }
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const say = (text) => updates.push({ update_id: uid++, message: { message_id: 1, chat: { id: 9 }, from: { language_code: 'en' }, text } });
+    const port = 3400 + Math.floor(Math.random() * 500);
+    const env = { ...process.env, CUBICLE_TELEGRAM_TOKEN: 'T0K', CUBICLE_TELEGRAM_CHAT: '9', CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`,
+      CUBICLE_TELEGRAM_STATE: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_INTERVAL: '60000', CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 's.json') };
+    const run = () => spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--paperclip', `http://127.0.0.1:${pc.address().port}`, '--telegram-replies'], { stdio: 'ignore', env });
+    let p = run();
+    try {
+      await sleep(800);
+      say('/waiting'); await sleep(700);
+      const firstBatch = sent.slice();
+      assert.ok(/2 waiting/.test(firstBatch[0].text), firstBatch[0].text);
+      assert.strictEqual(firstBatch.filter((m) => /needs you/.test(m.text)).length, 1, 'only the first one comes');
+      assert.ok(/Which layout\?/.test(sent.at(-1).text) && !/Ship when/.test(sent.at(-1).text) && /question 1 of 2/.test(sent.at(-1).text), sent.at(-1).text);
+      // a restart in the middle keeps the place
+      p.kill(); await sleep(300); p = run(); await sleep(900);
+      say('2'); await sleep(600);
+      assert.ok(/Ship when\?/.test(sent.at(-1).text) && /question 2 of 2/.test(sent.at(-1).text), sent.at(-1).text);
+      assert.strictEqual(comments.length, 0, 'nothing posted before the last answer');
+      say('ship it on Monday'); await sleep(800);
+      assert.strictEqual(comments.length, 1);
+      assert.ok(comments[0].url.includes('ACM-7') && /\*\*Which layout\?\*\*\nTwo-step/.test(comments[0].body) && /\*\*Ship when\?\*\*\nship it on Monday/.test(comments[0].body), comments[0].body);
+      const next = sent.at(-1).text;
+      assert.ok(/<b>QA<\/b> needs you/.test(next) && /ACM-8/.test(next) && /Board approval/.test(next), next);
+      say('/skip'); await sleep(600);
+      assert.ok(/last one/.test(sent.at(-1).text), sent.at(-1).text);
+      assert.strictEqual(comments.length, 1, 'skipping posts nothing');
+    } finally { p.kill(); tg.close(); pc.close(); }
+  }
+
   // Telegram set up from the page: the token is checked with Telegram, saved privately, and the bot
   // starts without a restart; only JSON from this page on this machine is accepted
   {
