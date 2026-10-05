@@ -242,6 +242,11 @@ Use a board API key with the narrowest read-only scope Paperclip lets you create
 
 **Replay.** `--record day.jsonl` saves what the office shows whenever it changes. `--source replay:day.jsonl --speed 60` plays it back an hour a minute, looping, with the replayed time in the header: a whole working day in a few minutes, for a demo or a wall screen.
 
+**Codex Desktop and existing CLI sessions.** The optional
+[session-file observer](examples/codex-sessions/) exports local JSONL histories
+without installing hooks. It labels Desktop and CLI separately; see its README
+for the limits of inferring status from logs.
+
 **Several at once.** `--source paperclip,claude-code,./other.json` puts every source in the same office. Each source keeps its own block of desks, so agents don't shuffle when a session starts or ends, and if one source goes down the others keep showing while the header names the one that is unreachable.
 
 **Grok CLI.** A passive hook example handles Grok's event fields, cancellations and

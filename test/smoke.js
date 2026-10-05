@@ -179,6 +179,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
   }
 
   // Codex CLI and Gemini CLI through the same hook (#3)
+  require('./codex-sessions.js')();
   {
     const fs = require('fs'); const os = require('os');
     const { apply: hookApply, install, RUNTIMES } = require('../bin/cubicle-hook.js');

@@ -1,5 +1,9 @@
 # Cubicle for Codex CLI
 
+For existing Desktop chats and CLI sessions without hook installation, see the
+optional [local session-file observer](../codex-sessions/). Its log-derived status
+has different limits from the hook integration described here.
+
 Every Codex session becomes a character in the office: it types while Codex runs tools, raises a hand when Codex asks for approval, and goes to the lounge when the turn ends. Subagents get their own character.
 
 Codex's hooks use the same event names and fields as Claude Code's, so this is the same hook script as [`../claude-code/`](../claude-code/), writing `~/.cubicle/codex.json` instead.
