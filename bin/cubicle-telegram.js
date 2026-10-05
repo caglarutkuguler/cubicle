@@ -20,12 +20,13 @@ const TEXT = {
     replyHint: 'Reply to this message to answer; it becomes a comment on the issue.',
     replyHintQ: 'Reply to this message with the option’s number, or write your own answer; it becomes a comment on the issue.', other: 'or write your own answer',
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
-    paired: 'This chat is now linked to the office. You will get a message when an agent needs you.',
+    completed: (n) => `✓ <b>${n}</b> finished its work`,
+    paired: 'This chat is now linked to the office. You will get a message when an agent needs you, fails or finishes its work.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
     help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get (or just /questions, /errors, /all)\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
     muted: (n) => `🔕 No more alerts for <b>${n}</b>. /unmute ${n} turns them back on.`, unmuted: (n) => `🔔 Alerts for <b>${n}</b> are back on.`,
     mutedList: (l) => (l.length ? `🔕 Muted: ${l.join(', ')}` : '🔔 No agent is muted.'), noAgent: (q, l) => `No agent called “${q}”. Agents: ${l.join(', ')}`,
-    alerts: { all: '🔔 You get every alert: questions and waiting agents, and failed runs.', questions: '🔔 You get only agents that need you (questions, approvals).', failures: '🔔 You get only failed runs and errors.' },
+    alerts: { all: '🔔 You get every alert: questions and waiting agents, failed runs, and completed work.', questions: '🔔 You get only agents that need you (questions, approvals).', failures: '🔔 You get only failed runs and errors.' },
     alertsHelp: 'Write /alerts all, /alerts questions or /alerts failures.',
     status: (n, run, wait, err) => `${n} agents · ${run} working · ${wait} need you${err ? ` · ${err} in error` : ''}`,
     nobody: 'Nobody is waiting for you.', office: 'Open the office', kpi: 'Tasks you gave',
@@ -42,20 +43,21 @@ const TEXT = {
     replyHint: 'Yanıtlamak için bu mesajı yanıtlayın; yanıtınız işe yorum olarak yazılır.',
     replyHintQ: 'Bu mesajı seçeneğin numarasıyla ya da kendi cevabınızla yanıtlayın; yanıtınız işe yorum olarak yazılır.', other: 'ya da kendi cevabınızı yazın',
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
-    paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde mesaj gelecek.',
+    completed: (n) => `✓ <b>${n}</b> işini tamamladı`,
+    paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde, hata aldığında veya işini tamamladığında mesaj gelecek.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
-    help: '/durum – ofisin şu anki hâli\n/bekleyen – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/ofis – Cubicle’ı aç\n/yanit ID metin – bir işi yanıtla\n/sustur ad, /ac ad – bir ajan için bildirim kapat / aç\n/bildirim hepsi | sorular | hatalar – hangi bildirimler gelsin\n/atla – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
-    muted: (n) => `🔕 <b>${n}</b> için bildirim gelmeyecek. Yeniden açmak için: /ac ${n}`, unmuted: (n) => `🔔 <b>${n}</b> için bildirimler yeniden açık.`,
+    help: '/status – ofisin şu anki hâli\n/waiting – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/office – Cubicle’ı aç\n/answer ID metin – bir işi yanıtla\n/mute ad, /unmute ad – bir ajan için bildirim kapat / aç\n/alerts all | questions | failures – hangi bildirimler gelsin (kısaca /questions, /errors, /all)\n/skip – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
+    muted: (n) => `🔕 <b>${n}</b> için bildirim gelmeyecek. Yeniden açmak için: /unmute ${n}`, unmuted: (n) => `🔔 <b>${n}</b> için bildirimler yeniden açık.`,
     mutedList: (l) => (l.length ? `🔕 Susturulan: ${l.join(', ')}` : '🔔 Susturulan ajan yok.'), noAgent: (q, l) => `“${q}” adında ajan yok. Ajanlar: ${l.join(', ')}`,
-    alerts: { all: '🔔 Bütün bildirimler gelir: sizi bekleyen ajanlar, sorular ve başarısız çalıştırmalar.', questions: '🔔 Yalnızca sizi bekleyen ajanlar (sorular, onaylar) bildirilir.', failures: '🔔 Yalnızca başarısız çalıştırmalar ve hatalar bildirilir.' },
-    alertsHelp: '/bildirim hepsi, /bildirim sorular ya da /bildirim hatalar yazın.',
+    alerts: { all: '🔔 Bütün bildirimler gelir: sizi bekleyen ajanlar, sorular, başarısız çalıştırmalar ve tamamlanan işler.', questions: '🔔 Yalnızca sizi bekleyen ajanlar (sorular, onaylar) bildirilir.', failures: '🔔 Yalnızca başarısız çalıştırmalar ve hatalar bildirilir.' },
+    alertsHelp: '/alerts all, /alerts questions ya da /alerts failures yazın.',
     status: (n, run, wait, err) => `${n} ajan · ${run} çalışıyor · ${wait} sizi bekliyor${err ? ` · ${err} hatada` : ''}`,
     nobody: 'Sizi bekleyen yok.', office: 'Ofisi aç', kpi: 'Verdiğiniz görevler',
     kpiLine: (open, avg, done7) => `${open} açık · ortalama ilerleme ${avg === null ? '–' : '%' + avg} · 7 günde ${done7} bitti`,
     sent: (id) => `✓ ${id} işine yazıldı.`, sendFail: (id, e) => `${id} işine yazılamadı: ${e}`,
     repliesOff: 'Telegram’dan yanıt kapalı (Cubicle’ı --telegram-replies ile başlatın). İşi buradan açın:',
-    which: '“Sizi bekliyor” mesajını yanıtlayın ya da /yanit ID metin yazın.',
-    step: (i, n) => `soru ${i}/${n}`, more: (n) => `Bundan sonra ${n} tane daha sizi bekliyor.`, skipHint: '/atla ile sıradakine geçersiniz.',
+    which: '“Sizi bekliyor” mesajını yanıtlayın ya da /answer ID metin yazın.',
+    step: (i, n) => `soru ${i}/${n}`, more: (n) => `Bundan sonra ${n} tane daha sizi bekliyor.`, skipHint: '/skip ile sıradakine geçersiniz.',
     answerHere: 'Cevabınızı buraya yazın (seçeneğin numarası ya da kendi cümleniz).', skipped: 'Geçildi.', queued: (n) => `${n} tane sizi bekliyor; ilki geliyor. Cevapladıkça sıradaki gelir.`,
     elsewhere: (id) => `${id} başka yerden yanıtlanmış; sıradakine geçiliyor.`, allDone: '✓ Sonuncusuydu; sizi bekleyen kalmadı.',
   },
@@ -113,6 +115,7 @@ async function snapshot(self) {
         const [as, issues, runs] = await Promise.all([
           getJSON(`/api/companies/${c.id}/agents`), getJSON(`/api/companies/${c.id}/issues`), getJSON(`/api/companies/${c.id}/heartbeat-runs`)]);
         const latest = latestRuns(runs);
+        const completed = latestRuns((Array.isArray(runs) ? runs : []).filter((r) => r && r.status === 'succeeded'));
         for (const a of as || []) {
           const mine = (issues || []).filter((i) => i.assigneeAgentId === a.id && !CLOSED.has(i.status));
           const ask = mine.find((i) => ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson));
@@ -123,6 +126,7 @@ async function snapshot(self) {
             id: a.id, name: a.name, status: a.status, company: c, paperclip: cfg.paperclipUrl || src.paperclipUrl,
             needs: a.status === 'waiting' || (!!ask && a.status !== 'error'), issue: ask || (a.status === 'waiting' ? task : null), reason: askPath ? askPath.label : '',
             task, error: a.errorReason || '', fail: run && FAILED_RUNS.has(run.status) ? { id: run.id, code: run.errorCode || run.status, error: run.error || '' } : null,
+            completionId: completed.get(a.id)?.id || null, explicitCompletion: true,
           });
         }
       }
@@ -132,10 +136,11 @@ async function snapshot(self) {
       list.forEach((a, i) => {
         const st = String(a.status || '').toLowerCase();
         const waiting = /wait|blocked|needs|input|approval|permission/.test(st);
-        const status = waiting ? 'waiting' : /error|fail/.test(st) ? 'error' : /work|run|busy|active/.test(st) ? 'running' : st;
+        const status = waiting ? 'waiting' : /error|fail/.test(st) ? 'error' : /work|run|busy|active/.test(st) ? 'running' : /^(done|finished|completed)$/.test(st) ? 'idle' : st;
         const task = a.task ? { identifier: a.task.identifier || a.task.id || '', title: a.task.title || '' } : null;
         // The page names feed agents "<feed path>#<id>", so links select the same one.
-        agents.push({ id: `${src.path}#${a.id ?? a.name ?? i}`, name: a.name || a.id, status, needs: waiting, issue: task, reason: '', task, error: a.error || '', fail: null });
+        agents.push({ id: `${src.path}#${a.id ?? a.name ?? i}`, name: a.name || a.id, status, needs: waiting, issue: task, reason: '', task, error: a.error || '', fail: null,
+          completionId: a.completedAt ? String(a.completedAt) : null, explicitCompletion: Object.hasOwn(a, 'completedAt') });
       });
     }
   }
@@ -196,12 +201,13 @@ function start(opts) {
   const issueLink = (a, i) => (a.company && a.paperclip && i && i.identifier && !(local(opts.paperclipPublicUrl || a.paperclip) && !local(opts.publicUrl)) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/issues/${encodeURIComponent(i.identifier)}` : '');
   const agentLink = (a) => cubicleLink(`?agent=${encodeURIComponent(a.id)}${a.company ? `&company=${encodeURIComponent(a.company.issuePrefix)}` : ''}`);
 
-  async function send(chatId, html, extra = {}) {
+  async function send(chatId, html, extra = {}, alert = null) {
     // Check here too: a linked chat may have been removed while a snapshot was loading.
-    if (stopped || !canSend(chatId)) return null;
+    const allowed = () => !stopped && canSend(chatId) && (!alert || (state.chats[chatId] && wants(state.chats[chatId], alert.agent, alert.kind)));
+    if (!allowed()) return null;
     let r = await call('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...extra });
     // Some links (e.g. 127.0.0.1) can be refused: send it again as plain text, links written out.
-    if (r.status === 400 && !stopped && canSend(chatId)) r = await call('sendMessage', { chat_id: chatId, text: html.replace(/<a href="([^"]*)">([^<]*)<\/a>/g, '$2: $1').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'), disable_web_page_preview: true, ...extra });
+    if (r.status === 400 && allowed()) r = await call('sendMessage', { chat_id: chatId, text: html.replace(/<a href="([^"]*)">([^<]*)<\/a>/g, '$2: $1').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'), disable_web_page_preview: true, ...extra });
     return r.json && r.json.ok ? r.json.result : null;
   }
   const links = (pairs) => pairs.filter(([, u]) => u).map(([t, u]) => `<a href="${esc(u)}">${esc(t)}</a>`).join(' · ');
@@ -323,7 +329,15 @@ function start(opts) {
     }
   }
 
-  // Watch the office: tell paired chats when an agent starts needing you or fails.
+  async function notifyCompleted(a) {
+    for (const [chat, c] of Object.entries(state.chats)) {
+      const t = tr(c.lang);
+      await send(chat, `${t.completed(esc(a.name))}\n${links([[t.open, agentLink(a)]])}`, {}, { agent: a, kind: 'completed' });
+    }
+  }
+
+  // Watch the office, including completions suppressed by a chat's filter or muted agents.
+  // Advancing the baseline for every chat prevents replay when its alerts are turned back on.
   let known = null;
   async function watch() {
     if (stopped) return;
@@ -337,9 +351,13 @@ function start(opts) {
           if (needKey !== null && (!before || before.needKey !== needKey)) await notifyNeeds(a);
           if (a.fail && (!before || before.failId !== a.fail.id)) await notifyFail(a);
           else if (!a.fail && a.status === 'error' && before && before.status !== 'error') await notifyFail(a);
+          const finished = before && (a.explicitCompletion
+            ? a.completionId && a.completionId !== before.completionId
+            : before.status === 'running' && a.status === 'idle' && !a.error && !a.needs);
+          if (finished) await notifyCompleted(a);
         }
       }
-      known = new Map([...now].map(([id, a]) => [id, { needKey: a.needs ? `${a.issue && a.issue.identifier || ''}` : null, failId: a.fail && a.fail.id, status: a.status }]));
+      known = new Map([...now].map(([id, a]) => [id, { needKey: a.needs ? `${a.issue && a.issue.identifier || ''}` : null, failId: a.fail && a.fail.id, completionId: a.completionId, status: a.status }]));
       // Answered in Paperclip (or no longer waiting): drop it from the queues, move on if it was on screen.
       const open = new Set(agents.filter((a) => a.needs).map((a) => (a.issue && a.issue.identifier ? a.issue.identifier : `agent:${a.id}`)));
       for (const [chat, c] of agents.length ? Object.entries(state.chats) : []) {      // nothing read: change nothing
@@ -390,7 +408,7 @@ function start(opts) {
     // Any message that is not a command answers the question on screen (a reply works too).
     if (!command && text && me0.current && opts.replies) return answerCurrent(chatId, text);
     if (!command && m.reply_to_message) return send(chatId, esc(t.which));
-    if (command === 'skip' || command === 'atla' || command === 'gec' || command === 'geç') {
+    if (command === 'skip') {
       if (!me0.current) return send(chatId, esc(t.nobody));
       if (me0.current.answers && me0.current.answers.length) me0.current.answers = [];
       await send(chatId, esc(t.skipped));
@@ -398,16 +416,16 @@ function start(opts) {
       if (!me0.current) return send(chatId, esc(t.allDone));
       return null;
     }
-    if (command === 'answer' || command === 'yanit' || command === 'yanıt') {
+    if (command === 'answer') {
       if (rest.length < 2) return send(chatId, esc(t.which));
       return answer(chatId, lang, rest[0].toUpperCase(), rest.slice(1).join(' '));
     }
-    if (command === 'status' || command === 'durum') {
+    if (command === 'status') {
       const { agents } = await snapshot(self);
       const n = agents.length, run = agents.filter((a) => a.status === 'running').length, wait = agents.filter((a) => a.needs).length, err = agents.filter((a) => a.status === 'error').length;
       return send(chatId, `${esc(t.status(n, run, wait, err))}\n${links([[t.office, cubicleLink()]])}`);
     }
-    if (command === 'waiting' || command === 'bekleyen') {
+    if (command === 'waiting') {
       const { agents } = await snapshot(self);
       const w = agents.filter((a) => a.needs);
       if (!w.length) return send(chatId, esc(t.nobody));
@@ -426,10 +444,10 @@ function start(opts) {
       const k = await kpiSummary(self).catch(() => null);
       return send(chatId, `📊 <b>${esc(t.kpi)}</b>\n${k ? esc(t.kpiLine(k.open, k.avg, k.done7)) : ''}\n${links([[t.kpi, cubicleLink('?kpi')]])}`);
     }
-    if (command === 'office' || command === 'ofis' || command === 'cubicle') return send(chatId, links([[t.office, cubicleLink()]]));
+    if (command === 'office' || command === 'cubicle') return send(chatId, links([[t.office, cubicleLink()]]));
     const me = state.chats[chatId];
-    if (['mute', 'unmute', 'muted', 'sustur', 'ac', 'aç', 'susturulan'].includes(command)) {
-      const off = ['mute', 'sustur'].includes(command), on = ['unmute', 'ac', 'aç'].includes(command);
+    if (['mute', 'unmute', 'muted'].includes(command)) {
+      const off = command === 'mute', on = command === 'unmute';
       me.muted = me.muted || [];
       const q = rest.join(' ').trim().toLowerCase();
       if (!q || (!off && !on)) return send(chatId, esc(t.mutedList(me.muted)));
@@ -444,9 +462,9 @@ function start(opts) {
       return send(chatId, off ? t.muted(esc(hit)) : t.unmuted(esc(hit)));
     }
     // /alerts questions, or the short forms /questions, /errors, /all
-    const short = { questions: 'questions', sorular: 'questions', errors: 'failures', failures: 'failures', hatalar: 'failures', all: 'all', hepsi: 'all' }[command];
-    if (command === 'alerts' || command === 'bildirim' || short) {
-      const pick = short || { all: 'all', hepsi: 'all', questions: 'questions', sorular: 'questions', failures: 'failures', errors: 'failures', hatalar: 'failures' }[String(rest[0] || '').toLowerCase()];
+    const short = { questions: 'questions', errors: 'failures', failures: 'failures', all: 'all' }[command];
+    if (command === 'alerts' || short) {
+      const pick = short || { all: 'all', questions: 'questions', failures: 'failures', errors: 'failures' }[String(rest[0] || '').toLowerCase()];
       if (!pick) return send(chatId, `${esc(t.alerts[me.only || 'all'])}\n${esc(t.alertsHelp)}`);
       me.only = pick; saveState();
       return send(chatId, esc(t.alerts[pick]));
