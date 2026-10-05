@@ -238,6 +238,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
   }
 
   // feed mode
+  require('./launchd.js')();
   await withServer(['--source', path.join(ROOT, 'examples/feed.json')], async (base) => {
     assert.strictEqual((await get(`${base}/`)).status, 200);
     const cfg = JSON.parse((await get(`${base}/config.json`)).body);
