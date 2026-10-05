@@ -161,6 +161,9 @@
   #tg .tgusers li { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:6px 0; }
   #tg [data-tg-access] .check { display:flex; align-items:center; gap:6px; margin:8px 0; font-size:13px; }
   #tg [data-tg-access] button:disabled { opacity:.6; cursor:wait; }
+  #tg [data-tg-notifications] .check { display:flex; align-items:center; gap:6px; margin:8px 0; font-size:13px; }
+  #tg [data-tg-notifications] fieldset { border:0; padding:0; margin:0 0 0 22px; }
+  #tg [data-tg-notifications] fieldset:disabled { opacity:.6; }
   #tg .tgpair { display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; margin:8px 0; }
   #tg .tgpair figure { margin:0; text-align:center; }
   #tg .tgpair figcaption { font-size:12px; color:var(--muted); margin-top:4px; }
@@ -279,6 +282,12 @@
   // ---------- i18n ----------
   const STR = {
     en: {
+      tgNotifyFailed: "Could not save notification settings. Please try again.",
+      tgNotifyHint: "Only selected notifications are sent. Bot commands remain available when notifications are off.",
+      tgNotifyCompleted: "Agent finished notifications",
+      tgNotifyWaiting: "Agent waiting notifications",
+      tgNotifyErrors: "Error notifications",
+      tgNotify: "Send notifications",
       tgAccess: "Who can use the bot?",
       tgAllowEveryone: "Allow everyone",
       tgAllowEveryoneHint: "Anyone with the pairing code can link a chat, as before.",
@@ -309,7 +318,7 @@
       waitsOn1: (id) => `waiting for ${id}`, waitsOnN: (n, id) => `waiting for ${n} tasks (${id}…)`, waitsSubs: (n) => `waiting for ${n} subtasks`, waitsYou: 'waiting for you', stalled: (n) => `${n} stalled`,
       sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sHuman: 'Your desk', sNotify: 'Desktop notification',
       tgButton: '📨 Telegram…', tgIntro: 'Get a message on your phone when an agent needs you or a run fails, with links to the agent and the issue, and ask the office how it is doing.',
-      tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text, /mute name, /alerts all|questions|failures',
+      tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text, /mute name, /alerts all|questions|failures|done',
       tg1: 'Create a bot', tg1Text: 'In Telegram, open @BotFather, go to My Bots and press “Create a New Bot”. Give it a name and a username ending in “bot”. BotFather then sends you a token, a long line like 123456789:AAH…; copy it.',
       tg2: 'Paste the token here', tgTokenPh: 'e.g. 123456789:AAH…', tgSave: 'Save', tgSaving: 'Checking…', tgBad: { format: 'That does not look like a bot token. Copy the whole line BotFather sent.', refused: 'Telegram refused this token. Copy it again from BotFather.', unreachable: 'Telegram could not be reached from this computer. Check the internet connection.', url: 'That is not a web address; it should start with http:// or https://.' },
       tgBotOk: (u) => `✓ Connected to ${u}`, tgRemove: 'Disconnect', tgFromEnv: 'The token is set in the server’s environment.',
@@ -365,6 +374,12 @@
       hosted: 'This is the hosted demo with fake agents. To watch your own agents, run <code>npx @caglarutkuguler/cubicle</code> and open <code>http://127.0.0.1:3200</code>, or install it as a Paperclip plugin.',
     },
     tr: {
+      tgNotifyFailed: "Bildirim ayarları kaydedilemedi. Lütfen yeniden deneyin.",
+      tgNotifyHint: "Yalnızca seçili bildirimler gönderilir. Bildirimler kapalıyken de bot komutlarını kullanabilirsiniz.",
+      tgNotifyCompleted: "Ajan işi bitirdi bildirimi",
+      tgNotifyWaiting: "Ajan bekleme bildirimi",
+      tgNotifyErrors: "Hata bildirimi",
+      tgNotify: "Bildirim gönder",
       tgAccess: "Botu kimler kullanabilir?",
       tgAllowEveryone: "Herkese izin ver",
       tgAllowEveryoneHint: "Eşleştirme kodunu bilen herkes, mevcut düzende olduğu gibi sohbetini bağlayabilir.",
@@ -395,7 +410,7 @@
       waitsOn1: (id) => `başka bir görevi bekliyor (${id})`, waitsOnN: (n, id) => `${n} görevin bitmesini bekliyor (${id}…)`, waitsSubs: (n) => `${n} alt görevin bitmesini bekliyor`, waitsYou: 'sizi bekliyor', stalled: (n) => `${n} tanesi takıldı`,
       sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
       tgButton: '📨 Telegram…', tgIntro: 'Bir ajan sizi beklediğinde ya da bir çalıştırma hata verdiğinde telefonunuza ajan ve iş bağlantılarıyla mesaj gelir; ofisin durumunu da oradan sorabilirsiniz.',
-      tgCommands: 'Komutlar: /durum, /bekleyen, /kpi, /ofis, /yanit ID metin, /sustur ad, /bildirim hepsi|sorular|hatalar',
+      tgCommands: 'Komutlar: /durum, /bekleyen, /kpi, /ofis, /yanit ID metin, /sustur ad, /bildirim hepsi|sorular|hatalar|bitenler',
       tg1: 'Bot oluşturun', tg1Text: 'Telegram’da @BotFather’ı açın, My Bots menüsüne girip “Create a New Bot” düğmesine basın. Bota bir ad ve sonu “bot” ile biten bir kullanıcı adı verin. BotFather size 123456789:AAH… gibi uzun bir satır (token) gönderir; onu kopyalayın.',
       tg2: 'Token’ı buraya yapıştırın', tgTokenPh: 'örn. 123456789:AAH…', tgSave: 'Kaydet', tgSaving: 'Kontrol ediliyor…', tgBad: { format: 'Bu bir bot token’ına benzemiyor. BotFather’ın gönderdiği satırın tamamını kopyalayın.', refused: 'Telegram bu token’ı kabul etmedi. BotFather’dan yeniden kopyalayın.', unreachable: 'Bu bilgisayardan Telegram’a ulaşılamadı. İnternet bağlantısını kontrol edin.', url: 'Bu bir web adresi değil; http:// ya da https:// ile başlamalı.' },
       tgBotOk: (u) => `✓ ${u} bağlandı`, tgRemove: 'Bağlantıyı kaldır', tgFromEnv: 'Token sunucu ortamında tanımlı.',
@@ -451,6 +466,12 @@
       hosted: "Bu, sahte ajanlarla çalışan barındırılan demo. Kendi ajanlarınızı izlemek için <code>npx @caglarutkuguler/cubicle</code> çalıştırıp <code>http://127.0.0.1:3200</code> adresini açın ya da Paperclip eklentisi olarak kurun.",
     },
     de: {
+      tgNotifyFailed: "Benachrichtigungseinstellungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
+      tgNotifyHint: "Nur ausgewählte Benachrichtigungen werden gesendet. Bot-Befehle bleiben auch ohne Benachrichtigungen verfügbar.",
+      tgNotifyCompleted: "Agent hat seine Arbeit beendet",
+      tgNotifyWaiting: "Agent wartet",
+      tgNotifyErrors: "Fehlermeldungen",
+      tgNotify: "Benachrichtigungen senden",
       tgAccess: "Wer darf den Bot nutzen?",
       tgAllowEveryone: "Alle zulassen",
       tgAllowEveryoneHint: "Wie bisher kann jeder mit dem Kopplungscode einen Chat verknüpfen.",
@@ -481,7 +502,7 @@
       waitsOn1: (id) => `wartet auf ${id}`, waitsOnN: (n, id) => `wartet auf ${n} Aufgaben (${id} …)`, waitsSubs: (n) => `wartet auf ${n} Teilaufgaben`, waitsYou: 'wartet auf Sie', stalled: (n) => `${n} hängen`,
       sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
       tgButton: '📨 Telegram…', tgIntro: 'Eine Nachricht aufs Handy, wenn ein Agent Sie braucht oder ein Lauf fehlschlägt, mit Links zum Agenten und zur Aufgabe; und fragen Sie das Büro, wie es läuft.',
-      tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text, /mute Name, /alerts all|questions|failures',
+      tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text, /mute Name, /alerts all|questions|failures|done',
       tg1: 'Bot anlegen', tg1Text: 'Öffnen Sie in Telegram @BotFather, gehen Sie zu „My Bots“ und drücken Sie „Create a New Bot“. Geben Sie einen Namen und einen Benutzernamen, der auf „bot“ endet. BotFather schickt Ihnen ein Token, eine lange Zeile wie 123456789:AAH…; kopieren Sie es.',
       tg2: 'Token hier einfügen', tgTokenPh: 'z. B. 123456789:AAH…', tgSave: 'Speichern', tgSaving: 'Wird geprüft…', tgBad: { format: 'Das sieht nicht wie ein Bot-Token aus. Kopieren Sie die ganze Zeile von BotFather.', refused: 'Telegram hat dieses Token abgelehnt. Kopieren Sie es erneut von BotFather.', unreachable: 'Telegram ist von diesem Rechner aus nicht erreichbar. Prüfen Sie die Internetverbindung.', url: 'Das ist keine Webadresse; sie sollte mit http:// oder https:// beginnen.' },
       tgBotOk: (u) => `✓ Verbunden mit ${u}`, tgRemove: 'Trennen', tgFromEnv: 'Das Token ist in der Serverumgebung gesetzt.',
@@ -537,6 +558,12 @@
       hosted: 'Das ist die gehostete Demo mit erfundenen Agenten. Für deine eigenen Agenten <code>npx @caglarutkuguler/cubicle</code> ausführen und <code>http://127.0.0.1:3200</code> öffnen, oder es als Paperclip-Plugin installieren.',
     },
     es: {
+      tgNotifyFailed: "No se pudieron guardar las notificaciones. Inténtalo de nuevo.",
+      tgNotifyHint: "Solo se envían las notificaciones seleccionadas. Los comandos del bot siguen disponibles si las desactivas.",
+      tgNotifyCompleted: "Notificaciones de trabajo terminado",
+      tgNotifyWaiting: "Notificaciones de agentes esperando",
+      tgNotifyErrors: "Notificaciones de errores",
+      tgNotify: "Enviar notificaciones",
       tgAccess: "¿Quién puede usar el bot?",
       tgAllowEveryone: "Permitir a todos",
       tgAllowEveryoneHint: "Como antes, cualquiera con el código de vinculación puede vincular un chat.",
@@ -567,7 +594,7 @@
       waitsOn1: (id) => `espera a ${id}`, waitsOnN: (n, id) => `espera ${n} tareas (${id}…)`, waitsSubs: (n) => `espera ${n} subtareas`, waitsYou: 'te espera', stalled: (n) => `${n} atascadas`,
       sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
       tgButton: '📨 Telegram…', tgIntro: 'Recibe un mensaje en el móvil cuando un agente te necesita o una ejecución falla, con enlaces al agente y a la tarea, y pregunta a la oficina cómo va.',
-      tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto, /mute nombre, /alerts all|questions|failures',
+      tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto, /mute nombre, /alerts all|questions|failures|done',
       tg1: 'Crea un bot', tg1Text: 'En Telegram, abre @BotFather, entra en My Bots y pulsa «Create a New Bot». Dale un nombre y un usuario que termine en «bot». BotFather te envía un token, una línea larga como 123456789:AAH…; cópiala.',
       tg2: 'Pega el token aquí', tgTokenPh: 'p. ej. 123456789:AAH…', tgSave: 'Guardar', tgSaving: 'Comprobando…', tgBad: { format: 'Eso no parece un token de bot. Copia la línea completa que envió BotFather.', refused: 'Telegram rechazó este token. Vuelve a copiarlo de BotFather.', unreachable: 'No se pudo conectar con Telegram desde este equipo. Revisa la conexión a internet.', url: 'No es una dirección web; debe empezar por http:// o https://.' },
       tgBotOk: (u) => `✓ Conectado a ${u}`, tgRemove: 'Desconectar', tgFromEnv: 'El token está definido en el entorno del servidor.',
@@ -623,6 +650,12 @@
       hosted: 'Esta es la demo alojada con agentes ficticios. Para ver tus propios agentes, ejecuta <code>npx @caglarutkuguler/cubicle</code> y abre <code>http://127.0.0.1:3200</code>, o instálalo como plugin de Paperclip.',
     },
     fr: {
+      tgNotifyFailed: "Impossible d’enregistrer les notifications. Veuillez réessayer.",
+      tgNotifyHint: "Seules les notifications cochées sont envoyées. Les commandes restent disponibles si les notifications sont désactivées.",
+      tgNotifyCompleted: "Agent ayant terminé son travail",
+      tgNotifyWaiting: "Agent en attente",
+      tgNotifyErrors: "Notifications d’erreur",
+      tgNotify: "Envoyer des notifications",
       tgAccess: "Qui peut utiliser le bot ?",
       tgAllowEveryone: "Autoriser tout le monde",
       tgAllowEveryoneHint: "Comme avant, toute personne disposant du code peut lier une discussion.",
@@ -653,7 +686,7 @@
       waitsOn1: (id) => `attend ${id}`, waitsOnN: (n, id) => `attend ${n} tâches (${id}…)`, waitsSubs: (n) => `attend ${n} sous-tâches`, waitsYou: 'vous attend', stalled: (n) => `${n} bloquées`,
       sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
       tgButton: '📨 Telegram…', tgIntro: 'Recevez un message sur votre téléphone quand un agent a besoin de vous ou qu’une exécution échoue, avec des liens vers l’agent et la tâche, et demandez au bureau où il en est.',
-      tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte, /mute nom, /alerts all|questions|failures',
+      tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte, /mute nom, /alerts all|questions|failures|done',
       tg1: 'Créez un bot', tg1Text: 'Dans Telegram, ouvrez @BotFather, allez dans My Bots et appuyez sur « Create a New Bot ». Donnez-lui un nom et un nom d’utilisateur finissant par « bot ». BotFather vous envoie un jeton, une longue ligne comme 123456789:AAH… ; copiez-la.',
       tg2: 'Collez le jeton ici', tgTokenPh: 'ex. 123456789:AAH…', tgSave: 'Enregistrer', tgSaving: 'Vérification…', tgBad: { format: 'Cela ne ressemble pas à un jeton de bot. Copiez toute la ligne envoyée par BotFather.', refused: 'Telegram a refusé ce jeton. Copiez-le à nouveau depuis BotFather.', unreachable: 'Impossible de joindre Telegram depuis cet ordinateur. Vérifiez la connexion internet.', url: 'Ce n’est pas une adresse web ; elle doit commencer par http:// ou https://.' },
       tgBotOk: (u) => `✓ Connecté à ${u}`, tgRemove: 'Déconnecter', tgFromEnv: 'Le jeton est défini dans l’environnement du serveur.',
@@ -709,6 +742,12 @@
       hosted: 'Ceci est la démo en ligne avec des agents fictifs. Pour voir vos propres agents, lancez <code>npx @caglarutkuguler/cubicle</code> et ouvrez <code>http://127.0.0.1:3200</code>, ou installez-le comme plugin Paperclip.',
     },
     zh: {
+      tgNotifyFailed: "无法保存通知设置，请重试。",
+      tgNotifyHint: "仅发送选中的通知。关闭通知后仍可使用机器人命令。",
+      tgNotifyCompleted: "代理完成工作通知",
+      tgNotifyWaiting: "代理等待通知",
+      tgNotifyErrors: "错误通知",
+      tgNotify: "发送通知",
       tgAccess: "谁可以使用机器人？",
       tgAllowEveryone: "允许所有人",
       tgAllowEveryoneHint: "与之前一样，任何知道配对码的人都可以关联聊天。",
@@ -739,7 +778,7 @@
       waitsOn1: (id) => `等待 ${id}`, waitsOnN: (n, id) => `等待 ${n} 个任务（${id}…）`, waitsSubs: (n) => `等待 ${n} 个子任务`, waitsYou: '在等你', stalled: (n) => `${n} 个停滞`,
       sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sHuman: '你的办公桌', sNotify: '桌面通知',
       tgButton: '📨 Telegram…', tgIntro: '当代理需要你或运行失败时，手机上会收到带有代理和任务链接的消息，也可以随时询问办公室状态。',
-      tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本、/mute 名称、/alerts all|questions|failures',
+      tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本、/mute 名称、/alerts all|questions|failures|done',
       tg1: '创建机器人', tg1Text: '在 Telegram 中打开 @BotFather，进入 My Bots 并点“Create a New Bot”。给它起个名字和以“bot”结尾的用户名。BotFather 会发给你一个 token，形如 123456789:AAH… 的长字符串，复制它。',
       tg2: '把 token 粘贴到这里', tgTokenPh: '例如 123456789:AAH…', tgSave: '保存', tgSaving: '正在检查…', tgBad: { format: '这看起来不像机器人 token。请复制 BotFather 发来的完整一行。', refused: 'Telegram 拒绝了这个 token。请从 BotFather 重新复制。', unreachable: '这台电脑连不上 Telegram，请检查网络。', url: '这不是网址；应以 http:// 或 https:// 开头。' },
       tgBotOk: (u) => `✓ 已连接 ${u}`, tgRemove: '断开', tgFromEnv: 'token 已在服务器环境中设置。',
@@ -795,6 +834,12 @@
       hosted: '这是使用虚构代理的在线演示。要查看你自己的代理，请运行 <code>npx @caglarutkuguler/cubicle</code> 并打开 <code>http://127.0.0.1:3200</code>，或将其安装为 Paperclip 插件。',
     },
     ar: {
+      tgNotifyFailed: "تعذّر حفظ إعدادات الإشعارات. يُرجى المحاولة مجددًا.",
+      tgNotifyHint: "تُرسل الإشعارات المحددة فقط. تبقى أوامر البوت متاحة عند إيقاف الإشعارات.",
+      tgNotifyCompleted: "إشعارات اكتمال عمل الوكيل",
+      tgNotifyWaiting: "إشعارات انتظار الوكيل",
+      tgNotifyErrors: "إشعارات الأخطاء",
+      tgNotify: "إرسال الإشعارات",
       tgAccess: "من يمكنه استخدام البوت؟",
       tgAllowEveryone: "السماح للجميع",
       tgAllowEveryoneHint: "كما في السابق، يمكن لأي شخص لديه رمز الربط ربط دردشة.",
@@ -825,7 +870,7 @@
       waitsOn1: (id) => `ينتظر ${id}`, waitsOnN: (n, id) => `ينتظر ${n} مهام (${id}…)`, waitsSubs: (n) => `ينتظر ${n} مهام فرعية`, waitsYou: 'ينتظرك', stalled: (n) => `${n} متعثرة`,
       sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
       tgButton: '📨 Telegram…', tgIntro: 'تصلك رسالة على هاتفك عندما يحتاجك وكيل أو يفشل تشغيل، مع روابط للوكيل والمهمة، ويمكنك سؤال المكتب عن حاله.',
-      tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص ‎/mute اسم ‎/alerts all|questions|failures',
+      tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص ‎/mute اسم ‎/alerts all|questions|failures|done',
       tg1: 'أنشئ بوتًا', tg1Text: 'في Telegram افتح ‎@BotFather، وادخل My Bots واضغط «Create a New Bot». أعطه اسمًا واسم مستخدم ينتهي بـ «bot». سيرسل لك BotFather رمزًا (token) طويلًا مثل 123456789:AAH…؛ انسخه.',
       tg2: 'الصق الرمز هنا', tgTokenPh: 'مثال: 123456789:AAH…', tgSave: 'حفظ', tgSaving: 'جارٍ التحقق…', tgBad: { format: 'لا يبدو هذا رمز بوت. انسخ السطر كاملًا من BotFather.', refused: 'رفض Telegram هذا الرمز. انسخه مجددًا من BotFather.', unreachable: 'تعذر الوصول إلى Telegram من هذا الحاسوب. تحقق من الاتصال بالإنترنت.', url: 'هذا ليس عنوان ويب؛ يجب أن يبدأ بـ http:// أو https://.' },
       tgBotOk: (u) => `✓ متصل بـ ${u}`, tgRemove: 'قطع الاتصال', tgFromEnv: 'الرمز محدد في بيئة الخادم.',
@@ -1203,6 +1248,7 @@
   // server starts the bot at once; no files, no restarts.
   let tgTimer = null;
   let tgAccessState = { allowEveryone: true, allowedUsers: [] };
+  let tgNotificationState = {};
   let tgRenderVersion = 0, tgTailscale = null;
   async function tgStatus() { try { const r = await fetch('/api/telegram', { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (_) { return null; } }
   async function tgPut(body) {
@@ -1223,6 +1269,13 @@
     const st = savedStatus || (await tgStatus()) || { on: false, canEdit: false };
     if (version !== tgRenderVersion) return;
     const accessState = { allowEveryone: st.allowEveryone !== false, allowedUsers: st.allowedUsers || [] };
+    const notifications = Object.fromEntries(['enabled', 'errors', 'waiting', 'completed'].map((key) => [key, st.notifications?.[key] !== false]));
+    const notificationCheck = (key, label) => `<label class="check"><input type="checkbox" data-tg-notify="${key}"${notifications[key] ? ' checked' : ''}> ${esc(label)}</label>`;
+    const notificationBox = !st.canEdit ? '' : `<div class="tgstep" data-tg-notifications>`
+      + notificationCheck('enabled', L.tgNotify)
+      + `<fieldset aria-label="${esc(L.tgNotify)}"${notifications.enabled ? '' : ' disabled'}>`
+      + notificationCheck('errors', L.tgNotifyErrors) + notificationCheck('waiting', L.tgNotifyWaiting) + notificationCheck('completed', L.tgNotifyCompleted)
+      + `</fieldset><p class="muted small">${esc(L.tgNotifyHint)}</p><p class="err" data-tg="notificationerr" role="alert"></p></div>`;
     const bot = st.username ? `@${st.username}` : '';
     const step = (n, title, body, done) => `<div class="tgstep${done ? ' done' : ''}"><b><span class="num">${done ? '✓' : n}</span>${esc(title)}</b>${body}</div>`;
     const tokenBox = st.fromEnv ? `<p class="muted">${esc(L.tgFromEnv)}</p>`
@@ -1274,9 +1327,11 @@
     const phoneBox = !st.on ? '' : (remote ? '' : `<p>${esc(L.tg5Text)}</p>`) + tsBox + manual;
     const scrollTop = tgDlg.scrollTop;
     tgAccessState = accessState;
+    tgNotificationState = notifications;
     tgDlg.innerHTML = head
       + step(1, L.tg1, `<p>${esc(L.tg1Text)}</p><p><a class="act" href="https://t.me/BotFather" target="_blank" rel="noopener">✈ @BotFather</a></p>`, st.on)
       + step(2, L.tg2, tokenBox, st.on)
+      + notificationBox
       + accessBox
       + (st.on ? step(3, L.tg3, linkBox, st.chats > 0) : '')
       + (replyBox ? step(4, L.tg4, replyBox, false) : '')
@@ -1292,20 +1347,28 @@
       if (now && (now.chats || now.unpaired !== st.unpaired || now.polling !== st.polling)) openTelegram(now);
     }, 2500);
   }
-  async function saveTgAccess(change) {
+  async function saveTgSettings(change, section) {
     const version = ++tgRenderVersion;
     clearInterval(tgTimer);
-    const box = tgDlg.querySelector('[data-tg-access]'), err = box.querySelector('[data-tg="accesserr"]');
+    const box = tgDlg.querySelector(`[data-tg-${section}]`), err = box.querySelector(section === 'access' ? '[data-tg="accesserr"]' : '[data-tg="notificationerr"]');
     err.textContent = '';
-    const controls = [...box.querySelectorAll('input, button')];
+    const other = tgDlg.querySelector(section === 'access' ? '[data-tg-notifications]' : '[data-tg-access]');
+    const controls = [...box.querySelectorAll('input, button'), ...(other ? other.querySelectorAll('input, button') : [])];
+    const disabled = controls.map((c) => c.disabled);
     controls.forEach((c) => { c.disabled = true; });
     const r = await tgPut(change).catch(() => ({ ok: false }));
     if (version !== tgRenderVersion || !tgDlg.open) return;
     if (r.ok) { await openTelegram(r.status); return; }
-    controls.forEach((c) => { c.disabled = false; });
-    box.querySelector('[data-tg="everyone"]').checked = tgAccessState.allowEveryone;
-    err.textContent = r.error === 'users' ? L.tgUserInvalid : L.tgAccessFailed;
+    controls.forEach((c, i) => { c.disabled = disabled[i]; });
+    if (section === 'access') {
+      box.querySelector('[data-tg="everyone"]').checked = tgAccessState.allowEveryone;
+      err.textContent = r.error === 'users' ? L.tgUserInvalid : L.tgAccessFailed;
+    } else {
+      for (const c of box.querySelectorAll('[data-tg-notify]')) c.checked = tgNotificationState[c.dataset.tgNotify];
+      err.textContent = L.tgNotifyFailed;
+    }
   }
+  const saveTgAccess = (change) => saveTgSettings(change, 'access');
   tgDlg.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-tg]'); if (!b) return;
     const k = b.dataset.tg;
@@ -1348,8 +1411,9 @@
   tgDlg.addEventListener('change', async (e) => {
     if (e.target.dataset.tg === 'replies') await tgPut({ replies: e.target.checked });
     if (e.target.dataset.tg === 'everyone') await saveTgAccess({ allowEveryone: e.target.checked });
+    if (e.target.dataset.tgNotify) await saveTgSettings({ notifications: { [e.target.dataset.tgNotify]: e.target.checked } }, 'notifications');
   });
-  tgDlg.addEventListener('focusin', (e) => { if (e.target.closest('[data-tg-access]')) clearInterval(tgTimer); });
+  tgDlg.addEventListener('focusin', (e) => { if (e.target.closest('[data-tg-access], [data-tg-notifications]')) clearInterval(tgTimer); });
   tgDlg.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.dataset.tg === 'userid') { e.preventDefault(); tgDlg.querySelector('[data-tg="adduser"]').click(); }
   });

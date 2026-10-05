@@ -162,12 +162,14 @@ function apply(feed, ev, runtime = 'claude') {
       break;
     case 'Stop':
       a = a || { id, since: now, name, role };
+      if (a.status === 'running' || a.status === 'waiting') a.completedAt = now;
       Object.assign(a, { status: 'idle', task: null });
       break;
     default:
       return feed; // SubagentStart/SubagentStop without an agent_id etc.: nothing to draw
   }
   a.updated = now;
+  if (!Object.hasOwn(a, 'completedAt')) a.completedAt = null;
   if (!agents.includes(a)) agents.push(a);
   return { ...feed, agents };
 }

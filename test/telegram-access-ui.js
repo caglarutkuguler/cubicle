@@ -18,11 +18,14 @@ const status = (ids = []) => ({ on: true, canEdit: true, allowEveryone: false, a
 function fixture() {
   const error = { textContent: '' }, checkbox = { checked: false, disabled: false }, button = { disabled: false };
   const box = { querySelector: (s) => s.includes('accesserr') ? error : checkbox, querySelectorAll: () => [checkbox, button] };
+  const notificationError = { textContent: '' };
+  const notificationControls = ['enabled', 'errors', 'waiting', 'completed'].map((key) => ({ dataset: { tgNotify: key }, checked: true, disabled: false }));
+  const notificationBox = { querySelector: () => notificationError, querySelectorAll: () => notificationControls };
   const listeners = {}, timers = new Map(), requests = [];
   let timerId = 0;
   const dialog = {
     innerHTML: '', open: false, scrollTop: 180,
-    querySelector: (s) => s === '[data-tg-access]' ? box : null,
+    querySelector: (s) => s === '[data-tg-access]' ? box : s === '[data-tg-notifications]' ? notificationBox : null,
     addEventListener: (name, fn) => { (listeners[name] ||= []).push(fn); },
     showModal() { this.open = true; },
     close() { this.open = false; for (const fn of listeners.close || []) fn(); },
@@ -41,7 +44,9 @@ function fixture() {
   });
   vm.runInContext(script, context);
   return { dialog, network, requests, timers, open: () => vm.runInContext('openTelegram()', context),
-    save: (change) => vm.runInContext(`saveTgAccess(${JSON.stringify(change)})`, context) };
+    save: (change) => vm.runInContext(`saveTgAccess(${JSON.stringify(change)})`, context),
+    notify: (change) => vm.runInContext(`saveTgSettings({ notifications: ${JSON.stringify(change)} }, 'notifications')`, context),
+    notificationControls, notificationError };
 }
 
 test('adding and removing users renders the saved response without another GET or Tailscale wait', async () => {
@@ -87,4 +92,31 @@ test('closing the dialog during a save keeps it closed after the response arrive
   const saving = f.save({ allowedUsers: ['101'] });
   f.dialog.close(); slow.resolve(status(['101'])); await saving;
   assert.equal(f.dialog.open, false);
+});
+
+test('notification switches default on, preserve category choices, and refresh without Tailscale', async () => {
+  const f = fixture(); await f.open();
+  for (const key of ['enabled', 'errors', 'waiting', 'completed']) assert.ok(f.dialog.innerHTML.includes(`data-tg-notify="${key}" checked`));
+  const notifications = { enabled: true, errors: true, waiting: true, completed: true };
+  f.network.put = (body) => ({ ...status(), notifications: { ...Object.assign(notifications, body.notifications) } });
+  f.network.tailscale = () => new Promise(() => {});
+  f.requests.length = 0;
+  await f.notify({ waiting: false }); await f.notify({ enabled: false });
+  assert.match(f.dialog.innerHTML, /<fieldset[^>]* disabled>/);
+  assert.ok(!f.dialog.innerHTML.includes('data-tg-notify="waiting" checked'));
+  assert.ok(f.dialog.innerHTML.includes('data-tg-notify="completed" checked'));
+  await f.notify({ enabled: true });
+  assert.doesNotMatch(f.dialog.innerHTML, /<fieldset[^>]* disabled>/);
+  assert.ok(!f.dialog.innerHTML.includes('data-tg-notify="waiting" checked'));
+  assert.deepEqual(f.requests, Array(3).fill('PUT /api/telegram'));
+});
+
+test('a failed notification save restores the switch and shows a local error', async () => {
+  const f = fixture(); await f.open();
+  f.notificationControls[0].checked = false;
+  f.network.put = () => { throw new Error('offline'); };
+  await f.notify({ enabled: false });
+  assert.equal(f.notificationControls[0].checked, true);
+  assert.equal(f.notificationError.textContent, strings.en.tgNotifyFailed);
+  assert.ok(f.notificationControls.every((c) => !c.disabled));
 });
