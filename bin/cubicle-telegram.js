@@ -44,18 +44,18 @@ const TEXT = {
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
     paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde mesaj gelecek.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
-    help: '/durum – ofisin şu anki hâli\n/bekleyen – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/ofis – Cubicle’ı aç\n/yanit ID metin – bir işi yanıtla\n/sustur ad, /ac ad – bir ajan için bildirim kapat / aç\n/bildirim hepsi | sorular | hatalar – hangi bildirimler gelsin\n/atla – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
-    muted: (n) => `🔕 <b>${n}</b> için bildirim gelmeyecek. Yeniden açmak için: /ac ${n}`, unmuted: (n) => `🔔 <b>${n}</b> için bildirimler yeniden açık.`,
+    help: '/status – ofisin şu anki hâli\n/waiting – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/office – Cubicle’ı aç\n/answer ID metin – bir işi yanıtla\n/mute ad, /unmute ad – bir ajan için bildirim kapat / aç\n/alerts all | questions | failures – hangi bildirimler gelsin (kısaca /questions, /errors, /all)\n/skip – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
+    muted: (n) => `🔕 <b>${n}</b> için bildirim gelmeyecek. Yeniden açmak için: /unmute ${n}`, unmuted: (n) => `🔔 <b>${n}</b> için bildirimler yeniden açık.`,
     mutedList: (l) => (l.length ? `🔕 Susturulan: ${l.join(', ')}` : '🔔 Susturulan ajan yok.'), noAgent: (q, l) => `“${q}” adında ajan yok. Ajanlar: ${l.join(', ')}`,
     alerts: { all: '🔔 Bütün bildirimler gelir: sizi bekleyen ajanlar, sorular ve başarısız çalıştırmalar.', questions: '🔔 Yalnızca sizi bekleyen ajanlar (sorular, onaylar) bildirilir.', failures: '🔔 Yalnızca başarısız çalıştırmalar ve hatalar bildirilir.' },
-    alertsHelp: '/bildirim hepsi, /bildirim sorular ya da /bildirim hatalar yazın.',
+    alertsHelp: '/alerts all, /alerts questions ya da /alerts failures yazın.',
     status: (n, run, wait, err) => `${n} ajan · ${run} çalışıyor · ${wait} sizi bekliyor${err ? ` · ${err} hatada` : ''}`,
     nobody: 'Sizi bekleyen yok.', office: 'Ofisi aç', kpi: 'Verdiğiniz görevler',
     kpiLine: (open, avg, done7) => `${open} açık · ortalama ilerleme ${avg === null ? '–' : '%' + avg} · 7 günde ${done7} bitti`,
     sent: (id) => `✓ ${id} işine yazıldı.`, sendFail: (id, e) => `${id} işine yazılamadı: ${e}`,
     repliesOff: 'Telegram’dan yanıt kapalı (Cubicle’ı --telegram-replies ile başlatın). İşi buradan açın:',
-    which: '“Sizi bekliyor” mesajını yanıtlayın ya da /yanit ID metin yazın.',
-    step: (i, n) => `soru ${i}/${n}`, more: (n) => `Bundan sonra ${n} tane daha sizi bekliyor.`, skipHint: '/atla ile sıradakine geçersiniz.',
+    which: '“Sizi bekliyor” mesajını yanıtlayın ya da /answer ID metin yazın.',
+    step: (i, n) => `soru ${i}/${n}`, more: (n) => `Bundan sonra ${n} tane daha sizi bekliyor.`, skipHint: '/skip ile sıradakine geçersiniz.',
     answerHere: 'Cevabınızı buraya yazın (seçeneğin numarası ya da kendi cümleniz).', skipped: 'Geçildi.', queued: (n) => `${n} tane sizi bekliyor; ilki geliyor. Cevapladıkça sıradaki gelir.`,
     elsewhere: (id) => `${id} başka yerden yanıtlanmış; sıradakine geçiliyor.`, allDone: '✓ Sonuncusuydu; sizi bekleyen kalmadı.',
   },
@@ -390,7 +390,7 @@ function start(opts) {
     // Any message that is not a command answers the question on screen (a reply works too).
     if (!command && text && me0.current && opts.replies) return answerCurrent(chatId, text);
     if (!command && m.reply_to_message) return send(chatId, esc(t.which));
-    if (command === 'skip' || command === 'atla' || command === 'gec' || command === 'geç') {
+    if (command === 'skip') {
       if (!me0.current) return send(chatId, esc(t.nobody));
       if (me0.current.answers && me0.current.answers.length) me0.current.answers = [];
       await send(chatId, esc(t.skipped));
@@ -398,16 +398,16 @@ function start(opts) {
       if (!me0.current) return send(chatId, esc(t.allDone));
       return null;
     }
-    if (command === 'answer' || command === 'yanit' || command === 'yanıt') {
+    if (command === 'answer') {
       if (rest.length < 2) return send(chatId, esc(t.which));
       return answer(chatId, lang, rest[0].toUpperCase(), rest.slice(1).join(' '));
     }
-    if (command === 'status' || command === 'durum') {
+    if (command === 'status') {
       const { agents } = await snapshot(self);
       const n = agents.length, run = agents.filter((a) => a.status === 'running').length, wait = agents.filter((a) => a.needs).length, err = agents.filter((a) => a.status === 'error').length;
       return send(chatId, `${esc(t.status(n, run, wait, err))}\n${links([[t.office, cubicleLink()]])}`);
     }
-    if (command === 'waiting' || command === 'bekleyen') {
+    if (command === 'waiting') {
       const { agents } = await snapshot(self);
       const w = agents.filter((a) => a.needs);
       if (!w.length) return send(chatId, esc(t.nobody));
@@ -426,10 +426,10 @@ function start(opts) {
       const k = await kpiSummary(self).catch(() => null);
       return send(chatId, `📊 <b>${esc(t.kpi)}</b>\n${k ? esc(t.kpiLine(k.open, k.avg, k.done7)) : ''}\n${links([[t.kpi, cubicleLink('?kpi')]])}`);
     }
-    if (command === 'office' || command === 'ofis' || command === 'cubicle') return send(chatId, links([[t.office, cubicleLink()]]));
+    if (command === 'office' || command === 'cubicle') return send(chatId, links([[t.office, cubicleLink()]]));
     const me = state.chats[chatId];
-    if (['mute', 'unmute', 'muted', 'sustur', 'ac', 'aç', 'susturulan'].includes(command)) {
-      const off = ['mute', 'sustur'].includes(command), on = ['unmute', 'ac', 'aç'].includes(command);
+    if (['mute', 'unmute', 'muted'].includes(command)) {
+      const off = command === 'mute', on = command === 'unmute';
       me.muted = me.muted || [];
       const q = rest.join(' ').trim().toLowerCase();
       if (!q || (!off && !on)) return send(chatId, esc(t.mutedList(me.muted)));
@@ -444,9 +444,9 @@ function start(opts) {
       return send(chatId, off ? t.muted(esc(hit)) : t.unmuted(esc(hit)));
     }
     // /alerts questions, or the short forms /questions, /errors, /all
-    const short = { questions: 'questions', sorular: 'questions', errors: 'failures', failures: 'failures', hatalar: 'failures', all: 'all', hepsi: 'all' }[command];
-    if (command === 'alerts' || command === 'bildirim' || short) {
-      const pick = short || { all: 'all', hepsi: 'all', questions: 'questions', sorular: 'questions', failures: 'failures', errors: 'failures', hatalar: 'failures' }[String(rest[0] || '').toLowerCase()];
+    const short = { questions: 'questions', errors: 'failures', failures: 'failures', all: 'all' }[command];
+    if (command === 'alerts' || short) {
+      const pick = short || { all: 'all', questions: 'questions', failures: 'failures', errors: 'failures' }[String(rest[0] || '').toLowerCase()];
       if (!pick) return send(chatId, `${esc(t.alerts[me.only || 'all'])}\n${esc(t.alertsHelp)}`);
       me.only = pick; saveState();
       return send(chatId, esc(t.alerts[pick]));
