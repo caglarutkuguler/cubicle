@@ -104,6 +104,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
   }
 
   // concurrent hook runs don't lose each other's updates, and a stale lock doesn't block
+  await require('./agy.js')();
   {
     const fs = require('fs');
     const os = require('os');
