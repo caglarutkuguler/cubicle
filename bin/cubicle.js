@@ -510,6 +510,11 @@ const TG_SETTINGS = process.env.CUBICLE_TELEGRAM_SETTINGS || path.join(path.dirn
 function tgSettings() { try { return JSON.parse(fs.readFileSync(TG_SETTINGS, 'utf8')) || {}; } catch (_) { return {}; } }
 function tgToken() { return TELEGRAM_TOKEN || String(tgSettings().token || '').trim(); }
 function tgReplies() { return HAS_PAPERCLIP && (TELEGRAM_REPLIES || !!tgSettings().replies); }
+function tgAccess() {
+  const s = tgSettings(), { isUserId } = require('./cubicle-telegram.js');
+  return { allowEveryone: s.allowEveryone === undefined || s.allowEveryone === true,
+    allowedUsers: Array.isArray(s.allowedUsers) ? [...new Set(s.allowedUsers.filter(isUserId))] : [] };
+}
 // The address links in messages use: --public-url, else the one saved from the page (⚙ → Telegram →
 // "Open on your phone"), else this machine's own.
 const PUBLIC_URL_FLAG = arg('public-url') || process.env.CUBICLE_PUBLIC_URL || '';
@@ -531,6 +536,7 @@ function telegramStatus(req) {
     polling: TELEGRAM ? TELEGRAM.polling() : '', heard: !!seen.any, unpaired: !!seen.unpaired,
     publicUrl: tgPublicUrl(), publicFixed: !!PUBLIC_URL_FLAG,
     ...(local && TELEGRAM ? { code: TELEGRAM.code } : {}),
+    ...(local ? { ...tgAccess(), linkedUsers: TELEGRAM ? TELEGRAM.linkedUsers() : [] } : {}),
   };
 }
 function serveTelegram(req, res) {
@@ -545,7 +551,16 @@ function serveTelegram(req, res) {
   req.on('data', (d) => { if (body.length < 10000) body += d; });
   req.on('end', async () => {
     let data; try { data = JSON.parse(body); } catch (_) { return send(res, 400, '{"error":"not JSON"}'); }
+    if (!data || typeof data !== 'object' || Array.isArray(data)) return send(res, 400, '{"error":"bad request"}');
     const next = { ...tgSettings() };
+    if ('allowEveryone' in data) {
+      if (typeof data.allowEveryone !== 'boolean') return send(res, 400, '{"error":"access"}');
+      next.allowEveryone = data.allowEveryone;
+    }
+    if ('allowedUsers' in data) {
+      if (!Array.isArray(data.allowedUsers) || !data.allowedUsers.every(require('./cubicle-telegram.js').isUserId)) return send(res, 400, '{"error":"users"}');
+      next.allowedUsers = [...new Set(data.allowedUsers)];
+    }
     if ('token' in data) {
       if (TELEGRAM_TOKEN) return send(res, 409, '{"error":"env"}');
       if (data.token) {
@@ -568,7 +583,7 @@ function serveTelegram(req, res) {
       fs.mkdirSync(path.dirname(TG_SETTINGS), { recursive: true });
       fs.writeFileSync(TG_SETTINGS, JSON.stringify(next), { mode: 0o600 }); fs.chmodSync(TG_SETTINGS, 0o600);
     } catch (e) { return send(res, 500, JSON.stringify({ error: `cannot write ${TG_SETTINGS}` })); }
-    if ('token' in data) restartTelegram(); else if (TELEGRAM) { TELEGRAM.setReplies(tgReplies()); TELEGRAM.setPublicUrl(tgPublicUrl()); }
+    if ('token' in data) restartTelegram(); else if (TELEGRAM) { TELEGRAM.setReplies(tgReplies()); TELEGRAM.setPublicUrl(tgPublicUrl()); TELEGRAM.setAccess(tgAccess()); }
     setTimeout(() => send(res, 200, JSON.stringify(telegramStatus(req))), 'token' in data && data.token ? 1200 : 0);   // let getMe fill in the name
   });
 }
@@ -628,7 +643,7 @@ function serveTailscale(req, res) {
 
 function startTelegram(token) {
   const bot = require('./cubicle-telegram.js').start({
-    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(),
+    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(),
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),

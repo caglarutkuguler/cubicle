@@ -12,6 +12,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 const API = process.env.CUBICLE_TELEGRAM_API || 'https://api.telegram.org';   // tests point this at a fake
+const isUserId = (id) => typeof id === 'string' && /^[1-9]\d{0,15}$/.test(id) && Number.isSafeInteger(Number(id));
 
 const TEXT = {
   en: {
@@ -169,6 +170,9 @@ async function getMe(token) {
 function start(opts) {
   const { token, self, log = console.log } = opts;
   const stateFile = opts.stateFile;
+  let allowEveryone = opts.allowEveryone !== false;
+  let allowedUsers = new Set((opts.allowedUsers || []).filter(isUserId));
+  const canSend = (chatId) => allowEveryone || allowedUsers.has(String(chatId));
   let state = { chats: {}, offset: 0 };
   try { state = { ...state, ...JSON.parse(fs.readFileSync(stateFile, 'utf8')) }; } catch (_) {}
   for (const id of String(process.env.CUBICLE_TELEGRAM_CHAT || '').split(',').map((x) => x.trim()).filter(Boolean)) state.chats[id] = state.chats[id] || { lang: 'tr' };
@@ -193,9 +197,11 @@ function start(opts) {
   const agentLink = (a) => cubicleLink(`?agent=${encodeURIComponent(a.id)}${a.company ? `&company=${encodeURIComponent(a.company.issuePrefix)}` : ''}`);
 
   async function send(chatId, html, extra = {}) {
+    // Check here too: a linked chat may have been removed while a snapshot was loading.
+    if (stopped || !canSend(chatId)) return null;
     let r = await call('sendMessage', { chat_id: chatId, text: html, parse_mode: 'HTML', disable_web_page_preview: true, ...extra });
     // Some links (e.g. 127.0.0.1) can be refused: send it again as plain text, links written out.
-    if (r.status === 400) r = await call('sendMessage', { chat_id: chatId, text: html.replace(/<a href="([^"]*)">([^<]*)<\/a>/g, '$2: $1').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'), disable_web_page_preview: true, ...extra });
+    if (r.status === 400 && !stopped && canSend(chatId)) r = await call('sendMessage', { chat_id: chatId, text: html.replace(/<a href="([^"]*)">([^<]*)<\/a>/g, '$2: $1').replace(/<[^>]+>/g, '').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&amp;/g, '&'), disable_web_page_preview: true, ...extra });
     return r.json && r.json.ok ? r.json.result : null;
   }
   const links = (pairs) => pairs.filter(([, u]) => u).map(([t, u]) => `<a href="${esc(u)}">${esc(t)}</a>`).join(' · ');
@@ -357,6 +363,10 @@ function start(opts) {
 
   async function onMessage(m) {
     const chatId = String(m.chat && m.chat.id);
+    // In restricted mode, check the sender before pairing or handling any command. Group chats
+    // cannot be authorized by adding a member: replies there would disclose data to everyone.
+    if (!allowEveryone && (m.chat?.type !== 'private' || m.sender_chat || m.from?.is_bot
+      || String(m.from?.id) !== chatId || !allowedUsers.has(chatId))) return;
     const text = String(m.text || '').trim();
     const lang = /^tr/i.test((m.from && m.from.language_code) || '') ? 'tr' : 'en';
     const paired = !!state.chats[chatId];
@@ -472,7 +482,9 @@ function start(opts) {
   poll();
   watch();
   const bot = {
-    code, username: '', chats: () => Object.keys(state.chats).length, seen: () => ({ ...seen }), polling: () => polling,
+    code, username: '', chats: () => Object.keys(state.chats).filter(canSend).length, seen: () => ({ ...seen }), polling: () => polling,
+    linkedUsers: () => Object.keys(state.chats).filter(isUserId),
+    setAccess(access) { allowEveryone = access.allowEveryone !== false; allowedUsers = new Set((access.allowedUsers || []).filter(isUserId)); },
     setReplies(v) { opts.replies = !!v; },
     setPublicUrl(u) { opts.publicUrl = u; },
     stop() { stopped = true; if (pending) pending.destroy(new Error('stopped')); },
@@ -482,4 +494,4 @@ function start(opts) {
   return bot;
 }
 
-module.exports = { start, snapshot, kpiSummary, getMe };
+module.exports = { start, snapshot, kpiSummary, getMe, isUserId };

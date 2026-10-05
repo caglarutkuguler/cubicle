@@ -157,6 +157,10 @@
   #tg .num { display:inline-grid; place-items:center; width:20px; height:20px; border-radius:50%; background:#3d6fd9; color:#fff; font-size:12px; flex:none; }
   #tg .tgstep.done .num { background:#2f8a4c; }
   #tg .tgrow { display:flex; gap:6px; margin-top:6px; }
+  #tg .tgusers { list-style:none; padding:0; margin:8px 0; }
+  #tg .tgusers li { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:6px 0; }
+  #tg [data-tg-access] .check { display:flex; align-items:center; gap:6px; margin:8px 0; font-size:13px; }
+  #tg [data-tg-access] button:disabled { opacity:.6; cursor:wait; }
   #tg .tgpair { display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap; margin:8px 0; }
   #tg .tgpair figure { margin:0; text-align:center; }
   #tg .tgpair figcaption { font-size:12px; color:var(--muted); margin-top:4px; }
@@ -275,6 +279,17 @@
   // ---------- i18n ----------
   const STR = {
     en: {
+      tgAccess: "Who can use the bot?",
+      tgAllowEveryone: "Allow everyone",
+      tgAllowEveryoneHint: "Anyone with the pairing code can link a chat, as before.",
+      tgRestrictedHint: "Only listed users can pair, use commands and receive notifications, in private chats. Changes apply immediately.",
+      tgUserId: "Telegram user ID",
+      tgAddUser: "Add",
+      tgRemoveUser: "Remove",
+      tgNoUsers: "The list is empty. Nobody can use the bot or receive notifications.",
+      tgLinkedUsers: "Previously linked users",
+      tgUserInvalid: "Enter a positive numeric Telegram user ID, not an @username.",
+      tgAccessFailed: "Could not save access settings. Please try again.",
       connecting: 'Connecting…', unreachable: "Can't reach Paperclip, retrying…",
       denied: (c) => `Paperclip refused access (${c}). Set PAPERCLIP_TOKEN for an authenticated Paperclip, or check the key.`, feedUnreachable: "Can't read the agent feed, retrying…",
       empty: 'No agents yet.', emptyClaude: 'No Claude Code sessions yet — start <code>claude</code> in any folder and it will walk in.',
@@ -350,6 +365,17 @@
       hosted: 'This is the hosted demo with fake agents. To watch your own agents, run <code>npx @caglarutkuguler/cubicle</code> and open <code>http://127.0.0.1:3200</code>, or install it as a Paperclip plugin.',
     },
     tr: {
+      tgAccess: "Botu kimler kullanabilir?",
+      tgAllowEveryone: "Herkese izin ver",
+      tgAllowEveryoneHint: "Eşleştirme kodunu bilen herkes, mevcut düzende olduğu gibi sohbetini bağlayabilir.",
+      tgRestrictedHint: "Yalnızca listedeki kişiler özel sohbette eşleşebilir, komut kullanabilir ve bildirim alabilir. Değişiklikler hemen uygulanır.",
+      tgUserId: "Telegram kullanıcı kimliği",
+      tgAddUser: "Ekle",
+      tgRemoveUser: "Kaldır",
+      tgNoUsers: "Liste boş. Hiç kimse botu kullanamaz veya bildirim alamaz.",
+      tgLinkedUsers: "Daha önce bağlanan kişiler",
+      tgUserInvalid: "Telegram’ın sayısal kullanıcı kimliğini girin; @kullanıcıadı kullanmayın.",
+      tgAccessFailed: "Erişim ayarları kaydedilemedi. Lütfen yeniden deneyin.",
       connecting: 'Bağlanılıyor…', unreachable: "Paperclip'e ulaşılamıyor, yeniden deneniyor…",
       denied: (c) => `Paperclip erişimi reddetti (${c}). Kimlik doğrulamalı Paperclip için PAPERCLIP_TOKEN tanımlayın veya anahtarı kontrol edin.`, feedUnreachable: 'Ajan verisi okunamıyor, yeniden deneniyor…',
       empty: 'Henüz ajan yok.', emptyClaude: 'Henüz Claude Code oturumu yok. Herhangi bir klasörde <code>claude</code> başlatın, ofise girecek.',
@@ -425,6 +451,17 @@
       hosted: "Bu, sahte ajanlarla çalışan barındırılan demo. Kendi ajanlarınızı izlemek için <code>npx @caglarutkuguler/cubicle</code> çalıştırıp <code>http://127.0.0.1:3200</code> adresini açın ya da Paperclip eklentisi olarak kurun.",
     },
     de: {
+      tgAccess: "Wer darf den Bot nutzen?",
+      tgAllowEveryone: "Alle zulassen",
+      tgAllowEveryoneHint: "Wie bisher kann jeder mit dem Kopplungscode einen Chat verknüpfen.",
+      tgRestrictedHint: "Nur aufgeführte Nutzer können sich in privaten Chats verknüpfen, Befehle nutzen und Benachrichtigungen erhalten. Änderungen gelten sofort.",
+      tgUserId: "Telegram-Nutzer-ID",
+      tgAddUser: "Hinzufügen",
+      tgRemoveUser: "Entfernen",
+      tgNoUsers: "Die Liste ist leer. Niemand kann den Bot nutzen oder Benachrichtigungen erhalten.",
+      tgLinkedUsers: "Zuvor verknüpfte Nutzer",
+      tgUserInvalid: "Geben Sie eine positive numerische Telegram-Nutzer-ID ein, keinen @Nutzernamen.",
+      tgAccessFailed: "Die Zugriffseinstellungen konnten nicht gespeichert werden. Bitte erneut versuchen.",
       connecting: 'Verbinde…', unreachable: 'Paperclip nicht erreichbar, neuer Versuch…',
       denied: (c) => `Paperclip hat den Zugriff verweigert (${c}). Für ein Paperclip mit Anmeldung PAPERCLIP_TOKEN setzen oder den Schlüssel prüfen.`, feedUnreachable: 'Agenten-Feed nicht lesbar, neuer Versuch…',
       empty: 'Noch keine Agenten.', emptyClaude: 'Noch keine Claude-Code-Sitzungen. Starte <code>claude</code> in einem beliebigen Ordner, dann kommt sie herein.',
@@ -500,6 +537,17 @@
       hosted: 'Das ist die gehostete Demo mit erfundenen Agenten. Für deine eigenen Agenten <code>npx @caglarutkuguler/cubicle</code> ausführen und <code>http://127.0.0.1:3200</code> öffnen, oder es als Paperclip-Plugin installieren.',
     },
     es: {
+      tgAccess: "¿Quién puede usar el bot?",
+      tgAllowEveryone: "Permitir a todos",
+      tgAllowEveryoneHint: "Como antes, cualquiera con el código de vinculación puede vincular un chat.",
+      tgRestrictedHint: "Solo los usuarios de la lista pueden vincularse, usar comandos y recibir notificaciones en chats privados. Los cambios se aplican al instante.",
+      tgUserId: "ID de usuario de Telegram",
+      tgAddUser: "Añadir",
+      tgRemoveUser: "Quitar",
+      tgNoUsers: "La lista está vacía. Nadie puede usar el bot ni recibir notificaciones.",
+      tgLinkedUsers: "Usuarios vinculados anteriormente",
+      tgUserInvalid: "Introduce un ID de usuario de Telegram numérico y positivo, no un @nombredeusuario.",
+      tgAccessFailed: "No se pudo guardar la configuración de acceso. Inténtalo de nuevo.",
       connecting: 'Conectando…', unreachable: 'No se puede conectar con Paperclip, reintentando…',
       denied: (c) => `Paperclip denegó el acceso (${c}). Define PAPERCLIP_TOKEN para un Paperclip con autenticación o revisa la clave.`, feedUnreachable: 'No se puede leer el feed de agentes, reintentando…',
       empty: 'Todavía no hay agentes.', emptyClaude: 'Todavía no hay sesiones de Claude Code. Ejecuta <code>claude</code> en cualquier carpeta y entrará.',
@@ -575,6 +623,17 @@
       hosted: 'Esta es la demo alojada con agentes ficticios. Para ver tus propios agentes, ejecuta <code>npx @caglarutkuguler/cubicle</code> y abre <code>http://127.0.0.1:3200</code>, o instálalo como plugin de Paperclip.',
     },
     fr: {
+      tgAccess: "Qui peut utiliser le bot ?",
+      tgAllowEveryone: "Autoriser tout le monde",
+      tgAllowEveryoneHint: "Comme avant, toute personne disposant du code peut lier une discussion.",
+      tgRestrictedHint: "Seuls les utilisateurs de la liste peuvent se lier, utiliser les commandes et recevoir des notifications en discussion privée. Les changements sont immédiats.",
+      tgUserId: "Identifiant utilisateur Telegram",
+      tgAddUser: "Ajouter",
+      tgRemoveUser: "Retirer",
+      tgNoUsers: "La liste est vide. Personne ne peut utiliser le bot ni recevoir de notifications.",
+      tgLinkedUsers: "Utilisateurs déjà liés",
+      tgUserInvalid: "Saisissez un identifiant utilisateur Telegram numérique positif, pas un @nomutilisateur.",
+      tgAccessFailed: "Impossible d’enregistrer les paramètres d’accès. Veuillez réessayer.",
       connecting: 'Connexion…', unreachable: 'Impossible de joindre Paperclip, nouvel essai…',
       denied: (c) => `Paperclip a refusé l’accès (${c}). Définissez PAPERCLIP_TOKEN pour un Paperclip avec authentification, ou vérifiez la clé.`, feedUnreachable: 'Impossible de lire le flux des agents, nouvel essai…',
       empty: 'Aucun agent pour l’instant.', emptyClaude: 'Aucune session Claude Code pour l’instant. Lancez <code>claude</code> dans n’importe quel dossier et elle entrera.',
@@ -650,6 +709,17 @@
       hosted: 'Ceci est la démo en ligne avec des agents fictifs. Pour voir vos propres agents, lancez <code>npx @caglarutkuguler/cubicle</code> et ouvrez <code>http://127.0.0.1:3200</code>, ou installez-le comme plugin Paperclip.',
     },
     zh: {
+      tgAccess: "谁可以使用机器人？",
+      tgAllowEveryone: "允许所有人",
+      tgAllowEveryoneHint: "与之前一样，任何知道配对码的人都可以关联聊天。",
+      tgRestrictedHint: "只有列表中的用户才能在私聊中配对、使用命令和接收通知。更改立即生效。",
+      tgUserId: "Telegram 用户 ID",
+      tgAddUser: "添加",
+      tgRemoveUser: "移除",
+      tgNoUsers: "列表为空。任何人都无法使用机器人或接收通知。",
+      tgLinkedUsers: "之前关联的用户",
+      tgUserInvalid: "请输入正整数 Telegram 用户 ID，而不是 @用户名。",
+      tgAccessFailed: "无法保存访问设置，请重试。",
       connecting: '正在连接…', unreachable: '无法连接 Paperclip，正在重试…',
       denied: (c) => `Paperclip 拒绝了访问（${c}）。如果 Paperclip 需要登录，请设置 PAPERCLIP_TOKEN，或检查密钥。`, feedUnreachable: '无法读取代理数据，正在重试…',
       empty: '还没有代理。', emptyClaude: '还没有 Claude Code 会话。在任意文件夹里运行 <code>claude</code>，它就会走进来。',
@@ -725,6 +795,17 @@
       hosted: '这是使用虚构代理的在线演示。要查看你自己的代理，请运行 <code>npx @caglarutkuguler/cubicle</code> 并打开 <code>http://127.0.0.1:3200</code>，或将其安装为 Paperclip 插件。',
     },
     ar: {
+      tgAccess: "من يمكنه استخدام البوت؟",
+      tgAllowEveryone: "السماح للجميع",
+      tgAllowEveryoneHint: "كما في السابق، يمكن لأي شخص لديه رمز الربط ربط دردشة.",
+      tgRestrictedHint: "يمكن للمستخدمين في القائمة فقط الربط واستخدام الأوامر وتلقي الإشعارات في الدردشات الخاصة. تُطبّق التغييرات فورًا.",
+      tgUserId: "معرّف مستخدم Telegram",
+      tgAddUser: "إضافة",
+      tgRemoveUser: "إزالة",
+      tgNoUsers: "القائمة فارغة. لا يمكن لأحد استخدام البوت أو تلقي الإشعارات.",
+      tgLinkedUsers: "المستخدمون المرتبطون سابقًا",
+      tgUserInvalid: "أدخل معرّف مستخدم Telegram كرقم موجب، وليس @اسم_مستخدم.",
+      tgAccessFailed: "تعذّر حفظ إعدادات الوصول. يُرجى المحاولة مجددًا.",
       connecting: 'جارٍ الاتصال…', unreachable: 'تعذّر الوصول إلى Paperclip، جارٍ إعادة المحاولة…',
       denied: (c) => `رفض Paperclip الوصول (${c}). اضبط PAPERCLIP_TOKEN إذا كان Paperclip يتطلب تسجيل الدخول، أو تحقّق من المفتاح.`, feedUnreachable: 'تعذّرت قراءة بيانات الوكلاء، جارٍ إعادة المحاولة…',
       empty: 'لا يوجد وكلاء بعد.', emptyClaude: 'لا توجد جلسات Claude Code بعد. شغّل <code>claude</code> في أي مجلد وسيدخل المكتب.',
@@ -1121,6 +1202,8 @@
   // saves the token on this computer (PUT /api/telegram, accepted only from this machine) and the
   // server starts the bot at once; no files, no restarts.
   let tgTimer = null;
+  let tgAccessState = { allowEveryone: true, allowedUsers: [] };
+  let tgRenderVersion = 0, tgTailscale = null;
   async function tgStatus() { try { const r = await fetch('/api/telegram', { cache: 'no-store' }); return r.ok ? await r.json() : null; } catch (_) { return null; } }
   async function tgPut(body) {
     const r = await fetch('/api/telegram', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify(body) });
@@ -1128,7 +1211,8 @@
     return r.ok ? { ok: true, status: j } : { ok: false, error: j.error || r.status };
   }
   async function tsInfo() { try { const r = await fetch('/api/tailscale', { cache: 'no-store' }); return r.ok ? await r.json() : { found: false }; } catch (_) { return { found: false }; } }
-  async function openTelegram() {
+  async function openTelegram(savedStatus = null) {
+    const version = ++tgRenderVersion;
     clearInterval(tgTimer);
     const head = `<h2>📨 Telegram <button type="button" data-tg="close" aria-label="${esc(L.close)}">✕</button></h2><p>${esc(L.tgIntro)}</p>`;
     if (EMBED || DEMO) {
@@ -1136,7 +1220,9 @@
       if (!tgDlg.open) tgDlg.showModal();
       return;
     }
-    const st = (await tgStatus()) || { on: false, canEdit: false };
+    const st = savedStatus || (await tgStatus()) || { on: false, canEdit: false };
+    if (version !== tgRenderVersion) return;
+    const accessState = { allowEveryone: st.allowEveryone !== false, allowedUsers: st.allowedUsers || [] };
     const bot = st.username ? `@${st.username}` : '';
     const step = (n, title, body, done) => `<div class="tgstep${done ? ' done' : ''}"><b><span class="num">${done ? '✓' : n}</span>${esc(title)}</b>${body}</div>`;
     const tokenBox = st.fromEnv ? `<p class="muted">${esc(L.tgFromEnv)}</p>`
@@ -1158,9 +1244,23 @@
       + (cmd ? `<p>${esc(L.tgOrSend)}</p><div class="tgrow"><code class="tgcode">${esc(cmd)}</code><button type="button" data-tg="copy" data-copy="${esc(cmd)}">${esc(L.tgCopy)}</button></div>` : '')
       + hint + `<p class="${st.chats ? 'ok' : 'muted'}">${esc(st.chats ? L.tgLinked(st.chats) : L.tgWaitStart)}</p>`;
     const replyBox = !st.on || !st.canReply ? '' : `<label class="check"><input type="checkbox" data-tg="replies"${st.replies ? ' checked' : ''}${st.canEdit ? '' : ' disabled'}> ${esc(L.tgRepliesLabel)}</label>`;
+    const userRow = (id, action, label) => `<li><code dir="ltr">${esc(id)}</code><button type="button" class="act" data-tg="${action}" data-user="${esc(id)}" aria-label="${esc(label + ': ' + id)}">${esc(label)}</button></li>`;
+    const candidates = (st.linkedUsers || []).filter((id) => !accessState.allowedUsers.includes(id));
+    const accessBox = !st.canEdit ? '' : `<div class="tgstep" data-tg-access><b>${esc(L.tgAccess)}</b>`
+      + `<label class="check"><input type="checkbox" data-tg="everyone"${accessState.allowEveryone ? ' checked' : ''}> ${esc(L.tgAllowEveryone)}</label>`
+      + (accessState.allowEveryone ? `<p class="muted small">${esc(L.tgAllowEveryoneHint)}</p>`
+        : `<p class="muted small">${esc(L.tgRestrictedHint)}</p>`
+          + `<label for="tg-user-id">${esc(L.tgUserId)}</label><div class="tgrow"><input id="tg-user-id" type="text" inputmode="numeric" data-tg="userid" placeholder="123456789" autocomplete="off" spellcheck="false"><button type="button" class="act" data-tg="adduser">${esc(L.tgAddUser)}</button></div>`
+          + (accessState.allowedUsers.length ? `<ul class="tgusers">${accessState.allowedUsers.map((id) => userRow(id, 'removeuser', L.tgRemoveUser)).join('')}</ul>` : `<p class="muted" role="status">${esc(L.tgNoUsers)}</p>`)
+          + (candidates.length ? `<details><summary>${esc(L.tgLinkedUsers)}</summary><ul class="tgusers">${candidates.map((id) => userRow(id, 'allowuser', L.tgAddUser)).join('')}</ul></details>` : ''))
+      + `<p class="err" data-tg="accesserr" role="alert"></p></div>`;
     const remote = st.publicUrl && !/^https?:\/\/(127\.|localhost|\[::1\])/i.test(st.publicUrl);
     // Step 5, the phone: find Tailscale on this computer and walk through what is missing.
-    const ts = st.on && st.canEdit && !st.publicFixed && !remote ? await tsInfo() : null;
+    // A saved response already contains the current list. Reuse the phone setup information so
+    // adding/removing a user never waits for another GET or a slow Tailscale lookup.
+    const ts = st.on && st.canEdit && !st.publicFixed && !remote ? (savedStatus ? tgTailscale : await tsInfo()) : null;
+    if (version !== tgRenderVersion) return;
+    if (!savedStatus) tgTailscale = ts;
     const manual = st.canEdit && !st.publicFixed ? `<details${remote ? '' : ''}><summary class="muted small">${esc(L.tsManual)}</summary><div class="tgrow"><input type="url" data-tg="url" placeholder="${esc(L.tgPhonePh)}" value="${esc(remote ? st.publicUrl : '')}" spellcheck="false"><button type="button" class="act" data-tg="saveurl">${esc(L.tgSave)}</button></div><p class="err" data-tg="urlerr"></p></details>` : '';
     const checkBtn = `<button type="button" data-tg="tscheck">${esc(L.tsCheck)}</button>`;
     const howTo = `<ol class="tssteps"><li>${esc(L.ts1)}</li><li>${esc(L.ts2)}</li><li>${esc(L.ts3)}</li></ol>`;
@@ -1172,25 +1272,50 @@
     else if (ts && ts.found) tsBox = `<p class="err">${esc(L.tsOff)}</p><p>${checkBtn}</p>`;
     else if (ts) tsBox = howTo + `<p><a class="act" href="https://tailscale.com/download" target="_blank" rel="noopener">⬇ ${esc(L.tsDownload)}</a> ${checkBtn}</p>`;
     const phoneBox = !st.on ? '' : (remote ? '' : `<p>${esc(L.tg5Text)}</p>`) + tsBox + manual;
+    const scrollTop = tgDlg.scrollTop;
+    tgAccessState = accessState;
     tgDlg.innerHTML = head
       + step(1, L.tg1, `<p>${esc(L.tg1Text)}</p><p><a class="act" href="https://t.me/BotFather" target="_blank" rel="noopener">✈ @BotFather</a></p>`, st.on)
       + step(2, L.tg2, tokenBox, st.on)
+      + accessBox
       + (st.on ? step(3, L.tg3, linkBox, st.chats > 0) : '')
       + (replyBox ? step(4, L.tg4, replyBox, false) : '')
       + (phoneBox ? step(5, L.tg5, phoneBox, remote) : '')
       + `<p class="muted">${esc(L.tgCommands)}${remote ? '' : ` · ${esc(L.tgPhone)}`}</p>`;
     if (!tgDlg.open) tgDlg.showModal();
+    if (savedStatus) tgDlg.scrollTop = scrollTop;
     // Waiting for Start in Telegram: refresh until a chat is linked.
     if (st.on && !st.chats) tgTimer = setInterval(async () => {
-      if (!tgDlg.open) { clearInterval(tgTimer); return; }
+      if (!tgDlg.open || version !== tgRenderVersion) return;
       const now = await tgStatus();
-      if (now && (now.chats || now.unpaired !== st.unpaired || now.polling !== st.polling)) openTelegram();
+      if (!tgDlg.open || version !== tgRenderVersion) return;
+      if (now && (now.chats || now.unpaired !== st.unpaired || now.polling !== st.polling)) openTelegram(now);
     }, 2500);
+  }
+  async function saveTgAccess(change) {
+    const version = ++tgRenderVersion;
+    clearInterval(tgTimer);
+    const box = tgDlg.querySelector('[data-tg-access]'), err = box.querySelector('[data-tg="accesserr"]');
+    err.textContent = '';
+    const controls = [...box.querySelectorAll('input, button')];
+    controls.forEach((c) => { c.disabled = true; });
+    const r = await tgPut(change).catch(() => ({ ok: false }));
+    if (version !== tgRenderVersion || !tgDlg.open) return;
+    if (r.ok) { await openTelegram(r.status); return; }
+    controls.forEach((c) => { c.disabled = false; });
+    box.querySelector('[data-tg="everyone"]').checked = tgAccessState.allowEveryone;
+    err.textContent = r.error === 'users' ? L.tgUserInvalid : L.tgAccessFailed;
   }
   tgDlg.addEventListener('click', async (e) => {
     const b = e.target.closest('[data-tg]'); if (!b) return;
     const k = b.dataset.tg;
     if (k === 'close') { tgDlg.close(); return; }
+    if (k === 'adduser' || k === 'allowuser' || k === 'removeuser') {
+      const id = k === 'adduser' ? tgDlg.querySelector('[data-tg="userid"]').value.trim() : b.dataset.user;
+      if (!/^[1-9]\d{0,15}$/.test(id) || !Number.isSafeInteger(Number(id))) { tgDlg.querySelector('[data-tg="accesserr"]').textContent = L.tgUserInvalid; return; }
+      const ids = tgAccessState.allowedUsers;
+      await saveTgAccess({ allowedUsers: k === 'removeuser' ? ids.filter((x) => x !== id) : [...new Set([...ids, id])] });
+    }
     if (k === 'save') {
       const input = tgDlg.querySelector('[data-tg="token"]'), err = tgDlg.querySelector('[data-tg="err"]');
       b.disabled = true; b.textContent = L.tgSaving; err.textContent = '';
@@ -1220,8 +1345,15 @@
       if (r.ok) openTelegram(); else if (err) err.textContent = (L.tgBad && L.tgBad[r.error]) || String(r.error);
     }
   });
-  tgDlg.addEventListener('change', async (e) => { if (e.target.dataset.tg === 'replies') await tgPut({ replies: e.target.checked }); });
-  tgDlg.addEventListener('close', () => clearInterval(tgTimer));
+  tgDlg.addEventListener('change', async (e) => {
+    if (e.target.dataset.tg === 'replies') await tgPut({ replies: e.target.checked });
+    if (e.target.dataset.tg === 'everyone') await saveTgAccess({ allowEveryone: e.target.checked });
+  });
+  tgDlg.addEventListener('focusin', (e) => { if (e.target.closest('[data-tg-access]')) clearInterval(tgTimer); });
+  tgDlg.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.dataset.tg === 'userid') { e.preventDefault(); tgDlg.querySelector('[data-tg="adduser"]').click(); }
+  });
+  tgDlg.addEventListener('close', () => { ++tgRenderVersion; clearInterval(tgTimer); });
   tgDlg.addEventListener('click', (e) => { if (e.target === tgDlg) tgDlg.close(); });
 
   // ---------- layout: the office fits the window ----------
