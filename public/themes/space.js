@@ -52,7 +52,7 @@
       const col = s.status === 'error' ? '#ff5a5a' : (s.status === 'waiting' || s.ask) ? '#ffd23f' : s.status === 'running' ? '#5fe0ff' : '#3a4a5a';
       K.circle(col, 8.4 * T + 6 + (i % 8) * 8.8, 14 + Math.floor(i / 8) * 5, 1.4);
     });
-    K.clock(c, 8.4 * T + 4.8 * T - 17, 5.5, { label: K.say(c, 'MET'), utc: true, color: '#8fe3ff', bg: '#0c1420' });
+    K.clock(c, 8.4 * T + 4.8 * T - 17, 5.5, { color: '#8fe3ff', bg: '#0c1420' });
     K.partition(c, { glass: 'rgba(120,220,255,.16)', frame: '#8d97a3' });
   }
 

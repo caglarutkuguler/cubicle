@@ -19,7 +19,6 @@
     RUN: { en: 'RUN', tr: 'ÇALIŞAN', de: 'LÄUFT', es: 'ACTIVO', fr: 'MARCHE', zh: '运行', ar: 'يعمل' },
     HOLD: { en: 'HOLD', tr: 'BEKLEYEN', de: 'WARTET', es: 'ESPERA', fr: 'ATTENTE', zh: '等待', ar: 'انتظار' },
     STOP: { en: 'STOP', tr: 'DURAN', de: 'STOPP', es: 'PARADO', fr: 'ARRÊT', zh: '停止', ar: 'توقف' },
-    MET: { en: 'MET', tr: 'GÖREV', de: 'MISSION', es: 'MISIÓN', fr: 'MISSION', zh: '任务', ar: 'المهمة' },
   };
 
   const K = {
