@@ -1495,8 +1495,16 @@
       const cur = latest.get(r.agentId);
       if (!cur || when(r) > when(cur)) latest.set(r.agentId, r);
     }
+    // Nor once another run ended after it, or is still going: a run that started earlier but was
+    // stopped later (an agent paused and resumed, say) shows the failure was dealt with.
+    const ended = (r) => String(r.finishedAt || '');
+    const later = new Set();
+    for (const r of Array.isArray(runs) ? runs : []) {
+      const f = r && r.agentId && latest.get(r.agentId);
+      if (f && r !== f && (!ended(r) || ended(r) > ended(f))) later.add(r.agentId);
+    }
     const out = new Map();
-    for (const [id, r] of latest) if (FAILED_RUNS.has(r.status)) out.set(id, {
+    for (const [id, r] of latest) if (FAILED_RUNS.has(r.status) && !later.has(id)) out.set(id, {
       runId: r.id, code: r.errorCode || r.status, error: r.error ? String(r.error).slice(0, 500) : '',
       stderr: r.stderrExcerpt ? String(r.stderrExcerpt).slice(-600) : '', at: Date.parse(r.finishedAt) || Date.now(),
     });

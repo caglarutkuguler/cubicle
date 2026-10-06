@@ -78,6 +78,14 @@ function latestRuns(runs) {
   for (const r of Array.isArray(runs) ? runs : []) if (r && r.agentId && runTime(r) && (!latest.has(r.agentId) || runTime(r) > runTime(latest.get(r.agentId)))) latest.set(r.agentId, r);
   return latest;
 }
+// Whether an agent's newest run failed and nothing has happened since: no other run of the agent
+// ended after it or is still going (a run stopped later, when the agent was paused and resumed,
+// shows the failure was dealt with).
+function standingFailure(run, runs) {
+  if (!run || !FAILED_RUNS.has(run.status)) return false;
+  const ended = (r) => String(r.finishedAt || '');
+  return !(Array.isArray(runs) ? runs : []).some((r) => r && r !== run && r.agentId === run.agentId && (!ended(r) || ended(r) > ended(run)));
+}
 // A review path that waits on a person: the board or a user, or an interaction (questions,
 // confirmations), whose responder Paperclip gives as the agent.
 const asksPerson = (x) => !!x && (/board|user|human/i.test(String(x.responder || '')) || x.kind === 'interaction');
@@ -133,7 +141,7 @@ async function snapshot(self) {
           agents.push({
             id: a.id, name: a.name, status: a.status, company: c, paperclip: cfg.paperclipUrl || src.paperclipUrl,
             needs: a.status === 'waiting' || (!!ask && a.status !== 'error'), issue: ask || (a.status === 'waiting' ? task : null), reason: askPath ? askPath.label : '',
-            task, error: a.errorReason || '', fail: run && FAILED_RUNS.has(run.status) ? { id: run.id, code: run.errorCode || run.status, error: run.error || '' } : null,
+            task, error: a.errorReason || '', fail: standingFailure(run, runs) ? { id: run.id, code: run.errorCode || run.status, error: run.error || '' } : null,
             completionId: completed.get(a.id)?.id || null, explicitCompletion: true,
           });
         }
@@ -526,4 +534,4 @@ function start(opts) {
   return bot;
 }
 
-module.exports = { start, snapshot, kpiSummary, getMe, isUserId, writeFileAtomic };
+module.exports = { start, snapshot, kpiSummary, standingFailure, getMe, isUserId, writeFileAtomic };

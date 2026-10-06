@@ -879,5 +879,23 @@ esac
     assert.ok(['en', 'tr', 'de', 'es', 'fr', 'zh', 'ar'].every((c) => STR[c]));
   }
 
+  // a failed run stops counting once another run of the agent ends after it or is still going:
+  // here two earlier runs were cancelled when the agent was paused, after the failure (page and bot)
+  {
+    const src = html.slice(html.indexOf('  const FAILED_RUNS = new Set'), html.indexOf('  // Generic feed (docs/FEED.md)'));
+    const lastFailures = new Function(`${src}; return lastFailures;`)();
+    const { standingFailure } = require('../bin/cubicle-telegram.js');
+    const r = (id, status, startedAt, finishedAt) => ({ id, agentId: 'q', status, startedAt, finishedAt });
+    const fail = r('f', 'failed', '2026-10-06T08:57:11Z', '2026-10-06T08:57:18Z');
+    const before = [r('a', 'succeeded', '2026-10-06T08:30:00Z', '2026-10-06T08:44:00Z')];
+    const paused = [r('b', 'cancelled', '2026-10-06T08:45:18Z', '2026-10-06T09:01:54Z')];
+    const running = [r('c', 'running', '2026-10-06T08:50:00Z', null)];
+    assert.ok(lastFailures([...before, fail]).has('q') && standingFailure(fail, [...before, fail]));
+    for (const runs of [[...before, ...paused, fail], [...running, fail], [fail, r('d', 'succeeded', '2026-10-06T09:00:00Z', '2026-10-06T09:05:00Z')]]) {
+      assert.ok(!lastFailures(runs).has('q'), 'a later run ends the failure (page)');
+      assert.ok(!standingFailure(fail, runs), 'a later run ends the failure (bot)');
+    }
+  }
+
   console.log('ok');
 })().catch((e) => { console.error(e); process.exit(1); });
