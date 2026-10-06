@@ -490,6 +490,52 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { p.kill(); tg.close(); pc.close(); }
   }
 
+  // A linked approval waiting on the board: shaped by the server (pending only, no payload), and the
+  // Telegram message shows what is asked, its risks and a link to the approval page in Paperclip
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tga-'));
+    let asking = false;
+    const pc = http.createServer((q, r) => {
+      r.writeHead(200, { 'content-type': 'application/json' });
+      if (q.url === '/api/companies') return r.end(JSON.stringify([{ id: 'c1', name: 'Acme', issuePrefix: 'ACM' }]));
+      if (q.url === '/api/companies/c1/agents') return r.end(JSON.stringify([{ id: 'a1', name: 'ReleaseOps', status: 'idle' }]));
+      if (q.url === '/api/companies/c1/issues') return r.end(JSON.stringify([{ identifier: 'ACM-9', title: 'Ship it', status: 'in_review', assigneeAgentId: 'a1',
+        reviewAttention: { paths: asking ? [{ kind: 'approval', label: 'Linked approval', responder: 'Board', ref: 'ap1' }] : [] } }]));
+      if (q.url === '/api/issues/ACM-9/approvals') return r.end(JSON.stringify([
+        { id: 'ap1', type: 'request_board_approval', status: 'pending', requestedByAgentId: 'a1', payload: { title: 'Merge PR #3', summary: 'One new file.', risks: ['Push to main deploys live.'] } },
+        { id: 'ap0', type: 'request_board_approval', status: 'approved', payload: { title: 'Old one' } }]));
+      r.end('[]');
+    });
+    await new Promise((ok) => pc.listen(0, '127.0.0.1', ok));
+    const sent = [];
+    const tg = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        const body = b ? JSON.parse(b) : {}; r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/botT0K/getUpdates') return setTimeout(() => r.end('{"ok":true,"result":[]}'), 150);
+        if (q.url === '/botT0K/sendMessage') { sent.push(body); return r.end(JSON.stringify({ ok: true, result: { message_id: sent.length } })); }
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const port = 3400 + Math.floor(Math.random() * 500);
+    const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--paperclip', `http://127.0.0.1:${pc.address().port}`, '--telegram-replies'], { stdio: 'ignore',
+      env: { ...process.env, CUBICLE_TELEGRAM_TOKEN: 'T0K', CUBICLE_TELEGRAM_CHAT: '9', CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`,
+        CUBICLE_TELEGRAM_STATE: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_INTERVAL: '300', CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 's.json') } });
+    try {
+      await sleep(1500);
+      const shaped = JSON.parse((await get(`http://127.0.0.1:${port}/api/issues/ACM-9/approvals`)).body);
+      assert.deepStrictEqual(shaped.map((x) => [x.id, x.title, x.risks]), [['ap1', 'Merge PR #3', ['Push to main deploys live.']]]);
+      assert.ok(!('payload' in shaped[0]) && !('requestedByAgentId' in shaped[0]), 'shaped, not passed through');
+      asking = true; await sleep(1000);
+      const issues = JSON.parse((await get(`http://127.0.0.1:${port}/api/companies/c1/issues`)).body);
+      assert.strictEqual(issues[0].reviewAttention.paths[0].ref, 'ap1', 'the page can link the approval');
+      const note = sent.find((m) => /needs you|sizi bekliyor/.test(m.text));
+      assert.ok(note && note.text.includes('Merge PR #3') && note.text.includes('Push to main deploys live.'), note && note.text);
+      assert.ok(note.text.includes(`/ACM/approvals/ap1`), 'links the approval page');
+    } finally { p.kill(); tg.close(); pc.close(); }
+  }
+
   // Telegram filters: /mute an agent, /alerts questions|failures|all; each chat keeps its own
   {
     const fs = require('fs'); const os = require('os');

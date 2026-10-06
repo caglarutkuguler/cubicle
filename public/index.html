@@ -331,7 +331,7 @@
       tsDownload: 'Download Tailscale', tsCheck: 'Check again', tsChecking: 'Checking…', tsOff: 'Tailscale is installed but not connected. Click the Tailscale icon in the taskbar (next to the clock) and sign in or press “Connect”, then check again.',
       tsOn: (d) => `✓ Tailscale is running on this computer (${d}).`, tsServe: 'Open the office on my phone', tsServeNote: 'Only devices signed in to your Tailscale account can open it; the settings and the pairing code stay on this computer.',
       tsNoPhone: 'No phone in your Tailscale account yet: install Tailscale on the phone and sign in with the same account.', tsFail: 'Tailscale did not accept it. Run this once on this computer (PowerShell or Terminal):',
-      tsPhoneOn: 'On the phone, the Tailscale app must be on (connected).', qShow: 'Show the question', qAsks: (n) => `${n} asks you`, pcAway: 'Paperclip opens only on the computer it runs on. To answer from here, reply to the agent’s message in Telegram.', tsManual: 'Or write an address yourself',
+      tsPhoneOn: 'On the phone, the Tailscale app must be on (connected).', apBtn: 'Approve / reject', apWait: 'Waiting for your approval', apShow: 'Show the approval request', apAsks: (n) => `${n} asks for your approval`, apRisks: 'Risks', apOpen: 'Approve or reject in Paperclip', qShow: 'Show the question', qAsks: (n) => `${n} asks you`, pcAway: 'Paperclip opens only on the computer it runs on. To answer from here, reply to the agent’s message in Telegram.', tsManual: 'Or write an address yourself',
       tgPhonePh: 'e.g. http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links open at ${u}`, tgPhoneTry: 'Open it on your phone to try', tgPhoneFixed: 'The address was given when Cubicle started (--public-url).', tgPhoneClear: 'Remove',
       tgEmbed: 'The Telegram bot belongs to the standalone Cubicle running on this computer, not to the office inside Paperclip. Open it and press ⚙ → Telegram there:', tgOpenStandalone: 'Open Cubicle',
       iss: { backlog: 'backlog', todo: 'to do', in_progress: 'in progress', in_review: 'in review', blocked: 'blocked', done: 'done', cancelled: 'cancelled' },
@@ -417,7 +417,7 @@
       tsDownload: 'Tailscale’i indir', tsCheck: 'Yeniden kontrol et', tsChecking: 'Kontrol ediliyor…', tsOff: 'Tailscale kurulu ama bağlı değil. Görev çubuğunda saatin yanındaki Tailscale simgesine tıklayıp giriş yapın ya da “Connect”e basın, sonra yeniden kontrol edin.',
       tsOn: (d) => `✓ Tailscale bu bilgisayarda çalışıyor (${d}).`, tsServe: 'Ofisi telefonumda aç', tsServeNote: 'Ofisi yalnızca Tailscale hesabınıza bağlı cihazlar açabilir; ayarlar ve eşleme kodu bu bilgisayarda kalır.',
       tsNoPhone: 'Tailscale hesabınızda henüz telefon görünmüyor: telefona Tailscale’i kurup aynı hesapla giriş yapın.', tsFail: 'Tailscale bunu kabul etmedi. Bu bilgisayarda bir kez şu komutu çalıştırın (PowerShell ya da Terminal):',
-      tsPhoneOn: 'Telefonda Tailscale uygulaması açık (bağlı) olmalı.', qShow: 'Soruyu göster', qAsks: (n) => `${n} size soruyor`, pcAway: 'Paperclip yalnızca çalıştığı bilgisayarda açılır. Buradan yanıt vermek için Telegram’daki ajan mesajını yanıtlayın.', tsManual: 'Ya da adresi kendiniz yazın',
+      tsPhoneOn: 'Telefonda Tailscale uygulaması açık (bağlı) olmalı.', apBtn: 'Onayla / reddet', apWait: 'Onayınızı bekliyor', apShow: 'Onay isteğini göster', apAsks: (n) => `${n} onayınızı istiyor`, apRisks: 'Riskler', apOpen: 'Paperclip’te onayla ya da reddet', qShow: 'Soruyu göster', qAsks: (n) => `${n} size soruyor`, pcAway: 'Paperclip yalnızca çalıştığı bilgisayarda açılır. Buradan yanıt vermek için Telegram’daki ajan mesajını yanıtlayın.', tsManual: 'Ya da adresi kendiniz yazın',
       tgPhonePh: 'ör. http://bilgisayarim.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Bağlantılar ${u} adresinde açılır`, tgPhoneTry: 'Denemek için telefonda açın', tgPhoneFixed: 'Adres, Cubicle başlatılırken verildi (--public-url).', tgPhoneClear: 'Kaldır',
       tgEmbed: 'Telegram botu, Paperclip içindeki ofise değil, bu bilgisayarda çalışan bağımsız Cubicle’a aittir. Onu açıp orada ⚙ → Telegram’a basın:', tgOpenStandalone: 'Cubicle’ı aç',
       iss: { backlog: 'bekleme listesi', todo: 'yapılacak', in_progress: 'sürüyor', in_review: 'incelemede', blocked: 'engelli', done: 'bitti', cancelled: 'iptal' },
@@ -503,7 +503,7 @@
       tsDownload: 'Tailscale laden', tsCheck: 'Erneut prüfen', tsChecking: 'Wird geprüft…', tsOff: 'Tailscale ist installiert, aber nicht verbunden. Auf das Tailscale-Symbol in der Taskleiste (bei der Uhr) klicken und anmelden oder „Connect“ drücken, dann erneut prüfen.',
       tsOn: (d) => `✓ Tailscale läuft auf diesem Rechner (${d}).`, tsServe: 'Büro auf meinem Handy öffnen', tsServeNote: 'Nur Geräte in Ihrem Tailscale-Konto können es öffnen; Einstellungen und Code bleiben auf diesem Rechner.',
       tsNoPhone: 'Noch kein Handy in Ihrem Tailscale-Konto: Tailscale auf dem Handy installieren und mit demselben Konto anmelden.', tsFail: 'Tailscale hat es nicht angenommen. Einmal auf diesem Rechner ausführen (PowerShell oder Terminal):',
-      tsPhoneOn: 'Auf dem Handy muss die Tailscale-App eingeschaltet (verbunden) sein.', qShow: 'Frage anzeigen', qAsks: (n) => `${n} fragt Sie`, pcAway: 'Paperclip öffnet sich nur auf dem Rechner, auf dem es läuft. Um von hier zu antworten, antworten Sie in Telegram auf die Nachricht des Agenten.', tsManual: 'Oder eine Adresse selbst eintragen',
+      tsPhoneOn: 'Auf dem Handy muss die Tailscale-App eingeschaltet (verbunden) sein.', apBtn: 'Freigeben / ablehnen', apWait: 'Wartet auf Ihre Freigabe', apShow: 'Freigabeanfrage anzeigen', apAsks: (n) => `${n} bittet um Ihre Freigabe`, apRisks: 'Risiken', apOpen: 'In Paperclip freigeben oder ablehnen', qShow: 'Frage anzeigen', qAsks: (n) => `${n} fragt Sie`, pcAway: 'Paperclip öffnet sich nur auf dem Rechner, auf dem es läuft. Um von hier zu antworten, antworten Sie in Telegram auf die Nachricht des Agenten.', tsManual: 'Oder eine Adresse selbst eintragen',
       tgPhonePh: 'z. B. http://mein-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Links öffnen sich unter ${u}`, tgPhoneTry: 'Zum Testen auf dem Handy öffnen', tgPhoneFixed: 'Die Adresse wurde beim Start angegeben (--public-url).', tgPhoneClear: 'Entfernen',
       tgEmbed: 'Der Telegram-Bot gehört zum eigenständigen Cubicle auf diesem Rechner, nicht zum Büro in Paperclip. Öffnen Sie es und drücken Sie dort ⚙ → Telegram:', tgOpenStandalone: 'Cubicle öffnen',
       iss: { backlog: 'Backlog', todo: 'offen', in_progress: 'in Arbeit', in_review: 'im Review', blocked: 'blockiert', done: 'erledigt', cancelled: 'abgebrochen' },
@@ -589,7 +589,7 @@
       tsDownload: 'Descargar Tailscale', tsCheck: 'Comprobar de nuevo', tsChecking: 'Comprobando…', tsOff: 'Tailscale está instalado pero no conectado. Haz clic en el icono de Tailscale de la barra de tareas (junto al reloj) e inicia sesión o pulsa «Connect»; luego comprueba de nuevo.',
       tsOn: (d) => `✓ Tailscale funciona en este equipo (${d}).`, tsServe: 'Abrir la oficina en mi móvil', tsServeNote: 'Solo los dispositivos de tu cuenta de Tailscale pueden abrirla; los ajustes y el código se quedan en este equipo.',
       tsNoPhone: 'Aún no hay ningún móvil en tu cuenta de Tailscale: instálalo en el móvil y entra con la misma cuenta.', tsFail: 'Tailscale no lo aceptó. Ejecuta esto una vez en este equipo (PowerShell o Terminal):',
-      tsPhoneOn: 'En el móvil, la app de Tailscale debe estar activada (conectada).', qShow: 'Ver la pregunta', qAsks: (n) => `${n} te pregunta`, pcAway: 'Paperclip solo se abre en el equipo donde se ejecuta. Para responder desde aquí, contesta al mensaje del agente en Telegram.', tsManual: 'O escribe una dirección tú mismo',
+      tsPhoneOn: 'En el móvil, la app de Tailscale debe estar activada (conectada).', apBtn: 'Aprobar / rechazar', apWait: 'Espera tu aprobación', apShow: 'Ver la solicitud de aprobación', apAsks: (n) => `${n} pide tu aprobación`, apRisks: 'Riesgos', apOpen: 'Aprobar o rechazar en Paperclip', qShow: 'Ver la pregunta', qAsks: (n) => `${n} te pregunta`, pcAway: 'Paperclip solo se abre en el equipo donde se ejecuta. Para responder desde aquí, contesta al mensaje del agente en Telegram.', tsManual: 'O escribe una dirección tú mismo',
       tgPhonePh: 'p. ej. http://mi-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Los enlaces se abren en ${u}`, tgPhoneTry: 'Ábrelo en el móvil para probar', tgPhoneFixed: 'La dirección se dio al iniciar Cubicle (--public-url).', tgPhoneClear: 'Quitar',
       tgEmbed: 'El bot de Telegram pertenece al Cubicle independiente de este equipo, no a la oficina dentro de Paperclip. Ábrelo y pulsa allí ⚙ → Telegram:', tgOpenStandalone: 'Abrir Cubicle',
       iss: { backlog: 'pendiente', todo: 'por hacer', in_progress: 'en curso', in_review: 'en revisión', blocked: 'bloqueada', done: 'terminada', cancelled: 'cancelada' },
@@ -675,7 +675,7 @@
       tsDownload: 'Télécharger Tailscale', tsCheck: 'Vérifier à nouveau', tsChecking: 'Vérification…', tsOff: 'Tailscale est installé mais pas connecté. Cliquez sur l’icône Tailscale de la barre des tâches (près de l’horloge) et connectez-vous ou appuyez sur « Connect », puis vérifiez à nouveau.',
       tsOn: (d) => `✓ Tailscale fonctionne sur cet ordinateur (${d}).`, tsServe: 'Ouvrir le bureau sur mon téléphone', tsServeNote: 'Seuls les appareils de votre compte Tailscale peuvent l’ouvrir ; les réglages et le code restent sur cet ordinateur.',
       tsNoPhone: 'Aucun téléphone dans votre compte Tailscale pour l’instant : installez Tailscale sur le téléphone et connectez-vous avec le même compte.', tsFail: 'Tailscale ne l’a pas accepté. Lancez ceci une fois sur cet ordinateur (PowerShell ou Terminal) :',
-      tsPhoneOn: 'Sur le téléphone, l’application Tailscale doit être activée (connectée).', qShow: 'Voir la question', qAsks: (n) => `${n} vous demande`, pcAway: 'Paperclip ne s’ouvre que sur l’ordinateur où il tourne. Pour répondre d’ici, répondez au message de l’agent dans Telegram.', tsManual: 'Ou écrivez une adresse vous-même',
+      tsPhoneOn: 'Sur le téléphone, l’application Tailscale doit être activée (connectée).', apBtn: 'Approuver / refuser', apWait: 'Attend votre approbation', apShow: 'Voir la demande d’approbation', apAsks: (n) => `${n} demande votre approbation`, apRisks: 'Risques', apOpen: 'Approuver ou refuser dans Paperclip', qShow: 'Voir la question', qAsks: (n) => `${n} vous demande`, pcAway: 'Paperclip ne s’ouvre que sur l’ordinateur où il tourne. Pour répondre d’ici, répondez au message de l’agent dans Telegram.', tsManual: 'Ou écrivez une adresse vous-même',
       tgPhonePh: 'ex. http://mon-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ Les liens s’ouvrent sur ${u}`, tgPhoneTry: 'Ouvrez-la sur le téléphone pour essayer', tgPhoneFixed: 'L’adresse a été donnée au démarrage (--public-url).', tgPhoneClear: 'Retirer',
       tgEmbed: 'Le bot Telegram appartient au Cubicle autonome de cet ordinateur, pas au bureau dans Paperclip. Ouvrez-le et appuyez sur ⚙ → Telegram :', tgOpenStandalone: 'Ouvrir Cubicle',
       iss: { backlog: 'en attente', todo: 'à faire', in_progress: 'en cours', in_review: 'en revue', blocked: 'bloquée', done: 'terminée', cancelled: 'annulée' },
@@ -761,7 +761,7 @@
       tsDownload: '下载 Tailscale', tsCheck: '重新检查', tsChecking: '正在检查…', tsOff: 'Tailscale 已安装但未连接。点任务栏（时钟旁）的 Tailscale 图标登录或点 “Connect”，然后重新检查。',
       tsOn: (d) => `✓ Tailscale 正在这台电脑上运行（${d}）。`, tsServe: '在我的手机上打开办公室', tsServeNote: '只有登录你 Tailscale 账号的设备才能打开；设置和配对代码只留在这台电脑上。',
       tsNoPhone: '你的 Tailscale 账号里还没有手机：在手机上安装 Tailscale，并用同一账号登录。', tsFail: 'Tailscale 没有接受。请在这台电脑上运行一次（PowerShell 或终端）：',
-      tsPhoneOn: '手机上的 Tailscale 应用必须开启（已连接）。', qShow: '查看问题', qAsks: (n) => `${n} 在问你`, pcAway: 'Paperclip 只能在它运行的那台电脑上打开。要在这里回答，请在 Telegram 中回复该代理的消息。', tsManual: '或者自己填写地址',
+      tsPhoneOn: '手机上的 Tailscale 应用必须开启（已连接）。', apBtn: '批准 / 拒绝', apWait: '等待你的批准', apShow: '查看审批请求', apAsks: (n) => `${n} 请求你的批准`, apRisks: '风险', apOpen: '在 Paperclip 中批准或拒绝', qShow: '查看问题', qAsks: (n) => `${n} 在问你`, pcAway: 'Paperclip 只能在它运行的那台电脑上打开。要在这里回答，请在 Telegram 中回复该代理的消息。', tsManual: '或者自己填写地址',
       tgPhonePh: '例如 http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ 链接将在 ${u} 打开`, tgPhoneTry: '在手机上打开试试', tgPhoneFixed: '地址是在启动 Cubicle 时指定的（--public-url）。', tgPhoneClear: '移除',
       tgEmbed: 'Telegram 机器人属于这台电脑上独立运行的 Cubicle，而不是 Paperclip 里的办公室。打开它，并在那里点 ⚙ → Telegram：', tgOpenStandalone: '打开 Cubicle',
       iss: { backlog: '待办池', todo: '待办', in_progress: '进行中', in_review: '审核中', blocked: '受阻', done: '已完成', cancelled: '已取消' },
@@ -847,7 +847,7 @@
       tsDownload: 'تنزيل Tailscale', tsCheck: 'تحقق مجددًا', tsChecking: 'جارٍ التحقق…', tsOff: 'Tailscale مثبّت لكنه غير متصل. اضغط أيقونة Tailscale في شريط المهام (بجانب الساعة) وسجّل الدخول أو اضغط «Connect»، ثم تحقق مجددًا.',
       tsOn: (d) => `✓ يعمل Tailscale على هذا الحاسوب (${d}).`, tsServe: 'افتح المكتب على هاتفي', tsServeNote: 'لا يفتحه إلا الأجهزة المسجّلة في حساب Tailscale الخاص بك؛ وتبقى الإعدادات ورمز الربط على هذا الحاسوب.',
       tsNoPhone: 'لا يوجد هاتف في حساب Tailscale بعد: ثبّت Tailscale على الهاتف وسجّل الدخول بالحساب نفسه.', tsFail: 'لم يقبل Tailscale ذلك. شغّل هذا الأمر مرة واحدة على هذا الحاسوب (PowerShell أو Terminal):',
-      tsPhoneOn: 'يجب أن يكون تطبيق Tailscale على الهاتف قيد التشغيل (متصلًا).', qShow: 'عرض السؤال', qAsks: (n) => `${n} يسألك`, pcAway: 'لا يُفتح Paperclip إلا على الحاسوب الذي يعمل عليه. للرد من هنا، ردّ على رسالة الوكيل في Telegram.', tsManual: 'أو اكتب عنوانًا بنفسك',
+      tsPhoneOn: 'يجب أن يكون تطبيق Tailscale على الهاتف قيد التشغيل (متصلًا).', apBtn: 'وافق / ارفض', apWait: 'ينتظر موافقتك', apShow: 'عرض طلب الموافقة', apAsks: (n) => `${n} يطلب موافقتك`, apRisks: 'المخاطر', apOpen: 'وافق أو ارفض في Paperclip', qShow: 'عرض السؤال', qAsks: (n) => `${n} يسألك`, pcAway: 'لا يُفتح Paperclip إلا على الحاسوب الذي يعمل عليه. للرد من هنا، ردّ على رسالة الوكيل في Telegram.', tsManual: 'أو اكتب عنوانًا بنفسك',
       tgPhonePh: 'مثال: http://my-pc.tail1234.ts.net:3200', tgPhoneOk: (u) => `✓ تُفتح الروابط على ${u}`, tgPhoneTry: 'افتحه على الهاتف للتجربة', tgPhoneFixed: 'تم تحديد العنوان عند تشغيل Cubicle (--public-url).', tgPhoneClear: 'إزالة',
       tgEmbed: 'بوت Telegram تابع لـ Cubicle المستقل على هذا الحاسوب، لا للمكتب داخل Paperclip. افتحه واضغط هناك ⚙ ← Telegram:', tgOpenStandalone: 'افتح Cubicle',
       iss: { backlog: 'قائمة الانتظار', todo: 'للتنفيذ', in_progress: 'قيد التنفيذ', in_review: 'قيد المراجعة', blocked: 'متوقفة', done: 'منجزة', cancelled: 'ملغاة' },
@@ -1705,7 +1705,7 @@
       if (i.assigneeAgentId !== agentId || ['done', 'cancelled'].includes(i.status)) continue;
       const paths = (i.reviewAttention && i.reviewAttention.paths) || [];
       const p = paths.find(asksPerson);
-      if (p) return { issue: i, reason: String(p.label || '') };
+      if (p) return { issue: i, reason: p.kind === 'approval' ? L.apWait : String(p.label || ''), kind: p.kind || '', ref: p.ref || '' };
     }
     return null;
   }
@@ -1808,6 +1808,8 @@
   }
   const answerIssue = (s) => (s.ask ? s.ask.issue : s.status === 'waiting' ? s.task : null);
   const answerable = (s) => !KIOSK && !!issueUrl(answerIssue(s));
+  const approvalUrl = (s) => (s.ask && s.ask.kind === 'approval' && s.ask.ref && issueUrl(s.ask.issue)
+    ? `${pcLink()}/${encodeURIComponent(company.issuePrefix)}/approvals/${encodeURIComponent(s.ask.ref)}` : '');
 
   function taskLink(t) {
     const label = esc(t.identifier);
@@ -1839,12 +1841,17 @@
     const c = qCache.get(i.identifier), now = Date.now();
     if (!c || (now - c.at > 30000 && !c.busy)) {
       const entry = c || { at: 0, list: null }; entry.busy = true; qCache.set(i.identifier, entry);
-      fetch(`/api/issues/${encodeURIComponent(i.identifier)}/interactions`, { cache: 'no-store', credentials: 'same-origin' })
-        .then((r) => (r.ok ? r.json() : [])).catch(() => [])
-        .then((list) => {
-          entry.list = (Array.isArray(list) ? list : []).filter((x) => x && (x.status || 'pending') === 'pending').map((x) => ({
+      const get = (what) => fetch(`/api/issues/${encodeURIComponent(i.identifier)}/${what}`, { cache: 'no-store', credentials: 'same-origin' })
+        .then((r) => (r.ok ? r.json() : [])).catch(() => []).then((l) => (Array.isArray(l) ? l : []).filter((x) => x && (x.status || 'pending') === 'pending'));
+      // An approval waiting on you (a linked board approval) is read the same way: what is asked, and its risks.
+      Promise.all([get('interactions'), s.ask && s.ask.kind === 'approval' ? get('approvals') : []])
+        .then(([list, approvals]) => {
+          entry.list = approvals.map((x) => { const p = x.payload || x; return {
+            approval: x.id || '', title: String(p.title || '').slice(0, 300), summary: String(p.summary || '').slice(0, 4000),
+            risks: (Array.isArray(p.risks) ? p.risks : []).slice(0, 10).map((r) => String(r).slice(0, 600)), questions: [],
+          }; }).concat(list.map((x) => ({
             title: x.title || '', questions: ((x.questions || (x.payload && x.payload.questions)) || []).map((q) => ({ prompt: q.prompt || '', options: (q.options || []).map((o) => ({ label: o.label || '', description: o.description || '' })), other: !!q.allowOther })),
-          })).filter((x) => x.title || x.questions.length);
+          }))).filter((x) => x.title || x.summary || x.questions.length);
           const changed = JSON.stringify(entry.list) !== entry.shown; entry.shown = JSON.stringify(entry.list);
           entry.at = Date.now(); entry.busy = false;
           if (changed) renderCards();
@@ -1854,7 +1861,11 @@
   }
   function questionsHtml(list, full) {
     if (!list || !list.length) return '';
-    return `<div class="qs${full ? ' full' : ''}">` + list.slice(0, 3).map((x) => (x.title ? `<div class="qt">❓ ${esc(x.title)}</div>` : '')
+    const short = (t, n) => (t.length > n ? t.slice(0, n - 1) + '…' : t);
+    return `<div class="qs${full ? ' full' : ''}">` + list.slice(0, 3).map((x) => (x.approval !== undefined
+      ? `<div class="qt">📝 ${esc(x.title)}</div>${x.summary ? `<div class="qp" style="white-space:pre-wrap">${esc(full ? x.summary : short(x.summary, 160))}</div>` : ''}`
+        + (full && x.risks.length ? `<div class="qp"><b>${esc(L.apRisks)}</b></div><ul class="qo">${x.risks.map((r) => `<li>${esc(r)}</li>`).join('')}</ul>` : '')
+      : (x.title ? `<div class="qt">❓ ${esc(x.title)}</div>` : ''))
       + x.questions.slice(0, full ? 6 : 2).map((q, n) => `<div class="qp">${x.questions.length > 1 ? `<b>${n + 1})</b> ` : ''}${esc(q.prompt)}</div>`
         + (q.options.length ? `<ol class="qo">${q.options.map((o) => `<li>${esc(o.label)}${full && o.description ? `<small>${esc(o.description)}</small>` : ''}</li>`).join('')}</ol>` : '')).join('')).join('') + '</div>';
   }
@@ -2203,12 +2214,12 @@
     const taskHtml = t ? `${taskLink(t)} ${esc(t.title)}` : `<span style="color:var(--muted)">${L.noTask}</span>`;
     const note = s.status === 'waiting' && s.waitReason ? `<div class="st" style="color:#ffe08a">✋ ${esc(s.waitReason)}</div>`
       : s.ask ? `<div class="st" style="color:#ffe08a">✋ ${L.asks} ${taskLink(s.ask.issue)} ${esc(s.ask.issue.title)}</div>` : '';
-    const reply = !panel && answerable(s) ? `<button type="button" class="reply" data-id="${esc(s.id)}">✋ ${esc(L.reply)}</button>` : '';
+    const reply = !panel && answerable(s) ? `<button type="button" class="reply" data-id="${esc(s.id)}">✋ ${esc(approvalUrl(s) ? L.apBtn : L.reply)}</button>` : '';
     const id = esc(s.id);
     const qlist = questionsFor(s);
     const acts = panel ? `<div class="acts">${[
-      qlist && qlist.length ? `<button type="button" class="act warn" data-act="questions" data-id="${id}">❓ ${esc(L.qShow)}</button>` : '',
-      answerable(s) ? `<button type="button" class="act warn" data-act="reply" data-id="${id}">✋ ${esc(L.reply)}</button>` : '',
+      qlist && qlist.length ? `<button type="button" class="act warn" data-act="questions" data-id="${id}">${qlist[0].approval !== undefined ? `📝 ${esc(L.apShow)}` : `❓ ${esc(L.qShow)}`}</button>` : '',
+      answerable(s) ? `<button type="button" class="act warn" data-act="reply" data-id="${id}">✋ ${esc(approvalUrl(s) ? L.apBtn : L.reply)}</button>` : '',
       issueUrl(t) && !answerable(s) ? `<button type="button" class="act" data-act="task" data-id="${id}">📄 ${esc(L.openTask)}</button>` : '',
       agentUrl(s) ? `<button type="button" class="act" data-act="chat" data-id="${id}">💬 ${esc(L.chat)}</button>` : '',
       runUrl(s) ? `<button type="button" class="act bad" data-act="run" data-id="${id}">⚠ ${esc(L.openRun)}</button>` : '',
@@ -2261,10 +2272,11 @@
   function openQuestions(s) {
     const list = questionsFor(s); if (!list || !list.length) return false;
     const i = answerIssue(s), id = esc(s.id);
-    qDlg.innerHTML = `<h2>✋ ${esc(L.qAsks(s.name))}<button type="button" data-q="close" aria-label="${esc(L.close)}">✕</button></h2>`
+    const ap = list.some((x) => x.approval !== undefined);
+    qDlg.innerHTML = `<h2>✋ ${esc(ap ? L.apAsks(s.name) : L.qAsks(s.name))}<button type="button" data-q="close" aria-label="${esc(L.close)}">✕</button></h2>`
       + (i ? `<div class="sub">${taskLink(i)} ${esc(i.title || '')}</div>` : '')
       + questionsHtml(list, true)
-      + `<div class="acts">${answerable(s) ? `<button type="button" class="act warn" data-q="reply" data-id="${id}">✋ ${esc(L.reply)}</button>` : ''}</div>`
+      + `<div class="acts">${answerable(s) ? `<button type="button" class="act warn" data-q="reply" data-id="${id}">✋ ${esc(ap && approvalUrl(s) ? L.apOpen : L.reply)}</button>` : ''}</div>`
       + (pcLinkBase === '' && paperclipUrl ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
     if (!qDlg.open) qDlg.showModal();
     return true;
@@ -2282,6 +2294,8 @@
   }
   function openAnswer(s) {
     const t = answerIssue(s);
+    // A linked approval is decided on its own Paperclip page, not on the issue's.
+    if (approvalUrl(s)) return openPaperclip(approvalUrl(s), `${L.apAsks(s.name)} · ${t.identifier}${t.title ? ' ' + t.title : ''}`, L.replyNote);
     openPaperclip(issueUrl(t), `${L.replyTitle(s.name)} · ${t.identifier}${t.title ? ' ' + t.title : ''}`, L.replyNote);
   }
   function act(kind, s) {

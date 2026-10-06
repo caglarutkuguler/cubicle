@@ -169,6 +169,7 @@ const ALLOWED = [
   /^\/api\/companies$/,
   /^\/api\/companies\/[\w-]+\/(agents|issues|heartbeat-runs)$/,
   /^\/api\/issues\/[A-Za-z0-9-]+\/interactions$/,      // what an agent is asking you (shown, never answered here)
+  /^\/api\/issues\/[A-Za-z0-9-]+\/approvals$/,         // what an agent asks you to approve (shown, never decided here)
 ];
 // Heartbeat runs: only the latest few, so a failed run's error can be shown on the agent.
 const RUNS_QUERY = '?limit=60&summary=1';
@@ -205,8 +206,17 @@ function shapePaperclip(pathname, data) {
   }));
   if (pathname.endsWith('/issues')) return data.filter((i) => !CLOSED.has(i.status)).map((i) => ({
     ...pick(i, REDACT ? ['identifier', 'status', 'assigneeAgentId'] : ['identifier', 'title', 'status', 'assigneeAgentId']),
-    reviewAttention: { paths: ((i.reviewAttention && i.reviewAttention.paths) || []).map((x) => pick(x, ['kind', 'responder', 'label'])) },
+    reviewAttention: { paths: ((i.reviewAttention && i.reviewAttention.paths) || []).map((x) => pick(x, ['kind', 'responder', 'label', 'ref'])) },
   }));
+  // Approvals still waiting for a decision: what is asked and its risks, to read on any screen.
+  if (pathname.endsWith('/approvals')) return data.filter((x) => x && x.status === 'pending').map((x) => {
+    const p = x.payload || {};
+    return REDACT ? pick(x, ['id', 'type', 'status']) : {
+      ...pick(x, ['id', 'type', 'status', 'createdAt']),
+      title: String(p.title || '').slice(0, 300), summary: String(p.summary || '').slice(0, 4000),
+      risks: (Array.isArray(p.risks) ? p.risks : []).slice(0, 10).map((r) => String(r).slice(0, 600)),
+    };
+  });
   // Open questions to a person: the questions and their options, to read on any screen.
   if (pathname.endsWith('/interactions')) return data.filter((x) => x && x.status === 'pending').map((x) => {
     const qs = (x.payload && Array.isArray(x.payload.questions)) ? x.payload.questions : [];

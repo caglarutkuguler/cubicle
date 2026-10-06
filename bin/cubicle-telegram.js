@@ -25,6 +25,7 @@ const isUserId = (id) => typeof id === 'string' && /^[1-9]\d{0,15}$/.test(id) &&
 const TEXT = {
   en: {
     needs: (n) => `✋ <b>${n}</b> needs you`, why: 'Reason', open: 'See in Cubicle', inPaperclip: 'Open in Paperclip',
+    approval: 'Approval request', risks: 'Risks', approveIn: 'Approve or reject in Paperclip',
     replyHint: 'Reply to this message to answer; it becomes a comment on the issue.',
     replyHintQ: 'Reply to this message with the option’s number, or write your own answer; it becomes a comment on the issue.', other: 'or write your own answer',
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
@@ -48,6 +49,7 @@ const TEXT = {
   },
   tr: {
     needs: (n) => `✋ <b>${n}</b> sizi bekliyor`, why: 'Neden', open: 'Cubicle’da gör', inPaperclip: 'Paperclip’te aç',
+    approval: 'Onay isteği', risks: 'Riskler', approveIn: 'Paperclip’te onayla ya da reddet',
     replyHint: 'Yanıtlamak için bu mesajı yanıtlayın; yanıtınız işe yorum olarak yazılır.',
     replyHintQ: 'Bu mesajı seçeneğin numarasıyla ya da kendi cevabınızla yanıtlayın; yanıtınız işe yorum olarak yazılır.', other: 'ya da kendi cevabınızı yazın',
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
@@ -140,7 +142,7 @@ async function snapshot(self) {
           const askPath = ask && ask.reviewAttention.paths.find(asksPerson);
           agents.push({
             id: a.id, name: a.name, status: a.status, company: c, paperclip: cfg.paperclipUrl || src.paperclipUrl,
-            needs: a.status === 'waiting' || (!!ask && a.status !== 'error'), issue: ask || (a.status === 'waiting' ? task : null), reason: askPath ? askPath.label : '',
+            needs: a.status === 'waiting' || (!!ask && a.status !== 'error'), issue: ask || (a.status === 'waiting' ? task : null), reason: askPath ? askPath.label : '', approval: askPath && askPath.kind === 'approval' ? askPath.ref || '' : '',
             task, error: a.errorReason || '', fail: standingFailure(run, runs) ? { id: run.id, code: run.errorCode || run.status, error: run.error || '' } : null,
             completionId: completed.get(a.id)?.id || null, explicitCompletion: true,
           });
@@ -215,6 +217,7 @@ function start(opts) {
   // links are left out (answer by replying in Telegram instead).
   const local = (u) => { try { return /^(127\.|localhost$|\[::1\]$)/.test(new URL(u).hostname); } catch (_) { return true; } };
   const issueLink = (a, i) => (a.company && a.paperclip && i && i.identifier && !(local(opts.paperclipPublicUrl || a.paperclip) && !local(opts.publicUrl)) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/issues/${encodeURIComponent(i.identifier)}` : '');
+  const approvalLink = (a, ref) => (ref && issueLink(a, { identifier: 'x' }) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/approvals/${encodeURIComponent(ref)}` : '');
   const agentLink = (a) => cubicleLink(`?agent=${encodeURIComponent(a.id)}${a.company ? `&company=${encodeURIComponent(a.company.issuePrefix)}` : ''}`);
 
   async function send(chatId, html, extra = {}, alert = null) {
@@ -233,6 +236,21 @@ function start(opts) {
     if (!i || !i.identifier) return [];
     try { const b = await self(`/api/issues/${encodeURIComponent(i.identifier)}/interactions`); const list = JSON.parse(b || '[]'); return Array.isArray(list) ? list : []; } catch (_) { return []; }
   }
+  // A linked approval waiting on you: what is asked and its risks (deciding it stays in Paperclip).
+  async function approvalsOf(a) {
+    if (!a || !a.approval || !a.issue || !a.issue.identifier) return [];
+    try {
+      const list = JSON.parse((await self(`/api/issues/${encodeURIComponent(a.issue.identifier)}/approvals`)) || '[]');
+      return (Array.isArray(list) ? list : []).filter((x) => x && x.id === a.approval).map((x) => ({
+        title: String(x.title || '').slice(0, 300), summary: String(x.summary || '').slice(0, 1500), risks: (x.risks || []).slice(0, 5).map((r) => String(r).slice(0, 300)) }));
+    } catch (_) { return []; }
+  }
+  function approvalText(ap, lang) {
+    if (!ap) return '';
+    const t = tr(lang);
+    return [`📝 <b>${esc(t.approval)}:</b> ${esc(ap.title)}`, ap.summary ? esc(ap.summary.length > 1200 ? ap.summary.slice(0, 1199) + '…' : ap.summary) : '',
+      ap.risks.length ? `<b>${esc(t.risks)}:</b>\n${ap.risks.map((r) => `• ${esc(r)}`).join('\n')}` : ''].filter(Boolean).join('\n');
+  }
   function questionsText(list, lang) {
     const out = [];
     for (const x of list.slice(0, 3)) {
@@ -245,12 +263,12 @@ function start(opts) {
     }
     return out.join('\n').slice(0, 3200);
   }
-  function needsText(a, lang, qs = []) {
-    const t = tr(lang), i = a.issue, q = qs.length ? questionsText(qs, lang) : '';
+  function needsText(a, lang, qs = [], aps = []) {
+    const t = tr(lang), i = a.issue, q = [approvalText(aps[0], lang), qs.length ? questionsText(qs, lang) : ''].filter(Boolean).join('\n');
     return [t.needs(esc(a.name)),
       i && (i.identifier || i.title) ? `<b>${esc(i.identifier || '')}</b> ${esc(i.title || '')}` : '',
       a.reason && !q ? `${t.why}: ${esc(a.reason)}` : '',
-      q, '', links([[t.open, agentLink(a)], [t.inPaperclip, issueLink(a, i)]]),
+      q, '', links([[t.open, agentLink(a)], [t.approveIn, aps.length ? approvalLink(a, a.approval) : ''], [t.inPaperclip, issueLink(a, i)]]),
       opts.replies && a.company && i && i.identifier ? `<i>${esc(q ? t.replyHintQ : t.replyHint)}</i>` : ''].filter((x, k) => x || k === 4).join('\n');
   }
   // A reply of just a number picks that option.
@@ -281,8 +299,9 @@ function start(opts) {
       if (q.prompt) body.push(esc(q.prompt));
       q.options.forEach((o, k) => body.push(`   <b>${k + 1}.</b> ${esc(o.label)}${o.description ? ` · <i>${esc(o.description.slice(0, 160))}</i>` : ''}`));
       if (q.other && q.options.length) body.push(`   <i>${esc(t.other)}</i>`);
-    } else if (cur.reason) body.push(`${t.why}: ${esc(cur.reason)}`);
-    const tail = ['', links([[t.open, agentLink(a)], [t.inPaperclip, issueLink(a, { identifier: cur.issue })]])];
+    } else if (cur.ap) body.push(approvalText(cur.ap, c.lang));
+    else if (cur.reason) body.push(`${t.why}: ${esc(cur.reason)}`);
+    const tail = ['', links([[t.open, agentLink(a)], [t.approveIn, cur.ap ? approvalLink(a, cur.approval) : ''], [t.inPaperclip, issueLink(a, { identifier: cur.issue })]])];
     if (opts.replies && cur.issue) tail.push(`<i>${esc(t.answerHere)}</i>`);
     const left = (c.queue || []).length;
     if (left) tail.push(`<i>${esc(t.more(left))} ${esc(t.skipHint)}</i>`);
@@ -299,7 +318,8 @@ function start(opts) {
     while ((c.queue || []).length) {
       const item = c.queue.shift();
       const qs = item.issue ? await questionsOf({ identifier: item.issue }) : [];
-      c.current = { ...item, steps: compact(qs), at: 0, answers: [] };
+      const aps = item.approval ? await approvalsOf({ approval: item.approval, issue: { identifier: item.issue } }) : [];
+      c.current = { ...item, steps: compact(qs), ap: aps[0] || null, at: 0, answers: [] };
       break;
     }
     saveState();
@@ -310,13 +330,13 @@ function start(opts) {
     const key = a.issue && a.issue.identifier ? a.issue.identifier : `agent:${a.id}`;
     if ((c.current && c.current.key === key) || c.queue.some((x) => x.key === key)) return false;
     c.queue.push({ key, issue: a.issue && a.issue.identifier ? a.issue.identifier : '', title: a.issue && a.issue.title ? String(a.issue.title).slice(0, 200) : '',
-      reason: String(a.reason || '').slice(0, 300), agent: { id: a.id, name: a.name, company: a.company ? { issuePrefix: a.company.issuePrefix } : null, paperclip: a.paperclip } });
+      reason: String(a.reason || '').slice(0, 300), approval: a.approval || '', agent: { id: a.id, name: a.name, company: a.company ? { issuePrefix: a.company.issuePrefix } : null, paperclip: a.paperclip } });
     return true;
   }
   async function notifyNeeds(a) {
     for (const [chat, c] of Object.entries(state.chats)) {
       if (!wants(c, a, 'questions')) continue;
-      if (!opts.replies) { const qs = await questionsOf(a.issue); await send(chat, needsText(a, c.lang, qs)); continue; }
+      if (!opts.replies) { await send(chat, needsText(a, c.lang, await questionsOf(a.issue), await approvalsOf(a))); continue; }
       if (enqueue(chat, a) && !c.current) await nextFor(chat);
       else saveState();
     }
@@ -448,7 +468,7 @@ function start(opts) {
       const w = agents.filter((a) => a.needs);
       if (!w.length) return send(chatId, esc(t.nobody));
       if (!opts.replies) {
-        for (const a of w.slice(0, 10)) await send(chatId, needsText(a, lang, await questionsOf(a.issue)));
+        for (const a of w.slice(0, 10)) await send(chatId, needsText(a, lang, await questionsOf(a.issue), await approvalsOf(a)));
         return null;
       }
       for (const a of w) enqueue(chatId, a);
