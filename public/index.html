@@ -1438,8 +1438,10 @@
     const payload = { title: form.title, description: form.description, priority: form.priority, ...(form.assignee ? { assigneeAgentId: form.assignee } : {}) };
     if (DEMO) return { identifier: `DEMO-${100 + Math.floor(Math.random() * 900)}` };
     if (EMBED) {
-      const r = await fetch(`/api/issues/${encodeURIComponent(root.id)}/children`, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ ...payload, status: 'todo' }) });
+      // the general create with the parent set: Paperclip's /children helper stops at 25 subtasks
+      const p = await getJSON(`/api/issues/${encodeURIComponent(root.id)}`);
+      const r = await fetch(`/api/companies/${encodeURIComponent(p.companyId)}/issues`, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...payload, status: 'todo', parentId: p.id, ...(p.projectId ? { projectId: p.projectId } : {}), ...(p.goalId ? { goalId: p.goalId } : {}) }) });
       const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || r.status); return d.issue || d;
     }
     const r = await fetch('/api/cubicle/tasks', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ parentId: root.id, ...payload }) });

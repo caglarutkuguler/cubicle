@@ -410,12 +410,12 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
         seen.push(`${q.method} ${q.url}`); r.writeHead(200, { 'content-type': 'application/json' });
         const u = new URL(q.url, 'http://x');
-        if (u.pathname === '/api/companies/c/issues') { const off = +(u.searchParams.get('offset') || 0), lim = +(u.searchParams.get('limit') || 500); return r.end(JSON.stringify(many.slice(off, off + lim))); }
+        if (u.pathname === '/api/companies/c/issues' && q.method === 'GET') { const off = +(u.searchParams.get('offset') || 0), lim = +(u.searchParams.get('limit') || 500); return r.end(JSON.stringify(many.slice(off, off + lim))); }
         if (u.pathname === '/api/companies/c/heartbeat-runs') return r.end(JSON.stringify([{ id: 'r', agentId: AGENT, status: 'failed', errorCode: 'acpx_session_init_failed', error: 'spawn E2BIG ' + 'x'.repeat(400), stderrExcerpt: 'secret trace', contextSnapshot: { issueId: 'i3', prompt: 'secret prompt' } }]));
         if (u.pathname === '/api/issues/B-0/cost-summary') return r.end(JSON.stringify({ issueId: 'i0', runCount: 9, runtimeMs: 5, costCents: 7, secret: 'x' }));
-        if (u.pathname === `/api/issues/${PARENT}`) return r.end(JSON.stringify({ id: PARENT, identifier: 'B-0', companyId: 'c' }));
+        if (u.pathname === `/api/issues/${PARENT}`) return r.end(JSON.stringify({ id: PARENT, identifier: 'B-0', companyId: 'c', projectId: 'p1', goalId: 'g1' }));
         if (u.pathname === '/api/companies/c/agents') return r.end(JSON.stringify([{ id: AGENT, name: 'Dev' }]));
-        if (u.pathname === `/api/issues/${PARENT}/children` && q.method === 'POST') { created.push(JSON.parse(b)); r.statusCode = 201; return r.end(JSON.stringify({ id: 'n', identifier: 'B-9000' })); }
+        if (u.pathname === '/api/companies/c/issues' && q.method === 'POST') { created.push(JSON.parse(b)); r.statusCode = 201; return r.end(JSON.stringify({ id: 'n', identifier: 'B-9000' })); }
         r.statusCode = 404; r.end('{}');
       });
     });
@@ -450,7 +450,8 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', { ...task, parentId: '44444444-4444-4444-8444-444444444444' })).status, 404, 'a real parent');
         const made = await call(`${base}/api/cubicle/tasks`, 'POST', task);
         assert.deepStrictEqual([made.status, made.data.identifier], [200, 'B-9000']);
-        assert.deepStrictEqual(created, [{ title: 'Speed up B-0', description: 'advice', status: 'todo', priority: 'high', assigneeAgentId: AGENT }]);
+        assert.deepStrictEqual(created, [{ title: 'Speed up B-0', description: 'advice', status: 'todo', priority: 'high', parentId: PARENT, projectId: 'p1', goalId: 'g1', assigneeAgentId: AGENT }],
+          'a subtask through the general create (the /children helper stops at 25), in the parent\'s project and goal');
         assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'GET')).status, 405);
       }, { CUBICLE_SETTINGS: path.join(dir, 'settings.json') });
       await withServer(['--paperclip', `http://127.0.0.1:${up.address().port}`, '--redact'], async (base) => {

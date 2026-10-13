@@ -657,9 +657,13 @@ async function serveTasks(req, res) {
     const agents = await upstreamJSON('GET', `/api/companies/${parent.data.companyId}/agents`);
     if (!Array.isArray(agents.data) || !agents.data.some((a) => a && a.id === d.assigneeAgentId)) return send(res, 400, '{"error":"no such agent"}');
   }
+  // Paperclip's general create, with the parent set (its /children helper stops at 25 subtasks, and a
+  // slow task usually has more); the new task stays in the parent's project and goal.
+  const p = parent.data;
   const body = { title: d.title.trim().slice(0, 200), description: String(d.description || '').slice(0, 8000), status: 'todo',
-    priority: PRIORITIES.has(d.priority) ? d.priority : 'high', ...(d.assigneeAgentId ? { assigneeAgentId: d.assigneeAgentId } : {}) };
-  const r = await upstreamJSON('POST', `/api/issues/${d.parentId}/children`, body);
+    priority: PRIORITIES.has(d.priority) ? d.priority : 'high', parentId: p.id,
+    ...(p.projectId ? { projectId: p.projectId } : {}), ...(p.goalId ? { goalId: p.goalId } : {}), ...(d.assigneeAgentId ? { assigneeAgentId: d.assigneeAgentId } : {}) };
+  const r = await upstreamJSON('POST', `/api/companies/${p.companyId}/issues`, body);
   if (r.status < 200 || r.status >= 300 || !r.data) return send(res, r.status || 502, JSON.stringify({ error: String((r.data && r.data.error) || 'Paperclip refused the task').slice(0, 300) }));
   const made = r.data.issue || r.data;
   console.log(`Cubicle: created ${made.identifier || made.id} under ${parent.data.identifier || d.parentId} from KPI advice.`);
