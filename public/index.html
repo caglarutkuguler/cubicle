@@ -1260,7 +1260,9 @@
   const kpiIssue = (i) => ({ id: i.id, identifier: i.identifier, title: i.title, status: i.status, parentId: i.parentId, assigneeAgentId: i.assigneeAgentId,
     createdAt: i.createdAt, startedAt: i.startedAt, completedAt: i.completedAt, cancelledAt: i.cancelledAt, human: !!i.createdByUserId, convo: !!i.conversationAgentId,
     toUser: !!i.assigneeUserId, blockers: blockerInfo(i), asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson),
-    priority: i.priority, lastActivityAt: i.lastActivityAt, updatedAt: i.updatedAt, running: !!(i.executionRunId || i.checkoutRunId), ...askTiming(i) });
+    priority: i.priority, lastActivityAt: i.lastActivityAt, updatedAt: i.updatedAt, running: !!(i.executionRunId || i.checkoutRunId), ...askTiming(i),
+    ...adviceKeys(i) });
+  const adviceKeys = (i) => { const m = /cubicle-advice: ([A-Za-z0-9_,-]{1,300})/.exec(String(i.description || '')); return m ? { advice: m[1] } : {}; };
   const askTiming = (i) => {
     const asks = ((i.reviewAttention && i.reviewAttention.paths) || []).filter(asksPerson), since = asks.map((x) => Date.parse(x.since)).filter(Number.isFinite);
     return asks.length ? { asksKind: String(asks[0].kind || ''), ...(since.length ? { asksSince: new Date(Math.min(...since)).toISOString() } : {}) } : {};
@@ -1432,7 +1434,8 @@
     const body = list.map((f, n) => [list.length > 1 ? `### ${n + 1}. ${f.text}` : `**${L.adTaskFinding}:** ${f.text}`,
       f.items && f.items.length ? `**${L.adTaskWhere}:** ${f.items.slice(0, 15).map(link).join(', ')}${f.items.length > 15 ? ` +${f.items.length - 15}` : ''}` : '',
       `**${L.adTaskFix}:** ${f.fix}`].filter(Boolean).join('\n\n')).join('\n\n');
-    return `## ${L.adTaskHead}\n\n**${L.adFor}:** ${link(root)} ${root.title || ''}\n\n${body}\n\n_${L.adTaskSource(fmtDay(Date.now()))}_`;
+    // the last line names the advice it carries, so Cubicle knows it is done (from any browser)
+    return `## ${L.adTaskHead}\n\n**${L.adFor}:** ${link(root)} ${root.title || ''}\n\n${body}\n\n_${L.adTaskSource(fmtDay(Date.now()))}_\n\n\`cubicle-advice: ${list.map((f) => f.key).join(',')}\``;
   }
   async function createTask(root, form) {
     const payload = { title: form.title, description: form.description, priority: form.priority, ...(form.assignee ? { assigneeAgentId: form.assignee } : {}) };
@@ -1531,6 +1534,30 @@
   // Advice already made into a task, per slow task, kept a week in this browser so reopening the
   // board does not offer the same task again.
   const remaining = (a) => (a.res ? a.res.findings.filter((f) => f.agentTask !== false && !(a.made && a.made[f.key])) : []);
+  // Advice already in Paperclip as a subtask of this task (not cancelled, not yet done): read from the
+  // advice keys its description ends with, or, for tasks made before that, from its title.
+  // a title made from advice text: the same words, whatever the numbers and units are now
+  const words = (t) => new Set(String(t || '').toLocaleLowerCase().split(/[^\p{L}]+/u).filter((w) => w.length > 2));
+  const alike = (a, b) => { const x = words(a), y = words(b); if (!x.size || !y.size) return false; let n = 0; for (const w of x) if (y.has(w)) n++; return n / Math.max(x.size, y.size) >= 0.7; };
+  function madeInPaperclip(k, rootId, findings) {
+    const root = k.byId.get(rootId), out = {};
+    if (!root) return out;
+    for (const c of k.kids.get(rootId) || []) {
+      if (c.status === 'cancelled' || c.status === 'done') continue;
+      const ident = c.identifier || '✓';
+      if (c.advice) { for (const key of c.advice.split(',')) if (key) out[key] = ident; continue; }
+      for (const S of Object.values(STR)) {
+        if (typeof S.adTaskName !== 'function') continue;
+        const head = S.adTaskName(root.identifier, ''), title = String(c.title || '');
+        if (!head || !title.startsWith(head)) continue;
+        const rest = title.slice(head.length);
+        if (rest === S.adTaskHead) { for (const f of findings) if (f.agentTask !== false) out[f.key] = ident; }
+        else for (const f of findings) if (f.agentTask !== false && alike(rest, f.text)) out[f.key] = ident;
+        break;
+      }
+    }
+    return out;
+  }
   const MADE = 'cubicle.adviceTasks';
   function loadMade(id) {
     try { const all = JSON.parse(localStorage.getItem(MADE) || '{}'), x = all[id]; return x && Date.now() - x.at < 7 * DAY ? x.made : {}; } catch (_) { return {}; }
@@ -1558,6 +1585,7 @@
       const i = kpiLast.byId.get(id);
       const [runs, cost] = await Promise.all([kpiRunsData(), kpiCost(i)]);
       a.res = adviseKpi(kpiLast, id, runs, cost, [...sprites.values()]);
+      a.made = { ...madeInPaperclip(kpiLast, id, a.res.findings), ...(a.made || {}) };
     } catch (e) { a.err = String(e.message || e); }
     a.busy = false; if (kpiAdv.get(id) === a) renderKpi();
   }

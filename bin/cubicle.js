@@ -257,6 +257,8 @@ function shapeKpi(data) {
       sample: i.blockerAttention.sampleBlockerIdentifier || '', stalled: i.blockerAttention.stalledBlockerCount || 0 } : null,
     asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson),
     ...kpiTiming(i),
+    // an advice task made by Cubicle: only the advice keys its description ends with, not the description
+    ...(/cubicle-advice: ([A-Za-z0-9_,-]{1,300})/.test(String(i.description || '')) ? { advice: /cubicle-advice: ([A-Za-z0-9_,-]{1,300})/.exec(String(i.description))[1] } : {}),
   }));
 }
 // What the KPI's advice reads besides the status: priority, last activity, whether a run holds the

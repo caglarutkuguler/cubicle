@@ -403,7 +403,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     const fs = require('fs'); const os = require('os');
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-kpi-'));
     const PARENT = '11111111-1111-4111-8111-111111111111', AGENT = '22222222-2222-4222-8222-222222222222';
-    const many = Array.from({ length: 1500 }, (_, n) => ({ id: `i${n}`, identifier: `B-${n}`, title: `t${n}`, status: 'todo', createdByUserId: n === 0 ? 'u' : null, description: 'secret body',
+    const many = Array.from({ length: 1500 }, (_, n) => ({ id: `i${n}`, identifier: `B-${n}`, title: `t${n}`, status: 'todo', createdByUserId: n === 0 ? 'u' : null, description: n === 2 ? 'secret body\n\n`cubicle-advice: idle,fail-provider_quota`' : 'secret body',
       reviewAttention: n === 1 ? { paths: [{ kind: 'approval', responder: 'Board', since: '2026-10-01T00:00:00Z' }] } : { paths: [] } }));
     const seen = [], created = [];
     const up = http.createServer((q, r) => {
@@ -431,6 +431,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         const kpi = JSON.parse((await get(`${base}/api/kpi/c`)).body);
         assert.strictEqual(kpi.length, 1500, 'both pages of issues');
         assert.ok(seen.some((x) => /offset=1000/.test(x)) && !JSON.stringify(kpi).includes('secret body'));
+        assert.strictEqual(kpi[2].advice, 'idle,fail-provider_quota', 'an advice task says which advice it carries');
         assert.strictEqual(kpi[1].asksKind, 'approval'); assert.strictEqual(kpi[1].asksSince, '2026-10-01T00:00:00.000Z');
         const open = JSON.parse((await get(`${base}/api/companies/c/issues`)).body);
         assert.ok(seen.some((x) => /\/api\/companies\/c\/issues\?status=backlog,todo,in_progress,in_review,blocked&limit=1000/.test(x)), 'the office asks for open issues only');
