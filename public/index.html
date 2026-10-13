@@ -381,7 +381,7 @@
       adLong: (ids, age, typ) => `${ids} open for up to ${age}; similar tasks here finish in about ${typ}`, adLongFix: 'Make the acceptance criteria concrete and split the work into smaller subtasks that can run in parallel.',
       adChurn: (ids, n) => `${ids}: up to ${n} runs recently and still open`, adChurnFix: 'The agent may be going in circles: add a clear finish condition and check what keeps waking it (comments, reviews).',
       adReview: (n, age) => `${n} task(s) wait in review, the oldest for ${age}`, adReviewFix: 'Add a reviewer or lighten the reviewer’s load; low-risk changes may not need a review step.',
-      adToTask: 'Turn into a task', adAllToTask: 'All advice as one task', adAssignee: 'Agent', adPriority: 'Priority', adTaskTitle: 'Title', adCreate: 'Create in Paperclip', adCreating: 'Creating…',
+      adToTask: 'Turn into a task', adAllToTask: 'Turn all into a task', adAssignee: 'Agent', adPriority: 'Priority', adTaskTitle: 'Title', adCreate: 'Create in Paperclip', adCreating: 'Creating…',
       adCreated: (id) => `Created ${id}`, adOff: 'Turning advice into tasks is off.', adTurnOn: 'Let Cubicle create these tasks in Paperclip (subtasks of the slow task)', adOnlyHere: 'Turned on from the computer Cubicle runs on.',
       adTaskName: (id, text) => `Speed up ${id}: ${text}`, adTaskHead: 'Speed-up advice from Cubicle', adFor: 'Task', adTaskFinding: 'Finding', adTaskFix: 'Advice', adTaskWhere: 'Where',
       adTaskSource: (d) => `Derived by Cubicle on ${d} from Paperclip’s tasks, recent runs and costs.`, adPrios: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' },
@@ -488,7 +488,7 @@
       adLong: (ids, age, typ) => `${ids} açık; en uzunu ${age} süredir sürüyor, buradaki benzer işler ise yaklaşık ${typ} sürüyor`, adLongFix: 'Kabul kriterlerini somutlaştırın ve işi paralel yürüyebilecek daha küçük alt görevlere bölün.',
       adChurn: (ids, n) => `${ids}: son günlerde en çok ${n} çalıştırma, hâlâ açık`, adChurnFix: 'Ajan döngüye girmiş olabilir: net bir bitiş koşulu ekleyin ve onu neyin sürekli uyandırdığına bakın (yorumlar, incelemeler).',
       adReview: (n, age) => `${n} iş incelemede bekliyor; en eskisi ${age} süredir`, adReviewFix: 'İnceleyici ekleyin ya da inceleyicinin yükünü azaltın; düşük riskli değişiklikler inceleme adımına gerek duymayabilir.',
-      adToTask: 'Göreve çevir', adAllToTask: 'Tüm tavsiyeler tek görev', adAssignee: 'Ajan', adPriority: 'Öncelik', adTaskTitle: 'Başlık', adCreate: 'Paperclip’te oluştur', adCreating: 'Oluşturuluyor…',
+      adToTask: 'Göreve çevir', adAllToTask: 'Tümünü göreve çevir', adAssignee: 'Ajan', adPriority: 'Öncelik', adTaskTitle: 'Başlık', adCreate: 'Paperclip’te oluştur', adCreating: 'Oluşturuluyor…',
       adCreated: (id) => `${id} oluşturuldu`, adOff: 'Tavsiyeyi göreve çevirme kapalı.', adTurnOn: 'Cubicle bu görevleri Paperclip’te açabilsin (yavaş görevin alt görevi olarak)', adOnlyHere: 'Cubicle’ın çalıştığı bilgisayardan açılır.',
       adTaskName: (id, text) => `${id} hızlandırma: ${text}`, adTaskHead: 'Cubicle’dan hızlandırma tavsiyesi', adFor: 'Görev', adTaskFinding: 'Bulgu', adTaskFix: 'Tavsiye', adTaskWhere: 'İlgili işler',
       adTaskSource: (d) => `Cubicle tarafından ${d} tarihinde Paperclip’teki görevler, son çalıştırmalar ve maliyetlerden çıkarıldı.`, adPrios: { critical: 'Kritik', high: 'Yüksek', medium: 'Orta', low: 'Düşük' },
@@ -595,7 +595,7 @@
       adLong: (ids, age, typ) => `${ids} seit bis zu ${age} offen; ähnliche Aufgaben dauern hier etwa ${typ}`, adLongFix: 'Machen Sie die Abnahmekriterien konkret und teilen Sie die Arbeit in kleinere, parallel laufende Teilaufgaben.',
       adChurn: (ids, n) => `${ids}: bis zu ${n} Läufe zuletzt und noch offen`, adChurnFix: 'Der Agent dreht sich womöglich im Kreis: klare Abschlussbedingung hinzufügen und prüfen, was ihn ständig weckt (Kommentare, Reviews).',
       adReview: (n, age) => `${n} Aufgabe(n) warten im Review, die älteste seit ${age}`, adReviewFix: 'Fügen Sie einen Reviewer hinzu oder entlasten Sie ihn; risikoarme Änderungen brauchen evtl. kein Review.',
-      adToTask: 'Als Aufgabe anlegen', adAllToTask: 'Alle Ratschläge als eine Aufgabe', adAssignee: 'Agent', adPriority: 'Priorität', adTaskTitle: 'Titel', adCreate: 'In Paperclip anlegen', adCreating: 'Wird angelegt…',
+      adToTask: 'Als Aufgabe anlegen', adAllToTask: 'Alle als Aufgabe anlegen', adAssignee: 'Agent', adPriority: 'Priorität', adTaskTitle: 'Titel', adCreate: 'In Paperclip anlegen', adCreating: 'Wird angelegt…',
       adCreated: (id) => `${id} angelegt`, adOff: 'Ratschläge als Aufgaben anlegen ist aus.', adTurnOn: 'Cubicle darf diese Aufgaben in Paperclip anlegen (als Teilaufgaben der langsamen Aufgabe)', adOnlyHere: 'Wird auf dem Rechner eingeschaltet, auf dem Cubicle läuft.',
       adTaskName: (id, text) => `${id} beschleunigen: ${text}`, adTaskHead: 'Beschleunigungs-Rat von Cubicle', adFor: 'Aufgabe', adTaskFinding: 'Befund', adTaskFix: 'Rat', adTaskWhere: 'Betrifft',
       adTaskSource: (d) => `Von Cubicle am ${d} aus Paperclips Aufgaben, letzten Läufen und Kosten abgeleitet.`, adPrios: { critical: 'Kritisch', high: 'Hoch', medium: 'Mittel', low: 'Niedrig' },
@@ -702,7 +702,7 @@
       adLong: (ids, age, typ) => `${ids} abiertas hasta ${age}; aquí tareas similares tardan unas ${typ}`, adLongFix: 'Concreta los criterios de aceptación y divide el trabajo en subtareas más pequeñas que puedan ir en paralelo.',
       adChurn: (ids, n) => `${ids}: hasta ${n} ejecuciones recientes y sigue abierta`, adChurnFix: 'El agente puede estar dando vueltas: añade una condición clara de fin y mira qué lo despierta (comentarios, revisiones).',
       adReview: (n, age) => `${n} tarea(s) esperan revisión, la más antigua desde hace ${age}`, adReviewFix: 'Añade un revisor o aligera su carga; los cambios de bajo riesgo pueden no necesitar revisión.',
-      adToTask: 'Convertir en tarea', adAllToTask: 'Todo el consejo en una tarea', adAssignee: 'Agente', adPriority: 'Prioridad', adTaskTitle: 'Título', adCreate: 'Crear en Paperclip', adCreating: 'Creando…',
+      adToTask: 'Convertir en tarea', adAllToTask: 'Convertir todo en una tarea', adAssignee: 'Agente', adPriority: 'Prioridad', adTaskTitle: 'Título', adCreate: 'Crear en Paperclip', adCreating: 'Creando…',
       adCreated: (id) => `${id} creada`, adOff: 'Convertir consejos en tareas está desactivado.', adTurnOn: 'Permitir que Cubicle cree estas tareas en Paperclip (como subtareas de la tarea lenta)', adOnlyHere: 'Se activa desde el equipo donde se ejecuta Cubicle.',
       adTaskName: (id, text) => `Acelerar ${id}: ${text}`, adTaskHead: 'Consejo de aceleración de Cubicle', adFor: 'Tarea', adTaskFinding: 'Hallazgo', adTaskFix: 'Consejo', adTaskWhere: 'Afecta a',
       adTaskSource: (d) => `Obtenido por Cubicle el ${d} de las tareas, ejecuciones recientes y costes de Paperclip.`, adPrios: { critical: 'Crítica', high: 'Alta', medium: 'Media', low: 'Baja' },
@@ -809,7 +809,7 @@
       adLong: (ids, age, typ) => `${ids} ouvertes jusqu’à ${age} ; ici des tâches similaires prennent environ ${typ}`, adLongFix: 'Rendez les critères d’acceptation concrets et découpez le travail en sous-tâches plus petites menées en parallèle.',
       adChurn: (ids, n) => `${ids} : jusqu’à ${n} exécutions récentes et toujours ouverte`, adChurnFix: 'L’agent tourne peut-être en rond : ajoutez une condition de fin claire et voyez ce qui le réveille (commentaires, revues).',
       adReview: (n, age) => `${n} tâche(s) attendent une revue, la plus ancienne depuis ${age}`, adReviewFix: 'Ajoutez un relecteur ou allégez sa charge ; les changements à faible risque peuvent se passer de revue.',
-      adToTask: 'En faire une tâche', adAllToTask: 'Tous les conseils en une tâche', adAssignee: 'Agent', adPriority: 'Priorité', adTaskTitle: 'Titre', adCreate: 'Créer dans Paperclip', adCreating: 'Création…',
+      adToTask: 'En faire une tâche', adAllToTask: 'Tout transformer en tâche', adAssignee: 'Agent', adPriority: 'Priorité', adTaskTitle: 'Titre', adCreate: 'Créer dans Paperclip', adCreating: 'Création…',
       adCreated: (id) => `${id} créée`, adOff: 'La conversion des conseils en tâches est désactivée.', adTurnOn: 'Autoriser Cubicle à créer ces tâches dans Paperclip (sous-tâches de la tâche lente)', adOnlyHere: 'S’active depuis l’ordinateur où tourne Cubicle.',
       adTaskName: (id, text) => `Accélérer ${id} : ${text}`, adTaskHead: 'Conseil d’accélération de Cubicle', adFor: 'Tâche', adTaskFinding: 'Constat', adTaskFix: 'Conseil', adTaskWhere: 'Concerne',
       adTaskSource: (d) => `Établi par Cubicle le ${d} à partir des tâches, exécutions récentes et coûts de Paperclip.`, adPrios: { critical: 'Critique', high: 'Haute', medium: 'Moyenne', low: 'Basse' },
@@ -916,7 +916,7 @@
       adLong: (ids, age, typ) => `${ids} 已开放最长 ${age}；这里类似任务约 ${typ} 完成`, adLongFix: '明确验收标准，把工作拆成可并行的小子任务。',
       adChurn: (ids, n) => `${ids}：最近多达 ${n} 次运行，仍未完成`, adChurnFix: '代理可能在兜圈子：加上明确的完成条件，并检查是什么一直唤醒它（评论、评审）。',
       adReview: (n, age) => `${n} 个任务在等评审，最早的已等 ${age}`, adReviewFix: '增加评审者或减轻其负担；低风险的改动可能不需要评审。',
-      adToTask: '转为任务', adAllToTask: '全部建议合为一个任务', adAssignee: '代理', adPriority: '优先级', adTaskTitle: '标题', adCreate: '在 Paperclip 中创建', adCreating: '正在创建…',
+      adToTask: '转为任务', adAllToTask: '全部转为任务', adAssignee: '代理', adPriority: '优先级', adTaskTitle: '标题', adCreate: '在 Paperclip 中创建', adCreating: '正在创建…',
       adCreated: (id) => `已创建 ${id}`, adOff: '将建议转为任务的功能已关闭。', adTurnOn: '允许 Cubicle 在 Paperclip 中创建这些任务（作为慢任务的子任务）', adOnlyHere: '需在运行 Cubicle 的电脑上开启。',
       adTaskName: (id, text) => `加快 ${id}：${text}`, adTaskHead: '来自 Cubicle 的加速建议', adFor: '任务', adTaskFinding: '发现', adTaskFix: '建议', adTaskWhere: '涉及',
       adTaskSource: (d) => `由 Cubicle 于 ${d} 根据 Paperclip 的任务、最近运行和成本得出。`, adPrios: { critical: '紧急', high: '高', medium: '中', low: '低' },
@@ -1023,7 +1023,7 @@
       adLong: (ids, age, typ) => `${ids} مفتوحة حتى ${age}؛ والمهام المماثلة هنا تنتهي في نحو ${typ}`, adLongFix: 'اجعل معايير القبول محددة وقسّم العمل إلى مهام فرعية أصغر تسير بالتوازي.',
       adChurn: (ids, n) => `${ids}: حتى ${n} تشغيلًا مؤخرًا وما زالت مفتوحة`, adChurnFix: 'ربما يدور الوكيل في حلقة: أضف شرط إنهاء واضحًا وتحقق مما يوقظه باستمرار (تعليقات، مراجعات).',
       adReview: (n, age) => `${n} مهمة تنتظر المراجعة، أقدمها منذ ${age}`, adReviewFix: 'أضف مراجعًا أو خفف عبئه؛ قد لا تحتاج التغييرات منخفضة المخاطر إلى مراجعة.',
-      adToTask: 'حوّلها إلى مهمة', adAllToTask: 'كل النصائح في مهمة واحدة', adAssignee: 'الوكيل', adPriority: 'الأولوية', adTaskTitle: 'العنوان', adCreate: 'أنشئ في Paperclip', adCreating: 'جارٍ الإنشاء…',
+      adToTask: 'حوّلها إلى مهمة', adAllToTask: 'حوّل الكل إلى مهمة', adAssignee: 'الوكيل', adPriority: 'الأولوية', adTaskTitle: 'العنوان', adCreate: 'أنشئ في Paperclip', adCreating: 'جارٍ الإنشاء…',
       adCreated: (id) => `أُنشئت ${id}`, adOff: 'تحويل النصائح إلى مهام متوقف.', adTurnOn: 'اسمح لـ Cubicle بإنشاء هذه المهام في Paperclip (مهام فرعية للمهمة البطيئة)', adOnlyHere: 'يُفعّل من الحاسوب الذي يعمل عليه Cubicle.',
       adTaskName: (id, text) => `تسريع ${id}: ${text}`, adTaskHead: 'نصيحة تسريع من Cubicle', adFor: 'المهمة', adTaskFinding: 'الملاحظة', adTaskFix: 'النصيحة', adTaskWhere: 'تخص',
       adTaskSource: (d) => `استخلصها Cubicle في ${d} من مهام Paperclip وتشغيلاته الأخيرة وتكاليفه.`, adPrios: { critical: 'حرجة', high: 'عالية', medium: 'متوسطة', low: 'منخفضة' },
@@ -1519,12 +1519,28 @@
     const { findings, stats } = a.res;
     const canMake = taskCfg.available && taskCfg.on;
     const made = (key) => (a.made && a.made[key] ? `<span class="made">✓ ${esc(L.adCreated(a.made[key]))}</span>` : '');
-    const toTask = (key) => (canMake && !(a.made && a.made[key]) ? `<button type="button" class="mini" data-adv-task="${esc(key)}" data-for="${esc(i.id)}">➕ ${esc(L.adToTask)}</button>` : '') + made(key);
+    const toTask = (key) => (canMake && !(a.made && a.made[key]) ? `<button type="button" class="mini" data-adv-task="${esc(key)}" data-for="${esc(i.id)}">➕ ${esc(key === 'all' ? L.adAllToTask : L.adToTask)}</button>` : '') + (key === 'all' ? '' : made(key));
+    // "all" covers what has not been made into a task yet, and goes once fewer than two are left
+    const left = remaining(a);
     const list = findings.map((f) => `<li class="sev${Math.round(f.sev)}"><b>${esc(f.text)}</b>${f.items && f.items.length ? `<div class="ids">${f.items.slice(0, 8).map(kLink).join(', ')}${f.items.length > 8 ? ` +${f.items.length - 8}` : ''}</div>` : ''}
       <div class="fix">${esc(f.fix)}</div>${f.agentTask === false ? '' : toTask(f.key)}${a.form && a.form.key === f.key ? formHtml(i, a.form) : ''}</li>`).join('');
     const off = !taskCfg.available ? '' : taskCfg.on ? '' : `<div class="adoff">${esc(L.adOff)} <label><input type="checkbox" data-adv-on="1"${taskCfg.canEdit ? '' : ' disabled'}> ${esc(L.adTurnOn)}</label>${taskCfg.canEdit ? '' : ` <span class="sub">${esc(L.adOnlyHere)}</span>`}</div>`;
     return `<div class="adv"><div class="advh">💡 ${esc(L.adTitle(i.identifier))}${stats.length ? ` <span class="sub">${esc(stats.join(' '))}</span>` : ''}</div>
-      ${findings.length ? `<ol>${list}</ol>${findings.filter((f) => f.agentTask !== false).length > 1 ? `<div class="all">${toTask('all')}${a.form && a.form.key === 'all' ? formHtml(i, a.form) : ''}</div>` : ''}` : `<p class="sub">${esc(L.adNone)}</p>`}${findings.length ? off : ''}</div>`;
+      ${findings.length ? `<ol>${list}</ol>${left.length > 1 ? `<div class="all">${toTask('all')}${a.form && a.form.key === 'all' ? formHtml(i, a.form) : ''}</div>` : ''}` : `<p class="sub">${esc(L.adNone)}</p>`}${findings.length ? off : ''}</div>`;
+  }
+  // Advice already made into a task, per slow task, kept a week in this browser so reopening the
+  // board does not offer the same task again.
+  const remaining = (a) => (a.res ? a.res.findings.filter((f) => f.agentTask !== false && !(a.made && a.made[f.key])) : []);
+  const MADE = 'cubicle.adviceTasks';
+  function loadMade(id) {
+    try { const all = JSON.parse(localStorage.getItem(MADE) || '{}'), x = all[id]; return x && Date.now() - x.at < 7 * DAY ? x.made : {}; } catch (_) { return {}; }
+  }
+  function saveMade(id, made) {
+    try {
+      const all = JSON.parse(localStorage.getItem(MADE) || '{}');
+      for (const [k, v] of Object.entries(all)) if (!v || Date.now() - v.at >= 7 * DAY) delete all[k];
+      all[id] = { at: Date.now(), made }; localStorage.setItem(MADE, JSON.stringify(all));
+    } catch (_) {}
   }
   function formHtml(i, f) {
     const agents = [...sprites.values()].filter((s) => s.urlKey !== undefined || DEMO).sort((a, b) => a.name.localeCompare(b.name));
@@ -1537,7 +1553,7 @@
   }
   async function toggleAdvice(id) {
     if (kpiAdv.has(id)) { kpiAdv.delete(id); renderKpi(); return; }
-    const a = { busy: true }; kpiAdv.set(id, a); renderKpi();
+    const a = { busy: true, made: loadMade(id) }; kpiAdv.set(id, a); renderKpi();
     try {
       const i = kpiLast.byId.get(id);
       const [runs, cost] = await Promise.all([kpiRunsData(), kpiCost(i)]);
@@ -1564,7 +1580,7 @@
     if (mk) {
       const id = mk.dataset.for, a = kpiAdv.get(id), root = kpiLast.byId.get(id); if (!a || !a.res || !root) return;
       kpiAdv.forEach((_, x) => readForm(x));
-      const key = mk.dataset.advTask, list = key === 'all' ? a.res.findings.filter((f) => f.agentTask !== false) : a.res.findings.filter((f) => f.key === key);
+      const key = mk.dataset.advTask, list = key === 'all' ? remaining(a) : a.res.findings.filter((f) => f.key === key);
       if (a.form && a.form.key === key) a.form = null;
       else a.form = { key, title: L.adTaskName(root.identifier, key === 'all' ? L.adTaskHead : list[0].text).slice(0, 200), description: taskText(root, list),
         assignee: root.assigneeAgentId || '', priority: ['critical', 'high'].includes(root.priority) ? root.priority : 'high' };
@@ -1575,8 +1591,11 @@
       const id = go.dataset.advCreate, a = kpiAdv.get(id), root = kpiLast.byId.get(id); if (!a || !a.form || a.form.busy) return;
       readForm(id); a.form.busy = true; a.form.err = ''; renderKpi();
       try {
-        const made = await createTask(root, a.form);
-        a.made = { ...(a.made || {}), [a.form.key]: made.identifier || made.id || '✓' }; a.form = null;
+        // "all" carries the advice still left: each of those lines now shows the task it went into
+        const keys = a.form.key === 'all' ? remaining(a).map((f) => f.key) : [a.form.key];
+        const made = await createTask(root, a.form), ident = made.identifier || made.id || '✓';
+        a.made = { ...(a.made || {}) }; for (const k of keys) a.made[k] = ident;
+        a.form = null; saveMade(id, a.made);
       } catch (err) { a.form.busy = false; a.form.err = String(err.message || err); }
       renderKpi(); return;
     }
