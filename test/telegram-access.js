@@ -42,7 +42,7 @@ test('Telegram access policy applies to pairing, commands, comments and notifica
       if (q.url === '/botT0K/sendMessage') { sent.push(body); return json({ ok: true, result: { message_id: sent.length } }); }
       if (q.url === '/api/companies') return json([{ id: 'c1', name: 'Test office', issuePrefix: 'T' }]);
       if (q.url === '/api/companies/c1/agents') { watches++; return json([{ id: 'a1', name: 'Test agent', status: agentStatus }]); }
-      if (q.url === '/api/companies/c1/issues') return json([{ id: 'i1', identifier: 'T-1', title: 'Test task', status: 'in_progress', assigneeAgentId: 'a1' }]);
+      if (q.url.split('?')[0] === '/api/companies/c1/issues') return json([{ id: 'i1', identifier: 'T-1', title: 'Test task', status: 'in_progress', assigneeAgentId: 'a1' }]);
       if (q.url === '/api/issues/T-1/comments' && q.method === 'POST') { comments.push(body); return json({}); }
       return json([]);
     });

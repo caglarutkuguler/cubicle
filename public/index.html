@@ -146,6 +146,34 @@
   #kpi .sub { color:var(--muted); font-size:11px; }
   #kpi .late { color:#ffb36b; }
   #kpi .note { font-size:11px; color:var(--muted); margin-top:12px; }
+  #kpi .tblw { overflow-x:auto; }
+  #kpi .tblw table { min-width:820px; }
+  #kpi .tw { display:inline-block; width:18px; background:none; border:0; color:var(--muted); cursor:pointer; font:inherit; padding:0; text-align:center; }
+  #kpi tr.kid td { font-size:12px; background:rgba(255,255,255,.015); }
+  #kpi tr.kid td:first-child { color:var(--text); }
+  #kpi .adb { background:none; border:1px solid transparent; border-radius:6px; cursor:pointer; font-size:14px; padding:1px 5px; opacity:.75; }
+  #kpi .adb:hover, #kpi .adb.on { opacity:1; border-color:var(--line); background:#2a2f47; }
+  #kpi tr.advrow td { background:#1a1d2b; padding:10px 14px 14px; }
+  #kpi .adv .advh { font-weight:600; margin-bottom:6px; }
+  #kpi .adv .advh .sub { font-weight:400; margin-inline-start:6px; }
+  #kpi .adv ol { margin:0; padding-inline-start:20px; display:grid; gap:9px; }
+  #kpi .adv li b { font-weight:600; }
+  #kpi .adv li.sev3 b, #kpi .adv li.sev2 b { color:#ffcf87; }
+  #kpi .adv .ids { font-size:11.5px; color:var(--muted); margin-top:2px; }
+  #kpi .adv .fix { margin-top:3px; color:#cfd3e6; }
+  #kpi .adv .mini { margin-top:5px; background:#2f3552; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:3px 9px; font:inherit; font-size:12px; cursor:pointer; }
+  #kpi .adv .mini.go { background:#3b6fd6; border-color:#3b6fd6; }
+  #kpi .adv .mini:disabled { opacity:.6; cursor:default; }
+  #kpi .adv .made { color:#7fd89a; margin-inline-start:6px; font-size:12px; }
+  #kpi .adv .all { margin-top:10px; }
+  #kpi .adoff { margin-top:10px; font-size:12px; color:var(--muted); }
+  #kpi .adoff label { display:inline-flex; gap:5px; align-items:center; color:var(--text); }
+  #kpi .tform { margin-top:8px; display:grid; gap:6px; background:#22263a; border:1px solid var(--line); border-radius:8px; padding:9px; }
+  #kpi .tform label { display:flex; gap:6px; align-items:center; font-size:12px; color:var(--muted); }
+  #kpi .tform input[type=text] { flex:1; }
+  #kpi .tform input, #kpi .tform select, #kpi .tform textarea { background:#151826; color:var(--text); border:1px solid var(--line); border-radius:5px; padding:4px 6px; font:inherit; font-size:12px; }
+  #kpi .tform textarea { width:100%; box-sizing:border-box; resize:vertical; font-family:ui-monospace, monospace; font-size:11.5px; }
+  #kpi .tform .row { display:flex; gap:12px; flex-wrap:wrap; align-items:center; }
   dialog#tg { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:16px 18px; width:min(620px, 94vw); box-shadow:0 18px 50px rgba(0,0,0,.5); }
   dialog#qdlg { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:16px 18px; width:min(640px, 94vw); max-height:86vh; box-shadow:0 18px 50px rgba(0,0,0,.5); }
   dialog#qdlg::backdrop { background:rgba(8,9,15,.6); }
@@ -336,6 +364,27 @@
       tgEmbed: 'The Telegram bot belongs to the standalone Cubicle running on this computer, not to the office inside Paperclip. Open it and press ⚙ → Telegram there:', tgOpenStandalone: 'Open Cubicle',
       iss: { backlog: 'backlog', todo: 'to do', in_progress: 'in progress', in_review: 'in review', blocked: 'blocked', done: 'done', cancelled: 'cancelled' },
       kpiTask: 'Task', kpiWho: 'Agent', kpiProgress: 'Progress', kpiEta: 'Expected', kpiSub: (d, n) => `${d}/${n} subtasks`, kpiOver: 'past the usual time', kpiDone: 'done', kpiShowDone: 'Show finished', kpiRefresh: 'Refresh', kpiEmpty: 'No tasks from people yet.',
+      kpiStarted: 'Started', kpiTook: 'Duration', kpiRunningFor: (d) => `${d} so far`, kpiAllRoots: 'Also tasks agents opened', kpiExpand: 'Subtasks', kpiAdvice: 'How to speed it up',
+      adTitle: (id) => `How to speed up ${id}`, adLoading: 'Reading runs and costs…', adNone: 'Nothing stands out: no waits on you, stopped blockers, repeated failures or idle work here.',
+      adCost: (runs, time, cost) => `In all: ${runs} runs, ${time} of agent time, ${cost}.`, adFailShare: (p, n) => `${p}% of its last ${n} runs failed.`,
+      adWaitsYou: (n, age) => `${n} task(s) wait for your answer or approval, the oldest for ${age}`,
+      adWaitsYouFix: 'Nothing moves until you decide. Answer them; for decisions that keep coming back, give the agent the authority or a written rule so it need not ask.',
+      adFailQuota: (n) => `${n} runs stopped on the AI provider’s usage limit`, adFailQuotaFix: 'Those runs are lost and retried later. Spread the work over the day, run fewer agents at once, put critical tasks first, or add a second provider or model for overflow.',
+      adQuotaAll: (n, all) => `Company-wide, ${n} of the last ${all} runs stopped on the AI provider’s usage limit`, adFailBig: (n) => `${n} runs could not start: the prompt was too large (E2BIG)`, adFailBigFix: 'Shorten task descriptions and long comment threads, link long documents instead of pasting them, and trim the agent’s instruction files.',
+      adFailTurn: (n) => `${n} runs broke off mid-turn (terminal, limit or service error)`, adFailTurnFix: 'Split the work into smaller steps, keep long commands out of a single turn, and check the agent’s time and output limits.',
+      adFailLost: (n) => `${n} runs lost their process`, adFailLostFix: 'The computer or WSL slept or restarted during the work. Keep it awake while agents run.',
+      adFailOther: (n, code) => `${n} runs failed with ${code}`, adFailOtherFix: 'Open one of these runs to see why; the same failure repeating needs a setting changed, not another retry.',
+      adStalled: (n, chain) => `${n} task(s) are blocked by work that has itself stopped: ${chain}`, adStalledFix: 'Unblock the first link: give it priority or another agent, or check whether the dependency is really needed and start the independent parts now.',
+      adIdle: (n) => `${n} open task(s) have had no activity for over a day`, adIdleFix: 'Wake their agents or give them to free ones.',
+      adUnassigned: (n) => `${n} open task(s) have no agent`, adUnassignedFix: 'Assign an agent; until then nobody works on them.',
+      adOverload: (name, n, free) => `${name} holds ${n} open tasks while ${free} are free`, adOverloadFix: 'Hand some of them to the free agents, or add a second agent with the same role.',
+      adLong: (ids, age, typ) => `${ids} open for up to ${age}; similar tasks here finish in about ${typ}`, adLongFix: 'Make the acceptance criteria concrete and split the work into smaller subtasks that can run in parallel.',
+      adChurn: (ids, n) => `${ids}: up to ${n} runs recently and still open`, adChurnFix: 'The agent may be going in circles: add a clear finish condition and check what keeps waking it (comments, reviews).',
+      adReview: (n, age) => `${n} task(s) wait in review, the oldest for ${age}`, adReviewFix: 'Add a reviewer or lighten the reviewer’s load; low-risk changes may not need a review step.',
+      adToTask: 'Turn into a task', adAllToTask: 'All advice as one task', adAssignee: 'Agent', adPriority: 'Priority', adTaskTitle: 'Title', adCreate: 'Create in Paperclip', adCreating: 'Creating…',
+      adCreated: (id) => `Created ${id}`, adOff: 'Turning advice into tasks is off.', adTurnOn: 'Let Cubicle create these tasks in Paperclip (subtasks of the slow task)', adOnlyHere: 'Turned on from the computer Cubicle runs on.',
+      adTaskName: (id, text) => `Speed up ${id}: ${text}`, adTaskHead: 'Speed-up advice from Cubicle', adFor: 'Task', adTaskFinding: 'Finding', adTaskFix: 'Advice', adTaskWhere: 'Where',
+      adTaskSource: (d) => `Derived by Cubicle on ${d} from Paperclip’s tasks, recent runs and costs.`, adPrios: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' },
       kpiNote: 'Tasks a person created, not the ones agents made for each other. Progress comes from a task’s subtasks, or from its status when it has none; the expected time follows the pace so far, or how long a task usually takes in this company.',
       chat: 'Chat', chatTitle: (n) => `Chat with ${n}`, chatNote: 'Paperclip’s Agent Chat: ask anything without giving a task. If it says it is disabled, turn it on in Paperclip → Instance settings → Experimental.',
       human: 'Your desk: agents who need you queue there', you: 'You', queue: (n) => `${n} waiting for you`, myLook: 'My look',
@@ -422,6 +471,27 @@
       tgEmbed: 'Telegram botu, Paperclip içindeki ofise değil, bu bilgisayarda çalışan bağımsız Cubicle’a aittir. Onu açıp orada ⚙ → Telegram’a basın:', tgOpenStandalone: 'Cubicle’ı aç',
       iss: { backlog: 'bekleme listesi', todo: 'yapılacak', in_progress: 'sürüyor', in_review: 'incelemede', blocked: 'engelli', done: 'bitti', cancelled: 'iptal' },
       kpiTask: 'Görev', kpiWho: 'Ajan', kpiProgress: 'İlerleme', kpiEta: 'Tahmini bitiş', kpiSub: (d, n) => `${d}/${n} alt görev`, kpiOver: 'tipik süreyi aştı', kpiDone: 'bitti', kpiShowDone: 'Bitenleri göster', kpiRefresh: 'Yenile', kpiEmpty: 'Henüz bir kişinin verdiği görev yok.',
+      kpiStarted: 'Başlangıç', kpiTook: 'Süre', kpiRunningFor: (d) => `${d} · sürüyor`, kpiAllRoots: 'Ajanların açtığı görevler de', kpiExpand: 'Alt görevler', kpiAdvice: 'Nasıl hızlanır',
+      adTitle: (id) => `${id} nasıl hızlanır`, adLoading: 'Çalıştırmalar ve maliyetler okunuyor…', adNone: 'Öne çıkan bir sorun yok: sizi bekleyen, durmuş blokajı olan, tekrar eden hata ya da hareketsiz iş görünmüyor.',
+      adCost: (runs, time, cost) => `Toplam: ${runs} çalıştırma, ${time} ajan süresi, ${cost}.`, adFailShare: (p, n) => `Son ${n} çalıştırmada başarısızlık oranı %${p}.`,
+      adWaitsYou: (n, age) => `${n} iş sizin yanıtınızı ya da onayınızı bekliyor; en eskisi ${age} süredir`,
+      adWaitsYouFix: 'Siz karar vermeden ilerlemezler. Yanıtlayın; sık tekrar eden kararlar için ajana yetki ya da yazılı bir kural verin ki sormasın.',
+      adFailQuota: (n) => `${n} çalıştırma yapay zekâ sağlayıcısının kullanım sınırına takıldı`, adFailQuotaFix: 'Bu çalıştırmalar boşa gider ve sonra yeniden denenir. İşi güne yayın, aynı anda daha az ajan çalıştırın, kritik işleri öne alın ya da taşan iş için ikinci bir sağlayıcı/model ekleyin.',
+      adQuotaAll: (n, all) => `Şirket genelinde son ${all} çalıştırmanın ${n} tanesi yapay zekâ sağlayıcısının kullanım sınırına takıldı`, adFailBig: (n) => `${n} çalıştırma başlayamadı: istem çok büyük (E2BIG)`, adFailBigFix: 'Görev açıklamalarını ve uzun yorum zincirlerini kısaltın, uzun belgeleri yapıştırmak yerine bağlantı verin, ajanın talimat dosyalarını küçültün.',
+      adFailTurn: (n) => `${n} çalıştırma yarıda kesildi (terminal, sınır ya da servis hatası)`, adFailTurnFix: 'İşi daha küçük adımlara bölün, uzun komutları tek turda çalıştırmayın, ajanın süre ve çıktı sınırlarını kontrol edin.',
+      adFailLost: (n) => `${n} çalıştırmanın süreci kayboldu`, adFailLostFix: 'Bilgisayar ya da WSL iş sırasında uykuya geçti veya yeniden başladı. Ajanlar çalışırken bilgisayarı uyanık tutun.',
+      adFailOther: (n, code) => `${n} çalıştırma ${code} ile başarısız oldu`, adFailOtherFix: 'Nedeni görmek için bu çalıştırmalardan birini açın; aynı hata tekrar ediyorsa yeniden denemek değil bir ayarı değiştirmek gerekir.',
+      adStalled: (n, chain) => `${n} iş, kendisi de durmuş bir işi bekliyor: ${chain}`, adStalledFix: 'Zincirin ilk halkasını çözün: ona öncelik verin ya da başka ajana atayın; bağımlılık gerçekten gerekli mi bakın, bağımsız kısımları şimdi başlatın.',
+      adIdle: (n) => `${n} açık işte bir günden uzun süredir hareket yok`, adIdleFix: 'Ajanlarını uyandırın ya da işleri boştaki ajanlara verin.',
+      adUnassigned: (n) => `${n} açık işin ajanı yok`, adUnassignedFix: 'Bir ajan atayın; atanana kadar kimse üzerinde çalışmaz.',
+      adOverload: (name, n, free) => `${name} üzerinde ${n} açık iş var, ${free} ise boşta`, adOverloadFix: 'Bir kısmını boştaki ajanlara verin ya da aynı rolde ikinci bir ajan ekleyin.',
+      adLong: (ids, age, typ) => `${ids} açık; en uzunu ${age} süredir sürüyor, buradaki benzer işler ise yaklaşık ${typ} sürüyor`, adLongFix: 'Kabul kriterlerini somutlaştırın ve işi paralel yürüyebilecek daha küçük alt görevlere bölün.',
+      adChurn: (ids, n) => `${ids}: son günlerde en çok ${n} çalıştırma, hâlâ açık`, adChurnFix: 'Ajan döngüye girmiş olabilir: net bir bitiş koşulu ekleyin ve onu neyin sürekli uyandırdığına bakın (yorumlar, incelemeler).',
+      adReview: (n, age) => `${n} iş incelemede bekliyor; en eskisi ${age} süredir`, adReviewFix: 'İnceleyici ekleyin ya da inceleyicinin yükünü azaltın; düşük riskli değişiklikler inceleme adımına gerek duymayabilir.',
+      adToTask: 'Göreve çevir', adAllToTask: 'Tüm tavsiyeler tek görev', adAssignee: 'Ajan', adPriority: 'Öncelik', adTaskTitle: 'Başlık', adCreate: 'Paperclip’te oluştur', adCreating: 'Oluşturuluyor…',
+      adCreated: (id) => `${id} oluşturuldu`, adOff: 'Tavsiyeyi göreve çevirme kapalı.', adTurnOn: 'Cubicle bu görevleri Paperclip’te açabilsin (yavaş görevin alt görevi olarak)', adOnlyHere: 'Cubicle’ın çalıştığı bilgisayardan açılır.',
+      adTaskName: (id, text) => `${id} hızlandırma: ${text}`, adTaskHead: 'Cubicle’dan hızlandırma tavsiyesi', adFor: 'Görev', adTaskFinding: 'Bulgu', adTaskFix: 'Tavsiye', adTaskWhere: 'İlgili işler',
+      adTaskSource: (d) => `Cubicle tarafından ${d} tarihinde Paperclip’teki görevler, son çalıştırmalar ve maliyetlerden çıkarıldı.`, adPrios: { critical: 'Kritik', high: 'Yüksek', medium: 'Orta', low: 'Düşük' },
       kpiNote: 'Bir kişinin oluşturduğu görevler; ajanların birbirine açtıkları değil. İlerleme görevin alt görevlerinden, alt görev yoksa durumundan hesaplanır; tahmini bitiş şimdiye kadarki hıza ya da bu şirkette bir görevin genelde ne kadar sürdüğüne göre öngörülür.',
       chat: 'Sohbet', chatTitle: (n) => `${n} ile sohbet`, chatNote: 'Paperclip’in Agent Chat özelliği: görev vermeden istediğinizi sorun. Kapalı olduğunu söylerse Paperclip → Instance settings → Experimental’dan açın.',
       human: 'İnsan masası: sizi bekleyen ajanlar orada sıraya girer', you: 'Siz', queue: (n) => `${n} ajan sizi bekliyor`, myLook: 'Görünümüm',
@@ -508,6 +578,27 @@
       tgEmbed: 'Der Telegram-Bot gehört zum eigenständigen Cubicle auf diesem Rechner, nicht zum Büro in Paperclip. Öffnen Sie es und drücken Sie dort ⚙ → Telegram:', tgOpenStandalone: 'Cubicle öffnen',
       iss: { backlog: 'Backlog', todo: 'offen', in_progress: 'in Arbeit', in_review: 'im Review', blocked: 'blockiert', done: 'erledigt', cancelled: 'abgebrochen' },
       kpiTask: 'Aufgabe', kpiWho: 'Agent', kpiProgress: 'Fortschritt', kpiEta: 'Voraussichtlich', kpiSub: (d, n) => `${d}/${n} Teilaufgaben`, kpiOver: 'über der üblichen Dauer', kpiDone: 'erledigt', kpiShowDone: 'Erledigte zeigen', kpiRefresh: 'Aktualisieren', kpiEmpty: 'Noch keine Aufgaben von Menschen.',
+      kpiStarted: 'Begonnen', kpiTook: 'Dauer', kpiRunningFor: (d) => `seit ${d}`, kpiAllRoots: 'Auch Aufgaben von Agenten', kpiExpand: 'Teilaufgaben', kpiAdvice: 'So geht es schneller',
+      adTitle: (id) => `So wird ${id} schneller`, adLoading: 'Läufe und Kosten werden gelesen…', adNone: 'Nichts fällt auf: keine Wartezeit auf Sie, keine stehenden Blocker, keine wiederholten Fehler, keine liegende Arbeit.',
+      adCost: (runs, time, cost) => `Insgesamt: ${runs} Läufe, ${time} Agentenzeit, ${cost}.`, adFailShare: (p, n) => `${p} % der letzten ${n} Läufe sind fehlgeschlagen.`,
+      adWaitsYou: (n, age) => `${n} Aufgabe(n) warten auf Ihre Antwort oder Freigabe, die älteste seit ${age}`,
+      adWaitsYouFix: 'Ohne Ihre Entscheidung geht nichts weiter. Antworten Sie; für wiederkehrende Entscheidungen geben Sie dem Agenten die Befugnis oder eine schriftliche Regel.',
+      adFailQuota: (n) => `${n} Läufe stoppten am Nutzungslimit des KI-Anbieters`, adFailQuotaFix: 'Diese Läufe sind verloren und werden später wiederholt. Verteilen Sie die Arbeit über den Tag, lassen Sie weniger Agenten gleichzeitig laufen, ziehen Sie kritische Aufgaben vor oder fügen Sie einen zweiten Anbieter oder ein zweites Modell hinzu.',
+      adQuotaAll: (n, all) => `Firmenweit stoppten ${n} der letzten ${all} Läufe am Nutzungslimit des KI-Anbieters`, adFailBig: (n) => `${n} Läufe konnten nicht starten: Prompt zu groß (E2BIG)`, adFailBigFix: 'Kürzen Sie Beschreibungen und lange Kommentarverläufe, verlinken Sie lange Dokumente statt sie einzufügen, und kürzen Sie die Anweisungsdateien des Agenten.',
+      adFailTurn: (n) => `${n} Läufe brachen mitten im Zug ab (Terminal-, Limit- oder Dienstfehler)`, adFailTurnFix: 'Teilen Sie die Arbeit in kleinere Schritte, vermeiden Sie lange Befehle in einem Zug und prüfen Sie die Zeit- und Ausgabelimits des Agenten.',
+      adFailLost: (n) => `${n} Läufe verloren ihren Prozess`, adFailLostFix: 'Der Rechner oder WSL schlief ein oder startete neu. Halten Sie ihn wach, solange Agenten arbeiten.',
+      adFailOther: (n, code) => `${n} Läufe scheiterten mit ${code}`, adFailOtherFix: 'Öffnen Sie einen dieser Läufe für die Ursache; derselbe Fehler braucht eine geänderte Einstellung, keinen weiteren Versuch.',
+      adStalled: (n, chain) => `${n} Aufgabe(n) warten auf Arbeit, die selbst steht: ${chain}`, adStalledFix: 'Lösen Sie das erste Glied: Priorität geben oder einem anderen Agenten zuweisen; prüfen Sie, ob die Abhängigkeit nötig ist, und starten Sie unabhängige Teile jetzt.',
+      adIdle: (n) => `${n} offene Aufgabe(n) ohne Aktivität seit über einem Tag`, adIdleFix: 'Wecken Sie die Agenten oder geben Sie die Aufgaben freien Agenten.',
+      adUnassigned: (n) => `${n} offene Aufgabe(n) ohne Agent`, adUnassignedFix: 'Weisen Sie einen Agenten zu; bis dahin arbeitet niemand daran.',
+      adOverload: (name, n, free) => `${name} hat ${n} offene Aufgaben, während ${free} frei sind`, adOverloadFix: 'Geben Sie einige an die freien Agenten ab oder fügen Sie einen zweiten Agenten mit derselben Rolle hinzu.',
+      adLong: (ids, age, typ) => `${ids} seit bis zu ${age} offen; ähnliche Aufgaben dauern hier etwa ${typ}`, adLongFix: 'Machen Sie die Abnahmekriterien konkret und teilen Sie die Arbeit in kleinere, parallel laufende Teilaufgaben.',
+      adChurn: (ids, n) => `${ids}: bis zu ${n} Läufe zuletzt und noch offen`, adChurnFix: 'Der Agent dreht sich womöglich im Kreis: klare Abschlussbedingung hinzufügen und prüfen, was ihn ständig weckt (Kommentare, Reviews).',
+      adReview: (n, age) => `${n} Aufgabe(n) warten im Review, die älteste seit ${age}`, adReviewFix: 'Fügen Sie einen Reviewer hinzu oder entlasten Sie ihn; risikoarme Änderungen brauchen evtl. kein Review.',
+      adToTask: 'Als Aufgabe anlegen', adAllToTask: 'Alle Ratschläge als eine Aufgabe', adAssignee: 'Agent', adPriority: 'Priorität', adTaskTitle: 'Titel', adCreate: 'In Paperclip anlegen', adCreating: 'Wird angelegt…',
+      adCreated: (id) => `${id} angelegt`, adOff: 'Ratschläge als Aufgaben anlegen ist aus.', adTurnOn: 'Cubicle darf diese Aufgaben in Paperclip anlegen (als Teilaufgaben der langsamen Aufgabe)', adOnlyHere: 'Wird auf dem Rechner eingeschaltet, auf dem Cubicle läuft.',
+      adTaskName: (id, text) => `${id} beschleunigen: ${text}`, adTaskHead: 'Beschleunigungs-Rat von Cubicle', adFor: 'Aufgabe', adTaskFinding: 'Befund', adTaskFix: 'Rat', adTaskWhere: 'Betrifft',
+      adTaskSource: (d) => `Von Cubicle am ${d} aus Paperclips Aufgaben, letzten Läufen und Kosten abgeleitet.`, adPrios: { critical: 'Kritisch', high: 'Hoch', medium: 'Mittel', low: 'Niedrig' },
       kpiNote: 'Aufgaben, die ein Mensch angelegt hat, nicht die der Agenten untereinander. Der Fortschritt kommt aus den Teilaufgaben, ohne Teilaufgaben aus dem Status; die voraussichtliche Zeit folgt dem bisherigen Tempo oder der üblichen Dauer in dieser Firma.',
       chat: 'Chat', chatTitle: (n) => `Chat mit ${n}`, chatNote: 'Agent Chat von Paperclip: fragen Sie, ohne eine Aufgabe zu vergeben. Ist er deaktiviert, schalten Sie ihn in Paperclip → Instance settings → Experimental ein.',
       human: 'Ihr Schreibtisch: Agenten, die Sie brauchen, stellen sich dort an', you: 'Sie', queue: (n) => `${n} warten auf Sie`, myLook: 'Mein Aussehen',
@@ -594,6 +685,27 @@
       tgEmbed: 'El bot de Telegram pertenece al Cubicle independiente de este equipo, no a la oficina dentro de Paperclip. Ábrelo y pulsa allí ⚙ → Telegram:', tgOpenStandalone: 'Abrir Cubicle',
       iss: { backlog: 'pendiente', todo: 'por hacer', in_progress: 'en curso', in_review: 'en revisión', blocked: 'bloqueada', done: 'terminada', cancelled: 'cancelada' },
       kpiTask: 'Tarea', kpiWho: 'Agente', kpiProgress: 'Progreso', kpiEta: 'Previsto', kpiSub: (d, n) => `${d}/${n} subtareas`, kpiOver: 'pasó el tiempo habitual', kpiDone: 'terminada', kpiShowDone: 'Mostrar terminadas', kpiRefresh: 'Actualizar', kpiEmpty: 'Aún no hay tareas de personas.',
+      kpiStarted: 'Inicio', kpiTook: 'Duración', kpiRunningFor: (d) => `${d} en curso`, kpiAllRoots: 'También tareas de agentes', kpiExpand: 'Subtareas', kpiAdvice: 'Cómo acelerarla',
+      adTitle: (id) => `Cómo acelerar ${id}`, adLoading: 'Leyendo ejecuciones y costes…', adNone: 'Nada destaca: nada espera por ti, ni bloqueos detenidos, fallos repetidos o trabajo parado.',
+      adCost: (runs, time, cost) => `En total: ${runs} ejecuciones, ${time} de tiempo de agente, ${cost}.`, adFailShare: (p, n) => `El ${p} % de sus últimas ${n} ejecuciones falló.`,
+      adWaitsYou: (n, age) => `${n} tarea(s) esperan tu respuesta o aprobación, la más antigua desde hace ${age}`,
+      adWaitsYouFix: 'Nada avanza hasta que decidas. Responde; para decisiones que se repiten, da al agente la autoridad o una regla escrita para que no pregunte.',
+      adFailQuota: (n) => `${n} ejecuciones se detuvieron en el límite de uso del proveedor de IA`, adFailQuotaFix: 'Esas ejecuciones se pierden y se repiten después. Reparte el trabajo en el día, ejecuta menos agentes a la vez, prioriza lo crítico o añade un segundo proveedor o modelo.',
+      adQuotaAll: (n, all) => `En toda la empresa, ${n} de las últimas ${all} ejecuciones se detuvieron en el límite de uso del proveedor de IA`, adFailBig: (n) => `${n} ejecuciones no pudieron empezar: prompt demasiado grande (E2BIG)`, adFailBigFix: 'Acorta descripciones y largos hilos de comentarios, enlaza documentos largos en vez de pegarlos y reduce los archivos de instrucciones del agente.',
+      adFailTurn: (n) => `${n} ejecuciones se cortaron a mitad de turno (terminal, límite o servicio)`, adFailTurnFix: 'Divide el trabajo en pasos más pequeños, evita comandos largos en un solo turno y revisa los límites de tiempo y salida del agente.',
+      adFailLost: (n) => `${n} ejecuciones perdieron su proceso`, adFailLostFix: 'El equipo o WSL se suspendió o reinició. Mantenlo despierto mientras trabajan los agentes.',
+      adFailOther: (n, code) => `${n} ejecuciones fallaron con ${code}`, adFailOtherFix: 'Abre una de ellas para ver la causa; si el mismo fallo se repite, hay que cambiar un ajuste, no reintentar.',
+      adStalled: (n, chain) => `${n} tarea(s) esperan trabajo que también está detenido: ${chain}`, adStalledFix: 'Desbloquea el primer eslabón: dale prioridad u otro agente; revisa si la dependencia es necesaria y empieza ya las partes independientes.',
+      adIdle: (n) => `${n} tarea(s) abiertas sin actividad desde hace más de un día`, adIdleFix: 'Despierta a sus agentes o pásalas a agentes libres.',
+      adUnassigned: (n) => `${n} tarea(s) abiertas sin agente`, adUnassignedFix: 'Asigna un agente; hasta entonces nadie trabaja en ellas.',
+      adOverload: (name, n, free) => `${name} tiene ${n} tareas abiertas mientras ${free} están libres`, adOverloadFix: 'Pasa algunas a los agentes libres o añade un segundo agente con el mismo rol.',
+      adLong: (ids, age, typ) => `${ids} abiertas hasta ${age}; aquí tareas similares tardan unas ${typ}`, adLongFix: 'Concreta los criterios de aceptación y divide el trabajo en subtareas más pequeñas que puedan ir en paralelo.',
+      adChurn: (ids, n) => `${ids}: hasta ${n} ejecuciones recientes y sigue abierta`, adChurnFix: 'El agente puede estar dando vueltas: añade una condición clara de fin y mira qué lo despierta (comentarios, revisiones).',
+      adReview: (n, age) => `${n} tarea(s) esperan revisión, la más antigua desde hace ${age}`, adReviewFix: 'Añade un revisor o aligera su carga; los cambios de bajo riesgo pueden no necesitar revisión.',
+      adToTask: 'Convertir en tarea', adAllToTask: 'Todo el consejo en una tarea', adAssignee: 'Agente', adPriority: 'Prioridad', adTaskTitle: 'Título', adCreate: 'Crear en Paperclip', adCreating: 'Creando…',
+      adCreated: (id) => `${id} creada`, adOff: 'Convertir consejos en tareas está desactivado.', adTurnOn: 'Permitir que Cubicle cree estas tareas en Paperclip (como subtareas de la tarea lenta)', adOnlyHere: 'Se activa desde el equipo donde se ejecuta Cubicle.',
+      adTaskName: (id, text) => `Acelerar ${id}: ${text}`, adTaskHead: 'Consejo de aceleración de Cubicle', adFor: 'Tarea', adTaskFinding: 'Hallazgo', adTaskFix: 'Consejo', adTaskWhere: 'Afecta a',
+      adTaskSource: (d) => `Obtenido por Cubicle el ${d} de las tareas, ejecuciones recientes y costes de Paperclip.`, adPrios: { critical: 'Crítica', high: 'Alta', medium: 'Media', low: 'Baja' },
       kpiNote: 'Tareas que creó una persona, no las que los agentes se crean entre sí. El progreso sale de las subtareas, o del estado si no tiene; el tiempo previsto sigue el ritmo hasta ahora o lo que suele tardar una tarea en esta empresa.',
       chat: 'Chat', chatTitle: (n) => `Chat con ${n}`, chatNote: 'El Agent Chat de Paperclip: pregunta sin asignar una tarea. Si dice que está desactivado, actívalo en Paperclip → Instance settings → Experimental.',
       human: 'Tu escritorio: los agentes que te necesitan hacen cola allí', you: 'Tú', queue: (n) => `${n} esperándote`, myLook: 'Mi aspecto',
@@ -680,6 +792,27 @@
       tgEmbed: 'Le bot Telegram appartient au Cubicle autonome de cet ordinateur, pas au bureau dans Paperclip. Ouvrez-le et appuyez sur ⚙ → Telegram :', tgOpenStandalone: 'Ouvrir Cubicle',
       iss: { backlog: 'en attente', todo: 'à faire', in_progress: 'en cours', in_review: 'en revue', blocked: 'bloquée', done: 'terminée', cancelled: 'annulée' },
       kpiTask: 'Tâche', kpiWho: 'Agent', kpiProgress: 'Avancement', kpiEta: 'Prévu', kpiSub: (d, n) => `${d}/${n} sous-tâches`, kpiOver: 'au-delà de la durée habituelle', kpiDone: 'terminée', kpiShowDone: 'Afficher les terminées', kpiRefresh: 'Actualiser', kpiEmpty: 'Pas encore de tâches créées par une personne.',
+      kpiStarted: 'Début', kpiTook: 'Durée', kpiRunningFor: (d) => `depuis ${d}`, kpiAllRoots: 'Aussi les tâches des agents', kpiExpand: 'Sous-tâches', kpiAdvice: 'Comment l’accélérer',
+      adTitle: (id) => `Comment accélérer ${id}`, adLoading: 'Lecture des exécutions et des coûts…', adNone: 'Rien ne ressort : pas d’attente sur vous, de blocage arrêté, d’échecs répétés ni de travail à l’arrêt.',
+      adCost: (runs, time, cost) => `Au total : ${runs} exécutions, ${time} de temps d’agent, ${cost}.`, adFailShare: (p, n) => `${p} % de ses ${n} dernières exécutions ont échoué.`,
+      adWaitsYou: (n, age) => `${n} tâche(s) attendent votre réponse ou approbation, la plus ancienne depuis ${age}`,
+      adWaitsYouFix: 'Rien n’avance sans votre décision. Répondez ; pour les décisions récurrentes, donnez à l’agent l’autorité ou une règle écrite.',
+      adFailQuota: (n) => `${n} exécutions arrêtées par la limite d’usage du fournisseur d’IA`, adFailQuotaFix: 'Ces exécutions sont perdues et relancées plus tard. Étalez le travail sur la journée, lancez moins d’agents à la fois, passez le critique en premier ou ajoutez un second fournisseur ou modèle.',
+      adQuotaAll: (n, all) => `Dans toute l’entreprise, ${n} des ${all} dernières exécutions ont été arrêtées par la limite d’usage du fournisseur d’IA`, adFailBig: (n) => `${n} exécutions n’ont pas pu démarrer : prompt trop grand (E2BIG)`, adFailBigFix: 'Raccourcissez descriptions et longs fils de commentaires, liez les longs documents au lieu de les coller et allégez les fichiers d’instructions de l’agent.',
+      adFailTurn: (n) => `${n} exécutions coupées en plein tour (terminal, limite ou service)`, adFailTurnFix: 'Découpez le travail en étapes plus petites, évitez les longues commandes en un seul tour et vérifiez les limites de temps et de sortie.',
+      adFailLost: (n) => `${n} exécutions ont perdu leur processus`, adFailLostFix: 'L’ordinateur ou WSL s’est mis en veille ou a redémarré. Gardez-le éveillé pendant le travail des agents.',
+      adFailOther: (n, code) => `${n} exécutions ont échoué avec ${code}`, adFailOtherFix: 'Ouvrez-en une pour voir la cause ; un même échec qui se répète demande un réglage, pas un nouvel essai.',
+      adStalled: (n, chain) => `${n} tâche(s) attendent un travail lui-même arrêté : ${chain}`, adStalledFix: 'Débloquez le premier maillon : priorité ou autre agent ; vérifiez si la dépendance est nécessaire et lancez maintenant les parties indépendantes.',
+      adIdle: (n) => `${n} tâche(s) ouvertes sans activité depuis plus d’un jour`, adIdleFix: 'Réveillez leurs agents ou confiez-les à des agents libres.',
+      adUnassigned: (n) => `${n} tâche(s) ouvertes sans agent`, adUnassignedFix: 'Assignez un agent ; d’ici là personne n’y travaille.',
+      adOverload: (name, n, free) => `${name} a ${n} tâches ouvertes alors que ${free} sont libres`, adOverloadFix: 'Confiez-en une partie aux agents libres ou ajoutez un second agent de même rôle.',
+      adLong: (ids, age, typ) => `${ids} ouvertes jusqu’à ${age} ; ici des tâches similaires prennent environ ${typ}`, adLongFix: 'Rendez les critères d’acceptation concrets et découpez le travail en sous-tâches plus petites menées en parallèle.',
+      adChurn: (ids, n) => `${ids} : jusqu’à ${n} exécutions récentes et toujours ouverte`, adChurnFix: 'L’agent tourne peut-être en rond : ajoutez une condition de fin claire et voyez ce qui le réveille (commentaires, revues).',
+      adReview: (n, age) => `${n} tâche(s) attendent une revue, la plus ancienne depuis ${age}`, adReviewFix: 'Ajoutez un relecteur ou allégez sa charge ; les changements à faible risque peuvent se passer de revue.',
+      adToTask: 'En faire une tâche', adAllToTask: 'Tous les conseils en une tâche', adAssignee: 'Agent', adPriority: 'Priorité', adTaskTitle: 'Titre', adCreate: 'Créer dans Paperclip', adCreating: 'Création…',
+      adCreated: (id) => `${id} créée`, adOff: 'La conversion des conseils en tâches est désactivée.', adTurnOn: 'Autoriser Cubicle à créer ces tâches dans Paperclip (sous-tâches de la tâche lente)', adOnlyHere: 'S’active depuis l’ordinateur où tourne Cubicle.',
+      adTaskName: (id, text) => `Accélérer ${id} : ${text}`, adTaskHead: 'Conseil d’accélération de Cubicle', adFor: 'Tâche', adTaskFinding: 'Constat', adTaskFix: 'Conseil', adTaskWhere: 'Concerne',
+      adTaskSource: (d) => `Établi par Cubicle le ${d} à partir des tâches, exécutions récentes et coûts de Paperclip.`, adPrios: { critical: 'Critique', high: 'Haute', medium: 'Moyenne', low: 'Basse' },
       kpiNote: 'Les tâches créées par une personne, pas celles que les agents se créent entre eux. L’avancement vient des sous-tâches, ou du statut s’il n’y en a pas ; la date prévue suit le rythme actuel ou la durée habituelle d’une tâche dans cette entreprise.',
       chat: 'Discuter', chatTitle: (n) => `Discuter avec ${n}`, chatNote: 'L’Agent Chat de Paperclip : posez une question sans donner de tâche. S’il est désactivé, activez-le dans Paperclip → Instance settings → Experimental.',
       human: 'Votre bureau : les agents qui ont besoin de vous y font la queue', you: 'Vous', queue: (n) => `${n} vous attendent`, myLook: 'Mon apparence',
@@ -766,6 +899,27 @@
       tgEmbed: 'Telegram 机器人属于这台电脑上独立运行的 Cubicle，而不是 Paperclip 里的办公室。打开它，并在那里点 ⚙ → Telegram：', tgOpenStandalone: '打开 Cubicle',
       iss: { backlog: '待办池', todo: '待办', in_progress: '进行中', in_review: '审核中', blocked: '受阻', done: '已完成', cancelled: '已取消' },
       kpiTask: '任务', kpiWho: '代理', kpiProgress: '进度', kpiEta: '预计完成', kpiSub: (d, n) => `${d}/${n} 个子任务`, kpiOver: '已超过通常时间', kpiDone: '已完成', kpiShowDone: '显示已完成', kpiRefresh: '刷新', kpiEmpty: '还没有由人创建的任务。',
+      kpiStarted: '开始', kpiTook: '用时', kpiRunningFor: (d) => `已进行 ${d}`, kpiAllRoots: '也显示代理创建的任务', kpiExpand: '子任务', kpiAdvice: '如何加快',
+      adTitle: (id) => `如何加快 ${id}`, adLoading: '正在读取运行和成本…', adNone: '没有明显问题：没有等待你的事项、停滞的阻塞、重复失败或闲置的工作。',
+      adCost: (runs, time, cost) => `总计：${runs} 次运行，${time} 代理时间，${cost}。`, adFailShare: (p, n) => `最近 ${n} 次运行中有 ${p}% 失败。`,
+      adWaitsYou: (n, age) => `${n} 个任务在等你的回答或批准，最早的已等 ${age}`,
+      adWaitsYouFix: '你不决定就不会推进。请回复；对反复出现的决定，给代理授权或书面规则，让它不必再问。',
+      adFailQuota: (n) => `${n} 次运行因 AI 提供商的用量上限而停止`, adFailQuotaFix: '这些运行白白浪费并稍后重试。把工作分散到全天，减少同时运行的代理，优先关键任务，或为溢出增加第二个提供商或模型。',
+      adQuotaAll: (n, all) => `全公司最近 ${all} 次运行中有 ${n} 次因 AI 提供商的用量上限而停止`, adFailBig: (n) => `${n} 次运行无法启动：提示过大（E2BIG）`, adFailBigFix: '缩短任务描述和冗长的评论串，长文档用链接而不是粘贴，精简代理的指令文件。',
+      adFailTurn: (n) => `${n} 次运行在回合中途中断（终端、限制或服务错误）`, adFailTurnFix: '把工作拆成更小的步骤，避免在一个回合里运行长命令，并检查代理的时间和输出限制。',
+      adFailLost: (n) => `${n} 次运行丢失了进程`, adFailLostFix: '电脑或 WSL 在工作中休眠或重启。代理运行时请保持电脑唤醒。',
+      adFailOther: (n, code) => `${n} 次运行以 ${code} 失败`, adFailOtherFix: '打开其中一次查看原因；同样的失败反复出现需要改设置，而不是再试一次。',
+      adStalled: (n, chain) => `${n} 个任务在等待本身也已停滞的工作：${chain}`, adStalledFix: '先解开第一环：提高优先级或换代理；检查依赖是否真的必要，并立即开始独立的部分。',
+      adIdle: (n) => `${n} 个未完成任务超过一天没有动静`, adIdleFix: '唤醒它们的代理，或交给空闲的代理。',
+      adUnassigned: (n) => `${n} 个未完成任务没有代理`, adUnassignedFix: '指派一个代理；否则没人处理。',
+      adOverload: (name, n, free) => `${name} 手上有 ${n} 个未完成任务，而 ${free} 空闲`, adOverloadFix: '把一部分交给空闲代理，或增加一个同角色的代理。',
+      adLong: (ids, age, typ) => `${ids} 已开放最长 ${age}；这里类似任务约 ${typ} 完成`, adLongFix: '明确验收标准，把工作拆成可并行的小子任务。',
+      adChurn: (ids, n) => `${ids}：最近多达 ${n} 次运行，仍未完成`, adChurnFix: '代理可能在兜圈子：加上明确的完成条件，并检查是什么一直唤醒它（评论、评审）。',
+      adReview: (n, age) => `${n} 个任务在等评审，最早的已等 ${age}`, adReviewFix: '增加评审者或减轻其负担；低风险的改动可能不需要评审。',
+      adToTask: '转为任务', adAllToTask: '全部建议合为一个任务', adAssignee: '代理', adPriority: '优先级', adTaskTitle: '标题', adCreate: '在 Paperclip 中创建', adCreating: '正在创建…',
+      adCreated: (id) => `已创建 ${id}`, adOff: '将建议转为任务的功能已关闭。', adTurnOn: '允许 Cubicle 在 Paperclip 中创建这些任务（作为慢任务的子任务）', adOnlyHere: '需在运行 Cubicle 的电脑上开启。',
+      adTaskName: (id, text) => `加快 ${id}：${text}`, adTaskHead: '来自 Cubicle 的加速建议', adFor: '任务', adTaskFinding: '发现', adTaskFix: '建议', adTaskWhere: '涉及',
+      adTaskSource: (d) => `由 Cubicle 于 ${d} 根据 Paperclip 的任务、最近运行和成本得出。`, adPrios: { critical: '紧急', high: '高', medium: '中', low: '低' },
       kpiNote: '由人创建的任务，不包括代理之间互相创建的任务。进度来自子任务，没有子任务时按状态估算；预计完成时间按目前的速度，或按这家公司任务通常需要的时间推算。',
       chat: '聊天', chatTitle: (n) => `与 ${n} 聊天`, chatNote: 'Paperclip 的 Agent Chat：不分配任务也能提问。如果提示已禁用，请在 Paperclip → Instance settings → Experimental 中开启。',
       human: '你的办公桌：需要你的代理在这里排队', you: '你', queue: (n) => `${n} 个在等你`, myLook: '我的外观',
@@ -852,6 +1006,27 @@
       tgEmbed: 'بوت Telegram تابع لـ Cubicle المستقل على هذا الحاسوب، لا للمكتب داخل Paperclip. افتحه واضغط هناك ⚙ ← Telegram:', tgOpenStandalone: 'افتح Cubicle',
       iss: { backlog: 'قائمة الانتظار', todo: 'للتنفيذ', in_progress: 'قيد التنفيذ', in_review: 'قيد المراجعة', blocked: 'متوقفة', done: 'منجزة', cancelled: 'ملغاة' },
       kpiTask: 'المهمة', kpiWho: 'الوكيل', kpiProgress: 'التقدم', kpiEta: 'الموعد المتوقع', kpiSub: (d, n) => `${d}/${n} مهام فرعية`, kpiOver: 'تجاوزت المدة المعتادة', kpiDone: 'أُنجزت', kpiShowDone: 'اعرض المنجزة', kpiRefresh: 'تحديث', kpiEmpty: 'لا توجد مهام من أشخاص بعد.',
+      kpiStarted: 'البدء', kpiTook: 'المدة', kpiRunningFor: (d) => `منذ ${d}`, kpiAllRoots: 'ومهام أنشأها الوكلاء', kpiExpand: 'المهام الفرعية', kpiAdvice: 'كيف تتسارع',
+      adTitle: (id) => `كيف تتسارع ${id}`, adLoading: 'جارٍ قراءة التشغيلات والتكاليف…', adNone: 'لا شيء لافت: لا انتظار لك، ولا عوائق متوقفة، ولا إخفاقات متكررة، ولا عمل متوقف.',
+      adCost: (runs, time, cost) => `الإجمالي: ${runs} تشغيلًا، ${time} من وقت الوكلاء، ${cost}.`, adFailShare: (p, n) => `فشل ${p}% من آخر ${n} تشغيلًا.`,
+      adWaitsYou: (n, age) => `${n} مهمة تنتظر ردك أو موافقتك، أقدمها منذ ${age}`,
+      adWaitsYouFix: 'لا شيء يتقدم قبل قرارك. أجب، وللقرارات المتكررة امنح الوكيل الصلاحية أو قاعدة مكتوبة كي لا يسأل.',
+      adFailQuota: (n) => `توقف ${n} تشغيلًا عند حد استخدام مزود الذكاء الاصطناعي`, adFailQuotaFix: 'تضيع هذه التشغيلات وتُعاد لاحقًا. وزّع العمل على اليوم، وشغّل وكلاء أقل في الوقت نفسه، وقدّم المهام الحرجة، أو أضف مزودًا أو نموذجًا ثانيًا.',
+      adQuotaAll: (n, all) => `على مستوى الشركة، توقف ${n} من آخر ${all} تشغيلًا عند حد استخدام مزود الذكاء الاصطناعي`, adFailBig: (n) => `تعذر بدء ${n} تشغيلًا: الموجّه كبير جدًا (E2BIG)`, adFailBigFix: 'اختصر أوصاف المهام وسلاسل التعليقات الطويلة، واربط المستندات الطويلة بدل لصقها، وقلّص ملفات تعليمات الوكيل.',
+      adFailTurn: (n) => `انقطع ${n} تشغيلًا في منتصف الدور (طرفية أو حد أو خدمة)`, adFailTurnFix: 'قسّم العمل إلى خطوات أصغر، وتجنب الأوامر الطويلة في دور واحد، وراجع حدود الوقت والمخرجات.',
+      adFailLost: (n) => `فقد ${n} تشغيلًا عمليته`, adFailLostFix: 'دخل الحاسوب أو WSL في السكون أو أعيد تشغيله. أبقه مستيقظًا أثناء عمل الوكلاء.',
+      adFailOther: (n, code) => `فشل ${n} تشغيلًا بالرمز ${code}`, adFailOtherFix: 'افتح أحدها لمعرفة السبب؛ تكرار الفشل نفسه يحتاج إلى تغيير إعداد لا إلى محاولة أخرى.',
+      adStalled: (n, chain) => `${n} مهمة تنتظر عملًا متوقفًا هو أيضًا: ${chain}`, adStalledFix: 'افكك الحلقة الأولى: امنحها الأولوية أو وكيلًا آخر، وتحقق من ضرورة الاعتماد، وابدأ الأجزاء المستقلة الآن.',
+      adIdle: (n) => `${n} مهمة مفتوحة بلا نشاط منذ أكثر من يوم`, adIdleFix: 'أيقظ وكلاءها أو أسندها إلى وكلاء متفرغين.',
+      adUnassigned: (n) => `${n} مهمة مفتوحة بلا وكيل`, adUnassignedFix: 'أسند وكيلًا؛ وإلا فلن يعمل عليها أحد.',
+      adOverload: (name, n, free) => `لدى ${name} ‏${n} مهام مفتوحة بينما ${free} متفرغون`, adOverloadFix: 'أسند بعضها إلى المتفرغين أو أضف وكيلًا ثانيًا بالدور نفسه.',
+      adLong: (ids, age, typ) => `${ids} مفتوحة حتى ${age}؛ والمهام المماثلة هنا تنتهي في نحو ${typ}`, adLongFix: 'اجعل معايير القبول محددة وقسّم العمل إلى مهام فرعية أصغر تسير بالتوازي.',
+      adChurn: (ids, n) => `${ids}: حتى ${n} تشغيلًا مؤخرًا وما زالت مفتوحة`, adChurnFix: 'ربما يدور الوكيل في حلقة: أضف شرط إنهاء واضحًا وتحقق مما يوقظه باستمرار (تعليقات، مراجعات).',
+      adReview: (n, age) => `${n} مهمة تنتظر المراجعة، أقدمها منذ ${age}`, adReviewFix: 'أضف مراجعًا أو خفف عبئه؛ قد لا تحتاج التغييرات منخفضة المخاطر إلى مراجعة.',
+      adToTask: 'حوّلها إلى مهمة', adAllToTask: 'كل النصائح في مهمة واحدة', adAssignee: 'الوكيل', adPriority: 'الأولوية', adTaskTitle: 'العنوان', adCreate: 'أنشئ في Paperclip', adCreating: 'جارٍ الإنشاء…',
+      adCreated: (id) => `أُنشئت ${id}`, adOff: 'تحويل النصائح إلى مهام متوقف.', adTurnOn: 'اسمح لـ Cubicle بإنشاء هذه المهام في Paperclip (مهام فرعية للمهمة البطيئة)', adOnlyHere: 'يُفعّل من الحاسوب الذي يعمل عليه Cubicle.',
+      adTaskName: (id, text) => `تسريع ${id}: ${text}`, adTaskHead: 'نصيحة تسريع من Cubicle', adFor: 'المهمة', adTaskFinding: 'الملاحظة', adTaskFix: 'النصيحة', adTaskWhere: 'تخص',
+      adTaskSource: (d) => `استخلصها Cubicle في ${d} من مهام Paperclip وتشغيلاته الأخيرة وتكاليفه.`, adPrios: { critical: 'حرجة', high: 'عالية', medium: 'متوسطة', low: 'منخفضة' },
       kpiNote: 'المهام التي أنشأها شخص، لا التي ينشئها الوكلاء لبعضهم. يُحسب التقدم من المهام الفرعية، أو من الحالة إن لم توجد؛ ويُقدَّر الموعد من الوتيرة حتى الآن أو من المدة المعتادة لمهمة في هذه الشركة.',
       chat: 'دردشة', chatTitle: (n) => `دردشة مع ${n}`, chatNote: 'ميزة Agent Chat في Paperclip: اسأل دون إسناد مهمة. إن ظهرت معطلة ففعّلها من Paperclip ← Instance settings ← Experimental.',
       human: 'مكتبك: يصطف عنده الوكلاء الذين يحتاجونك', you: 'أنت', queue: (n) => `${n} ينتظرونك`, myLook: 'مظهري',
@@ -1010,64 +1185,97 @@
   }
 
   // ---------- KPI: the tasks people gave, how far along they are and when they should finish ----------
+  // Each task opens into its subtasks (a tree), shows when it started and how long it took or has
+  // been running, and its 💡 reads the task's own data (waits, blockers, failed runs, idle work,
+  // load, runs and cost) into speed-up advice that can be turned into a Paperclip task.
   const kpiDlg = document.getElementById('kpi');
   const STATUS_PCT = { backlog: 0, todo: 5, in_progress: 40, in_review: 80, blocked: 40, done: 100, cancelled: 100 };
   const isClosed = (i) => i.status === 'done' || i.status === 'cancelled';
   const median = (xs) => { if (!xs.length) return null; const a = [...xs].sort((x, y) => x - y), m = a.length >> 1; return a.length % 2 ? a[m] : (a[m - 1] + a[m]) / 2; };
-  function computeKpi(list, now = Date.now()) {
+  const kt = (x) => (x ? Date.parse(x) : NaN);
+  const kStart = (i) => kt(i.startedAt || i.createdAt);
+  const kEnd = (i) => kt(i.completedAt || i.cancelledAt);
+  const DAY = 86400000;
+  function computeKpi(list, now = Date.now(), all = false) {
     const issues = list.filter((i) => i && i.id && !i.convo);
+    const byId = new Map(issues.map((i) => [i.id, i]));
     const kids = new Map();
-    for (const i of issues) if (i.parentId) { if (!kids.has(i.parentId)) kids.set(i.parentId, []); kids.get(i.parentId).push(i); }
-    const under = (id) => { const out = [], seen = new Set([id]), stack = [id];
+    for (const i of issues) if (i.parentId && byId.has(i.parentId)) { if (!kids.has(i.parentId)) kids.set(i.parentId, []); kids.get(i.parentId).push(i); }
+    const underCache = new Map();
+    const under = (id) => {
+      if (underCache.has(id)) return underCache.get(id);
+      const out = [], seen = new Set([id]), stack = [id];
       while (stack.length) for (const k of kids.get(stack.pop()) || []) if (!seen.has(k.id)) { seen.add(k.id); out.push(k); stack.push(k.id); }
-      return out; };
-    const t = (x) => (x ? Date.parse(x) : NaN);
-    const roots = issues.filter((i) => i.human && !i.parentId);
-    const leads = roots.filter((i) => i.status === 'done' && t(i.completedAt)).map((i) => t(i.completedAt) - t(i.startedAt || i.createdAt)).filter((d) => d > 0);
+      underCache.set(id, out); return out;
+    };
+    const pctOf = (i) => { const sub = under(i.id); return isClosed(i) ? 100 : sub.length ? Math.min(95, Math.round(sub.reduce((a, k) => a + (STATUS_PCT[k.status] ?? 0), 0) / sub.length)) : (STATUS_PCT[i.status] ?? 0); };
+    const roots = issues.filter((i) => !i.parentId && (all || i.human));
+    const leads = roots.filter((i) => i.status === 'done' && kEnd(i)).map((i) => kEnd(i) - kStart(i)).filter((d) => d > 0);
     const typical = median(leads);
     const rows = roots.map((i) => {
-      const sub = under(i.id), subDone = sub.filter(isClosed).length;
-      let pct = isClosed(i) ? 100 : sub.length ? Math.min(95, Math.round(100 * sub.reduce((a, k) => a + (STATUS_PCT[k.status] ?? 0), 0) / (100 * sub.length))) : (STATUS_PCT[i.status] ?? 0);
-      const start = t(i.startedAt || i.createdAt);
+      const sub = under(i.id), subDone = sub.filter(isClosed).length, pct = pctOf(i);
+      const start = kStart(i);
       let eta = null, over = false;
-      if (i.status === 'done') eta = t(i.completedAt);
+      if (i.status === 'done') eta = kEnd(i);
       else if (i.status !== 'cancelled' && Number.isFinite(start)) {
         if (sub.length && pct >= 10 && i.startedAt) eta = start + (now - start) * 100 / pct;
         else if (typical) { eta = start + typical; if (eta < now) { over = true; eta = null; } }
       }
-      return { i, pct, sub: sub.length, subDone, eta, over, closed: isClosed(i), done: i.status === 'done', doneAt: t(i.completedAt) };
+      return { i, pct, sub: sub.length, subDone, eta, over, closed: isClosed(i), done: i.status === 'done', doneAt: kEnd(i) };
     });
     const open = rows.filter((r) => !r.closed);
-    const week = now - 7 * 86400000;
-    const days = Array.from({ length: 14 }, (_, d) => rows.filter((r) => r.done && r.doneAt >= now - (14 - d) * 86400000 && r.doneAt < now - (13 - d) * 86400000).length);
+    const week = now - 7 * DAY;
+    const days = Array.from({ length: 14 }, (_, d) => rows.filter((r) => r.done && r.doneAt >= now - (14 - d) * DAY && r.doneAt < now - (13 - d) * DAY).length);
     return {
       rows, open: open.length, avg: open.length ? Math.round(open.reduce((a, r) => a + r.pct, 0) / open.length) : null,
       done7: rows.filter((r) => r.done && r.doneAt >= week).length, typical, blocked: open.filter((r) => r.i.status === 'blocked').length, days,
+      issues, byId, kids, under, pctOf, now,
     };
   }
   function demoKpi() {
     const now = Date.now(), h = 3600000, out = [];
-    [...sprites.values()].slice(0, 8).forEach((s, n) => {
-      const id = `k${n}`, started = now - (2 + n * 3) * h;
+    const agents = [...sprites.values()];
+    const who = (n) => (agents[n % Math.max(1, agents.length)] || {}).id;
+    agents.slice(0, 8).forEach((s, n) => {
+      const id = `k${n}`, started = now - (2 + n * 9) * h;
       const done = n === 6 || n === 7;
       out.push({ id, identifier: `DEMO-${n + 1}`, title: (s.task && s.task.title) || `Task ${n + 1}`, status: done ? 'done' : n === 3 ? 'blocked' : 'in_progress', assigneeAgentId: s.id, human: true,
-        blockers: n === 3 ? { n: 1, sample: 'DEMO-2', stalled: 0 } : null,
+        blockers: n === 3 ? { n: 1, sample: 'DEMO-12', stalled: 1 } : null, priority: 'high', lastActivityAt: new Date(now - (n === 1 ? 40 : 1) * h).toISOString(),
         createdAt: new Date(started - h).toISOString(), startedAt: new Date(started).toISOString(), completedAt: done ? new Date(now - n * 9 * h).toISOString() : null });
       const subs = 2 + (n % 4);
-      for (let k = 0; k < subs; k++) out.push({ id: `${id}-${k}`, parentId: id, status: done || k < (n % subs) ? 'done' : k === (n % subs) ? 'in_progress' : 'todo', human: false });
+      for (let k = 0; k < subs; k++) {
+        const st = done || k < (n % subs) ? 'done' : k === (n % subs) ? (n === 2 ? 'in_review' : 'in_progress') : 'todo';
+        const b = started + k * 5 * h;
+        out.push({ id: `${id}-${k}`, identifier: `DEMO-${10 + n * 6 + k}`, title: ['Draft the plan', 'Build it', 'Write tests', 'Review', 'Ship'][k % 5], parentId: id, status: st, human: false,
+          assigneeAgentId: who(n + k + 1), createdAt: new Date(b).toISOString(), startedAt: new Date(b).toISOString(), completedAt: st === 'done' ? new Date(b + (2 + k) * h).toISOString() : null,
+          lastActivityAt: new Date(st === 'todo' && n === 1 ? now - 30 * h : now - h).toISOString(), asksYou: n === 2 && st === 'in_review', asksKind: n === 2 && st === 'in_review' ? 'approval' : undefined,
+          asksSince: n === 2 && st === 'in_review' ? new Date(now - 20 * h).toISOString() : undefined });
+      }
     });
-    for (let n = 0; n < 6; n++) out.push({ id: `old${n}`, identifier: `DEMO-${20 + n}`, title: 'Earlier task', status: 'done', human: true,
-      createdAt: new Date(now - (3 + n * 2) * 86400000).toISOString(), startedAt: new Date(now - (3 + n * 2) * 86400000).toISOString(), completedAt: new Date(now - (2 + n * 2) * 86400000 + n * 3 * h).toISOString() });
+    for (let n = 0; n < 6; n++) out.push({ id: `old${n}`, identifier: `DEMO-${60 + n}`, title: 'Earlier task', status: 'done', human: true,
+      createdAt: new Date(now - (3 + n * 2) * DAY).toISOString(), startedAt: new Date(now - (3 + n * 2) * DAY).toISOString(), completedAt: new Date(now - (2 + n * 2) * DAY + n * 3 * h).toISOString() });
     return out;
   }
+  // Issues, as the KPI needs them: every page of them (Paperclip lists a thousand at a time).
+  const kpiIssue = (i) => ({ id: i.id, identifier: i.identifier, title: i.title, status: i.status, parentId: i.parentId, assigneeAgentId: i.assigneeAgentId,
+    createdAt: i.createdAt, startedAt: i.startedAt, completedAt: i.completedAt, cancelledAt: i.cancelledAt, human: !!i.createdByUserId, convo: !!i.conversationAgentId,
+    toUser: !!i.assigneeUserId, blockers: blockerInfo(i), asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson),
+    priority: i.priority, lastActivityAt: i.lastActivityAt, updatedAt: i.updatedAt, running: !!(i.executionRunId || i.checkoutRunId), ...askTiming(i) });
+  const askTiming = (i) => {
+    const asks = ((i.reviewAttention && i.reviewAttention.paths) || []).filter(asksPerson), since = asks.map((x) => Date.parse(x.since)).filter(Number.isFinite);
+    return asks.length ? { asksKind: String(asks[0].kind || ''), ...(since.length ? { asksSince: new Date(Math.min(...since)).toISOString() } : {}) } : {};
+  };
   async function kpiData() {
     if (DEMO) return demoKpi();
     if (!company) return [];
     if (EMBED) {
-      const raw = await getJSON(`/api/companies/${company.id}/issues`);
-      return raw.map((i) => ({ id: i.id, identifier: i.identifier, title: i.title, status: i.status, parentId: i.parentId, assigneeAgentId: i.assigneeAgentId,
-        createdAt: i.createdAt, startedAt: i.startedAt, completedAt: i.completedAt, cancelledAt: i.cancelledAt, human: !!i.createdByUserId, convo: !!i.conversationAgentId,
-        blockers: blockerInfo(i), asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson) }));
+      const all = [];
+      for (let page = 0; page < 20; page++) {
+        const raw = await getJSON(`/api/companies/${company.id}/issues?limit=1000&offset=${page * 1000}&sortField=id&view=compact`);
+        all.push(...(Array.isArray(raw) ? raw : [])); if (!Array.isArray(raw) || raw.length < 1000) break;
+      }
+      const since = Date.now() - 90 * DAY;
+      return all.filter((i) => !(isClosed(i) && Date.parse(i.completedAt || i.cancelledAt || i.updatedAt || 0) < since)).map(kpiIssue);
     }
     return getJSON(`/api/kpi/${company.id}`);
   }
@@ -1094,20 +1302,194 @@
       return new Intl.DateTimeFormat(lang, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(ms);
     } catch (_) { return new Date(ms).toLocaleString(); }
   };
-  let kpiShowDone = false, kpiLast = null;
+  const fmtDay = (ms) => { try { return new Intl.DateTimeFormat(lang, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(ms); } catch (_) { return new Date(ms).toLocaleString(); } };
+
+  // ----- runs and cost behind the advice -----
+  let kpiRuns = null;
+  async function kpiRunsData() {
+    if (kpiRuns && Date.now() - kpiRuns.at < 60000) return kpiRuns.list;
+    let raw = [];
+    if (DEMO) raw = demoRuns();
+    else if (company) raw = await getJSON(`/api/companies/${company.id}/heartbeat-runs${EMBED ? '?limit=1000&summary=1' : '?scope=kpi'}`).catch(() => []);
+    const list = (Array.isArray(raw) ? raw : []).map((r) => ({ agentId: r.agentId || '', issueId: r.issueId || (r.contextSnapshot && r.contextSnapshot.issueId) || '',
+      status: r.status || '', code: r.errorCode || '', error: String(r.error || '').slice(0, 120), at: Date.parse(r.startedAt || r.createdAt || '') || 0 }));
+    kpiRuns = { at: Date.now(), list };
+    return list;
+  }
+  function demoRuns() {
+    const out = [], now = Date.now();
+    const k = kpiLast; if (!k) return out;
+    for (const i of k.issues) {
+      if (isClosed(i) || !i.parentId) continue;
+      const n = i.identifier === 'DEMO-17' ? 14 : 3;
+      for (let x = 0; x < n; x++) out.push({ agentId: i.assigneeAgentId, issueId: i.id, status: x % 3 === 0 ? 'failed' : 'succeeded', errorCode: x % 3 === 0 ? 'provider_quota' : null, startedAt: new Date(now - x * 3600000).toISOString() });
+    }
+    return out;
+  }
+  async function kpiCost(i) {
+    if (DEMO) return { runCount: 42, runtimeMs: 31 * 3600000, costCents: 2840 };
+    try { return await getJSON(`/api/issues/${encodeURIComponent(i.identifier || i.id)}/cost-summary`); } catch (_) { return null; }
+  }
+
+  // ----- the advice: measured causes in one task's tree, most pressing first -----
+  const FAIL_KINDS = [
+    ['quota', (r) => r.code === 'provider_quota' || /quota|rate.?limit|usage limit|\b429\b/i.test(r.error), (n) => L.adFailQuota(n), () => L.adFailQuotaFix],
+    ['big', (r) => /E2BIG/i.test(r.error) || r.code === 'acpx_session_init_failed', (n) => L.adFailBig(n), () => L.adFailBigFix],
+    ['turn', (r) => r.code === 'acpx_turn_failed' || r.code === 'timed_out' || r.status === 'timed_out', (n) => L.adFailTurn(n), () => L.adFailTurnFix],
+    ['lost', (r) => r.code === 'process_lost' || r.code === 'orphaned_running_run', (n) => L.adFailLost(n), () => L.adFailLostFix],
+  ];
+  function adviseKpi(k, rootId, runs, cost, agentsNow, now = Date.now()) {
+    const root = k.byId.get(rootId); if (!root) return { findings: [], stats: [] };
+    const tree = [root, ...k.under(rootId)], open = tree.filter((i) => !isClosed(i)), ids = new Set(tree.map((i) => i.id));
+    const ident = (i) => i.identifier || '?';
+    const show = (arr, n = 5) => arr.slice(0, n).map(ident).join(', ') + (arr.length > n ? ` +${arr.length - n}` : '');
+    const name = (id) => { const s = sprites.get(id); return s ? s.name : '?'; };
+    const out = [];
+    // 1. waits on you
+    const asks = open.filter((i) => i.asksYou);
+    if (asks.length) {
+      const oldest = Math.min(now, ...asks.map((i) => kt(i.asksSince)).filter(Number.isFinite));
+      out.push({ key: 'you', sev: 3, text: L.adWaitsYou(asks.length, fmtDur(now - oldest)), fix: L.adWaitsYouFix, items: asks, agentTask: false });
+    }
+    // 2. runs that failed for the same reason, again and again
+    const mine = runs.filter((r) => ids.has(r.issueId));
+    const failed = mine.filter((r) => r.status === 'failed' || r.status === 'timed_out' || r.status === 'interrupted');
+    const used = new Set();
+    for (const [key, test, text, fix] of FAIL_KINDS) {
+      const hit = failed.filter((r) => !used.has(r) && test(r)); hit.forEach((r) => used.add(r));
+      if (hit.length >= 3 || (hit.length >= 2 && hit.length >= mine.length * 0.2)) {
+        const items = [...new Set(hit.map((r) => r.issueId))].map((id) => k.byId.get(id)).filter(Boolean);
+        out.push({ key, sev: key === 'quota' || key === 'big' ? 2.5 : 2, text: text(hit.length), fix: fix(), items });
+      }
+    }
+    // the provider's limit hits the whole company at once: say so even when this tree's runs are not tagged
+    const quota = runs.filter((r) => r.status === 'failed' && FAIL_KINDS[0][1](r));
+    if (!out.some((f) => f.key === 'quota') && quota.length >= 20 && quota.length >= runs.length * 0.1)
+      out.push({ key: 'quota-all', sev: 2.4, text: L.adQuotaAll(quota.length, runs.length), fix: L.adFailQuotaFix, items: [] });
+    const rest = new Map();
+    for (const r of failed) if (!used.has(r)) { const c = r.code || r.status; rest.set(c, [...(rest.get(c) || []), r]); }
+    for (const [code, hit] of rest) if (hit.length >= 3) {
+      const items = [...new Set(hit.map((r) => r.issueId))].map((id) => k.byId.get(id)).filter(Boolean);
+      out.push({ key: `fail-${code}`, sev: 1.5, text: L.adFailOther(hit.length, code), fix: L.adFailOtherFix, items });
+    }
+    // 3. blocked by work that has itself stopped
+    const blockedIds = new Set(k.issues.filter((i) => !isClosed(i) && i.status === 'blocked').map((i) => i.identifier));
+    const stalled = open.filter((i) => i.status === 'blocked' && i.blockers && (i.blockers.stalled > 0 || blockedIds.has(i.blockers.sample)));
+    if (stalled.length) out.push({ key: 'stalled', sev: 2.2, items: stalled, fix: L.adStalledFix,
+      text: L.adStalled(stalled.length, stalled.slice(0, 3).map((i) => `${ident(i)} ← ${i.blockers.sample || '?'}`).join(', ')) });
+    // 4. nobody on it, or nothing happening
+    const unassigned = open.filter((i) => !i.assigneeAgentId && !i.toUser && i.status !== 'backlog');
+    if (unassigned.length) out.push({ key: 'unassigned', sev: 1.8, text: L.adUnassigned(unassigned.length), fix: L.adUnassignedFix, items: unassigned });
+    const idle = open.filter((i) => i.assigneeAgentId && !i.running && !i.asksYou && !['blocked', 'backlog'].includes(i.status) && now - kt(i.lastActivityAt || i.updatedAt || i.createdAt) > DAY)
+      .sort((a, b) => kt(a.lastActivityAt || a.updatedAt) - kt(b.lastActivityAt || b.updatedAt));
+    if (idle.length) out.push({ key: 'idle', sev: 1.7, text: L.adIdle(idle.length), fix: L.adIdleFix, items: idle });
+    // 5. one agent holds the queue while others are free
+    const load = new Map();
+    for (const i of open) if (i.assigneeAgentId && i.status !== 'blocked' && i.id !== rootId) load.set(i.assigneeAgentId, (load.get(i.assigneeAgentId) || 0) + 1);
+    const [busy, n] = [...load].sort((a, b) => b[1] - a[1])[0] || [];
+    if (busy && n >= 5) {
+      const free = agentsNow.filter((s) => s.status === 'idle' && !load.has(s.id) && s.id !== busy).map((s) => s.name);
+      if (free.length) out.push({ key: 'overload', sev: 1.6, text: L.adOverload(name(busy), n, free.slice(0, 3).join(', ') + (free.length > 3 ? ` +${free.length - 3}` : '')),
+        fix: L.adOverloadFix, items: open.filter((i) => i.assigneeAgentId === busy && i.status !== 'blocked' && i.id !== rootId) });
+    }
+    // 6. much longer than similar tasks here
+    const doneDur = tree.filter((i) => i.id !== rootId && i.status === 'done').map((i) => kEnd(i) - kStart(i)).filter((d) => d > 0);
+    const typ = doneDur.length >= 3 ? median(doneDur) : null;
+    if (typ) {
+      const long = open.filter((i) => i.id !== rootId && !['backlog', 'blocked'].includes(i.status) && now - kStart(i) > Math.max(3 * typ, 2 * DAY)).sort((a, b) => kStart(a) - kStart(b));
+      if (long.length) out.push({ key: 'long', sev: 1.4, text: L.adLong(show(long, 3), fmtDur(now - kStart(long[0])), fmtDur(typ)), fix: L.adLongFix, items: long });
+    }
+    // 7. many runs, still open
+    const per = new Map(); for (const r of mine) per.set(r.issueId, (per.get(r.issueId) || 0) + 1);
+    const churn = open.filter((i) => (per.get(i.id) || 0) >= 12).sort((a, b) => per.get(b.id) - per.get(a.id));
+    if (churn.length) out.push({ key: 'churn', sev: 1.3, text: L.adChurn(show(churn, 3), per.get(churn[0].id)), fix: L.adChurnFix, items: churn });
+    // 8. a queue in review (not waiting on you)
+    const review = open.filter((i) => i.status === 'in_review' && !i.asksYou);
+    if (review.length >= 3) {
+      const oldest = Math.min(now, ...review.map((i) => kt(i.lastActivityAt || i.updatedAt)).filter(Number.isFinite));
+      out.push({ key: 'review', sev: 1.2, text: L.adReview(review.length, fmtDur(now - oldest)), fix: L.adReviewFix, items: review });
+    }
+    const stats = [];
+    if (cost && cost.runCount) stats.push(L.adCost(cost.runCount, fmtDur(cost.runtimeMs || 0), money(cost.costCents || 0)));
+    if (mine.length >= 10) stats.push(L.adFailShare(Math.round(100 * failed.length / mine.length), mine.length));
+    return { findings: out.sort((a, b) => b.sev - a.sev), stats };
+  }
+
+  // ----- turning advice into a task (off unless turned on) -----
+  let taskCfg = { on: false, canEdit: false, available: false };
+  async function loadTaskCfg() {
+    if (DEMO || EMBED) taskCfg = { on: settings.createTasks === true, canEdit: true, available: true };
+    else { try { taskCfg = await getJSON('/api/cubicle/settings'); taskCfg.on = taskCfg.createTasks; } catch (_) { taskCfg = { on: false, canEdit: false, available: false }; } }
+  }
+  async function setTaskCfg(on) {
+    if (DEMO || EMBED) { settings.createTasks = on; save(); taskCfg.on = on; return; }
+    const r = await fetch('/api/cubicle/settings', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ createTasks: on }) });
+    if (r.ok) { const d = await r.json(); taskCfg = { ...d, on: d.createTasks }; }
+  }
+  function taskText(root, list) {
+    const pre = company ? company.issuePrefix : '';
+    const link = (i) => (pre && i.identifier ? `[${i.identifier}](/${pre}/issues/${i.identifier})` : (i.identifier || ''));
+    const body = list.map((f, n) => [list.length > 1 ? `### ${n + 1}. ${f.text}` : `**${L.adTaskFinding}:** ${f.text}`,
+      f.items && f.items.length ? `**${L.adTaskWhere}:** ${f.items.slice(0, 15).map(link).join(', ')}${f.items.length > 15 ? ` +${f.items.length - 15}` : ''}` : '',
+      `**${L.adTaskFix}:** ${f.fix}`].filter(Boolean).join('\n\n')).join('\n\n');
+    return `## ${L.adTaskHead}\n\n**${L.adFor}:** ${link(root)} ${root.title || ''}\n\n${body}\n\n_${L.adTaskSource(fmtDay(Date.now()))}_`;
+  }
+  async function createTask(root, form) {
+    const payload = { title: form.title, description: form.description, priority: form.priority, ...(form.assignee ? { assigneeAgentId: form.assignee } : {}) };
+    if (DEMO) return { identifier: `DEMO-${100 + Math.floor(Math.random() * 900)}` };
+    if (EMBED) {
+      const r = await fetch(`/api/issues/${encodeURIComponent(root.id)}/children`, { method: 'POST', credentials: 'same-origin', headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ ...payload, status: 'todo' }) });
+      const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || r.status); return d.issue || d;
+    }
+    const r = await fetch('/api/cubicle/tasks', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ parentId: root.id, ...payload }) });
+    const d = await r.json().catch(() => ({})); if (!r.ok) throw new Error(d.error || r.status); return d;
+  }
+
+  // ----- the board -----
+  let kpiShowDone = false, kpiLast = null, kpiRaw = null;
+  let kpiAll = false; try { kpiAll = localStorage.getItem('cubicle.kpiAll') === '1'; } catch (_) {}
+  const kpiOpenRows = new Set();          // tasks shown with their subtasks
+  const kpiAdv = new Map();               // task id -> { busy, res, err, form, made }
   async function openKpi() {
     if (!kpiDlg.open) kpiDlg.showModal();
     if (!kpiLast) kpiDlg.innerHTML = `<div class="head"><h2>📊 ${esc(L.kpi)}</h2></div><div class="body">…</div>`;
-    try { kpiLast = computeKpi(await kpiData()); } catch (e) { kpiDlg.querySelector('.body').textContent = String(e.message || e); return; }
+    try { [kpiRaw] = await Promise.all([kpiData(), loadTaskCfg()]); kpiLast = computeKpi(kpiRaw, Date.now(), kpiAll); kpiRuns = null; }
+    catch (e) { kpiDlg.querySelector('.body').textContent = String(e.message || e); return; }
+    for (const [id, a] of kpiAdv) if (!a.form && !a.busy) kpiAdv.delete(id);
     renderKpi();
+  }
+  const agentName = (id) => { const s = sprites.get(id); return s ? s.name : ''; };
+  const kLink = (i) => (issueUrl({ ...i, assigneeAgentId: i.assigneeAgentId || null }) ? `<a href="${esc(issueUrl({ ...i, assigneeAgentId: i.assigneeAgentId || null }))}" data-kpi-issue="${esc(i.identifier)}" data-title="${esc(i.title || '')}">${esc(i.identifier)}</a>` : esc(i.identifier || ''));
+  const statusPill = (i) => `<span class="pill p-${i.status === 'blocked' ? 'error' : isClosed(i) ? 'idle' : i.status === 'in_review' ? 'waiting' : 'running'}">${esc((L.iss && L.iss[i.status]) || String(i.status).replace('_', ' '))}</span>`;
+  function durCell(i, k, long) {
+    const s = kStart(i); if (!Number.isFinite(s)) return '–';
+    if (isClosed(i)) { const e = kEnd(i); return Number.isFinite(e) && e >= s ? esc(fmtDur(e - s)) : '–'; }
+    const d = k.now - s;
+    return `<span class="${long(d) ? 'late' : ''}">${esc(L.kpiRunningFor(fmtDur(d)))}</span>`;
   }
   function renderKpi() {
     const k = kpiLast; if (!k) return;
-    const agentName = (id) => { const s = sprites.get(id); return s ? s.name : ''; };
+    const scroll = kpiDlg.querySelector('.body') ? kpiDlg.querySelector('.body').scrollTop : 0;
+    const long = (d) => d > Math.max(2 * DAY, k.typical ? 2 * k.typical : 0);
     const rows = k.rows.filter((r) => kpiShowDone || !r.closed).sort((a, b) => (a.closed - b.closed) || ((a.eta ?? Infinity) - (b.eta ?? Infinity)) || (b.doneAt || 0) - (a.doneAt || 0));
-    const link = (i) => (issueUrl({ ...i, assigneeAgentId: i.assigneeAgentId || null }) ? `<a href="${esc(issueUrl({ ...i, assigneeAgentId: i.assigneeAgentId || null }))}" data-kpi-issue="${esc(i.identifier)}" data-title="${esc(i.title || '')}">${esc(i.identifier)}</a>` : esc(i.identifier || ''));
     const maxDay = Math.max(1, ...k.days);
+    const adBtn = (i) => (!isClosed(i) && !KIOSK ? `<button type="button" class="adb${kpiAdv.has(i.id) ? ' on' : ''}" data-adv="${esc(i.id)}" title="${esc(L.kpiAdvice)}" aria-label="${esc(L.kpiAdvice)}">💡</button>` : '');
+    const toggle = (i, n) => (n ? `<button type="button" class="tw" data-tree="${esc(i.id)}" aria-expanded="${kpiOpenRows.has(i.id)}" title="${esc(L.kpiExpand)}">${kpiOpenRows.has(i.id) ? '▾' : '▸'}</button>` : '<span class="tw"></span>');
+    const childRows = (id, depth) => {
+      if (!kpiOpenRows.has(id)) return '';
+      const list = [...(k.kids.get(id) || [])].sort((a, b) => (isClosed(a) - isClosed(b)) || (kStart(a) - kStart(b)));
+      return list.map((c) => {
+        const n = (k.kids.get(c.id) || []).length, sub = k.under(c.id), sd = sub.filter(isClosed).length;
+        return `<tr class="kid${isClosed(c) ? ' done' : ''}"><td style="padding-inline-start:${8 + depth * 18}px">${toggle(c, n)}${kLink(c)} ${esc(c.title || '')} ${statusPill(c)}${c.asksYou ? ' <span class="pill p-waiting">✋</span>' : ''}</td>
+          <td>${esc(agentName(c.assigneeAgentId))}</td><td>${Number.isFinite(kStart(c)) ? esc(fmtDay(kStart(c))) : '–'}</td><td>${durCell(c, k, long)}</td>
+          <td>${sub.length ? `<div class="prog"><div class="bar"><i style="width:${k.pctOf(c)}%"></i></div><b>${k.pctOf(c)}%</b></div><div class="sub">${esc(L.kpiSub(sd, sub.length))}</div>` : ''}</td>
+          <td>${c.status === 'done' && Number.isFinite(kEnd(c)) ? `${esc(L.kpiDone)} · ${esc(fmtWhen(kEnd(c)))}` : ''}</td><td>${adBtn(c)}</td></tr>${advRow(c)}${childRows(c.id, depth + 1)}`;
+      }).join('');
+    };
+    const advRow = (i) => (kpiAdv.has(i.id) ? `<tr class="advrow"><td colspan="7">${adviceHtml(i)}</td></tr>` : '');
     kpiDlg.innerHTML = `<div class="head"><h2>📊 ${esc(L.kpi)}</h2>
+        <label><input type="checkbox" data-k="all"${kpiAll ? ' checked' : ''}> ${esc(L.kpiAllRoots)}</label>
         <label><input type="checkbox" data-k="done"${kpiShowDone ? ' checked' : ''}> ${esc(L.kpiShowDone)}</label>
         <button type="button" data-k="refresh">${esc(L.kpiRefresh)}</button><button type="button" class="x" data-k="close" aria-label="${esc(L.close)}">✕</button></div>
       <div class="body">
@@ -1118,23 +1500,94 @@
           <div class="tile"><b>${k.typical ? esc(fmtDur(k.typical)) : '–'}</b><span>${esc(L.kpiLead)}</span></div>
           <div class="tile"><b>${k.blocked}</b><span>${esc(L.kpiBlocked)}</span></div>
         </div>
-        ${rows.length ? `<table><thead><tr><th>${esc(L.kpiTask)}</th><th>${esc(L.kpiWho)}</th><th>${esc(L.kpiProgress)}</th><th>${esc(L.kpiEta)}</th></tr></thead><tbody>${rows.map((r) => `
-          <tr class="${r.closed ? 'done' : ''}"><td>${link(r.i)} ${esc(r.i.title || '')} ${waitText(r) ? `<span class="pill p-waiting" title="${esc((L.iss && L.iss.blocked) || 'blocked')}">⏳ ${esc(waitText(r))}</span>` : `<span class="pill p-${r.i.status === 'blocked' ? 'error' : r.closed ? 'idle' : r.i.status === 'in_review' ? 'waiting' : 'running'}">${esc((L.iss && L.iss[r.i.status]) || r.i.status.replace('_', ' '))}</span>`}</td>
+        ${rows.length ? `<div class="tblw"><table><thead><tr><th>${esc(L.kpiTask)}</th><th>${esc(L.kpiWho)}</th><th>${esc(L.kpiStarted)}</th><th>${esc(L.kpiTook)}</th><th>${esc(L.kpiProgress)}</th><th>${esc(L.kpiEta)}</th><th></th></tr></thead><tbody>${rows.map((r) => `
+          <tr class="${r.closed ? 'done' : ''}"><td>${toggle(r.i, r.sub)}${kLink(r.i)} ${esc(r.i.title || '')} ${waitText(r) ? `<span class="pill p-waiting" title="${esc((L.iss && L.iss.blocked) || 'blocked')}">⏳ ${esc(waitText(r))}</span>` : statusPill(r.i)}</td>
             <td>${esc(agentName(r.i.assigneeAgentId))}</td>
+            <td>${Number.isFinite(kStart(r.i)) ? esc(fmtDay(kStart(r.i))) : '–'}</td><td>${durCell(r.i, k, long)}</td>
             <td><div class="prog"><div class="bar"><i style="width:${r.pct}%"></i></div><b>${r.pct}%</b></div>${r.sub ? `<div class="sub">${esc(L.kpiSub(r.subDone, r.sub))}</div>` : ''}</td>
-            <td>${r.done ? `${esc(L.kpiDone)} · ${esc(fmtWhen(r.doneAt))}` : r.eta ? esc(fmtWhen(r.eta)) : r.over ? `<span class="late">${esc(L.kpiOver)}</span>` : '–'}</td></tr>`).join('')}</tbody></table>` : `<p>${esc(L.kpiEmpty)}</p>`}
+            <td>${r.done ? `${esc(L.kpiDone)} · ${esc(fmtWhen(r.doneAt))}` : r.eta ? esc(fmtWhen(r.eta)) : r.over ? `<span class="late">${esc(L.kpiOver)}</span>` : '–'}</td><td>${adBtn(r.i)}</td></tr>${advRow(r.i)}${childRows(r.i.id, 1)}`).join('')}</tbody></table></div>` : `<p>${esc(L.kpiEmpty)}</p>`}
         <div class="note">${esc(L.kpiNote)}</div>
       </div>`;
+    const body = kpiDlg.querySelector('.body'); if (body) body.scrollTop = scroll;
   }
-  kpiDlg.addEventListener('click', (e) => {
+  function adviceHtml(i) {
+    const a = kpiAdv.get(i.id);
+    if (a.busy && !a.res) return `<div class="adv"><div class="advh">💡 ${esc(L.adTitle(i.identifier))}</div><p class="sub">${esc(L.adLoading)}</p></div>`;
+    if (a.err) return `<div class="adv"><div class="advh">💡 ${esc(L.adTitle(i.identifier))}</div><p class="late">${esc(a.err)}</p></div>`;
+    const { findings, stats } = a.res;
+    const canMake = taskCfg.available && taskCfg.on;
+    const made = (key) => (a.made && a.made[key] ? `<span class="made">✓ ${esc(L.adCreated(a.made[key]))}</span>` : '');
+    const toTask = (key) => (canMake && !(a.made && a.made[key]) ? `<button type="button" class="mini" data-adv-task="${esc(key)}" data-for="${esc(i.id)}">➕ ${esc(L.adToTask)}</button>` : '') + made(key);
+    const list = findings.map((f) => `<li class="sev${Math.round(f.sev)}"><b>${esc(f.text)}</b>${f.items && f.items.length ? `<div class="ids">${f.items.slice(0, 8).map(kLink).join(', ')}${f.items.length > 8 ? ` +${f.items.length - 8}` : ''}</div>` : ''}
+      <div class="fix">${esc(f.fix)}</div>${f.agentTask === false ? '' : toTask(f.key)}${a.form && a.form.key === f.key ? formHtml(i, a.form) : ''}</li>`).join('');
+    const off = !taskCfg.available ? '' : taskCfg.on ? '' : `<div class="adoff">${esc(L.adOff)} <label><input type="checkbox" data-adv-on="1"${taskCfg.canEdit ? '' : ' disabled'}> ${esc(L.adTurnOn)}</label>${taskCfg.canEdit ? '' : ` <span class="sub">${esc(L.adOnlyHere)}</span>`}</div>`;
+    return `<div class="adv"><div class="advh">💡 ${esc(L.adTitle(i.identifier))}${stats.length ? ` <span class="sub">${esc(stats.join(' '))}</span>` : ''}</div>
+      ${findings.length ? `<ol>${list}</ol>${findings.filter((f) => f.agentTask !== false).length > 1 ? `<div class="all">${toTask('all')}${a.form && a.form.key === 'all' ? formHtml(i, a.form) : ''}</div>` : ''}` : `<p class="sub">${esc(L.adNone)}</p>`}${findings.length ? off : ''}</div>`;
+  }
+  function formHtml(i, f) {
+    const agents = [...sprites.values()].filter((s) => s.urlKey !== undefined || DEMO).sort((a, b) => a.name.localeCompare(b.name));
+    return `<div class="tform" data-form="${esc(i.id)}">
+      <label>${esc(L.adTaskTitle)} <input type="text" data-f="title" maxlength="200" value="${esc(f.title)}"></label>
+      <div class="row"><label>${esc(L.adAssignee)} <select data-f="assignee"><option value="">–</option>${agents.map((s) => `<option value="${esc(s.id)}"${s.id === f.assignee ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}</select></label>
+      <label>${esc(L.adPriority)} <select data-f="priority">${['critical', 'high', 'medium', 'low'].map((p) => `<option value="${p}"${p === f.priority ? ' selected' : ''}>${esc(L.adPrios[p])}</option>`).join('')}</select></label></div>
+      <textarea data-f="description" rows="8" maxlength="8000">${esc(f.description)}</textarea>
+      <div class="row"><button type="button" class="mini go" data-adv-create="${esc(i.id)}"${f.busy ? ' disabled' : ''}>${esc(f.busy ? L.adCreating : L.adCreate)}</button>${f.err ? ` <span class="late">${esc(f.err)}</span>` : ''}</div></div>`;
+  }
+  async function toggleAdvice(id) {
+    if (kpiAdv.has(id)) { kpiAdv.delete(id); renderKpi(); return; }
+    const a = { busy: true }; kpiAdv.set(id, a); renderKpi();
+    try {
+      const i = kpiLast.byId.get(id);
+      const [runs, cost] = await Promise.all([kpiRunsData(), kpiCost(i)]);
+      a.res = adviseKpi(kpiLast, id, runs, cost, [...sprites.values()]);
+    } catch (e) { a.err = String(e.message || e); }
+    a.busy = false; if (kpiAdv.get(id) === a) renderKpi();
+  }
+  // keep what is typed in an open form across re-renders
+  function readForm(id) {
+    const a = kpiAdv.get(id), el = kpiDlg.querySelector(`.tform[data-form="${CSS.escape(id)}"]`);
+    if (!a || !a.form || !el) return;
+    for (const f of el.querySelectorAll('[data-f]')) a.form[f.dataset.f] = f.value;
+  }
+  kpiDlg.addEventListener('click', async (e) => {
     if (e.target === kpiDlg) { kpiDlg.close(); return; }
     const b = e.target.closest('[data-k]');
     if (b && b.dataset.k === 'close') kpiDlg.close();
     else if (b && b.dataset.k === 'refresh') openKpi();
+    const tw = e.target.closest('[data-tree]');
+    if (tw) { const id = tw.dataset.tree; if (kpiOpenRows.has(id)) kpiOpenRows.delete(id); else kpiOpenRows.add(id); kpiAdv.forEach((_, x) => readForm(x)); renderKpi(); return; }
+    const ad = e.target.closest('[data-adv]');
+    if (ad) { kpiAdv.forEach((_, x) => readForm(x)); toggleAdvice(ad.dataset.adv); return; }
+    const mk = e.target.closest('[data-adv-task]');
+    if (mk) {
+      const id = mk.dataset.for, a = kpiAdv.get(id), root = kpiLast.byId.get(id); if (!a || !a.res || !root) return;
+      kpiAdv.forEach((_, x) => readForm(x));
+      const key = mk.dataset.advTask, list = key === 'all' ? a.res.findings.filter((f) => f.agentTask !== false) : a.res.findings.filter((f) => f.key === key);
+      if (a.form && a.form.key === key) a.form = null;
+      else a.form = { key, title: L.adTaskName(root.identifier, key === 'all' ? L.adTaskHead : list[0].text).slice(0, 200), description: taskText(root, list),
+        assignee: root.assigneeAgentId || '', priority: ['critical', 'high'].includes(root.priority) ? root.priority : 'high' };
+      renderKpi(); return;
+    }
+    const go = e.target.closest('[data-adv-create]');
+    if (go) {
+      const id = go.dataset.advCreate, a = kpiAdv.get(id), root = kpiLast.byId.get(id); if (!a || !a.form || a.form.busy) return;
+      readForm(id); a.form.busy = true; a.form.err = ''; renderKpi();
+      try {
+        const made = await createTask(root, a.form);
+        a.made = { ...(a.made || {}), [a.form.key]: made.identifier || made.id || '✓' }; a.form = null;
+      } catch (err) { a.form.busy = false; a.form.err = String(err.message || err); }
+      renderKpi(); return;
+    }
     const a = e.target.closest('a[data-kpi-issue]');
     if (a && !e.ctrlKey && !e.metaKey) { e.preventDefault(); openPaperclip(a.href, `${a.dataset.kpiIssue} ${a.dataset.title}`); }
   });
-  kpiDlg.addEventListener('change', (e) => { if (e.target.dataset.k === 'done') { kpiShowDone = e.target.checked; renderKpi(); } });
+  kpiDlg.addEventListener('change', async (e) => {
+    if (e.target.dataset.k === 'done') { kpiShowDone = e.target.checked; renderKpi(); }
+    else if (e.target.dataset.k === 'all') {
+      kpiAll = e.target.checked; try { localStorage.setItem('cubicle.kpiAll', kpiAll ? '1' : '0'); } catch (_) {}
+      if (kpiRaw) { kpiLast = computeKpi(kpiRaw, Date.now(), kpiAll); renderKpi(); }
+    } else if (e.target.dataset.advOn) { kpiAdv.forEach((_, x) => readForm(x)); await setTaskCfg(e.target.checked); renderKpi(); }
+  });
 
   // ---------- QR code (byte mode, error correction M, versions 1-10: up to 213 bytes) ----------
   // A small encoder after the QR spec, so a phone can scan the Telegram link off the screen.

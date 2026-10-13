@@ -170,9 +170,14 @@ const ALLOWED = [
   /^\/api\/companies\/[\w-]+\/(agents|issues|heartbeat-runs)$/,
   /^\/api\/issues\/[A-Za-z0-9-]+\/interactions$/,      // what an agent is asking you (shown, never answered here)
   /^\/api\/issues\/[A-Za-z0-9-]+\/approvals$/,         // what an agent asks you to approve (shown, never decided here)
+  /^\/api\/issues\/[A-Za-z0-9-]+\/cost-summary$/,      // runs, run time and cost under a task (KPI advice)
 ];
 // Heartbeat runs: only the latest few, so a failed run's error can be shown on the agent.
 const RUNS_QUERY = '?limit=60&summary=1';
+// The KPI's advice looks further back: the last thousand runs, each with the issue it worked on.
+const KPI_RUNS_QUERY = '?limit=1000&summary=1';
+// The office needs open issues only; asking Paperclip for those keeps a big company under its page size.
+const ISSUES_QUERY = '?status=backlog,todo,in_progress,in_review,blocked&limit=1000';
 
 function send(res, status, body, type = 'application/json') {
   if (res.headersSent) return res.destroy();   // too late for a clean error: just drop the connection
@@ -192,7 +197,8 @@ const CLOSED = new Set(['done', 'cancelled']);
 // confirmations) — Paperclip names the agent as the responder of those.
 const asksPerson = (x) => !!x && (/board|user|human/i.test(String(x.responder || '')) || x.kind === 'interaction');
 
-function shapePaperclip(pathname, data) {
+function shapePaperclip(pathname, data, light = false) {
+  if (pathname.endsWith('/cost-summary')) return pick(data, ['issueCount', 'runCount', 'runtimeMs', 'costCents', 'inputTokens', 'outputTokens']);
   if (!Array.isArray(data)) return data;
   if (pathname === '/api/companies') return data.map((c) => pick(c, ['id', 'name', 'issuePrefix']));
   if (pathname.endsWith('/agents')) return data.map((a) => ({
@@ -202,7 +208,10 @@ function shapePaperclip(pathname, data) {
   // Runs still going count too: a run that started after a failure means the failure is over.
   if (pathname.endsWith('/heartbeat-runs')) return data.filter((r) => r && r.agentId).map((r) => ({
     ...pick(r, ['id', 'agentId', 'status', 'errorCode', 'startedAt', 'createdAt', 'finishedAt']),
-    ...(REDACT ? {} : pick({ error: r.error && String(r.error).slice(0, 500), stderrExcerpt: r.stderrExcerpt && String(r.stderrExcerpt).slice(-600) }, ['error', 'stderrExcerpt'])),
+    ...(r.contextSnapshot && typeof r.contextSnapshot.issueId === 'string' ? { issueId: r.contextSnapshot.issueId } : {}),
+    // the KPI's thousand runs need only the start of the error (to tell a quota from a too-large prompt)
+    ...(REDACT ? {} : light ? pick({ error: r.error && String(r.error).slice(0, 120) }, ['error'])
+      : pick({ error: r.error && String(r.error).slice(0, 500), stderrExcerpt: r.stderrExcerpt && String(r.stderrExcerpt).slice(-600) }, ['error', 'stderrExcerpt'])),
   }));
   if (pathname.endsWith('/issues')) return data.filter((i) => !CLOSED.has(i.status)).map((i) => ({
     ...pick(i, REDACT ? ['identifier', 'status', 'assigneeAgentId'] : ['identifier', 'title', 'status', 'assigneeAgentId']),
@@ -243,10 +252,23 @@ function shapeKpi(data) {
     human: !!i.createdByUserId,
     convo: !!i.conversationAgentId,
     // what a blocked task is waiting for: how many open blockers, one of their ids, how many stalled
+    toUser: !!i.assigneeUserId,
     blockers: i.blockerAttention && i.blockerAttention.unresolvedBlockerCount ? { n: i.blockerAttention.unresolvedBlockerCount,
       sample: i.blockerAttention.sampleBlockerIdentifier || '', stalled: i.blockerAttention.stalledBlockerCount || 0 } : null,
     asksYou: ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson),
+    ...kpiTiming(i),
   }));
+}
+// What the KPI's advice reads besides the status: priority, last activity, whether a run holds the
+// task now, and since when (and for what) it waits on a person.
+function kpiTiming(i) {
+  const asks = ((i.reviewAttention && i.reviewAttention.paths) || []).filter(asksPerson);
+  const since = asks.map((x) => Date.parse(x.since)).filter(Number.isFinite);
+  return {
+    ...pick(i, ['priority', 'lastActivityAt', 'updatedAt']),
+    running: !!(i.executionRunId || i.checkoutRunId),
+    ...(asks.length ? { asksKind: String(asks[0].kind || ''), ...(since.length ? { asksSince: new Date(Math.min(...since)).toISOString() } : {}) } : {}),
+  };
 }
 
 function shapeFeed(data) {
@@ -278,6 +300,25 @@ function shapeFeed(data) {
 // Fetch an upstream JSON document, reshape it, and answer in one piece. Buffering means an
 // upstream that fails halfway can never leave a half-sent response behind.
 const MAX_UPSTREAM_BYTES = 20 * 1024 * 1024;
+// One request to Paperclip, with the key when there is one: { status, data } (status 0 when unreachable).
+function upstreamJSON(method, pathAndQuery, body) {
+  return new Promise((resolve) => {
+    const u = new URL(pathAndQuery, PAPERCLIP);
+    const data = body === undefined ? null : Buffer.from(JSON.stringify(body));
+    const req = (u.protocol === 'https:' ? https : http).request(u, { method, timeout: 20000, headers: { accept: 'application/json',
+      ...(data ? { 'content-type': 'application/json', 'content-length': data.length } : {}), ...(TOKEN ? { authorization: `Bearer ${TOKEN}` } : {}) } }, (r) => {
+      const chunks = []; let size = 0;
+      r.on('data', (c) => { size += c.length; if (size > MAX_UPSTREAM_BYTES) req.destroy(new Error('too large')); else chunks.push(c); });
+      r.on('end', () => { let d = null; try { d = JSON.parse(Buffer.concat(chunks).toString('utf8')); } catch (_) {} resolve({ status: r.statusCode, data: d }); });
+      r.on('error', () => resolve({ status: 0, data: null }));
+    });
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', () => resolve({ status: 0, data: null }));
+    req.end(data || undefined);
+  });
+}
+const KPI_MAX_PAGES = 20;
+
 function proxyJson(res, url, headers, failBody, shape) {
   const upstream = get(url, (r) => {
     const chunks = []; let size = 0;
@@ -358,6 +399,8 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/appearance') return serveAppearance(req, res);
   if (url.pathname === '/api/telegram') return serveTelegram(req, res);
   if (url.pathname === '/api/tailscale') return serveTailscale(req, res);
+  if (url.pathname === '/api/cubicle/settings') return serveSettings(req, res);
+  if (url.pathname === '/api/cubicle/tasks') return serveTasks(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -387,16 +430,27 @@ const server = http.createServer((req, res) => {
 
   const kpiMatch = url.pathname.match(/^\/api\/kpi\/([\w-]+)$/);
   if (kpiMatch && HAS_PAPERCLIP) {
-    return proxyJson(res, new URL(`/api/companies/${kpiMatch[1]}/issues`, PAPERCLIP), TOKEN ? { authorization: `Bearer ${TOKEN}` } : {},
-      '{"error":"paperclip unreachable"}', shapeKpi);
+    // Paperclip lists at most a thousand issues at a time: read every page (a big company has more).
+    return (async () => {
+      const all = [];
+      for (let page = 0; page < KPI_MAX_PAGES; page++) {
+        const r = await upstreamJSON('GET', `/api/companies/${kpiMatch[1]}/issues?limit=1000&offset=${page * 1000}&sortField=id&view=compact`);
+        if (r.status !== 200 || !Array.isArray(r.data)) return send(res, r.status || 502, page ? JSON.stringify(shapeKpi(all)) : '{"error":"paperclip unreachable"}');
+        all.push(...r.data);
+        if (r.data.length < 1000) break;
+      }
+      send(res, 200, JSON.stringify(shapeKpi(all)));
+    })();
   }
 
   if (url.pathname.startsWith('/api/')) {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
-    const upstreamUrl = new URL(url.pathname + (url.pathname.endsWith('/heartbeat-runs') ? RUNS_QUERY : ''), PAPERCLIP);
+    const query = url.pathname.endsWith('/heartbeat-runs') ? (url.searchParams.get('scope') === 'kpi' ? KPI_RUNS_QUERY : RUNS_QUERY)
+      : url.pathname.endsWith('/issues') ? ISSUES_QUERY : '';
+    const upstreamUrl = new URL(url.pathname + query, PAPERCLIP);
     return proxyJson(res, upstreamUrl, TOKEN ? { authorization: `Bearer ${TOKEN}` } : {},
-      '{"error":"paperclip unreachable"}', (data) => shapePaperclip(url.pathname, data));
+      '{"error":"paperclip unreachable"}', (data) => shapePaperclip(url.pathname, data, query === KPI_RUNS_QUERY));
   }
 
   // Optional themes: public/themes/<name>.js, loaded by the page only when chosen, and the
@@ -554,6 +608,64 @@ function telegramStatus(req) {
     ...(local ? { ...tgAccess(), linkedUsers: TELEGRAM ? TELEGRAM.linkedUsers() : [] } : {}),
   };
 }
+// ---------- turning KPI advice into a Paperclip task (off unless turned on) ----------
+// The one other thing Cubicle can write to Paperclip besides Telegram replies: a subtask under a
+// slow task, carrying the advice, when the setting is on. The setting is changed from this machine only.
+const CUBICLE_SETTINGS = process.env.CUBICLE_SETTINGS || path.join(path.dirname(APPEARANCE_FILE), 'settings.json');
+function cubicleSettings() { try { return JSON.parse(fs.readFileSync(CUBICLE_SETTINGS, 'utf8')) || {}; } catch (_) { return {}; } }
+const canCreateTasks = () => HAS_PAPERCLIP && !REDACT && cubicleSettings().createTasks === true;
+// Writes come from this page only: JSON, the page's own header, and no other site's origin.
+function pageRequest(req) {
+  if (!/^application\/json/.test(req.headers['content-type'] || '') || req.headers['x-cubicle'] !== '1') return false;
+  const origin = req.headers.origin;
+  try { if (origin && new URL(origin).host !== req.headers.host) return false; } catch (_) { return false; }
+  return true;
+}
+function readBody(req, max) {
+  return new Promise((resolve) => {
+    let body = '', over = false;
+    req.on('data', (d) => { if (body.length + d.length > max) over = true; else body += d; });
+    req.on('end', () => { if (over) return resolve(undefined); try { resolve(JSON.parse(body)); } catch (_) { resolve(undefined); } });
+  });
+}
+async function serveSettings(req, res) {
+  const status = () => ({ createTasks: canCreateTasks(), available: HAS_PAPERCLIP && !REDACT, canEdit: fromThisMachine(req) });
+  if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(status()));
+  if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+  if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
+  const data = await readBody(req, 2000);
+  if (!data || typeof data !== 'object' || Array.isArray(data) || typeof data.createTasks !== 'boolean') return send(res, 400, '{"error":"bad request"}');
+  try { require('./cubicle-telegram.js').writeFileAtomic(CUBICLE_SETTINGS, JSON.stringify({ ...cubicleSettings(), createTasks: data.createTasks })); }
+  catch (_) { return send(res, 500, JSON.stringify({ error: `cannot write ${CUBICLE_SETTINGS}` })); }
+  console.log(`Cubicle: turning KPI advice into Paperclip tasks is ${data.createTasks ? 'on' : 'off'}.`);
+  send(res, 200, JSON.stringify(status()));
+}
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const PRIORITIES = new Set(['critical', 'high', 'medium', 'low']);
+async function serveTasks(req, res) {
+  if (req.method !== 'POST') return send(res, 405, '{"error":"POST"}');
+  if (!canCreateTasks()) return send(res, 403, '{"error":"turning advice into tasks is off (turn it on under the KPI advice)"}');
+  if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
+  const d = await readBody(req, 20000);
+  if (!d || typeof d !== 'object' || !UUID.test(String(d.parentId || '')) || (d.assigneeAgentId && !UUID.test(String(d.assigneeAgentId)))
+    || typeof d.title !== 'string' || !d.title.trim() || typeof (d.description ?? '') !== 'string') return send(res, 400, '{"error":"bad request"}');
+  // The parent must be a real issue, and the assignee an agent of the same company.
+  const parent = await upstreamJSON('GET', `/api/issues/${d.parentId}`);
+  if (parent.status !== 200 || !parent.data || !parent.data.companyId) return send(res, 404, '{"error":"no such task"}');
+  if (d.assigneeAgentId) {
+    const agents = await upstreamJSON('GET', `/api/companies/${parent.data.companyId}/agents`);
+    if (!Array.isArray(agents.data) || !agents.data.some((a) => a && a.id === d.assigneeAgentId)) return send(res, 400, '{"error":"no such agent"}');
+  }
+  const body = { title: d.title.trim().slice(0, 200), description: String(d.description || '').slice(0, 8000), status: 'todo',
+    priority: PRIORITIES.has(d.priority) ? d.priority : 'high', ...(d.assigneeAgentId ? { assigneeAgentId: d.assigneeAgentId } : {}) };
+  const r = await upstreamJSON('POST', `/api/issues/${d.parentId}/children`, body);
+  if (r.status < 200 || r.status >= 300 || !r.data) return send(res, r.status || 502, JSON.stringify({ error: String((r.data && r.data.error) || 'Paperclip refused the task').slice(0, 300) }));
+  const made = r.data.issue || r.data;
+  console.log(`Cubicle: created ${made.identifier || made.id} under ${parent.data.identifier || d.parentId} from KPI advice.`);
+  send(res, 200, JSON.stringify({ ok: true, id: made.id, identifier: made.identifier || '' }));
+}
+
 function serveTelegram(req, res) {
   if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(telegramStatus(req)));
   if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');

@@ -60,7 +60,7 @@ test('completion alerts follow the existing per-chat filters, mutes and access p
       }
       if (q.url === '/api/companies') return json([{ id: 'c', name: 'Test', issuePrefix: 'T' }]);
       if (q.url === '/api/companies/c/agents') { watches++; return json([{ id: 'p1', name: 'Paperclip agent', status: 'idle' }]); }
-      if (q.url === '/api/companies/c/issues') return json([]);
+      if (q.url.split('?')[0] === '/api/companies/c/issues') return json([]);
       if (q.url.startsWith('/api/companies/c/heartbeat-runs')) return json(runs);
       return json([]);
     });

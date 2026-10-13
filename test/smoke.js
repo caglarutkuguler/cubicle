@@ -331,7 +331,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       executionWorkspaceSettings: { env: 'TOKEN=abc' }, reviewAttention: { paths: [{ kind: 'interaction', responder: 'Board', label: 'Pending ask user questions', ref: 'r' }] } };
     const up = http.createServer((q, r) => {
       r.writeHead(200, { 'content-type': 'application/json' });
-      if (q.url.endsWith('/issues')) return r.end(JSON.stringify([secretIssue, { ...secretIssue, identifier: 'X-2', status: 'done' }]));
+      if (q.url.split('?')[0].endsWith('/issues')) return r.end(JSON.stringify([secretIssue, { ...secretIssue, identifier: 'X-2', status: 'done' }]));
       if (q.url.endsWith('/agents')) return r.end(JSON.stringify([{ id: 'a1', name: 'Dev', status: 'error', errorReason: 'ssh key /home/me/.ssh/id_rsa denied', adapterConfig: { apiKey: 'sk-live' } }]));
       r.end(JSON.stringify([{ id: 'c', name: 'Co', issuePrefix: 'X', budgetMonthlyCents: 1 }]));
     });
@@ -372,7 +372,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     const up = http.createServer((q, r) => {
       r.writeHead(200, { 'content-type': 'application/json' });
       if (q.url.startsWith('/api/companies/c/heartbeat-runs')) { assert.ok(q.url.includes('limit=60'), 'runs are limited upstream'); return r.end(JSON.stringify([run, { id: 'r2', agentId: 'a1', status: 'running', startedAt: '2026-10-01T10:05:00Z', contextSnapshot: { prompt: 'secret prompt' } }])); }
-      if (q.url.endsWith('/issues')) return r.end(JSON.stringify(issues));
+      if (q.url.split('?')[0].endsWith('/issues')) return r.end(JSON.stringify(issues));
       r.end('[]');
     });
     await new Promise((ok) => up.listen(0, '127.0.0.1', ok));
@@ -393,6 +393,69 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         for (const secret of ['sk-live', '/secret/path', 'secret prompt', 'Launch page']) assert.ok(!all.includes(secret), `redacted output leaks ${secret}`);
         assert.ok(all.includes('adapter_failed'));
       });
+    } finally { up.close(); }
+  }
+
+  // KPI on a big company: every page of issues is read; the advice's runs (with their issue) and the
+  // cost summary are shaped; turning advice into a task is off until turned on from this machine,
+  // and then only creates a subtask of a real issue, for an agent of the same company
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-kpi-'));
+    const PARENT = '11111111-1111-4111-8111-111111111111', AGENT = '22222222-2222-4222-8222-222222222222';
+    const many = Array.from({ length: 1500 }, (_, n) => ({ id: `i${n}`, identifier: `B-${n}`, title: `t${n}`, status: 'todo', createdByUserId: n === 0 ? 'u' : null, description: 'secret body',
+      reviewAttention: n === 1 ? { paths: [{ kind: 'approval', responder: 'Board', since: '2026-10-01T00:00:00Z' }] } : { paths: [] } }));
+    const seen = [], created = [];
+    const up = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        seen.push(`${q.method} ${q.url}`); r.writeHead(200, { 'content-type': 'application/json' });
+        const u = new URL(q.url, 'http://x');
+        if (u.pathname === '/api/companies/c/issues') { const off = +(u.searchParams.get('offset') || 0), lim = +(u.searchParams.get('limit') || 500); return r.end(JSON.stringify(many.slice(off, off + lim))); }
+        if (u.pathname === '/api/companies/c/heartbeat-runs') return r.end(JSON.stringify([{ id: 'r', agentId: AGENT, status: 'failed', errorCode: 'acpx_session_init_failed', error: 'spawn E2BIG ' + 'x'.repeat(400), stderrExcerpt: 'secret trace', contextSnapshot: { issueId: 'i3', prompt: 'secret prompt' } }]));
+        if (u.pathname === '/api/issues/B-0/cost-summary') return r.end(JSON.stringify({ issueId: 'i0', runCount: 9, runtimeMs: 5, costCents: 7, secret: 'x' }));
+        if (u.pathname === `/api/issues/${PARENT}`) return r.end(JSON.stringify({ id: PARENT, identifier: 'B-0', companyId: 'c' }));
+        if (u.pathname === '/api/companies/c/agents') return r.end(JSON.stringify([{ id: AGENT, name: 'Dev' }]));
+        if (u.pathname === `/api/issues/${PARENT}/children` && q.method === 'POST') { created.push(JSON.parse(b)); r.statusCode = 201; return r.end(JSON.stringify({ id: 'n', identifier: 'B-9000' })); }
+        r.statusCode = 404; r.end('{}');
+      });
+    });
+    await new Promise((ok) => up.listen(0, '127.0.0.1', ok));
+    const call = (url, method, body, headers = {}) => new Promise((resolve, reject) => {
+      const u = new URL(url); const data = body ? JSON.stringify(body) : null;
+      const q = http.request({ hostname: u.hostname, port: u.port, path: u.pathname, method, headers: { 'content-type': 'application/json', 'x-cubicle': '1', ...headers } }, (r) => {
+        let t = ''; r.on('data', (d) => (t += d)); r.on('end', () => resolve({ status: r.statusCode, data: JSON.parse(t || '{}') }));
+      }); q.on('error', reject); q.end(data);
+    });
+    try {
+      await withServer(['--paperclip', `http://127.0.0.1:${up.address().port}`], async (base) => {
+        const kpi = JSON.parse((await get(`${base}/api/kpi/c`)).body);
+        assert.strictEqual(kpi.length, 1500, 'both pages of issues');
+        assert.ok(seen.some((x) => /offset=1000/.test(x)) && !JSON.stringify(kpi).includes('secret body'));
+        assert.strictEqual(kpi[1].asksKind, 'approval'); assert.strictEqual(kpi[1].asksSince, '2026-10-01T00:00:00.000Z');
+        const open = JSON.parse((await get(`${base}/api/companies/c/issues`)).body);
+        assert.ok(seen.some((x) => /\/api\/companies\/c\/issues\?status=backlog,todo,in_progress,in_review,blocked&limit=1000/.test(x)), 'the office asks for open issues only');
+        assert.ok(open.length >= 1000);
+        const runs = JSON.parse((await get(`${base}/api/companies/c/heartbeat-runs?scope=kpi`)).body);
+        assert.ok(seen.some((x) => /heartbeat-runs\?limit=1000&summary=1/.test(x)));
+        assert.strictEqual(runs[0].issueId, 'i3'); assert.ok(runs[0].error.startsWith('spawn E2BIG') && runs[0].error.length <= 120);
+        assert.ok(!JSON.stringify(runs).includes('secret'), 'no stderr or prompt');
+        assert.deepStrictEqual(JSON.parse((await get(`${base}/api/issues/B-0/cost-summary`)).body), { runCount: 9, runtimeMs: 5, costCents: 7 });
+        const task = { parentId: PARENT, assigneeAgentId: AGENT, title: 'Speed up B-0', description: 'advice', priority: 'high' };
+        assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', task)).status, 403, 'off by default');
+        assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { createTasks: true }, { 'x-forwarded-for': '1.2.3.4' })).status, 403, 'not through a proxy');
+        assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { createTasks: true }, { 'x-cubicle': '' })).status, 400, 'only this page');
+        assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { createTasks: true })).data.createTasks, true);
+        assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', task, { origin: 'http://evil.example' })).status, 400, 'no other site');
+        assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', { ...task, assigneeAgentId: '33333333-3333-4333-8333-333333333333' })).status, 400, 'an agent of the company');
+        assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', { ...task, parentId: '44444444-4444-4444-8444-444444444444' })).status, 404, 'a real parent');
+        const made = await call(`${base}/api/cubicle/tasks`, 'POST', task);
+        assert.deepStrictEqual([made.status, made.data.identifier], [200, 'B-9000']);
+        assert.deepStrictEqual(created, [{ title: 'Speed up B-0', description: 'advice', status: 'todo', priority: 'high', assigneeAgentId: AGENT }]);
+        assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'GET')).status, 405);
+      }, { CUBICLE_SETTINGS: path.join(dir, 'settings.json') });
+      await withServer(['--paperclip', `http://127.0.0.1:${up.address().port}`, '--redact'], async (base) => {
+        assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', { parentId: PARENT, title: 'x' })).status, 403, 'never with --redact');
+      }, { CUBICLE_SETTINGS: path.join(dir, 'settings.json') });
     } finally { up.close(); }
   }
 
@@ -453,7 +516,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         r.writeHead(200, { 'content-type': 'application/json' });
         if (q.url === '/api/companies') return r.end(JSON.stringify([{ id: 'c1', name: 'Acme', issuePrefix: 'ACM' }]));
         if (q.url === '/api/companies/c1/agents') return r.end(JSON.stringify([{ id: 'a1', name: 'WebDev', status: 'idle' }]));
-        if (q.url === '/api/companies/c1/issues') return r.end(JSON.stringify([{ identifier: 'ACM-7', title: 'Checkout', status: 'in_review', assigneeAgentId: 'a1',
+        if (q.url.split('?')[0] === '/api/companies/c1/issues') return r.end(JSON.stringify([{ identifier: 'ACM-7', title: 'Checkout', status: 'in_review', assigneeAgentId: 'a1',
           reviewAttention: { paths: asking ? [{ kind: 'interaction', label: 'Pending ask user questions', responder: 'WebDev' }] : [] } }]));
         if (q.url.startsWith('/api/companies/c1/heartbeat-runs')) return r.end('[]');
         if (q.url === '/api/issues/ACM-7/interactions') return r.end(JSON.stringify([{ id: 'i1', kind: 'ask_user_questions', status: 'pending', title: 'One decision',
@@ -500,7 +563,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       r.writeHead(200, { 'content-type': 'application/json' });
       if (q.url === '/api/companies') return r.end(JSON.stringify([{ id: 'c1', name: 'Acme', issuePrefix: 'ACM' }]));
       if (q.url === '/api/companies/c1/agents') return r.end(JSON.stringify([{ id: 'a1', name: 'ReleaseOps', status: 'idle' }]));
-      if (q.url === '/api/companies/c1/issues') return r.end(JSON.stringify([{ identifier: 'ACM-9', title: 'Ship it', status: 'in_review', assigneeAgentId: 'a1',
+      if (q.url.split('?')[0] === '/api/companies/c1/issues') return r.end(JSON.stringify([{ identifier: 'ACM-9', title: 'Ship it', status: 'in_review', assigneeAgentId: 'a1',
         reviewAttention: { paths: asking ? [{ kind: 'approval', label: 'Linked approval', responder: 'Board', ref: 'ap1' }] : [] } }]));
       if (q.url === '/api/issues/ACM-9/approvals') return r.end(JSON.stringify([
         { id: 'ap1', type: 'request_board_approval', status: 'pending', requestedByAgentId: 'a1', payload: { title: 'Merge PR #3', summary: 'One new file.', risks: ['Push to main deploys live.'] } },
@@ -591,7 +654,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         r.writeHead(200, { 'content-type': 'application/json' });
         if (q.url === '/api/companies') return r.end(JSON.stringify([{ id: 'c1', name: 'Acme', issuePrefix: 'ACM' }]));
         if (q.url === '/api/companies/c1/agents') return r.end(JSON.stringify([{ id: 'a1', name: 'WebDev', status: 'idle' }, { id: 'a2', name: 'QA', status: 'idle' }]));
-        if (q.url === '/api/companies/c1/issues') return r.end(JSON.stringify([
+        if (q.url.split('?')[0] === '/api/companies/c1/issues') return r.end(JSON.stringify([
           { identifier: 'ACM-7', title: 'Checkout', status: 'in_review', assigneeAgentId: 'a1', reviewAttention: { paths: ask } },
           { identifier: 'ACM-8', title: 'Release', status: 'in_review', assigneeAgentId: 'a2', reviewAttention: { paths: [{ kind: 'x', label: 'Board approval', responder: 'Board' }] } }]));
         if (q.url.startsWith('/api/companies/c1/heartbeat-runs')) return r.end('[]');
