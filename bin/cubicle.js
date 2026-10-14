@@ -171,6 +171,7 @@ const ALLOWED = [
   /^\/api\/issues\/[A-Za-z0-9-]+\/interactions$/,      // what an agent is asking you (shown, never answered here)
   /^\/api\/issues\/[A-Za-z0-9-]+\/approvals$/,         // what an agent asks you to approve (shown, never decided here)
   /^\/api\/issues\/[A-Za-z0-9-]+\/cost-summary$/,      // runs, run time and cost under a task (KPI advice)
+  /^\/api\/issues\/[A-Za-z0-9-]+\/comments$/,          // the last word on a finished advice task (its result)
 ];
 // Heartbeat runs: only the latest few, so a failed run's error can be shown on the agent.
 const RUNS_QUERY = '?limit=60&summary=1';
@@ -213,8 +214,11 @@ function shapePaperclip(pathname, data, light = false) {
     ...(REDACT ? {} : light ? pick({ error: r.error && String(r.error).slice(0, 120) }, ['error'])
       : pick({ error: r.error && String(r.error).slice(0, 500), stderrExcerpt: r.stderrExcerpt && String(r.stderrExcerpt).slice(-600) }, ['error', 'stderrExcerpt'])),
   }));
+  // the newest few comments, short: what an advice task ended with
+  if (pathname.endsWith('/comments')) return REDACT ? [] : data.filter((c) => c && !c.deletedAt).slice(0, 3).map((c) => ({
+    ...pick(c, ['createdAt', 'authorType', 'authorAgentId']), body: String(c.body || '').slice(0, 700) }));
   if (pathname.endsWith('/issues')) return data.filter((i) => !CLOSED.has(i.status)).map((i) => ({
-    ...pick(i, REDACT ? ['identifier', 'status', 'assigneeAgentId'] : ['identifier', 'title', 'status', 'assigneeAgentId']),
+    ...pick(i, REDACT ? ['identifier', 'status', 'assigneeAgentId', 'startedAt', 'createdAt'] : ['identifier', 'title', 'status', 'assigneeAgentId', 'startedAt', 'createdAt']),
     reviewAttention: { paths: ((i.reviewAttention && i.reviewAttention.paths) || []).map((x) => pick(x, ['kind', 'responder', 'label', 'ref'])) },
   }));
   // Approvals still waiting for a decision: what is asked and its risks, to read on any screen.
@@ -449,7 +453,7 @@ const server = http.createServer((req, res) => {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
     const query = url.pathname.endsWith('/heartbeat-runs') ? (url.searchParams.get('scope') === 'kpi' ? KPI_RUNS_QUERY : RUNS_QUERY)
-      : url.pathname.endsWith('/issues') ? ISSUES_QUERY : '';
+      : url.pathname.endsWith('/issues') ? ISSUES_QUERY : url.pathname.endsWith('/comments') ? '?limit=3' : '';
     const upstreamUrl = new URL(url.pathname + query, PAPERCLIP);
     return proxyJson(res, upstreamUrl, TOKEN ? { authorization: `Bearer ${TOKEN}` } : {},
       '{"error":"paperclip unreachable"}', (data) => shapePaperclip(url.pathname, data, query === KPI_RUNS_QUERY));

@@ -412,6 +412,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         const u = new URL(q.url, 'http://x');
         if (u.pathname === '/api/companies/c/issues' && q.method === 'GET') { const off = +(u.searchParams.get('offset') || 0), lim = +(u.searchParams.get('limit') || 500); return r.end(JSON.stringify(many.slice(off, off + lim))); }
         if (u.pathname === '/api/companies/c/heartbeat-runs') return r.end(JSON.stringify([{ id: 'r', agentId: AGENT, status: 'failed', errorCode: 'acpx_session_init_failed', error: 'spawn E2BIG ' + 'x'.repeat(400), stderrExcerpt: 'secret trace', contextSnapshot: { issueId: 'i3', prompt: 'secret prompt' } }]));
+        if (u.pathname === '/api/issues/B-0/comments') return r.end(JSON.stringify([{ body: 'r'.repeat(900), createdAt: 'x', metadata: { secret: 1 } }, { body: 'gone', deletedAt: 'y' }]));
         if (u.pathname === '/api/issues/B-0/cost-summary') return r.end(JSON.stringify({ issueId: 'i0', runCount: 9, runtimeMs: 5, costCents: 7, secret: 'x' }));
         if (u.pathname === `/api/issues/${PARENT}`) return r.end(JSON.stringify({ id: PARENT, identifier: 'B-0', companyId: 'c', projectId: 'p1', goalId: 'g1' }));
         if (u.pathname === '/api/companies/c/agents') return r.end(JSON.stringify([{ id: AGENT, name: 'Dev' }]));
@@ -441,6 +442,9 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
         assert.strictEqual(runs[0].issueId, 'i3'); assert.ok(runs[0].error.startsWith('spawn E2BIG') && runs[0].error.length <= 120);
         assert.ok(!JSON.stringify(runs).includes('secret'), 'no stderr or prompt');
         assert.deepStrictEqual(JSON.parse((await get(`${base}/api/issues/B-0/cost-summary`)).body), { runCount: 9, runtimeMs: 5, costCents: 7 });
+        const comments = JSON.parse((await get(`${base}/api/issues/B-0/comments`)).body);
+        assert.ok(seen.some((x) => /\/api\/issues\/B-0\/comments\?limit=3/.test(x)), 'only the newest few comments');
+        assert.deepStrictEqual(comments.map((c) => [c.body.length, 'metadata' in c]), [[700, false]], 'short, shaped, deleted ones left out');
         const task = { parentId: PARENT, assigneeAgentId: AGENT, title: 'Speed up B-0', description: 'advice', priority: 'high' };
         assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', task)).status, 403, 'off by default');
         assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { createTasks: true }, { 'x-forwarded-for': '1.2.3.4' })).status, 403, 'not through a proxy');

@@ -38,6 +38,9 @@
   .lbl { position:absolute; transform:translate(-50%,-100%); display:flex; flex-direction:column; align-items:center; white-space:nowrap; }
   .bub { background:#fff; color:#1d1f2b; border-radius:.82em; padding:.18em .64em; font-size:1em; font-weight:600; margin-bottom:.27em; box-shadow:0 1px 0 rgba(0,0,0,.3); max-width:210px; overflow:hidden; text-overflow:ellipsis; }
   .bub.err { background:#ffdede; color:#8a1111; }
+  .bub.task { pointer-events:auto; cursor:pointer; }
+  .eta { color:var(--muted); font-size:.92em; white-space:nowrap; margin-inline-start:4px; }
+  .eta.late { color:#ffb36b; }
   .bub.ok { background:#dcffe2; color:#145c24; }
   .bub.wait { background:#fff1c9; color:#6b4d00; }
   .bub.talk { position:relative; overflow:visible; white-space:normal; width:max-content; text-align:center; line-height:1.25; }
@@ -166,6 +169,10 @@
   #kpi .adv .mini:disabled { opacity:.6; cursor:default; }
   #kpi .adv .made { color:#7fd89a; margin-inline-start:6px; font-size:12px; }
   #kpi .adv .all { margin-top:10px; }
+  #kpi .adv .made.done { margin-top:4px; }
+  #kpi .adv .outc { margin-top:3px; font-size:12px; color:#cfd3e6; background:#22263a; border-inline-start:3px solid #57b86b; padding:4px 8px; border-radius:4px; }
+  #kpi .adv .earlier { margin-top:12px; border-top:1px solid var(--line); padding-top:8px; }
+  #kpi .adv .earlier ul { margin:4px 0 0; padding-inline-start:18px; display:grid; gap:6px; font-size:12px; }
   #kpi .adoff { margin-top:10px; font-size:12px; color:var(--muted); }
   #kpi .adoff label { display:inline-flex; gap:5px; align-items:center; color:var(--text); }
   #kpi .tform { margin-top:8px; display:grid; gap:6px; background:#22263a; border:1px solid var(--line); border-radius:8px; padding:9px; }
@@ -381,7 +388,7 @@
       adLong: (ids, age, typ) => `${ids} open for up to ${age}; similar tasks here finish in about ${typ}`, adLongFix: 'Make the acceptance criteria concrete and split the work into smaller subtasks that can run in parallel.',
       adChurn: (ids, n) => `${ids}: up to ${n} runs recently and still open`, adChurnFix: 'The agent may be going in circles: add a clear finish condition and check what keeps waking it (comments, reviews).',
       adReview: (n, age) => `${n} task(s) wait in review, the oldest for ${age}`, adReviewFix: 'Add a reviewer or lighten the reviewer’s load; low-risk changes may not need a review step.',
-      adToTask: 'Turn into a task', adAllToTask: 'Turn all into a task', adAssignee: 'Agent', adPriority: 'Priority', adTaskTitle: 'Title', adCreate: 'Create in Paperclip', adCreating: 'Creating…',
+      adDoneTask: (id, when) => `${id} completed ${when}`, adOpenTask: (id) => `${id} is still open`, adStill: 'The problem still shows in the data.', adAgain: 'Turn into a task again', adEarlier: 'Earlier advice', adGone: 'no longer shows in the data', adOutcome: 'Result', etaAt: (t) => `expected ${t}`, etaLate: 'past its usual time', etaShort: 'late', etaTitle: 'Estimated from how long this agent’s finished tasks took, or from the task’s subtasks', adDemoResult: 'The idle subtasks went to a free agent; both started within the hour.', adToTask: 'Turn into a task', adAllToTask: 'Turn all into a task', adAssignee: 'Agent', adPriority: 'Priority', adTaskTitle: 'Title', adCreate: 'Create in Paperclip', adCreating: 'Creating…',
       adCreated: (id) => `Created ${id}`, adOff: 'Turning advice into tasks is off.', adTurnOn: 'Let Cubicle create these tasks in Paperclip (subtasks of the slow task)', adOnlyHere: 'Turned on from the computer Cubicle runs on.',
       adTaskName: (id, text) => `Speed up ${id}: ${text}`, adTaskHead: 'Speed-up advice from Cubicle', adFor: 'Task', adTaskFinding: 'Finding', adTaskFix: 'Advice', adTaskWhere: 'Where',
       adTaskSource: (d) => `Derived by Cubicle on ${d} from Paperclip’s tasks, recent runs and costs.`, adPrios: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' },
@@ -488,7 +495,7 @@
       adLong: (ids, age, typ) => `${ids} açık; en uzunu ${age} süredir sürüyor, buradaki benzer işler ise yaklaşık ${typ} sürüyor`, adLongFix: 'Kabul kriterlerini somutlaştırın ve işi paralel yürüyebilecek daha küçük alt görevlere bölün.',
       adChurn: (ids, n) => `${ids}: son günlerde en çok ${n} çalıştırma, hâlâ açık`, adChurnFix: 'Ajan döngüye girmiş olabilir: net bir bitiş koşulu ekleyin ve onu neyin sürekli uyandırdığına bakın (yorumlar, incelemeler).',
       adReview: (n, age) => `${n} iş incelemede bekliyor; en eskisi ${age} süredir`, adReviewFix: 'İnceleyici ekleyin ya da inceleyicinin yükünü azaltın; düşük riskli değişiklikler inceleme adımına gerek duymayabilir.',
-      adToTask: 'Göreve çevir', adAllToTask: 'Tümünü göreve çevir', adAssignee: 'Ajan', adPriority: 'Öncelik', adTaskTitle: 'Başlık', adCreate: 'Paperclip’te oluştur', adCreating: 'Oluşturuluyor…',
+      adDoneTask: (id, when) => `${id} tamamlandı (${when})`, adOpenTask: (id) => `${id} hâlâ açık`, adStill: 'Sorun verilerde hâlâ görünüyor.', adAgain: 'Yeniden göreve çevir', adEarlier: 'Önceki tavsiyeler', adGone: 'artık verilerde görünmüyor', adOutcome: 'Sonuç', etaAt: (t) => `tahmini bitiş ${t}`, etaLate: 'tipik süresini aştı', etaShort: 'gecikti', etaTitle: 'Bu ajanın biten görevlerinin ne kadar sürdüğüne ya da görevin alt görevlerine göre tahmin edilir', adDemoResult: 'Hareketsiz alt görevler boştaki bir ajana verildi; ikisi de bir saat içinde başladı.', adToTask: 'Göreve çevir', adAllToTask: 'Tümünü göreve çevir', adAssignee: 'Ajan', adPriority: 'Öncelik', adTaskTitle: 'Başlık', adCreate: 'Paperclip’te oluştur', adCreating: 'Oluşturuluyor…',
       adCreated: (id) => `${id} oluşturuldu`, adOff: 'Tavsiyeyi göreve çevirme kapalı.', adTurnOn: 'Cubicle bu görevleri Paperclip’te açabilsin (yavaş görevin alt görevi olarak)', adOnlyHere: 'Cubicle’ın çalıştığı bilgisayardan açılır.',
       adTaskName: (id, text) => `${id} hızlandırma: ${text}`, adTaskHead: 'Cubicle’dan hızlandırma tavsiyesi', adFor: 'Görev', adTaskFinding: 'Bulgu', adTaskFix: 'Tavsiye', adTaskWhere: 'İlgili işler',
       adTaskSource: (d) => `Cubicle tarafından ${d} tarihinde Paperclip’teki görevler, son çalıştırmalar ve maliyetlerden çıkarıldı.`, adPrios: { critical: 'Kritik', high: 'Yüksek', medium: 'Orta', low: 'Düşük' },
@@ -595,7 +602,7 @@
       adLong: (ids, age, typ) => `${ids} seit bis zu ${age} offen; ähnliche Aufgaben dauern hier etwa ${typ}`, adLongFix: 'Machen Sie die Abnahmekriterien konkret und teilen Sie die Arbeit in kleinere, parallel laufende Teilaufgaben.',
       adChurn: (ids, n) => `${ids}: bis zu ${n} Läufe zuletzt und noch offen`, adChurnFix: 'Der Agent dreht sich womöglich im Kreis: klare Abschlussbedingung hinzufügen und prüfen, was ihn ständig weckt (Kommentare, Reviews).',
       adReview: (n, age) => `${n} Aufgabe(n) warten im Review, die älteste seit ${age}`, adReviewFix: 'Fügen Sie einen Reviewer hinzu oder entlasten Sie ihn; risikoarme Änderungen brauchen evtl. kein Review.',
-      adToTask: 'Als Aufgabe anlegen', adAllToTask: 'Alle als Aufgabe anlegen', adAssignee: 'Agent', adPriority: 'Priorität', adTaskTitle: 'Titel', adCreate: 'In Paperclip anlegen', adCreating: 'Wird angelegt…',
+      adDoneTask: (id, when) => `${id} erledigt (${when})`, adOpenTask: (id) => `${id} ist noch offen`, adStill: 'Das Problem zeigt sich weiter in den Daten.', adAgain: 'Erneut als Aufgabe anlegen', adEarlier: 'Frühere Ratschläge', adGone: 'zeigt sich nicht mehr in den Daten', adOutcome: 'Ergebnis', etaAt: (t) => `voraussichtlich ${t}`, etaLate: 'über der üblichen Dauer', etaShort: 'spät', etaTitle: 'Geschätzt aus der Dauer der erledigten Aufgaben dieses Agenten oder aus den Teilaufgaben', adDemoResult: 'Die liegenden Teilaufgaben gingen an einen freien Agenten; beide begannen innerhalb einer Stunde.', adToTask: 'Als Aufgabe anlegen', adAllToTask: 'Alle als Aufgabe anlegen', adAssignee: 'Agent', adPriority: 'Priorität', adTaskTitle: 'Titel', adCreate: 'In Paperclip anlegen', adCreating: 'Wird angelegt…',
       adCreated: (id) => `${id} angelegt`, adOff: 'Ratschläge als Aufgaben anlegen ist aus.', adTurnOn: 'Cubicle darf diese Aufgaben in Paperclip anlegen (als Teilaufgaben der langsamen Aufgabe)', adOnlyHere: 'Wird auf dem Rechner eingeschaltet, auf dem Cubicle läuft.',
       adTaskName: (id, text) => `${id} beschleunigen: ${text}`, adTaskHead: 'Beschleunigungs-Rat von Cubicle', adFor: 'Aufgabe', adTaskFinding: 'Befund', adTaskFix: 'Rat', adTaskWhere: 'Betrifft',
       adTaskSource: (d) => `Von Cubicle am ${d} aus Paperclips Aufgaben, letzten Läufen und Kosten abgeleitet.`, adPrios: { critical: 'Kritisch', high: 'Hoch', medium: 'Mittel', low: 'Niedrig' },
@@ -702,7 +709,7 @@
       adLong: (ids, age, typ) => `${ids} abiertas hasta ${age}; aquí tareas similares tardan unas ${typ}`, adLongFix: 'Concreta los criterios de aceptación y divide el trabajo en subtareas más pequeñas que puedan ir en paralelo.',
       adChurn: (ids, n) => `${ids}: hasta ${n} ejecuciones recientes y sigue abierta`, adChurnFix: 'El agente puede estar dando vueltas: añade una condición clara de fin y mira qué lo despierta (comentarios, revisiones).',
       adReview: (n, age) => `${n} tarea(s) esperan revisión, la más antigua desde hace ${age}`, adReviewFix: 'Añade un revisor o aligera su carga; los cambios de bajo riesgo pueden no necesitar revisión.',
-      adToTask: 'Convertir en tarea', adAllToTask: 'Convertir todo en una tarea', adAssignee: 'Agente', adPriority: 'Prioridad', adTaskTitle: 'Título', adCreate: 'Crear en Paperclip', adCreating: 'Creando…',
+      adDoneTask: (id, when) => `${id} terminada (${when})`, adOpenTask: (id) => `${id} sigue abierta`, adStill: 'El problema sigue apareciendo en los datos.', adAgain: 'Convertir en tarea de nuevo', adEarlier: 'Consejos anteriores', adGone: 'ya no aparece en los datos', adOutcome: 'Resultado', etaAt: (t) => `previsto ${t}`, etaLate: 'pasó el tiempo habitual', etaShort: 'tarde', etaTitle: 'Estimado según lo que tardaron las tareas terminadas de este agente o según las subtareas', adDemoResult: 'Las subtareas paradas pasaron a un agente libre; ambas empezaron en menos de una hora.', adToTask: 'Convertir en tarea', adAllToTask: 'Convertir todo en una tarea', adAssignee: 'Agente', adPriority: 'Prioridad', adTaskTitle: 'Título', adCreate: 'Crear en Paperclip', adCreating: 'Creando…',
       adCreated: (id) => `${id} creada`, adOff: 'Convertir consejos en tareas está desactivado.', adTurnOn: 'Permitir que Cubicle cree estas tareas en Paperclip (como subtareas de la tarea lenta)', adOnlyHere: 'Se activa desde el equipo donde se ejecuta Cubicle.',
       adTaskName: (id, text) => `Acelerar ${id}: ${text}`, adTaskHead: 'Consejo de aceleración de Cubicle', adFor: 'Tarea', adTaskFinding: 'Hallazgo', adTaskFix: 'Consejo', adTaskWhere: 'Afecta a',
       adTaskSource: (d) => `Obtenido por Cubicle el ${d} de las tareas, ejecuciones recientes y costes de Paperclip.`, adPrios: { critical: 'Crítica', high: 'Alta', medium: 'Media', low: 'Baja' },
@@ -809,7 +816,7 @@
       adLong: (ids, age, typ) => `${ids} ouvertes jusqu’à ${age} ; ici des tâches similaires prennent environ ${typ}`, adLongFix: 'Rendez les critères d’acceptation concrets et découpez le travail en sous-tâches plus petites menées en parallèle.',
       adChurn: (ids, n) => `${ids} : jusqu’à ${n} exécutions récentes et toujours ouverte`, adChurnFix: 'L’agent tourne peut-être en rond : ajoutez une condition de fin claire et voyez ce qui le réveille (commentaires, revues).',
       adReview: (n, age) => `${n} tâche(s) attendent une revue, la plus ancienne depuis ${age}`, adReviewFix: 'Ajoutez un relecteur ou allégez sa charge ; les changements à faible risque peuvent se passer de revue.',
-      adToTask: 'En faire une tâche', adAllToTask: 'Tout transformer en tâche', adAssignee: 'Agent', adPriority: 'Priorité', adTaskTitle: 'Titre', adCreate: 'Créer dans Paperclip', adCreating: 'Création…',
+      adDoneTask: (id, when) => `${id} terminée (${when})`, adOpenTask: (id) => `${id} est encore ouverte`, adStill: 'Le problème apparaît toujours dans les données.', adAgain: 'Refaire une tâche', adEarlier: 'Conseils précédents', adGone: 'n’apparaît plus dans les données', adOutcome: 'Résultat', etaAt: (t) => `prévu ${t}`, etaLate: 'au-delà de la durée habituelle', etaShort: 'en retard', etaTitle: 'Estimé d’après la durée des tâches terminées de cet agent ou d’après les sous-tâches', adDemoResult: 'Les sous-tâches à l’arrêt sont passées à un agent libre ; les deux ont démarré dans l’heure.', adToTask: 'En faire une tâche', adAllToTask: 'Tout transformer en tâche', adAssignee: 'Agent', adPriority: 'Priorité', adTaskTitle: 'Titre', adCreate: 'Créer dans Paperclip', adCreating: 'Création…',
       adCreated: (id) => `${id} créée`, adOff: 'La conversion des conseils en tâches est désactivée.', adTurnOn: 'Autoriser Cubicle à créer ces tâches dans Paperclip (sous-tâches de la tâche lente)', adOnlyHere: 'S’active depuis l’ordinateur où tourne Cubicle.',
       adTaskName: (id, text) => `Accélérer ${id} : ${text}`, adTaskHead: 'Conseil d’accélération de Cubicle', adFor: 'Tâche', adTaskFinding: 'Constat', adTaskFix: 'Conseil', adTaskWhere: 'Concerne',
       adTaskSource: (d) => `Établi par Cubicle le ${d} à partir des tâches, exécutions récentes et coûts de Paperclip.`, adPrios: { critical: 'Critique', high: 'Haute', medium: 'Moyenne', low: 'Basse' },
@@ -916,7 +923,7 @@
       adLong: (ids, age, typ) => `${ids} 已开放最长 ${age}；这里类似任务约 ${typ} 完成`, adLongFix: '明确验收标准，把工作拆成可并行的小子任务。',
       adChurn: (ids, n) => `${ids}：最近多达 ${n} 次运行，仍未完成`, adChurnFix: '代理可能在兜圈子：加上明确的完成条件，并检查是什么一直唤醒它（评论、评审）。',
       adReview: (n, age) => `${n} 个任务在等评审，最早的已等 ${age}`, adReviewFix: '增加评审者或减轻其负担；低风险的改动可能不需要评审。',
-      adToTask: '转为任务', adAllToTask: '全部转为任务', adAssignee: '代理', adPriority: '优先级', adTaskTitle: '标题', adCreate: '在 Paperclip 中创建', adCreating: '正在创建…',
+      adDoneTask: (id, when) => `${id} 已完成（${when}）`, adOpenTask: (id) => `${id} 仍未完成`, adStill: '数据中仍能看到这个问题。', adAgain: '再次转为任务', adEarlier: '之前的建议', adGone: '数据中已不再出现', adOutcome: '结果', etaAt: (t) => `预计 ${t}`, etaLate: '已超过通常时间', etaShort: '超时', etaTitle: '根据该代理已完成任务的用时或任务的子任务估算', adDemoResult: '闲置的子任务交给了一个空闲代理；两个都在一小时内开始了。', adToTask: '转为任务', adAllToTask: '全部转为任务', adAssignee: '代理', adPriority: '优先级', adTaskTitle: '标题', adCreate: '在 Paperclip 中创建', adCreating: '正在创建…',
       adCreated: (id) => `已创建 ${id}`, adOff: '将建议转为任务的功能已关闭。', adTurnOn: '允许 Cubicle 在 Paperclip 中创建这些任务（作为慢任务的子任务）', adOnlyHere: '需在运行 Cubicle 的电脑上开启。',
       adTaskName: (id, text) => `加快 ${id}：${text}`, adTaskHead: '来自 Cubicle 的加速建议', adFor: '任务', adTaskFinding: '发现', adTaskFix: '建议', adTaskWhere: '涉及',
       adTaskSource: (d) => `由 Cubicle 于 ${d} 根据 Paperclip 的任务、最近运行和成本得出。`, adPrios: { critical: '紧急', high: '高', medium: '中', low: '低' },
@@ -1023,7 +1030,7 @@
       adLong: (ids, age, typ) => `${ids} مفتوحة حتى ${age}؛ والمهام المماثلة هنا تنتهي في نحو ${typ}`, adLongFix: 'اجعل معايير القبول محددة وقسّم العمل إلى مهام فرعية أصغر تسير بالتوازي.',
       adChurn: (ids, n) => `${ids}: حتى ${n} تشغيلًا مؤخرًا وما زالت مفتوحة`, adChurnFix: 'ربما يدور الوكيل في حلقة: أضف شرط إنهاء واضحًا وتحقق مما يوقظه باستمرار (تعليقات، مراجعات).',
       adReview: (n, age) => `${n} مهمة تنتظر المراجعة، أقدمها منذ ${age}`, adReviewFix: 'أضف مراجعًا أو خفف عبئه؛ قد لا تحتاج التغييرات منخفضة المخاطر إلى مراجعة.',
-      adToTask: 'حوّلها إلى مهمة', adAllToTask: 'حوّل الكل إلى مهمة', adAssignee: 'الوكيل', adPriority: 'الأولوية', adTaskTitle: 'العنوان', adCreate: 'أنشئ في Paperclip', adCreating: 'جارٍ الإنشاء…',
+      adDoneTask: (id, when) => `اكتملت ${id} (${when})`, adOpenTask: (id) => `${id} ما زالت مفتوحة`, adStill: 'ما زالت المشكلة تظهر في البيانات.', adAgain: 'حوّلها إلى مهمة مجددًا', adEarlier: 'نصائح سابقة', adGone: 'لم تعد تظهر في البيانات', adOutcome: 'النتيجة', etaAt: (t) => `متوقع ${t}`, etaLate: 'تجاوزت المدة المعتادة', etaShort: 'متأخرة', etaTitle: 'تقدير بحسب مدة المهام المنتهية لهذا الوكيل أو بحسب المهام الفرعية', adDemoResult: 'أُسندت المهام الفرعية المتوقفة إلى وكيل متفرغ؛ وبدأت كلتاهما خلال ساعة.', adToTask: 'حوّلها إلى مهمة', adAllToTask: 'حوّل الكل إلى مهمة', adAssignee: 'الوكيل', adPriority: 'الأولوية', adTaskTitle: 'العنوان', adCreate: 'أنشئ في Paperclip', adCreating: 'جارٍ الإنشاء…',
       adCreated: (id) => `أُنشئت ${id}`, adOff: 'تحويل النصائح إلى مهام متوقف.', adTurnOn: 'اسمح لـ Cubicle بإنشاء هذه المهام في Paperclip (مهام فرعية للمهمة البطيئة)', adOnlyHere: 'يُفعّل من الحاسوب الذي يعمل عليه Cubicle.',
       adTaskName: (id, text) => `تسريع ${id}: ${text}`, adTaskHead: 'نصيحة تسريع من Cubicle', adFor: 'المهمة', adTaskFinding: 'الملاحظة', adTaskFix: 'النصيحة', adTaskWhere: 'تخص',
       adTaskSource: (d) => `استخلصها Cubicle في ${d} من مهام Paperclip وتشغيلاته الأخيرة وتكاليفه.`, adPrios: { critical: 'حرجة', high: 'عالية', medium: 'متوسطة', low: 'منخفضة' },
@@ -1252,6 +1259,12 @@
           asksSince: n === 2 && st === 'in_review' ? new Date(now - 20 * h).toISOString() : undefined });
       }
     });
+    // advice tasks already made for DEMO-2: one done while its problem still shows, one whose problem is gone
+    if (agents.length > 2) out.push(
+      { id: 'k1-a1', identifier: 'DEMO-91', title: L.adTaskName('DEMO-2', L.adIdle(1)), parentId: 'k1', status: 'done', advice: 'idle', human: false, assigneeAgentId: who(2),
+        createdAt: new Date(now - 30 * h).toISOString(), startedAt: new Date(now - 29 * h).toISOString(), completedAt: new Date(now - 6 * h).toISOString() },
+      { id: 'k1-a2', identifier: 'DEMO-92', title: L.adTaskName('DEMO-2', L.adReview(3, fmtDur(20 * h))), parentId: 'k1', status: 'done', advice: 'review', human: false, assigneeAgentId: who(3),
+        createdAt: new Date(now - 50 * h).toISOString(), startedAt: new Date(now - 49 * h).toISOString(), completedAt: new Date(now - 26 * h).toISOString() });
     for (let n = 0; n < 6; n++) out.push({ id: `old${n}`, identifier: `DEMO-${60 + n}`, title: 'Earlier task', status: 'done', human: true,
       createdAt: new Date(now - (3 + n * 2) * DAY).toISOString(), startedAt: new Date(now - (3 + n * 2) * DAY).toISOString(), completedAt: new Date(now - (2 + n * 2) * DAY + n * 3 * h).toISOString() });
     return out;
@@ -1305,6 +1318,41 @@
     } catch (_) { return new Date(ms).toLocaleString(); }
   };
   const fmtDay = (ms) => { try { return new Intl.DateTimeFormat(lang, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(ms); } catch (_) { return new Date(ms).toLocaleString(); } };
+
+  // ----- when a working agent's task should be done -----
+  // From the task's subtasks when it has them (the pace so far), otherwise from how long this
+  // agent's finished tasks took (or, with too few of them, the company's). Read every 5 minutes.
+  let etaData = null, etaBusy = false;
+  async function refreshEta() {
+    if (etaBusy || (etaData && Date.now() - etaData.at < 300000) || !(DEMO || (paperclipUrl && company))) return;
+    etaBusy = true;
+    try {
+      const k = computeKpi(await kpiData(), Date.now(), true), per = new Map(), all = [];
+      for (const i of k.issues) if (i.status === 'done') {
+        const d = kEnd(i) - kStart(i); if (!(d > 60000)) continue;
+        all.push(d); if (i.assigneeAgentId) per.set(i.assigneeAgentId, [...(per.get(i.assigneeAgentId) || []), d]);
+      }
+      etaData = { at: Date.now(), k, byIdent: new Map(k.issues.filter((i) => i.identifier).map((i) => [i.identifier, i])),
+        typ: new Map([...per].filter(([, l]) => l.length >= 3).map(([id, l]) => [id, median(l)])), all: all.length >= 3 ? median(all) : null };
+      renderCards();
+    } catch (_) {} finally { etaBusy = false; }
+  }
+  function etaFor(s) {
+    if (!etaData || s.status !== 'running' || !s.task || !s.task.identifier) return null;
+    const i = etaData.byIdent.get(s.task.identifier); if (!i || isClosed(i)) return null;
+    const start = kStart(i), now = Date.now(); if (!Number.isFinite(start)) return null;
+    if (etaData.k.under(i.id).length && i.startedAt) { const pct = etaData.k.pctOf(i); if (pct >= 10 && pct < 100) return { at: start + (now - start) * 100 / pct }; }
+    const typ = etaData.typ.get(s.id) || etaData.all; if (!typ) return null;
+    return start + typ < now ? { late: true } : { at: start + typ };
+  }
+  const fmtClock = (ms) => {
+    try { return new Intl.DateTimeFormat(lang, new Date(ms).toDateString() === new Date().toDateString() ? { hour: '2-digit', minute: '2-digit' } : { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(ms); }
+    catch (_) { return new Date(ms).toLocaleTimeString(); }
+  };
+  function etaHtml(s) {
+    const e = etaFor(s); if (!e) return '';
+    return `<span class="eta${e.late ? ' late' : ''}" title="${esc(L.etaTitle)}">⏱ ${esc(e.late ? L.etaLate : L.etaAt(fmtClock(e.at)))}</span>`;
+  }
 
   // ----- runs and cost behind the advice -----
   let kpiRuns = null;
@@ -1521,46 +1569,86 @@
     if (a.err) return `<div class="adv"><div class="advh">💡 ${esc(L.adTitle(i.identifier))}</div><p class="late">${esc(a.err)}</p></div>`;
     const { findings, stats } = a.res;
     const canMake = taskCfg.available && taskCfg.on;
-    const made = (key) => (a.made && a.made[key] ? `<span class="made">✓ ${esc(L.adCreated(a.made[key]))}</span>` : '');
-    const toTask = (key) => (canMake && !(a.made && a.made[key]) ? `<button type="button" class="mini" data-adv-task="${esc(key)}" data-for="${esc(i.id)}">➕ ${esc(key === 'all' ? L.adAllToTask : L.adToTask)}</button>` : '') + (key === 'all' ? '' : made(key));
+    const tLink = (m) => (m.id ? kLink({ id: m.id, identifier: m.ident, title: m.title, assigneeAgentId: null }) : esc(m.ident));
+    const outcome = (m) => (a.outcomes && a.outcomes[m.ident] ? `<div class="outc"><b>${esc(L.adOutcome)}:</b> ${esc(a.outcomes[m.ident])}</div>` : '');
+    const when = (m) => (Number.isFinite(m.doneAt) ? fmtWhen(m.doneAt) : '');
+    const made = (key) => {
+      const m = a.made && a.made[key]; if (!m) return '';
+      if (!m.done) return `<span class="made">✓ ${L.adCreated(tLink(m))}${m.status && m.status !== 'todo' && L.iss && L.iss[m.status] ? ` · ${esc(L.iss[m.status])}` : ''}</span>`;
+      return `<div class="made done">✓ ${L.adDoneTask(tLink(m), esc(when(m)))}</div>${outcome(m)}<div class="sub">${esc(L.adStill)}</div>`;
+    };
+    const toTask = (key) => (key === 'all' ? '' : made(key)) + (canMake && !isOpenTask(a.made && a.made[key])
+      ? `<button type="button" class="mini" data-adv-task="${esc(key)}" data-for="${esc(i.id)}">➕ ${esc(key === 'all' ? L.adAllToTask : a.made && a.made[key] ? L.adAgain : L.adToTask)}</button>` : '');
+    const earlier = (a.earlier || []).length ? `<div class="earlier"><div class="advh">${esc(L.adEarlier)}</div><ul>${a.earlier.map((m) => `<li>${tLink(m)} ${esc(m.title)}
+      <div class="sub">${m.done ? L.adDoneTask('', esc(when(m))).trim() : esc(L.adOpenTask('').trim())} · ${esc(L.adGone)}</div>${outcome(m)}</li>`).join('')}</ul></div>` : '';
     // "all" covers what has not been made into a task yet, and goes once fewer than two are left
     const left = remaining(a);
     const list = findings.map((f) => `<li class="sev${Math.round(f.sev)}"><b>${esc(f.text)}</b>${f.items && f.items.length ? `<div class="ids">${f.items.slice(0, 8).map(kLink).join(', ')}${f.items.length > 8 ? ` +${f.items.length - 8}` : ''}</div>` : ''}
       <div class="fix">${esc(f.fix)}</div>${f.agentTask === false ? '' : toTask(f.key)}${a.form && a.form.key === f.key ? formHtml(i, a.form) : ''}</li>`).join('');
     const off = !taskCfg.available ? '' : taskCfg.on ? '' : `<div class="adoff">${esc(L.adOff)} <label><input type="checkbox" data-adv-on="1"${taskCfg.canEdit ? '' : ' disabled'}> ${esc(L.adTurnOn)}</label>${taskCfg.canEdit ? '' : ` <span class="sub">${esc(L.adOnlyHere)}</span>`}</div>`;
     return `<div class="adv"><div class="advh">💡 ${esc(L.adTitle(i.identifier))}${stats.length ? ` <span class="sub">${esc(stats.join(' '))}</span>` : ''}</div>
-      ${findings.length ? `<ol>${list}</ol>${left.length > 1 ? `<div class="all">${toTask('all')}${a.form && a.form.key === 'all' ? formHtml(i, a.form) : ''}</div>` : ''}` : `<p class="sub">${esc(L.adNone)}</p>`}${findings.length ? off : ''}</div>`;
+      ${findings.length ? `<ol>${list}</ol>${left.length > 1 ? `<div class="all">${toTask('all')}${a.form && a.form.key === 'all' ? formHtml(i, a.form) : ''}</div>` : ''}` : `<p class="sub">${esc(L.adNone)}</p>`}${earlier}${findings.length ? off : ''}</div>`;
   }
   // Advice already made into a task, per slow task, kept a week in this browser so reopening the
   // board does not offer the same task again.
-  const remaining = (a) => (a.res ? a.res.findings.filter((f) => f.agentTask !== false && !(a.made && a.made[f.key])) : []);
+  const remaining = (a) => (a.res ? a.res.findings.filter((f) => f.agentTask !== false && !isOpenTask(a.made && a.made[f.key])) : []);
   // Advice already in Paperclip as a subtask of this task (not cancelled, not yet done): read from the
   // advice keys its description ends with, or, for tasks made before that, from its title.
   // a title made from advice text: the same words, whatever the numbers and units are now
   const words = (t) => new Set(String(t || '').toLocaleLowerCase().split(/[^\p{L}]+/u).filter((w) => w.length > 2));
   const alike = (a, b) => { const x = words(a), y = words(b); if (!x.size || !y.size) return false; let n = 0; for (const w of x) if (y.has(w)) n++; return n / Math.max(x.size, y.size) >= 0.7; };
-  function madeInPaperclip(k, rootId, findings) {
-    const root = k.byId.get(rootId), out = {};
-    if (!root) return out;
+  // Advice tasks under this task in Paperclip (cancelled ones aside): the advice keys each carries,
+  // read from the line its description ends with, or, for tasks made before that, from its title.
+  // An open one stands for its advice; a finished one shows its result; one whose advice no longer
+  // shows in the data is listed under earlier advice.
+  function adviceTasks(k, rootId, findings) {
+    const root = k.byId.get(rootId), made = {}, earlier = [];
+    if (!root) return { made, earlier };
+    const current = new Set(findings.map((f) => f.key));
     for (const c of k.kids.get(rootId) || []) {
-      if (c.status === 'cancelled' || c.status === 'done') continue;
-      const ident = c.identifier || '✓';
-      if (c.advice) { for (const key of c.advice.split(',')) if (key) out[key] = ident; continue; }
-      for (const S of Object.values(STR)) {
+      if (c.status === 'cancelled') continue;
+      let keys = null;
+      if (c.advice) keys = c.advice.split(',').filter(Boolean);
+      else for (const S of Object.values(STR)) {
         if (typeof S.adTaskName !== 'function') continue;
         const head = S.adTaskName(root.identifier, ''), title = String(c.title || '');
         if (!head || !title.startsWith(head)) continue;
         const rest = title.slice(head.length);
-        if (rest === S.adTaskHead) { for (const f of findings) if (f.agentTask !== false) out[f.key] = ident; }
-        else for (const f of findings) if (f.agentTask !== false && alike(rest, f.text)) out[f.key] = ident;
+        keys = rest === S.adTaskHead ? findings.filter((f) => f.agentTask !== false).map((f) => f.key)
+          : findings.filter((f) => f.agentTask !== false && alike(rest, f.text)).map((f) => f.key);
         break;
       }
+      if (!keys) continue;
+      const e = { ident: c.identifier || '✓', id: c.id, status: c.status, done: c.status === 'done', doneAt: kEnd(c), title: c.title || '' };
+      const live = keys.filter((x) => current.has(x));
+      if (!live.length) { earlier.push(e); continue; }
+      for (const x of live) if (!made[x] || (made[x].done && !e.done) || (made[x].done && e.done && e.doneAt > made[x].doneAt)) made[x] = e;
     }
-    return out;
+    return { made, earlier };
+  }
+  const isOpenTask = (m) => !!m && !m.done;
+  // The last word on a finished advice task: its newest comment, short and as plain text.
+  async function loadOutcomes(id, a) {
+    const want = [...Object.values(a.made || {}), ...(a.earlier || [])].filter((m) => m && m.done && m.ident && !(a.outcomes && m.ident in a.outcomes));
+    if (!want.length) return;
+    a.outcomes = a.outcomes || {};
+    if (DEMO) { for (const m of want) a.outcomes[m.ident] = m.ident === 'DEMO-91' ? L.adDemoResult : ''; return; }
+    await Promise.all([...new Set(want.map((m) => m.ident))].slice(0, 8).map(async (ident) => {
+      try {
+        const list = await getJSON(`/api/issues/${encodeURIComponent(ident)}/comments${EMBED ? '?limit=3' : ''}`);
+        const c = (Array.isArray(list) ? list : []).find((x) => x && x.body && !x.deletedAt);
+        a.outcomes[ident] = c ? String(c.body).replace(/[#*_`>|]+/g, ' ').replace(/\[([^\]]*)\]\([^)]*\)/g, '$1').replace(/\s+/g, ' ').trim().slice(0, 280) : '';
+      } catch (_) { a.outcomes[ident] = ''; }
+    }));
+    if (kpiAdv.get(id) === a) renderKpi();
   }
   const MADE = 'cubicle.adviceTasks';
   function loadMade(id) {
-    try { const all = JSON.parse(localStorage.getItem(MADE) || '{}'), x = all[id]; return x && Date.now() - x.at < 7 * DAY ? x.made : {}; } catch (_) { return {}; }
+    try {
+      const all = JSON.parse(localStorage.getItem(MADE) || '{}'), x = all[id], out = {};
+      if (x && Date.now() - x.at < 7 * DAY) for (const [k, v] of Object.entries(x.made || {})) out[k] = typeof v === 'string' ? { ident: v, status: 'todo' } : v;
+      return out;
+    } catch (_) { return {}; }
   }
   function saveMade(id, made) {
     try {
@@ -1585,7 +1673,11 @@
       const i = kpiLast.byId.get(id);
       const [runs, cost] = await Promise.all([kpiRunsData(), kpiCost(i)]);
       a.res = adviseKpi(kpiLast, id, runs, cost, [...sprites.values()]);
-      a.made = { ...madeInPaperclip(kpiLast, id, a.res.findings), ...(a.made || {}) };
+      const found = adviceTasks(kpiLast, id, a.res.findings);
+      // what Paperclip says wins; a task made a moment ago and not yet read back stays as made
+      a.made = { ...(a.made || {}) }; for (const [x, m] of Object.entries(found.made)) a.made[x] = m;
+      a.earlier = found.earlier;
+      loadOutcomes(id, a);
     } catch (e) { a.err = String(e.message || e); }
     a.busy = false; if (kpiAdv.get(id) === a) renderKpi();
   }
@@ -1622,7 +1714,7 @@
         // "all" carries the advice still left: each of those lines now shows the task it went into
         const keys = a.form.key === 'all' ? remaining(a).map((f) => f.key) : [a.form.key];
         const made = await createTask(root, a.form), ident = made.identifier || made.id || '✓';
-        a.made = { ...(a.made || {}) }; for (const k of keys) a.made[k] = ident;
+        a.made = { ...(a.made || {}) }; for (const k of keys) a.made[k] = { ident, status: 'todo' };
         a.form = null; saveMade(id, a.made);
       } catch (err) { a.form.busy = false; a.form.err = String(err.message || err); }
       renderKpi(); return;
@@ -2079,7 +2171,13 @@
         if (!company) company = { id: 'demo', name: 'Demo Co.', issuePrefix: 'DEMO' };
         // Every 30 s the Analyst hands its task to QA and back, to show a hand-off.
         const passed = Math.floor((Date.now() - t0) / 30000) % 2 === 1;
-        const issues = agents.map((a, i) => ({ identifier: `DEMO-${i + 1}`, title: tasks[i], status: 'in_progress', assigneeAgentId: i === 4 && passed ? agents[5].id : a.id }));
+        // WebDev asks a question and QA asks for an approval, each for 40 s out of every 80 s.
+        const asking = Math.floor((Date.now() - t0) / 40000) % 2 === 0;
+        const ask = (i) => (asking && i === 1 ? [{ kind: 'interaction', label: 'Pending ask user questions', responder: a0(i) }]
+          : !asking && i === 5 ? [{ kind: 'approval', label: 'Linked approval', responder: 'Board', ref: 'demo' }] : []);
+        const a0 = (i) => agents[i].name;
+        const issues = agents.map((a, i) => ({ identifier: `DEMO-${i + 1}`, title: tasks[i], status: ask(i).length ? 'in_review' : 'in_progress',
+          assigneeAgentId: i === 4 && passed ? agents[5].id : a.id, reviewAttention: { paths: ask(i) } }));
         return { agents: agents.map((a) => ({ ...a })), issues, label: 'Demo Co.' };
       },
     };
@@ -2337,9 +2435,18 @@
   // What an agent asks you (Paperclip interactions: questions with options), fetched once per
   // half minute per issue and shown on its card and panel, so it can be read on any screen.
   const qCache = new Map();
+  // The demo's agents ask too: WebDev a question with options, QA for an approval.
+  function demoQuestions(s) {
+    if (!(s.ask && s.ask.kind === 'approval')) return [{ title: 'Pick the launch plan', questions: [
+      { prompt: 'Which version of the landing page should go live first?', other: true, options: [{ label: 'One-page', description: 'Fastest to ship; fewer sections' }, { label: 'Two-step', description: 'Better on mobile; needs a day more' }] },
+      { prompt: 'Should the old URLs redirect to the new page?', other: false, options: [{ label: 'Yes, 301 redirects', description: '' }, { label: 'No, keep both for a week', description: '' }] }] }];
+    return [{ approval: 'demo', title: 'Merge PR #3 (export rules) to main', summary: 'One new file, no code change. main deploys live, so the merge waits for your approval.',
+      risks: ['A push to main deploys to production.', 'It must land before PR #1, or the next package carries test files.'], questions: [] }];
+  }
   function questionsFor(s) {
     const i = answerIssue(s);
-    if (!i || !i.identifier || DEMO || !paperclipUrl) return null;
+    if (DEMO) return i ? demoQuestions(s) : null;
+    if (!i || !i.identifier || !paperclipUrl) return null;
     const c = qCache.get(i.identifier), now = Date.now();
     if (!c || (now - c.at > 30000 && !c.busy)) {
       const entry = c || { at: 0, list: null }; entry.busy = true; qCache.set(i.identifier, entry);
@@ -2373,6 +2480,7 @@
   }
 
   function renderCards() {
+    refreshEta();                          // reads tasks every 5 minutes for the expected finish times
     fitLayout();                           // the banner or the company list may have moved the office
     const rank = (s) => (narrow() ? (answerIssue(s) || s.status === 'waiting' ? 0 : s.status === 'error' ? 1 : 2) : 0);
     const list = [...sprites.values()].sort((a, b) => rank(a) - rank(b) || a.idx - b.idx);
@@ -2732,7 +2840,7 @@
     const nick = s.realName && s.realName !== s.name ? ` <span class="real">(${esc(s.realName)})</span>` : '';
     return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${id}">${esc(s.name)}</b>${nick}${panel ? '' : `<button type="button" class="edit" data-id="${id}" title="${esc(L.looksName)}" aria-label="${esc(L.looksName)}">✎</button>`}</div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
-        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${reply}</div>${note}${errorBox(s)}${stepsHtml(s)}${acts}${away}`;
+        <div class="st"><span class="pill p-${esc(s.status)}">${esc(L[s.status] || s.status)}</span>${taskHtml}${etaHtml(s)}${reply}</div>${note}${errorBox(s)}${stepsHtml(s)}${acts}${away}`;
   }
   // The panel belongs to the selected agent (cam.sel), not to the camera: zooming, panning or the
   // wheel stop the camera from following but keep the panel next to its agent. It is placed right,
@@ -3048,10 +3156,12 @@
       s.el.style.left = (s.x * k) + 'px';
       s.el.style.top = ((s.y - 20) * k) + 'px';
       const b = s.el.querySelector('.bub');
-      const [text, cls] = labelFor(s, now);
+      const [text, cls, tip] = labelFor(s, now);
       b.style.maxWidth = cls === 'talk' ? talkMax : bubMax;
       if (text) { b.textContent = text; b.className = 'bub ' + cls; b.style.display = ''; }
       else b.style.display = 'none';
+      if (b.title !== (tip || '')) b.title = tip || '';
+      if (!b.dataset.id) { b.dataset.id = s.id; b.addEventListener('click', () => { const sp = sprites.get(b.dataset.id); if (sp) select(sp); }); }
       s.el.style.visibility = '';
       // who keeps its label when two would overlap: the one you picked, then who needs you, errors,
       // conversations, work; idle names give way first
@@ -3445,7 +3555,11 @@
       return s.queueIdx === 0 ? ['✋ ' + ((t && t.identifier) || L.waitBubble), 'wait'] : ['✋', 'wait'];
     }
     if (s.typing && s.ask && Math.floor(now / 3) % 2) return ['✋ ' + (s.ask.issue.identifier || L.waiting), 'wait'];
-    if (s.typing && s.task) return [toolIcon(s.task) + ' ' + (s.task.identifier || s.task.title), ''];
+    if (s.typing && s.task) {
+      // the task code, and when it should be done; hovering it shows the task's name
+      const e = etaFor(s), when = e ? (e.late ? L.etaShort : fmtClock(e.at)) : '';
+      return [toolIcon(s.task) + ' ' + (s.task.identifier || s.task.title) + (when ? ` · ⏱ ${when}` : ''), 'task', s.task.title || ''];
+    }
     if (s.status === 'paused') return ['zZ', ''];
     return [null, ''];
   }
