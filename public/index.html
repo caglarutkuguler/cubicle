@@ -40,7 +40,6 @@
   .bub.err { background:#ffdede; color:#8a1111; }
   .bub.task { pointer-events:auto; cursor:pointer; }
   .eta { color:var(--muted); font-size:.92em; white-space:nowrap; margin-inline-start:4px; }
-  .eta.late { color:#ffb36b; }
   .bub.ok { background:#dcffe2; color:#145c24; }
   .bub.wait { background:#fff1c9; color:#6b4d00; }
   .bub.talk { position:relative; overflow:visible; white-space:normal; width:max-content; text-align:center; line-height:1.25; }
@@ -388,7 +387,7 @@
       adLong: (ids, age, typ) => `${ids} open for up to ${age}; similar tasks here finish in about ${typ}`, adLongFix: 'Make the acceptance criteria concrete and split the work into smaller subtasks that can run in parallel.',
       adChurn: (ids, n) => `${ids}: up to ${n} runs recently and still open`, adChurnFix: 'The agent may be going in circles: add a clear finish condition and check what keeps waking it (comments, reviews).',
       adReview: (n, age) => `${n} task(s) wait in review, the oldest for ${age}`, adReviewFix: 'Add a reviewer or lighten the reviewer’s load; low-risk changes may not need a review step.',
-      adDoneTask: (id, when) => `${id} completed ${when}`, adOpenTask: (id) => `${id} is still open`, adStill: 'The problem still shows in the data.', adAgain: 'Turn into a task again', adEarlier: 'Earlier advice', adGone: 'no longer shows in the data', adOutcome: 'Result', etaAt: (t) => `expected ${t}`, etaLate: 'past its usual time', etaShort: 'late', etaTitle: 'Estimated from how long this agent’s finished tasks took, or from the task’s subtasks', adDemoResult: 'The idle subtasks went to a free agent; both started within the hour.', adToTask: 'Turn into a task', adAllToTask: 'Turn all into a task', adAssignee: 'Agent', adPriority: 'Priority', adTaskTitle: 'Title', adCreate: 'Create in Paperclip', adCreating: 'Creating…',
+      adDoneTask: (id, when) => `${id} completed ${when}`, adOpenTask: (id) => `${id} is still open`, adStill: 'The problem still shows in the data.', adAgain: 'Turn into a task again', adEarlier: 'Earlier advice', adGone: 'no longer shows in the data', adOutcome: 'Result', etaAt: (t) => `expected ${t}`, etaSubs: (d, n) => `From its subtasks: ${d} of ${n} done, at the pace so far`, etaLike: (n, rem) => `Tasks here that had run this long finished about ${rem} later (${n} tasks)`, etaRough: 'Few tasks here have run this long; a rough guess: about as long again as it has been open', etaTitle: 'Estimated from how long this agent’s finished tasks took, or from the task’s subtasks', adDemoResult: 'The idle subtasks went to a free agent; both started within the hour.', adToTask: 'Turn into a task', adAllToTask: 'Turn all into a task', adAssignee: 'Agent', adPriority: 'Priority', adTaskTitle: 'Title', adCreate: 'Create in Paperclip', adCreating: 'Creating…',
       adCreated: (id) => `Created ${id}`, adOff: 'Turning advice into tasks is off.', adTurnOn: 'Let Cubicle create these tasks in Paperclip (subtasks of the slow task)', adOnlyHere: 'Turned on from the computer Cubicle runs on.',
       adTaskName: (id, text) => `Speed up ${id}: ${text}`, adTaskHead: 'Speed-up advice from Cubicle', adFor: 'Task', adTaskFinding: 'Finding', adTaskFix: 'Advice', adTaskWhere: 'Where',
       adTaskSource: (d) => `Derived by Cubicle on ${d} from Paperclip’s tasks, recent runs and costs.`, adPrios: { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' },
@@ -495,7 +494,7 @@
       adLong: (ids, age, typ) => `${ids} açık; en uzunu ${age} süredir sürüyor, buradaki benzer işler ise yaklaşık ${typ} sürüyor`, adLongFix: 'Kabul kriterlerini somutlaştırın ve işi paralel yürüyebilecek daha küçük alt görevlere bölün.',
       adChurn: (ids, n) => `${ids}: son günlerde en çok ${n} çalıştırma, hâlâ açık`, adChurnFix: 'Ajan döngüye girmiş olabilir: net bir bitiş koşulu ekleyin ve onu neyin sürekli uyandırdığına bakın (yorumlar, incelemeler).',
       adReview: (n, age) => `${n} iş incelemede bekliyor; en eskisi ${age} süredir`, adReviewFix: 'İnceleyici ekleyin ya da inceleyicinin yükünü azaltın; düşük riskli değişiklikler inceleme adımına gerek duymayabilir.',
-      adDoneTask: (id, when) => `${id} tamamlandı (${when})`, adOpenTask: (id) => `${id} hâlâ açık`, adStill: 'Sorun verilerde hâlâ görünüyor.', adAgain: 'Yeniden göreve çevir', adEarlier: 'Önceki tavsiyeler', adGone: 'artık verilerde görünmüyor', adOutcome: 'Sonuç', etaAt: (t) => `tahmini bitiş ${t}`, etaLate: 'tipik süresini aştı', etaShort: 'gecikti', etaTitle: 'Bu ajanın biten görevlerinin ne kadar sürdüğüne ya da görevin alt görevlerine göre tahmin edilir', adDemoResult: 'Hareketsiz alt görevler boştaki bir ajana verildi; ikisi de bir saat içinde başladı.', adToTask: 'Göreve çevir', adAllToTask: 'Tümünü göreve çevir', adAssignee: 'Ajan', adPriority: 'Öncelik', adTaskTitle: 'Başlık', adCreate: 'Paperclip’te oluştur', adCreating: 'Oluşturuluyor…',
+      adDoneTask: (id, when) => `${id} tamamlandı (${when})`, adOpenTask: (id) => `${id} hâlâ açık`, adStill: 'Sorun verilerde hâlâ görünüyor.', adAgain: 'Yeniden göreve çevir', adEarlier: 'Önceki tavsiyeler', adGone: 'artık verilerde görünmüyor', adOutcome: 'Sonuç', etaAt: (t) => `tahmini bitiş ${t}`, etaSubs: (d, n) => `Alt görevlerinden: ${n} işin ${d} tanesi bitti, şimdiki hızla`, etaLike: (n, rem) => `Burada bu kadar süren işler yaklaşık ${rem} sonra bitti (${n} iş)`, etaRough: 'Burada bu kadar uzun süren iş az; kaba tahmin: açık kaldığı süre kadar daha', etaTitle: 'Bu ajanın biten görevlerinin ne kadar sürdüğüne ya da görevin alt görevlerine göre tahmin edilir', adDemoResult: 'Hareketsiz alt görevler boştaki bir ajana verildi; ikisi de bir saat içinde başladı.', adToTask: 'Göreve çevir', adAllToTask: 'Tümünü göreve çevir', adAssignee: 'Ajan', adPriority: 'Öncelik', adTaskTitle: 'Başlık', adCreate: 'Paperclip’te oluştur', adCreating: 'Oluşturuluyor…',
       adCreated: (id) => `${id} oluşturuldu`, adOff: 'Tavsiyeyi göreve çevirme kapalı.', adTurnOn: 'Cubicle bu görevleri Paperclip’te açabilsin (yavaş görevin alt görevi olarak)', adOnlyHere: 'Cubicle’ın çalıştığı bilgisayardan açılır.',
       adTaskName: (id, text) => `${id} hızlandırma: ${text}`, adTaskHead: 'Cubicle’dan hızlandırma tavsiyesi', adFor: 'Görev', adTaskFinding: 'Bulgu', adTaskFix: 'Tavsiye', adTaskWhere: 'İlgili işler',
       adTaskSource: (d) => `Cubicle tarafından ${d} tarihinde Paperclip’teki görevler, son çalıştırmalar ve maliyetlerden çıkarıldı.`, adPrios: { critical: 'Kritik', high: 'Yüksek', medium: 'Orta', low: 'Düşük' },
@@ -602,7 +601,7 @@
       adLong: (ids, age, typ) => `${ids} seit bis zu ${age} offen; ähnliche Aufgaben dauern hier etwa ${typ}`, adLongFix: 'Machen Sie die Abnahmekriterien konkret und teilen Sie die Arbeit in kleinere, parallel laufende Teilaufgaben.',
       adChurn: (ids, n) => `${ids}: bis zu ${n} Läufe zuletzt und noch offen`, adChurnFix: 'Der Agent dreht sich womöglich im Kreis: klare Abschlussbedingung hinzufügen und prüfen, was ihn ständig weckt (Kommentare, Reviews).',
       adReview: (n, age) => `${n} Aufgabe(n) warten im Review, die älteste seit ${age}`, adReviewFix: 'Fügen Sie einen Reviewer hinzu oder entlasten Sie ihn; risikoarme Änderungen brauchen evtl. kein Review.',
-      adDoneTask: (id, when) => `${id} erledigt (${when})`, adOpenTask: (id) => `${id} ist noch offen`, adStill: 'Das Problem zeigt sich weiter in den Daten.', adAgain: 'Erneut als Aufgabe anlegen', adEarlier: 'Frühere Ratschläge', adGone: 'zeigt sich nicht mehr in den Daten', adOutcome: 'Ergebnis', etaAt: (t) => `voraussichtlich ${t}`, etaLate: 'über der üblichen Dauer', etaShort: 'spät', etaTitle: 'Geschätzt aus der Dauer der erledigten Aufgaben dieses Agenten oder aus den Teilaufgaben', adDemoResult: 'Die liegenden Teilaufgaben gingen an einen freien Agenten; beide begannen innerhalb einer Stunde.', adToTask: 'Als Aufgabe anlegen', adAllToTask: 'Alle als Aufgabe anlegen', adAssignee: 'Agent', adPriority: 'Priorität', adTaskTitle: 'Titel', adCreate: 'In Paperclip anlegen', adCreating: 'Wird angelegt…',
+      adDoneTask: (id, when) => `${id} erledigt (${when})`, adOpenTask: (id) => `${id} ist noch offen`, adStill: 'Das Problem zeigt sich weiter in den Daten.', adAgain: 'Erneut als Aufgabe anlegen', adEarlier: 'Frühere Ratschläge', adGone: 'zeigt sich nicht mehr in den Daten', adOutcome: 'Ergebnis', etaAt: (t) => `voraussichtlich ${t}`, etaSubs: (d, n) => `Aus den Teilaufgaben: ${d} von ${n} erledigt, im bisherigen Tempo`, etaLike: (n, rem) => `Aufgaben, die hier so lange liefen, waren etwa ${rem} später fertig (${n} Aufgaben)`, etaRough: 'Hier liefen nur wenige Aufgaben so lange; grobe Schätzung: noch etwa so lange, wie sie schon offen ist', etaTitle: 'Geschätzt aus der Dauer der erledigten Aufgaben dieses Agenten oder aus den Teilaufgaben', adDemoResult: 'Die liegenden Teilaufgaben gingen an einen freien Agenten; beide begannen innerhalb einer Stunde.', adToTask: 'Als Aufgabe anlegen', adAllToTask: 'Alle als Aufgabe anlegen', adAssignee: 'Agent', adPriority: 'Priorität', adTaskTitle: 'Titel', adCreate: 'In Paperclip anlegen', adCreating: 'Wird angelegt…',
       adCreated: (id) => `${id} angelegt`, adOff: 'Ratschläge als Aufgaben anlegen ist aus.', adTurnOn: 'Cubicle darf diese Aufgaben in Paperclip anlegen (als Teilaufgaben der langsamen Aufgabe)', adOnlyHere: 'Wird auf dem Rechner eingeschaltet, auf dem Cubicle läuft.',
       adTaskName: (id, text) => `${id} beschleunigen: ${text}`, adTaskHead: 'Beschleunigungs-Rat von Cubicle', adFor: 'Aufgabe', adTaskFinding: 'Befund', adTaskFix: 'Rat', adTaskWhere: 'Betrifft',
       adTaskSource: (d) => `Von Cubicle am ${d} aus Paperclips Aufgaben, letzten Läufen und Kosten abgeleitet.`, adPrios: { critical: 'Kritisch', high: 'Hoch', medium: 'Mittel', low: 'Niedrig' },
@@ -709,7 +708,7 @@
       adLong: (ids, age, typ) => `${ids} abiertas hasta ${age}; aquí tareas similares tardan unas ${typ}`, adLongFix: 'Concreta los criterios de aceptación y divide el trabajo en subtareas más pequeñas que puedan ir en paralelo.',
       adChurn: (ids, n) => `${ids}: hasta ${n} ejecuciones recientes y sigue abierta`, adChurnFix: 'El agente puede estar dando vueltas: añade una condición clara de fin y mira qué lo despierta (comentarios, revisiones).',
       adReview: (n, age) => `${n} tarea(s) esperan revisión, la más antigua desde hace ${age}`, adReviewFix: 'Añade un revisor o aligera su carga; los cambios de bajo riesgo pueden no necesitar revisión.',
-      adDoneTask: (id, when) => `${id} terminada (${when})`, adOpenTask: (id) => `${id} sigue abierta`, adStill: 'El problema sigue apareciendo en los datos.', adAgain: 'Convertir en tarea de nuevo', adEarlier: 'Consejos anteriores', adGone: 'ya no aparece en los datos', adOutcome: 'Resultado', etaAt: (t) => `previsto ${t}`, etaLate: 'pasó el tiempo habitual', etaShort: 'tarde', etaTitle: 'Estimado según lo que tardaron las tareas terminadas de este agente o según las subtareas', adDemoResult: 'Las subtareas paradas pasaron a un agente libre; ambas empezaron en menos de una hora.', adToTask: 'Convertir en tarea', adAllToTask: 'Convertir todo en una tarea', adAssignee: 'Agente', adPriority: 'Prioridad', adTaskTitle: 'Título', adCreate: 'Crear en Paperclip', adCreating: 'Creando…',
+      adDoneTask: (id, when) => `${id} terminada (${when})`, adOpenTask: (id) => `${id} sigue abierta`, adStill: 'El problema sigue apareciendo en los datos.', adAgain: 'Convertir en tarea de nuevo', adEarlier: 'Consejos anteriores', adGone: 'ya no aparece en los datos', adOutcome: 'Resultado', etaAt: (t) => `previsto ${t}`, etaSubs: (d, n) => `Por sus subtareas: ${d} de ${n} hechas, al ritmo actual`, etaLike: (n, rem) => `Las tareas que llevaban tanto tiempo terminaron unas ${rem} después (${n} tareas)`, etaRough: 'Pocas tareas han durado tanto aquí; estimación aproximada: otro tanto como lleva abierta', etaTitle: 'Estimado según lo que tardaron las tareas terminadas de este agente o según las subtareas', adDemoResult: 'Las subtareas paradas pasaron a un agente libre; ambas empezaron en menos de una hora.', adToTask: 'Convertir en tarea', adAllToTask: 'Convertir todo en una tarea', adAssignee: 'Agente', adPriority: 'Prioridad', adTaskTitle: 'Título', adCreate: 'Crear en Paperclip', adCreating: 'Creando…',
       adCreated: (id) => `${id} creada`, adOff: 'Convertir consejos en tareas está desactivado.', adTurnOn: 'Permitir que Cubicle cree estas tareas en Paperclip (como subtareas de la tarea lenta)', adOnlyHere: 'Se activa desde el equipo donde se ejecuta Cubicle.',
       adTaskName: (id, text) => `Acelerar ${id}: ${text}`, adTaskHead: 'Consejo de aceleración de Cubicle', adFor: 'Tarea', adTaskFinding: 'Hallazgo', adTaskFix: 'Consejo', adTaskWhere: 'Afecta a',
       adTaskSource: (d) => `Obtenido por Cubicle el ${d} de las tareas, ejecuciones recientes y costes de Paperclip.`, adPrios: { critical: 'Crítica', high: 'Alta', medium: 'Media', low: 'Baja' },
@@ -816,7 +815,7 @@
       adLong: (ids, age, typ) => `${ids} ouvertes jusqu’à ${age} ; ici des tâches similaires prennent environ ${typ}`, adLongFix: 'Rendez les critères d’acceptation concrets et découpez le travail en sous-tâches plus petites menées en parallèle.',
       adChurn: (ids, n) => `${ids} : jusqu’à ${n} exécutions récentes et toujours ouverte`, adChurnFix: 'L’agent tourne peut-être en rond : ajoutez une condition de fin claire et voyez ce qui le réveille (commentaires, revues).',
       adReview: (n, age) => `${n} tâche(s) attendent une revue, la plus ancienne depuis ${age}`, adReviewFix: 'Ajoutez un relecteur ou allégez sa charge ; les changements à faible risque peuvent se passer de revue.',
-      adDoneTask: (id, when) => `${id} terminée (${when})`, adOpenTask: (id) => `${id} est encore ouverte`, adStill: 'Le problème apparaît toujours dans les données.', adAgain: 'Refaire une tâche', adEarlier: 'Conseils précédents', adGone: 'n’apparaît plus dans les données', adOutcome: 'Résultat', etaAt: (t) => `prévu ${t}`, etaLate: 'au-delà de la durée habituelle', etaShort: 'en retard', etaTitle: 'Estimé d’après la durée des tâches terminées de cet agent ou d’après les sous-tâches', adDemoResult: 'Les sous-tâches à l’arrêt sont passées à un agent libre ; les deux ont démarré dans l’heure.', adToTask: 'En faire une tâche', adAllToTask: 'Tout transformer en tâche', adAssignee: 'Agent', adPriority: 'Priorité', adTaskTitle: 'Titre', adCreate: 'Créer dans Paperclip', adCreating: 'Création…',
+      adDoneTask: (id, when) => `${id} terminée (${when})`, adOpenTask: (id) => `${id} est encore ouverte`, adStill: 'Le problème apparaît toujours dans les données.', adAgain: 'Refaire une tâche', adEarlier: 'Conseils précédents', adGone: 'n’apparaît plus dans les données', adOutcome: 'Résultat', etaAt: (t) => `prévu ${t}`, etaSubs: (d, n) => `D’après ses sous-tâches : ${d} sur ${n} faites, au rythme actuel`, etaLike: (n, rem) => `Les tâches ouvertes aussi longtemps ont fini environ ${rem} plus tard (${n} tâches)`, etaRough: 'Peu de tâches ont duré aussi longtemps ici ; estimation grossière : à peu près autant que depuis son ouverture', etaTitle: 'Estimé d’après la durée des tâches terminées de cet agent ou d’après les sous-tâches', adDemoResult: 'Les sous-tâches à l’arrêt sont passées à un agent libre ; les deux ont démarré dans l’heure.', adToTask: 'En faire une tâche', adAllToTask: 'Tout transformer en tâche', adAssignee: 'Agent', adPriority: 'Priorité', adTaskTitle: 'Titre', adCreate: 'Créer dans Paperclip', adCreating: 'Création…',
       adCreated: (id) => `${id} créée`, adOff: 'La conversion des conseils en tâches est désactivée.', adTurnOn: 'Autoriser Cubicle à créer ces tâches dans Paperclip (sous-tâches de la tâche lente)', adOnlyHere: 'S’active depuis l’ordinateur où tourne Cubicle.',
       adTaskName: (id, text) => `Accélérer ${id} : ${text}`, adTaskHead: 'Conseil d’accélération de Cubicle', adFor: 'Tâche', adTaskFinding: 'Constat', adTaskFix: 'Conseil', adTaskWhere: 'Concerne',
       adTaskSource: (d) => `Établi par Cubicle le ${d} à partir des tâches, exécutions récentes et coûts de Paperclip.`, adPrios: { critical: 'Critique', high: 'Haute', medium: 'Moyenne', low: 'Basse' },
@@ -923,7 +922,7 @@
       adLong: (ids, age, typ) => `${ids} 已开放最长 ${age}；这里类似任务约 ${typ} 完成`, adLongFix: '明确验收标准，把工作拆成可并行的小子任务。',
       adChurn: (ids, n) => `${ids}：最近多达 ${n} 次运行，仍未完成`, adChurnFix: '代理可能在兜圈子：加上明确的完成条件，并检查是什么一直唤醒它（评论、评审）。',
       adReview: (n, age) => `${n} 个任务在等评审，最早的已等 ${age}`, adReviewFix: '增加评审者或减轻其负担；低风险的改动可能不需要评审。',
-      adDoneTask: (id, when) => `${id} 已完成（${when}）`, adOpenTask: (id) => `${id} 仍未完成`, adStill: '数据中仍能看到这个问题。', adAgain: '再次转为任务', adEarlier: '之前的建议', adGone: '数据中已不再出现', adOutcome: '结果', etaAt: (t) => `预计 ${t}`, etaLate: '已超过通常时间', etaShort: '超时', etaTitle: '根据该代理已完成任务的用时或任务的子任务估算', adDemoResult: '闲置的子任务交给了一个空闲代理；两个都在一小时内开始了。', adToTask: '转为任务', adAllToTask: '全部转为任务', adAssignee: '代理', adPriority: '优先级', adTaskTitle: '标题', adCreate: '在 Paperclip 中创建', adCreating: '正在创建…',
+      adDoneTask: (id, when) => `${id} 已完成（${when}）`, adOpenTask: (id) => `${id} 仍未完成`, adStill: '数据中仍能看到这个问题。', adAgain: '再次转为任务', adEarlier: '之前的建议', adGone: '数据中已不再出现', adOutcome: '结果', etaAt: (t) => `预计 ${t}`, etaSubs: (d, n) => `根据子任务：${n} 个中已完成 ${d} 个，按目前的速度`, etaLike: (n, rem) => `这里进行了这么久的任务，大约 ${rem} 后完成（${n} 个任务）`, etaRough: '这里很少有任务进行这么久；粗略估计：再过与已开放时间相当的时长', etaTitle: '根据该代理已完成任务的用时或任务的子任务估算', adDemoResult: '闲置的子任务交给了一个空闲代理；两个都在一小时内开始了。', adToTask: '转为任务', adAllToTask: '全部转为任务', adAssignee: '代理', adPriority: '优先级', adTaskTitle: '标题', adCreate: '在 Paperclip 中创建', adCreating: '正在创建…',
       adCreated: (id) => `已创建 ${id}`, adOff: '将建议转为任务的功能已关闭。', adTurnOn: '允许 Cubicle 在 Paperclip 中创建这些任务（作为慢任务的子任务）', adOnlyHere: '需在运行 Cubicle 的电脑上开启。',
       adTaskName: (id, text) => `加快 ${id}：${text}`, adTaskHead: '来自 Cubicle 的加速建议', adFor: '任务', adTaskFinding: '发现', adTaskFix: '建议', adTaskWhere: '涉及',
       adTaskSource: (d) => `由 Cubicle 于 ${d} 根据 Paperclip 的任务、最近运行和成本得出。`, adPrios: { critical: '紧急', high: '高', medium: '中', low: '低' },
@@ -1030,7 +1029,7 @@
       adLong: (ids, age, typ) => `${ids} مفتوحة حتى ${age}؛ والمهام المماثلة هنا تنتهي في نحو ${typ}`, adLongFix: 'اجعل معايير القبول محددة وقسّم العمل إلى مهام فرعية أصغر تسير بالتوازي.',
       adChurn: (ids, n) => `${ids}: حتى ${n} تشغيلًا مؤخرًا وما زالت مفتوحة`, adChurnFix: 'ربما يدور الوكيل في حلقة: أضف شرط إنهاء واضحًا وتحقق مما يوقظه باستمرار (تعليقات، مراجعات).',
       adReview: (n, age) => `${n} مهمة تنتظر المراجعة، أقدمها منذ ${age}`, adReviewFix: 'أضف مراجعًا أو خفف عبئه؛ قد لا تحتاج التغييرات منخفضة المخاطر إلى مراجعة.',
-      adDoneTask: (id, when) => `اكتملت ${id} (${when})`, adOpenTask: (id) => `${id} ما زالت مفتوحة`, adStill: 'ما زالت المشكلة تظهر في البيانات.', adAgain: 'حوّلها إلى مهمة مجددًا', adEarlier: 'نصائح سابقة', adGone: 'لم تعد تظهر في البيانات', adOutcome: 'النتيجة', etaAt: (t) => `متوقع ${t}`, etaLate: 'تجاوزت المدة المعتادة', etaShort: 'متأخرة', etaTitle: 'تقدير بحسب مدة المهام المنتهية لهذا الوكيل أو بحسب المهام الفرعية', adDemoResult: 'أُسندت المهام الفرعية المتوقفة إلى وكيل متفرغ؛ وبدأت كلتاهما خلال ساعة.', adToTask: 'حوّلها إلى مهمة', adAllToTask: 'حوّل الكل إلى مهمة', adAssignee: 'الوكيل', adPriority: 'الأولوية', adTaskTitle: 'العنوان', adCreate: 'أنشئ في Paperclip', adCreating: 'جارٍ الإنشاء…',
+      adDoneTask: (id, when) => `اكتملت ${id} (${when})`, adOpenTask: (id) => `${id} ما زالت مفتوحة`, adStill: 'ما زالت المشكلة تظهر في البيانات.', adAgain: 'حوّلها إلى مهمة مجددًا', adEarlier: 'نصائح سابقة', adGone: 'لم تعد تظهر في البيانات', adOutcome: 'النتيجة', etaAt: (t) => `متوقع ${t}`, etaSubs: (d, n) => `من مهامها الفرعية: أُنجز ${d} من ${n} بالوتيرة الحالية`, etaLike: (n, rem) => `المهام التي استمرت هنا هذه المدة انتهت بعد نحو ${rem} (${n} مهمة)`, etaRough: 'قليلة هي المهام التي استمرت هنا هذه المدة؛ تقدير تقريبي: مدة مماثلة لما مضى على فتحها', etaTitle: 'تقدير بحسب مدة المهام المنتهية لهذا الوكيل أو بحسب المهام الفرعية', adDemoResult: 'أُسندت المهام الفرعية المتوقفة إلى وكيل متفرغ؛ وبدأت كلتاهما خلال ساعة.', adToTask: 'حوّلها إلى مهمة', adAllToTask: 'حوّل الكل إلى مهمة', adAssignee: 'الوكيل', adPriority: 'الأولوية', adTaskTitle: 'العنوان', adCreate: 'أنشئ في Paperclip', adCreating: 'جارٍ الإنشاء…',
       adCreated: (id) => `أُنشئت ${id}`, adOff: 'تحويل النصائح إلى مهام متوقف.', adTurnOn: 'اسمح لـ Cubicle بإنشاء هذه المهام في Paperclip (مهام فرعية للمهمة البطيئة)', adOnlyHere: 'يُفعّل من الحاسوب الذي يعمل عليه Cubicle.',
       adTaskName: (id, text) => `تسريع ${id}: ${text}`, adTaskHead: 'نصيحة تسريع من Cubicle', adFor: 'المهمة', adTaskFinding: 'الملاحظة', adTaskFix: 'النصيحة', adTaskWhere: 'تخص',
       adTaskSource: (d) => `استخلصها Cubicle في ${d} من مهام Paperclip وتشغيلاته الأخيرة وتكاليفه.`, adPrios: { critical: 'حرجة', high: 'عالية', medium: 'متوسطة', low: 'منخفضة' },
@@ -1327,23 +1326,27 @@
     if (etaBusy || (etaData && Date.now() - etaData.at < 300000) || !(DEMO || (paperclipUrl && company))) return;
     etaBusy = true;
     try {
-      const k = computeKpi(await kpiData(), Date.now(), true), per = new Map(), all = [];
-      for (const i of k.issues) if (i.status === 'done') {
-        const d = kEnd(i) - kStart(i); if (!(d > 60000)) continue;
-        all.push(d); if (i.assigneeAgentId) per.set(i.assigneeAgentId, [...(per.get(i.assigneeAgentId) || []), d]);
-      }
-      etaData = { at: Date.now(), k, byIdent: new Map(k.issues.filter((i) => i.identifier).map((i) => [i.identifier, i])),
-        typ: new Map([...per].filter(([, l]) => l.length >= 3).map(([id, l]) => [id, median(l)])), all: all.length >= 3 ? median(all) : null };
+      const k = computeKpi(await kpiData(), Date.now(), true);
+      const done = k.issues.filter((i) => i.status === 'done').map((i) => kEnd(i) - kStart(i)).filter((d) => d > 60000).sort((a, b) => a - b);
+      etaData = { at: Date.now(), k, done, byIdent: new Map(k.issues.filter((i) => i.identifier).map((i) => [i.identifier, i])) };
       renderCards();
     } catch (_) {} finally { etaBusy = false; }
   }
+  // When the task should be done, always as a time: from its subtasks at the pace so far; else from
+  // the tasks here that had already run as long as this one (how much longer they took); else, when
+  // few ran that long, a rough guess of as long again as it has been open.
   function etaFor(s) {
     if (!etaData || s.status !== 'running' || !s.task || !s.task.identifier) return null;
     const i = etaData.byIdent.get(s.task.identifier); if (!i || isClosed(i)) return null;
     const start = kStart(i), now = Date.now(); if (!Number.isFinite(start)) return null;
-    if (etaData.k.under(i.id).length && i.startedAt) { const pct = etaData.k.pctOf(i); if (pct >= 10 && pct < 100) return { at: start + (now - start) * 100 / pct }; }
-    const typ = etaData.typ.get(s.id) || etaData.all; if (!typ) return null;
-    return start + typ < now ? { late: true } : { at: start + typ };
+    const age = Math.max(60000, now - start), sub = etaData.k.under(i.id);
+    if (sub.length && i.startedAt) {
+      const pct = etaData.k.pctOf(i);
+      if (pct >= 10 && pct < 100) return { at: start + age * 100 / pct, why: L.etaSubs(sub.filter(isClosed).length, sub.length) };
+    }
+    const longer = etaData.done.filter((d) => d > age).map((d) => d - age);
+    if (longer.length >= 5) { const rem = median(longer); return { at: now + rem, why: L.etaLike(longer.length, fmtDur(rem)) }; }
+    return { at: now + Math.min(age, 14 * DAY), why: L.etaRough, rough: true };
   }
   const fmtClock = (ms) => {
     try { return new Intl.DateTimeFormat(lang, new Date(ms).toDateString() === new Date().toDateString() ? { hour: '2-digit', minute: '2-digit' } : { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }).format(ms); }
@@ -1351,8 +1354,13 @@
   };
   function etaHtml(s) {
     const e = etaFor(s); if (!e) return '';
-    return `<span class="eta${e.late ? ' late' : ''}" title="${esc(L.etaTitle)}">⏱ ${esc(e.late ? L.etaLate : L.etaAt(fmtClock(e.at)))}</span>`;
+    return `<span class="eta" title="${esc(e.why)}">⏱ ${esc(L.etaAt('≈ ' + fmtClock(e.at)))}</span>`;
   }
+  // in a bubble: the time today, the date otherwise
+  const fmtShortWhen = (ms) => {
+    try { return new Intl.DateTimeFormat(lang, new Date(ms).toDateString() === new Date().toDateString() ? { hour: '2-digit', minute: '2-digit' } : { month: 'short', day: 'numeric' }).format(ms); }
+    catch (_) { return new Date(ms).toLocaleDateString(); }
+  };
 
   // ----- runs and cost behind the advice -----
   let kpiRuns = null;
@@ -3557,8 +3565,8 @@
     if (s.typing && s.ask && Math.floor(now / 3) % 2) return ['✋ ' + (s.ask.issue.identifier || L.waiting), 'wait'];
     if (s.typing && s.task) {
       // the task code, and when it should be done; hovering it shows the task's name
-      const e = etaFor(s), when = e ? (e.late ? L.etaShort : fmtClock(e.at)) : '';
-      return [toolIcon(s.task) + ' ' + (s.task.identifier || s.task.title) + (when ? ` · ⏱ ${when}` : ''), 'task', s.task.title || ''];
+      const e = etaFor(s), when = e ? '≈' + fmtShortWhen(e.at) : '';
+      return [toolIcon(s.task) + ' ' + (s.task.identifier || s.task.title) + (when ? ` · ⏱ ${when}` : ''), 'task', [s.task.title || '', e ? `⏱ ${L.etaAt(fmtClock(e.at))} · ${e.why}` : ''].filter(Boolean).join('\n')];
     }
     if (s.status === 'paused') return ['zZ', ''];
     return [null, ''];
