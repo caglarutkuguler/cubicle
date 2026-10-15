@@ -25,7 +25,8 @@ const isUserId = (id) => typeof id === 'string' && /^[1-9]\d{0,15}$/.test(id) &&
 const TEXT = {
   en: {
     needs: (n) => `✋ <b>${n}</b> needs you`, why: 'Reason', open: 'See in Cubicle', inPaperclip: 'Open in Paperclip',
-    approval: 'Approval request', risks: 'Risks', approveIn: 'Approve or reject in Paperclip',
+    approval: 'Approval request', risks: 'Risks', approveIn: 'Approve or reject in Paperclip', connectIn: 'Connect in Paperclip',
+    connectNeeds: (svc) => `🔌 <b>Needs a connection: ${svc}</b>`, connectNote: 'Set it up in Paperclip; once connected, the agent carries on.',
     replyHint: 'Reply to this message to answer; it becomes a comment on the issue.',
     replyHintQ: 'Reply to this message with the option’s number, or write your own answer; it becomes a comment on the issue.', other: 'or write your own answer',
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
@@ -49,7 +50,8 @@ const TEXT = {
   },
   tr: {
     needs: (n) => `✋ <b>${n}</b> sizi bekliyor`, why: 'Neden', open: 'Cubicle’da gör', inPaperclip: 'Paperclip’te aç',
-    approval: 'Onay isteği', risks: 'Riskler', approveIn: 'Paperclip’te onayla ya da reddet',
+    approval: 'Onay isteği', risks: 'Riskler', approveIn: 'Paperclip’te onayla ya da reddet', connectIn: 'Paperclip’te bağla',
+    connectNeeds: (svc) => `🔌 <b>Bağlantı istiyor: ${svc}</b>`, connectNote: 'Paperclip’te kurun; bağlanınca ajan devam eder.',
     replyHint: 'Yanıtlamak için bu mesajı yanıtlayın; yanıtınız işe yorum olarak yazılır.',
     replyHintQ: 'Bu mesajı seçeneğin numarasıyla ya da kendi cevabınızla yanıtlayın; yanıtınız işe yorum olarak yazılır.', other: 'ya da kendi cevabınızı yazın',
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
@@ -218,6 +220,9 @@ function start(opts) {
   const local = (u) => { try { return /^(127\.|localhost$|\[::1\]$)/.test(new URL(u).hostname); } catch (_) { return true; } };
   const issueLink = (a, i) => (a.company && a.paperclip && i && i.identifier && !(local(opts.paperclipPublicUrl || a.paperclip) && !local(opts.publicUrl)) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/issues/${encodeURIComponent(i.identifier)}` : '');
   const approvalLink = (a, ref) => (ref && issueLink(a, { identifier: 'x' }) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/approvals/${encodeURIComponent(ref)}` : '');
+  const connectLink = (a, c) => (c && issueLink(a, { identifier: 'x' }) ? `${(opts.paperclipPublicUrl || a.paperclip).replace(/\/$/, '')}/${encodeURIComponent(a.company.issuePrefix)}/apps/connect?${new URLSearchParams({ source: c.slug, intent: c.id })}` : '');
+  // an agent asking for an app connection: which service and which request
+  const connectOf = (qs) => { const x = (qs || []).find((q) => q && q.kind === 'connection_intent' && q.service); return x ? { id: x.id, slug: x.service.slug, name: x.service.name } : null; };
   const agentLink = (a) => cubicleLink(`?agent=${encodeURIComponent(a.id)}${a.company ? `&company=${encodeURIComponent(a.company.issuePrefix)}` : ''}`);
 
   async function send(chatId, html, extra = {}, alert = null) {
@@ -264,11 +269,12 @@ function start(opts) {
     return out.join('\n').slice(0, 3200);
   }
   function needsText(a, lang, qs = [], aps = []) {
-    const t = tr(lang), i = a.issue, q = [approvalText(aps[0], lang), qs.length ? questionsText(qs, lang) : ''].filter(Boolean).join('\n');
+    const t = tr(lang), i = a.issue, cn = connectOf(qs);
+    const q = [approvalText(aps[0], lang), cn ? `${t.connectNeeds(esc(cn.name))}\n${esc(t.connectNote)}` : '', qs.filter((x) => x.kind !== 'connection_intent').length ? questionsText(qs.filter((x) => x.kind !== 'connection_intent'), lang) : ''].filter(Boolean).join('\n');
     return [t.needs(esc(a.name)),
       i && (i.identifier || i.title) ? `<b>${esc(i.identifier || '')}</b> ${esc(i.title || '')}` : '',
       a.reason && !q ? `${t.why}: ${esc(a.reason)}` : '',
-      q, '', links([[t.open, agentLink(a)], [t.approveIn, aps.length ? approvalLink(a, a.approval) : ''], [t.inPaperclip, issueLink(a, i)]]),
+      q, '', links([[t.open, agentLink(a)], [t.approveIn, aps.length ? approvalLink(a, a.approval) : ''], [t.connectIn, connectLink(a, cn)], [t.inPaperclip, issueLink(a, i)]]),
       opts.replies && a.company && i && i.identifier ? `<i>${esc(q ? t.replyHintQ : t.replyHint)}</i>` : ''].filter((x, k) => x || k === 4).join('\n');
   }
   // A reply of just a number picks that option.
@@ -300,8 +306,9 @@ function start(opts) {
       q.options.forEach((o, k) => body.push(`   <b>${k + 1}.</b> ${esc(o.label)}${o.description ? ` · <i>${esc(o.description.slice(0, 160))}</i>` : ''}`));
       if (q.other && q.options.length) body.push(`   <i>${esc(t.other)}</i>`);
     } else if (cur.ap) body.push(approvalText(cur.ap, c.lang));
+    else if (cur.connect) body.push(`${t.connectNeeds(esc(cur.connect.name))}\n${esc(t.connectNote)}`);
     else if (cur.reason) body.push(`${t.why}: ${esc(cur.reason)}`);
-    const tail = ['', links([[t.open, agentLink(a)], [t.approveIn, cur.ap ? approvalLink(a, cur.approval) : ''], [t.inPaperclip, issueLink(a, { identifier: cur.issue })]])];
+    const tail = ['', links([[t.open, agentLink(a)], [t.approveIn, cur.ap ? approvalLink(a, cur.approval) : ''], [t.connectIn, connectLink(a, cur.connect)], [t.inPaperclip, issueLink(a, { identifier: cur.issue })]])];
     if (opts.replies && cur.issue) tail.push(`<i>${esc(t.answerHere)}</i>`);
     const left = (c.queue || []).length;
     if (left) tail.push(`<i>${esc(t.more(left))} ${esc(t.skipHint)}</i>`);
@@ -319,7 +326,7 @@ function start(opts) {
       const item = c.queue.shift();
       const qs = item.issue ? await questionsOf({ identifier: item.issue }) : [];
       const aps = item.approval ? await approvalsOf({ approval: item.approval, issue: { identifier: item.issue } }) : [];
-      c.current = { ...item, steps: compact(qs), ap: aps[0] || null, at: 0, answers: [] };
+      c.current = { ...item, steps: compact(qs), ap: aps[0] || null, connect: connectOf(qs), at: 0, answers: [] };
       break;
     }
     saveState();

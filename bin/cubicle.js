@@ -235,6 +235,8 @@ function shapePaperclip(pathname, data, light = false) {
     const qs = (x.payload && Array.isArray(x.payload.questions)) ? x.payload.questions : [];
     return REDACT ? { id: x.id, kind: x.kind, status: x.status, count: qs.length } : {
       ...pick(x, ['id', 'kind', 'status', 'title', 'summary', 'createdAt']),
+      // an agent asking for an app connection (e.g. Google Sheets): which service, to link its setup
+      ...(x.kind === 'connection_intent' && x.payload && x.payload.serviceSlug ? { service: { slug: String(x.payload.serviceSlug).slice(0, 80), name: String(x.payload.serviceName || x.payload.serviceSlug).slice(0, 120) } } : {}),
       questions: qs.slice(0, 10).map((q) => ({
         ...pick(q, ['id', 'selectionMode', 'required', 'allowOther']), prompt: String(q.prompt || '').slice(0, 2000),
         options: (Array.isArray(q.options) ? q.options : []).slice(0, 12).map((o) => ({ id: o.id, label: String(o.label || '').slice(0, 200), description: o.description ? String(o.description).slice(0, 400) : undefined })),
