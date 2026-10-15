@@ -47,6 +47,8 @@ const TEXT = {
     step: (i, n) => `question ${i} of ${n}`, more: (n) => `${n} more waiting after this one.`, skipHint: '/skip moves on to the next one.',
     answerHere: 'Write your answer here (the option’s number, or your own words).', skipped: 'Skipped.', queued: (n) => `${n} waiting; here is the first. The next one comes when you answer.`,
     elsewhere: (id) => `${id} was answered elsewhere; moving on.`, allDone: '✓ That was the last one; nobody else is waiting for you.',
+    updated: (v) => `✓ Cubicle was updated to <b>${v}</b>.`, newVersion: (v, cur) => `⬆ Cubicle <b>${v}</b> is out (you have ${cur}).`, notes: 'What’s new',
+    howTo: 'To update:', autoHint: 'Or start Cubicle with --auto-update and it updates itself.',
     stuck: (n) => `⛔ <b>${n}</b> is stuck`, since: (d) => `stopped ${d} ago`, look: 'Look at', more: (n) => `${n} more stuck task${n === 1 ? '' : 's'}.`,
     stuckHint: 'Write the next step and who takes it (a comment wakes the agent).',
     blk: { stalled: (o) => (o ? `the chain it waits on stopped at ${o}` : 'nothing will move it on'), unassigned: (o) => `waits on ${o || 'a task'}, which has no one assigned`, backlog: (o) => `waits on ${o || 'a task'}, which sits in the backlog`, uninvokable: (o) => `waits on ${o || 'a task'}, whose agent cannot run`, cancelled: (o) => `waits on ${o || 'a task'}, which was cancelled`, review: (o) => `waits on the review of ${o || 'a task'}, which nobody is doing`, disposition: () => 'its run finished but nobody decided what comes next', decision: () => 'waits for your decision', external: () => 'waits on someone outside', recovery: (o) => `a recovery task is open${o ? ` (${o})` : ''}`, other: () => 'blocked and needs someone' },
@@ -75,6 +77,8 @@ const TEXT = {
     step: (i, n) => `soru ${i}/${n}`, more: (n) => `Bundan sonra ${n} tane daha sizi bekliyor.`, skipHint: '/skip ile sıradakine geçersiniz.',
     answerHere: 'Cevabınızı buraya yazın (seçeneğin numarası ya da kendi cümleniz).', skipped: 'Geçildi.', queued: (n) => `${n} tane sizi bekliyor; ilki geliyor. Cevapladıkça sıradaki gelir.`,
     elsewhere: (id) => `${id} başka yerden yanıtlanmış; sıradakine geçiliyor.`, allDone: '✓ Sonuncusuydu; sizi bekleyen kalmadı.',
+    updated: (v) => `✓ Cubicle <b>${v}</b> sürümüne güncellendi.`, newVersion: (v, cur) => `⬆ Cubicle <b>${v}</b> çıktı (sizdeki ${cur}).`, notes: 'Yenilikler',
+    howTo: 'Güncellemek için:', autoHint: 'Ya da Cubicle’ı --auto-update ile başlatın, kendiliğinden güncellensin.',
     stuck: (n) => `⛔ <b>${n}</b> takıldı`, since: (d) => `${d}${/gün$/.test(d) ? 'dür' : /saat$/.test(d) ? 'tir' : 'dır'} bekliyor`, look: 'Bakılacak iş', more: (n) => `${n} takılı iş daha var.`,
     stuckHint: 'Bir sonraki adımı ve kimin yapacağını yazın (yorum ajanı uyandırır).',
     blk: { stalled: (o) => (o ? `beklediği iş zinciri ${o} işinde kaldı` : 'onu ilerletecek kimse yok'), unassigned: (o) => `${o || 'bir iş'} bekleniyor ama o işin sahibi yok`, backlog: (o) => `${o || 'bir iş'} bekleniyor ama o iş beklemede (backlog)`, uninvokable: (o) => `${o || 'bir iş'} bekleniyor ama o işin ajanı çalışamıyor`, cancelled: (o) => `${o || 'bir iş'} bekleniyor ama o iş iptal edildi`, review: (o) => `${o || 'bir iş'} incelemede ama inceleyen yok`, disposition: () => 'çalışma bitti ama sonrasına kimse karar vermedi', decision: () => 'kararınızı bekliyor', external: () => 'dışarıdan biri bekleniyor', recovery: (o) => `bir kurtarma işi açık${o ? ` (${o})` : ''}`, other: () => 'takıldı, birinin bakması gerekiyor' },
@@ -402,6 +406,23 @@ function start(opts) {
     }
   }
 
+  // A new version: once per version, to every linked chat. After an update, a line saying so.
+  const notesLink = (v) => `https://github.com/caglarutkuguler/cubicle/releases/tag/v${encodeURIComponent(v)}`;
+  async function notifyVersion() {
+    if (!opts.version) return;
+    if (state.version !== opts.version) {
+      const was = state.version; state.version = opts.version; saveState();
+      if (was) for (const [chat, c] of Object.entries(state.chats)) await send(chat, `${tr(c.lang).updated(esc(opts.version))}\n${links([[tr(c.lang).notes, notesLink(opts.version)]])}`);
+    }
+    const u = opts.update && opts.update();
+    if (!u || !u.latest || u.auto || state.offered === u.latest) return;
+    state.offered = u.latest; saveState();
+    for (const [chat, c] of Object.entries(state.chats)) {
+      const t = tr(c.lang);
+      await send(chat, [t.newVersion(esc(u.latest), esc(opts.version)), links([[t.notes, notesLink(u.latest)]]), `${esc(t.howTo)} <code>${esc(u.command)}</code>`, `<i>${esc(t.autoHint)}</i>`].join('\n'));
+    }
+  }
+
   async function notifyCompleted(a) {
     for (const [chat, c] of Object.entries(state.chats)) {
       const t = tr(c.lang);
@@ -415,6 +436,7 @@ function start(opts) {
   async function watch() {
     if (stopped) return;
     try {
+      await notifyVersion();
       const { agents } = await snapshot(self);
       const now = new Map(agents.map((a) => [a.id, a]));
       if (known && Object.keys(state.chats).length) {

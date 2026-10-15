@@ -76,8 +76,21 @@ Telegram (optional; docs: README "On Telegram"):
   --paperclip-public-url   Paperclip's address for links, when it differs from --paperclip
   --telegram-replies       Let a reply in Telegram be posted as a comment on the Paperclip issue
                            (the only thing Cubicle ever writes to Paperclip; off by default)
+
+Updates:
+  Cubicle asks npm now and then whether a newer version is out and says so on the page and in
+  Telegram, with the command to update. --no-update-check (CUBICLE_UPDATE_CHECK=0) turns that off.
+  --auto-update            Install new versions by itself: Cubicle runs under a small supervisor that
+                           starts the new version (through npx, or git pull for a clone) and the open
+                           pages reload. Off by default.
 `);
   process.exit(0);
+}
+
+// --auto-update: this process only supervises; the office runs in a child it restarts on updates.
+if (process.argv.includes('--auto-update') && process.env.CUBICLE_WORKER !== '1') {
+  require('./cubicle-update.js').supervise(process.argv.slice(2));
+  return;
 }
 
 const PORT = Number(arg('port') || process.env.CUBICLE_PORT || 3200);
@@ -86,6 +99,11 @@ const PAPERCLIP = new URL(arg('paperclip') || process.env.PAPERCLIP_URL || 'http
 const PUBLIC_DIR = path.join(__dirname, '..', 'public');
 const VERSION = require('../package.json').version;
 const STARTED = Date.now();
+// A newer version on npm, once one is seen: { latest, kind, command, auto }.
+const UPDATES = require('./cubicle-update.js');
+const UPDATE_CHECK = !process.argv.includes('--no-update-check') && !/^(0|false|no|off)$/i.test(process.env.CUBICLE_UPDATE_CHECK || '');
+const AUTO_UPDATE = process.env.CUBICLE_WORKER === '1';
+let UPDATE = null;
 // Changes when the server restarts or index.html changes on disk; open pages
 // compare it and reload themselves, so a wall display picks up updates.
 function build() {
@@ -458,7 +476,7 @@ const server = http.createServer((req, res) => {
     // given for it, or none: the page then leaves out the Paperclip links instead of opening blanks.
     const pcLinks = !HAS_PAPERCLIP ? undefined : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
     return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined,
-      paperclipLinks: pcLinks, redact: REDACT, version: VERSION, build: build(), telegram }));
+      paperclipLinks: pcLinks, redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: UPDATE } : {}) }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -617,6 +635,19 @@ server.listen(PORT, HOST, () => {
   if (HAS_PAPERCLIP) console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
   for (const x of SOURCES) if (x.kind === 'file' && !fs.existsSync(x.file)) console.log(`Note: ${x.file} does not exist yet; it counts as no agents until something writes it.`);
   restartTelegram();
+  if (UPDATE_CHECK || AUTO_UPDATE) {
+    UPDATES.watch({ every: AUTO_UPDATE ? 3600000 : 6 * 3600000, onNewer(v) {
+      const kind = process.env.CUBICLE_INSTALL_KIND || UPDATES.installKind();
+      UPDATE = { latest: v, kind, command: UPDATES.command(kind), auto: AUTO_UPDATE };
+      if (!AUTO_UPDATE) return console.log(`Cubicle ${v} is out (this is ${VERSION}). To update: ${UPDATE.command}  (or start with --auto-update)`);
+      // under --auto-update: stop cleanly and let the supervisor start the new version
+      console.log(`Cubicle ${v} is out (this is ${VERSION}): restarting on it.`);
+      if (TELEGRAM) TELEGRAM.stop();
+      process.exitCode = UPDATES.UPDATE_EXIT;
+      server.close(); server.closeAllConnections?.();
+      setTimeout(() => process.exit(UPDATES.UPDATE_EXIT), 1500).unref();
+    } });
+  }
 });
 
 // The bot can also be set up from the page (⚙ → Telegram): the token and the replies switch are
@@ -820,7 +851,7 @@ function serveTailscale(req, res) {
 
 function startTelegram(token) {
   const bot = require('./cubicle-telegram.js').start({
-    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(),
+    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(), version: VERSION, update: () => UPDATE,
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),

@@ -30,7 +30,7 @@ async function withServer(args, fn, env = {}) {
 }
 
 // Fail fast instead of hanging CI if a server stops answering.
-setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45000).unref();
+setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90000).unref();
 
 (async () => {
   await require('./grok.js')();
@@ -654,6 +654,57 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
       const note = sent.find((m) => /is stuck|takıldı/.test(m.text));
       assert.ok(note && note.text.includes('ACM-5') && /stopped at ACM-2|ACM-2 işinde kaldı/.test(note.text) && note.text.includes('/ACM/issues/ACM-2'), note && note.text);
     } finally { p.kill(); tg.close(); pc.close(); }
+  }
+
+  // Updates: the server asks npm for the latest version and offers it on the page (with the command
+  // for this install) and once in Telegram; --auto-update restarts Cubicle on the new version
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-up-'));
+    const reg = http.createServer((q, r) => {
+      r.writeHead(200, { 'content-type': 'application/json' });
+      r.end(JSON.stringify(q.url === '/@caglarutkuguler%2fcubicle/latest' ? { name: '@caglarutkuguler/cubicle', version: '99.0.0' } : {}));
+    });
+    await new Promise((ok) => reg.listen(0, '127.0.0.1', ok));
+    const sent = [];
+    const tg = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        const body = b ? JSON.parse(b) : {}; r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/botT0K/getUpdates') return setTimeout(() => r.end('{"ok":true,"result":[]}'), 150);
+        if (q.url === '/botT0K/sendMessage') { sent.push(body); return r.end(JSON.stringify({ ok: true, result: { message_id: sent.length } })); }
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const feed = path.join(dir, 'f.json'); fs.writeFileSync(feed, '{"agents":[]}');
+    const env = { ...process.env, CUBICLE_REGISTRY: `http://127.0.0.1:${reg.address().port}`, CUBICLE_UPDATE_FIRST: '200', CUBICLE_INSTALL_KIND: 'npm',
+      CUBICLE_TELEGRAM_TOKEN: 'T0K', CUBICLE_TELEGRAM_CHAT: '9', CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`,
+      CUBICLE_TELEGRAM_STATE: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_INTERVAL: '300', CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 's.json') };
+    const port = 3400 + Math.floor(Math.random() * 500);
+    let p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--source', feed], { stdio: 'ignore', env });
+    try {
+      await sleep(1800);
+      const cfg = JSON.parse((await get(`http://127.0.0.1:${port}/config.json`)).body);
+      assert.deepStrictEqual(cfg.update, { latest: '99.0.0', kind: 'npm', command: 'npm install -g @caglarutkuguler/cubicle@latest', auto: false });
+      const offers = sent.filter((m) => m.text.includes('99.0.0'));
+      assert.strictEqual(offers.length, 1, 'offered once'); assert.ok(offers[0].text.includes('npm install -g @caglarutkuguler/cubicle@latest'), offers[0].text);
+    } finally { p.kill(); }
+    // turned off: nothing is asked
+    let asked = 0; reg.on('request', () => asked++);
+    p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port + 1), '--source', feed, '--no-update-check'], { stdio: 'ignore', env: { ...env, CUBICLE_TELEGRAM_TOKEN: '' } });
+    try { await sleep(1200); assert.strictEqual(asked, 0, 'no request with --no-update-check'); assert.ok(!JSON.parse((await get(`http://127.0.0.1:${port + 1}/config.json`)).body).update); } finally { p.kill(); }
+    // --auto-update: the worker steps aside and the supervisor starts the new version through npx
+    const fakeNpx = path.join(dir, 'npx.js'), marker = path.join(dir, 'ran.txt');
+    fs.writeFileSync(fakeNpx, `#!${process.execPath}\nrequire('fs').writeFileSync(${JSON.stringify(marker)}, process.argv.slice(2).join(' '));\n`); fs.chmodSync(fakeNpx, 0o755);
+    p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port + 2), '--source', feed, '--auto-update'], { stdio: 'ignore', env: { ...env, CUBICLE_TELEGRAM_TOKEN: '', CUBICLE_NPX: fakeNpx } });
+    try {
+      await sleep(4500);
+      assert.ok(fs.existsSync(marker), 'the supervisor started the new version');
+      assert.strictEqual(fs.readFileSync(marker, 'utf8'), `-y @caglarutkuguler/cubicle@99.0.0 --port ${port + 2} --source ${feed}`);
+      // the new version quit at once, so the supervisor went back to this one, which stays up
+      await sleep(1500);
+      assert.strictEqual((await get(`http://127.0.0.1:${port + 2}/config.json`)).status, 200, 'back on the old version');
+    } finally { p.kill('SIGTERM'); await sleep(300); tg.close(); reg.close(); }
   }
 
   // Telegram filters: /mute an agent, /alerts questions|failures|all; each chat keeps its own
