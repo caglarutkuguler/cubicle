@@ -47,6 +47,9 @@ const TEXT = {
     step: (i, n) => `question ${i} of ${n}`, more: (n) => `${n} more waiting after this one.`, skipHint: '/skip moves on to the next one.',
     answerHere: 'Write your answer here (the option’s number, or your own words).', skipped: 'Skipped.', queued: (n) => `${n} waiting; here is the first. The next one comes when you answer.`,
     elsewhere: (id) => `${id} was answered elsewhere; moving on.`, allDone: '✓ That was the last one; nobody else is waiting for you.',
+    stuck: (n) => `⛔ <b>${n}</b> is stuck`, since: (d) => `stopped ${d} ago`, look: 'Look at', more: (n) => `${n} more stuck task${n === 1 ? '' : 's'}.`,
+    stuckHint: 'Write the next step and who takes it (a comment wakes the agent).',
+    blk: { stalled: (o) => (o ? `the chain it waits on stopped at ${o}` : 'nothing will move it on'), unassigned: (o) => `waits on ${o || 'a task'}, which has no one assigned`, backlog: (o) => `waits on ${o || 'a task'}, which sits in the backlog`, uninvokable: (o) => `waits on ${o || 'a task'}, whose agent cannot run`, cancelled: (o) => `waits on ${o || 'a task'}, which was cancelled`, review: (o) => `waits on the review of ${o || 'a task'}, which nobody is doing`, disposition: () => 'its run finished but nobody decided what comes next', decision: () => 'waits for your decision', external: () => 'waits on someone outside', recovery: (o) => `a recovery task is open${o ? ` (${o})` : ''}`, other: () => 'blocked and needs someone' },
   },
   tr: {
     needs: (n) => `✋ <b>${n}</b> sizi bekliyor`, why: 'Neden', open: 'Cubicle’da gör', inPaperclip: 'Paperclip’te aç',
@@ -72,6 +75,9 @@ const TEXT = {
     step: (i, n) => `soru ${i}/${n}`, more: (n) => `Bundan sonra ${n} tane daha sizi bekliyor.`, skipHint: '/skip ile sıradakine geçersiniz.',
     answerHere: 'Cevabınızı buraya yazın (seçeneğin numarası ya da kendi cümleniz).', skipped: 'Geçildi.', queued: (n) => `${n} tane sizi bekliyor; ilki geliyor. Cevapladıkça sıradaki gelir.`,
     elsewhere: (id) => `${id} başka yerden yanıtlanmış; sıradakine geçiliyor.`, allDone: '✓ Sonuncusuydu; sizi bekleyen kalmadı.',
+    stuck: (n) => `⛔ <b>${n}</b> takıldı`, since: (d) => `${d}${/gün$/.test(d) ? 'dür' : /saat$/.test(d) ? 'tir' : 'dır'} bekliyor`, look: 'Bakılacak iş', more: (n) => `${n} takılı iş daha var.`,
+    stuckHint: 'Bir sonraki adımı ve kimin yapacağını yazın (yorum ajanı uyandırır).',
+    blk: { stalled: (o) => (o ? `beklediği iş zinciri ${o} işinde kaldı` : 'onu ilerletecek kimse yok'), unassigned: (o) => `${o || 'bir iş'} bekleniyor ama o işin sahibi yok`, backlog: (o) => `${o || 'bir iş'} bekleniyor ama o iş beklemede (backlog)`, uninvokable: (o) => `${o || 'bir iş'} bekleniyor ama o işin ajanı çalışamıyor`, cancelled: (o) => `${o || 'bir iş'} bekleniyor ama o iş iptal edildi`, review: (o) => `${o || 'bir iş'} incelemede ama inceleyen yok`, disposition: () => 'çalışma bitti ama sonrasına kimse karar vermedi', decision: () => 'kararınızı bekliyor', external: () => 'dışarıdan biri bekleniyor', recovery: (o) => `bir kurtarma işi açık${o ? ` (${o})` : ''}`, other: () => 'takıldı, birinin bakması gerekiyor' },
   },
 };
 // Each agent's newest run, finished or not (by when it started): a failure counts only while no
@@ -94,6 +100,17 @@ function standingFailure(run, runs) {
 // confirmations), whose responder Paperclip gives as the agent.
 const asksPerson = (x) => !!x && (/board|user|human/i.test(String(x.responder || '')) || x.kind === 'interaction');
 const tr = (lang) => TEXT[lang] || TEXT.en;
+// Stuck work (Paperclip's blocked inbox): why, in a few words, and which comes first for an agent
+// with several: a decision for you, then the most severe, then the oldest.
+const BLK_GROUP = { blocked_chain_stalled: 'stalled', blocked_by_unassigned_issue: 'unassigned', blocked_by_assigned_backlog_issue: 'backlog',
+  blocked_by_uninvokable_assignee: 'uninvokable', blocked_by_cancelled_issue: 'cancelled', in_review_without_action_path: 'review', invalid_review_participant: 'review',
+  missing_successful_run_disposition: 'disposition', pending_board_decision: 'decision', pending_user_decision: 'decision', external_owner_action: 'external', open_recovery_issue: 'recovery' };
+const blockedText = (b, lang) => { const t = tr(lang).blk; return (t[BLK_GROUP[b && b.reason]] || t.other)((b && b.on) || ''); };
+const SEV = { critical: 0, high: 1, medium: 2, low: 3 };
+const forYou = (b) => b.owner === 'board' || b.owner === 'user' || !!b.asks || !!b.approval;
+const blockedRank = (x, y) => (forYou(y.blocked) - forYou(x.blocked)) || ((SEV[x.blocked.severity] ?? 4) - (SEV[y.blocked.severity] ?? 4))
+  || String(x.blocked.since || '').localeCompare(String(y.blocked.since || ''));
+const durText = (ms, lang) => { const h = ms / 3600000; return h >= 48 ? `${Math.round(h / 24)} ${lang === 'tr' ? 'gün' : 'days'}` : h >= 2 ? `${Math.round(h)} ${lang === 'tr' ? 'saat' : 'hours'}` : `${Math.max(1, Math.round(h * 60))} ${lang === 'tr' ? 'dakika' : 'minutes'}`; };
 const esc = (s) => String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 const CLOSED = new Set(['done', 'cancelled']);
 const FAILED_RUNS = new Set(['failed', 'error', 'timed_out']);
@@ -139,12 +156,15 @@ async function snapshot(self) {
         for (const a of as || []) {
           const mine = (issues || []).filter((i) => i.assigneeAgentId === a.id && !CLOSED.has(i.status));
           const ask = mine.find((i) => ((i.reviewAttention && i.reviewAttention.paths) || []).some(asksPerson));
+          const stuckAll = ask ? [] : mine.filter((i) => i.blocked).sort(blockedRank), stuck = stuckAll[0] || null;
           const task = mine.find((i) => i.status === 'in_progress') || mine[0] || null;
           const run = latest.get(a.id);
           const askPath = ask && ask.reviewAttention.paths.find(asksPerson);
           agents.push({
             id: a.id, name: a.name, status: a.status, company: c, paperclip: cfg.paperclipUrl || src.paperclipUrl,
-            needs: a.status === 'waiting' || (!!ask && a.status !== 'error'), issue: ask || (a.status === 'waiting' ? task : null), reason: askPath ? askPath.label : '', approval: askPath && askPath.kind === 'approval' ? askPath.ref || '' : '',
+            needs: a.status === 'waiting' || ((!!ask || !!stuck) && a.status !== 'error'), issue: ask || stuck || (a.status === 'waiting' ? task : null),
+            reason: askPath ? askPath.label : '', approval: askPath && askPath.kind === 'approval' ? askPath.ref || '' : stuck && stuck.blocked.approval ? stuck.blocked.approval : '',
+            ...(stuck ? { blocked: { ...stuck.blocked, more: stuckAll.length - 1 } } : {}),
             task, error: a.errorReason || '', fail: standingFailure(run, runs) ? { id: run.id, code: run.errorCode || run.status, error: run.error || '' } : null,
             completionId: completed.get(a.id)?.id || null, explicitCompletion: true,
           });
@@ -268,13 +288,20 @@ function start(opts) {
     }
     return out.join('\n').slice(0, 3200);
   }
+  // why it is stuck, since when, what to look at, and how many more
+  function stuckText(b, lang) {
+    const t = tr(lang), since = Date.parse(b.since);
+    return [`⛔ ${esc(blockedText(b, lang))}${Number.isFinite(since) ? ` · ${esc(t.since(durText(Date.now() - since, lang)))}` : ''}`,
+      b.on && b.onTitle ? `→ <b>${esc(b.on)}</b> ${esc(b.onTitle)}` : '', `<i>${esc(t.stuckHint)}</i>`, b.more > 0 ? esc(t.more(b.more)) : ''].filter(Boolean).join('\n');
+  }
   function needsText(a, lang, qs = [], aps = []) {
     const t = tr(lang), i = a.issue, cn = connectOf(qs);
     const q = [approvalText(aps[0], lang), cn ? `${t.connectNeeds(esc(cn.name))}\n${esc(t.connectNote)}` : '', qs.filter((x) => x.kind !== 'connection_intent').length ? questionsText(qs.filter((x) => x.kind !== 'connection_intent'), lang) : ''].filter(Boolean).join('\n');
-    return [t.needs(esc(a.name)),
+    const b = a.blocked && !q ? a.blocked : null;
+    return [b ? t.stuck(esc(a.name)) : t.needs(esc(a.name)),
       i && (i.identifier || i.title) ? `<b>${esc(i.identifier || '')}</b> ${esc(i.title || '')}` : '',
-      a.reason && !q ? `${t.why}: ${esc(a.reason)}` : '',
-      q, '', links([[t.open, agentLink(a)], [t.approveIn, aps.length ? approvalLink(a, a.approval) : ''], [t.connectIn, connectLink(a, cn)], [t.inPaperclip, issueLink(a, i)]]),
+      b ? stuckText(b, lang) : a.reason && !q ? `${t.why}: ${esc(a.reason)}` : '',
+      q, '', links([[t.open, agentLink(a)], [t.approveIn, aps.length ? approvalLink(a, a.approval) : ''], [t.connectIn, connectLink(a, cn)], [b && b.on ? `${t.look}: ${b.on}` : '', b && b.on ? issueLink(a, { identifier: b.on }) : ''], [t.inPaperclip, issueLink(a, i)]]),
       opts.replies && a.company && i && i.identifier ? `<i>${esc(q ? t.replyHintQ : t.replyHint)}</i>` : ''].filter((x, k) => x || k === 4).join('\n');
   }
   // A reply of just a number picks that option.
@@ -297,7 +324,8 @@ function start(opts) {
     options: (q.options || []).slice(0, 12).map((o) => ({ label: String(o.label || '').slice(0, 200), description: String(o.description || '').slice(0, 200) })) })));
   function stepText(c, cur) {
     const t = tr(c.lang), a = cur.agent, q = cur.steps[cur.at];
-    const head = [t.needs(esc(a.name)), cur.issue ? `<b>${esc(cur.issue)}</b> ${esc(cur.title || '')}` : ''];
+    const stuck = cur.blocked && !q && !cur.ap && !cur.connect ? cur.blocked : null;
+    const head = [stuck ? t.stuck(esc(a.name)) : t.needs(esc(a.name)), cur.issue ? `<b>${esc(cur.issue)}</b> ${esc(cur.title || '')}` : ''];
     let body = [];
     if (q) {
       if (q.title) body.push(`❓ <b>${esc(q.title)}</b>`);
@@ -307,8 +335,10 @@ function start(opts) {
       if (q.other && q.options.length) body.push(`   <i>${esc(t.other)}</i>`);
     } else if (cur.ap) body.push(approvalText(cur.ap, c.lang));
     else if (cur.connect) body.push(`${t.connectNeeds(esc(cur.connect.name))}\n${esc(t.connectNote)}`);
+    else if (stuck) body.push(stuckText(stuck, c.lang));
     else if (cur.reason) body.push(`${t.why}: ${esc(cur.reason)}`);
-    const tail = ['', links([[t.open, agentLink(a)], [t.approveIn, cur.ap ? approvalLink(a, cur.approval) : ''], [t.connectIn, connectLink(a, cur.connect)], [t.inPaperclip, issueLink(a, { identifier: cur.issue })]])];
+    const tail = ['', links([[t.open, agentLink(a)], [t.approveIn, cur.ap ? approvalLink(a, cur.approval) : ''], [t.connectIn, connectLink(a, cur.connect)],
+      [stuck && stuck.on ? `${t.look}: ${stuck.on}` : '', stuck && stuck.on ? issueLink(a, { identifier: stuck.on }) : ''], [t.inPaperclip, issueLink(a, { identifier: cur.issue })]])];
     if (opts.replies && cur.issue) tail.push(`<i>${esc(t.answerHere)}</i>`);
     const left = (c.queue || []).length;
     if (left) tail.push(`<i>${esc(t.more(left))} ${esc(t.skipHint)}</i>`);
@@ -337,7 +367,7 @@ function start(opts) {
     const key = a.issue && a.issue.identifier ? a.issue.identifier : `agent:${a.id}`;
     if ((c.current && c.current.key === key) || c.queue.some((x) => x.key === key)) return false;
     c.queue.push({ key, issue: a.issue && a.issue.identifier ? a.issue.identifier : '', title: a.issue && a.issue.title ? String(a.issue.title).slice(0, 200) : '',
-      reason: String(a.reason || '').slice(0, 300), approval: a.approval || '', agent: { id: a.id, name: a.name, company: a.company ? { issuePrefix: a.company.issuePrefix } : null, paperclip: a.paperclip } });
+      reason: String(a.reason || '').slice(0, 300), approval: a.approval || '', ...(a.blocked ? { blocked: a.blocked } : {}), agent: { id: a.id, name: a.name, company: a.company ? { issuePrefix: a.company.issuePrefix } : null, paperclip: a.paperclip } });
     return true;
   }
   async function notifyNeeds(a) {

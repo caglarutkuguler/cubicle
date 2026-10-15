@@ -610,6 +610,52 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 45
     } finally { p.kill(); tg.close(); pc.close(); }
   }
 
+  // Stuck work: Paperclip's blocked inbox is merged into the office's issues (what it waits on, since
+  // when, who can move it), and Telegram says the agent is stuck, why, and links the task to look at
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tgb-'));
+    let stuck = false;
+    const pc = http.createServer((q, r) => {
+      r.writeHead(200, { 'content-type': 'application/json' });
+      if (q.url === '/api/companies') return r.end(JSON.stringify([{ id: 'c1', name: 'Acme', issuePrefix: 'ACM' }]));
+      if (q.url === '/api/companies/c1/agents') return r.end(JSON.stringify([{ id: 'a1', name: 'WebOps', status: 'idle' }]));
+      if (q.url === '/api/companies/c1/issues?attention=blocked') return r.end(JSON.stringify(stuck ? [{ identifier: 'ACM-5', title: 'Go live', status: 'blocked', assigneeAgentId: 'a1',
+        description: 'secret plan', blockerAttention: { terminalBlocker: { identifier: 'ACM-2', title: 'Staging access' } },
+        blockedInboxAttention: { state: 'needs_attention', reason: 'blocked_chain_stalled', severity: 'high', stoppedSinceAt: new Date(Date.now() - 3 * 86400000).toISOString(),
+          owner: { type: 'unknown' }, action: { label: 'Inspect blocker chain', detail: 'Inspect the stalled blocker.' }, leafIssue: null, interactionId: null, approvalId: null } }] : []));
+      if (q.url.split('?')[0] === '/api/companies/c1/issues') return r.end(JSON.stringify([{ identifier: 'ACM-5', title: 'Go live', status: 'blocked', assigneeAgentId: 'a1', reviewAttention: { paths: [] } }]));
+      r.end('[]');
+    });
+    await new Promise((ok) => pc.listen(0, '127.0.0.1', ok));
+    const sent = [];
+    const tg = http.createServer((q, r) => {
+      let b = ''; q.on('data', (d) => (b += d)); q.on('end', () => {
+        const body = b ? JSON.parse(b) : {}; r.writeHead(200, { 'content-type': 'application/json' });
+        if (q.url === '/botT0K/getUpdates') return setTimeout(() => r.end('{"ok":true,"result":[]}'), 150);
+        if (q.url === '/botT0K/sendMessage') { sent.push(body); return r.end(JSON.stringify({ ok: true, result: { message_id: sent.length } })); }
+        r.end('{"ok":false}');
+      });
+    });
+    await new Promise((ok) => tg.listen(0, '127.0.0.1', ok));
+    const port = 3400 + Math.floor(Math.random() * 500);
+    const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--paperclip', `http://127.0.0.1:${pc.address().port}`, '--telegram-replies'], { stdio: 'ignore',
+      env: { ...process.env, CUBICLE_BLOCKED_TTL: '100', CUBICLE_TELEGRAM_TOKEN: 'T0K', CUBICLE_TELEGRAM_CHAT: '9', CUBICLE_TELEGRAM_API: `http://127.0.0.1:${tg.address().port}`,
+        CUBICLE_TELEGRAM_STATE: path.join(dir, 'tg.json'), CUBICLE_TELEGRAM_INTERVAL: '300', CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_SETTINGS: path.join(dir, 's.json') } });
+    try {
+      await sleep(1500);
+      let issues = JSON.parse((await get(`http://127.0.0.1:${port}/api/companies/c1/issues`)).body);
+      assert.ok(!issues[0].blocked, 'not stuck yet');
+      stuck = true; await sleep(1200);
+      issues = JSON.parse((await get(`http://127.0.0.1:${port}/api/companies/c1/issues`)).body);
+      const b = issues[0].blocked;
+      assert.ok(b && b.reason === 'blocked_chain_stalled' && b.on === 'ACM-2' && b.onTitle === 'Staging access' && b.owner === 'unknown' && b.since, JSON.stringify(b));
+      assert.ok(!JSON.stringify(issues).includes('secret plan'), 'shaped, not passed through');
+      const note = sent.find((m) => /is stuck|takıldı/.test(m.text));
+      assert.ok(note && note.text.includes('ACM-5') && /stopped at ACM-2|ACM-2 işinde kaldı/.test(note.text) && note.text.includes('/ACM/issues/ACM-2'), note && note.text);
+    } finally { p.kill(); tg.close(); pc.close(); }
+  }
+
   // Telegram filters: /mute an agent, /alerts questions|failures|all; each chat keeps its own
   {
     const fs = require('fs'); const os = require('os');

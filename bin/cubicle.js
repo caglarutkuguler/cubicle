@@ -246,6 +246,38 @@ function shapePaperclip(pathname, data, light = false) {
   return data;
 }
 
+// Blocked work Paperclip says needs someone (its "blocked" inbox): why it stopped, since when, who
+// can move it (the board, a user, an agent, nobody known) and the issue to look at.
+const BLOCKED_TTL = Number(process.env.CUBICLE_BLOCKED_TTL) || 30000;
+const blockedCache = new Map();        // company id -> { at, map: identifier -> blocked, busy }
+function shapeBlocked(i) {
+  const a = i && i.blockedInboxAttention; if (!a || !i.identifier) return null;
+  const b = i.blockerAttention || {}, leaf = a.leafIssue || b.terminalBlocker || null;
+  const on = (leaf && leaf.identifier) || b.sampleStalledBlockerIdentifier || b.sampleBlockerIdentifier || '';
+  return {
+    state: String(a.state || ''), reason: String(a.reason || ''), severity: String(a.severity || ''),
+    ...(a.stoppedSinceAt ? { since: a.stoppedSinceAt } : {}), owner: String((a.owner && a.owner.type) || 'unknown'),
+    ...(on && on !== i.identifier ? { on } : {}),
+    ...(a.interactionId ? { asks: true } : {}), ...(a.approvalId ? { approval: String(a.approvalId) } : {}),
+    ...(REDACT ? {} : {
+      ...(leaf && leaf.title && on !== i.identifier ? { onTitle: String(leaf.title).slice(0, 200) } : {}),
+      ...(a.action && a.action.label ? { action: String(a.action.label).slice(0, 120), detail: String(a.action.detail || '').slice(0, 400) } : {}),
+    }),
+  };
+}
+// Paperclip takes a moment to work this out, so it is read at most every half minute, and once
+// known the office gets the last answer at once while a newer one is fetched.
+function blockedFor(companyId) {
+  const c = blockedCache.get(companyId);
+  if (c && (Date.now() - c.at < BLOCKED_TTL || c.busy)) return Promise.resolve(c.map);
+  const entry = c || { at: 0, map: new Map() }; entry.busy = true; blockedCache.set(companyId, entry);
+  const fresh = upstreamJSON('GET', `/api/companies/${companyId}/issues?attention=blocked`).then((r) => {
+    if (r.status === 200 && Array.isArray(r.data)) entry.map = new Map(r.data.map((i) => [i && i.identifier, shapeBlocked(i)]).filter(([k, v]) => k && v));
+    entry.at = Date.now(); entry.busy = false; return entry.map;
+  }, () => { entry.at = Date.now(); entry.busy = false; return entry.map; });
+  return c ? Promise.resolve(c.map) : fresh;
+}
+
 // KPI board: every issue a person created and everything under it, finished ones from the last
 // 90 days included, with just the fields progress and timing need.
 const KPI_DAYS = 90;
@@ -454,6 +486,13 @@ const server = http.createServer((req, res) => {
   if (url.pathname.startsWith('/api/')) {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
+    // A company's open issues, each blocked one carrying what it waits for (Paperclip's blocked inbox).
+    const issuesMatch = url.pathname.match(/^\/api\/companies\/([\w-]+)\/issues$/);
+    if (issuesMatch) return (async () => {
+      const [r, blocked] = await Promise.all([upstreamJSON('GET', url.pathname + ISSUES_QUERY), blockedFor(issuesMatch[1]).catch(() => new Map())]);
+      if (r.status !== 200 || !Array.isArray(r.data)) return send(res, r.status || 502, r.status ? JSON.stringify(r.data || { error: 'paperclip error' }) : '{"error":"paperclip unreachable"}');
+      send(res, 200, JSON.stringify(shapePaperclip(url.pathname, r.data).map((i) => (blocked.has(i.identifier) ? { ...i, blocked: blocked.get(i.identifier) } : i))));
+    })();
     const query = url.pathname.endsWith('/heartbeat-runs') ? (url.searchParams.get('scope') === 'kpi' ? KPI_RUNS_QUERY : RUNS_QUERY)
       : url.pathname.endsWith('/issues') ? ISSUES_QUERY : url.pathname.endsWith('/comments') ? '?limit=3' : '';
     const upstreamUrl = new URL(url.pathname + query, PAPERCLIP);
