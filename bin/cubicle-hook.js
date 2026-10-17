@@ -55,6 +55,34 @@ function normalize(ev, runtime) {
 
 const STALE_MS = 12 * 60 * 60 * 1000; // drop sessions with no event for 12 h
 
+// Headless runs (cron, CI, an issue worker script) can name their character and link its
+// card to the ticket they work on, through the environment Claude Code inherits:
+//   CUBICLE_NAME      character name instead of the directory name ("ncu-pch #42")
+//   CUBICLE_ROLE      card role instead of the runtime label ("Issue worker")
+//   CUBICLE_TASK_ID / CUBICLE_TASK_URL / CUBICLE_TASK
+//                     ticket id, link and title; the bubble keeps showing the current tool,
+//                     the card links to the ticket, and the title shows while idle
+//   CUBICLE_LINGER=1  keep the character in the office after SessionEnd (idle, or in error if
+//                     the last turn failed) so a finished batch run stays visible until the next
+//                     run with the same name or the 12 h stale limit; subagents still leave
+function identity(env) {
+  const s = (k) => String(env[k] || '').trim();
+  const id = { name: s('CUBICLE_NAME'), role: s('CUBICLE_ROLE'), title: s('CUBICLE_TASK'), taskId: s('CUBICLE_TASK_ID'), url: s('CUBICLE_TASK_URL') };
+  id.linger = /^(1|true|yes)$/i.test(s('CUBICLE_LINGER'));
+  id.ticket = !!(id.taskId || id.url || id.title);
+  return id;
+}
+
+// What the card shows as the task: the tool summary while running, wrapped with the ticket
+// id and link when the run was given one; the ticket title alone when idle.
+function taskOf(text, idn) {
+  if (!idn.ticket) return text;
+  const t = { id: idn.taskId, title: text || idn.title || idn.taskId, url: idn.url };
+  if (!t.id) delete t.id;
+  if (!t.url) delete t.url;
+  return t;
+}
+
 function summarize(ev) {
   const tool = ev.tool_name || '';
   const inp = ev.tool_input || {};
@@ -111,12 +139,13 @@ function applySubagent(feed, agents, ev, now) {
   return { ...feed, agents };
 }
 
-function apply(feed, ev, runtime = 'claude') {
+function apply(feed, ev, runtime = 'claude', env = {}) {
   // Grok discovers Claude settings too, but has its own feed example. Do not
   // combine its camelCase sessions under Claude's fallback "unknown" id.
   if (runtime === 'claude' && (ev.sessionId || ev.hookEventName)) return feed;
   ev = normalize(ev, runtime);
-  const role = RUNTIMES[runtimeOf(runtime)].label;
+  const idn = identity(env);
+  const role = idn.role || RUNTIMES[runtimeOf(runtime)].label;
   const id = ev.session_id || 'unknown';
   const now = Date.now();
   const agents = feed.agents.filter((a) => now - (a.updated || 0) < STALE_MS);
@@ -127,37 +156,43 @@ function apply(feed, ev, runtime = 'claude') {
   }
 
   let a = agents.find((x) => x.id === id);
-  const name = path.basename(ev.cwd || '') || runtimeOf(runtime);
+  const name = idn.name || path.basename(ev.cwd || '') || runtimeOf(runtime);
 
   switch (ev.hook_event_name) {
     case 'SessionEnd':
-      // The session leaves the office together with any subagents still at their desks.
+      // The session leaves the office together with any subagents still at their desks,
+      // unless it was started with CUBICLE_LINGER: then it stays, idle (or in error).
+      if (idn.linger && a) {
+        a.updated = now;
+        if (a.status !== 'error') Object.assign(a, { status: 'idle', task: taskOf('', idn) || null });
+        return { ...feed, agents: agents.filter((x) => x.id === id || x.parent !== id) };
+      }
       return { ...feed, agents: agents.filter((x) => x.id !== id && x.parent !== id) };
     case 'SessionStart':
       a = a || { id, since: now };
-      Object.assign(a, { name, role, status: 'idle', task: null, error: null });
+      Object.assign(a, { name, role, status: 'idle', task: taskOf('', idn) || null, error: null });
       break;
     case 'UserPromptSubmit':
       a = a || { id, since: now, name, role };
-      Object.assign(a, { status: 'running', task: summarizePrompt(ev.prompt), error: null });
+      Object.assign(a, { status: 'running', task: taskOf(idn.title || summarizePrompt(ev.prompt), idn), error: null });
       break;
     case 'PreToolUse':
     case 'PostToolUse':
     case 'PreCompact':
       a = a || { id, since: now, name, role };
-      Object.assign(a, { status: 'running', task: ev.hook_event_name === 'PreCompact' ? 'compacting context' : summarize(ev), error: null });
+      Object.assign(a, { status: 'running', task: taskOf(ev.hook_event_name === 'PreCompact' ? 'compacting context' : summarize(ev), idn), error: null });
       if (ev.hook_event_name !== 'PreCompact') remember(a, ev, now);
       break;
     case 'PermissionRequest':
       a = a || { id, since: now, name, role };
-      Object.assign(a, { status: 'waiting', task: ev.tool_name ? `allow ${summarize(ev)}?` : 'needs your permission' });
+      Object.assign(a, { status: 'waiting', task: taskOf(ev.tool_name ? `allow ${summarize(ev)}?` : 'needs your permission', idn) });
       break;
     case 'Notification':
       // Only notifications that ask the user for something raise a hand.
       // idle_prompt (~60 s after a turn), auth_success, agent_completed, quota_* etc. are ignored.
       if (!needsUser(ev)) return feed;
       a = a || { id, since: now, name, role };
-      Object.assign(a, { status: 'waiting', task: ev.message ? String(ev.message).slice(0, 80) : 'needs your input' });
+      Object.assign(a, { status: 'waiting', task: taskOf(ev.message ? String(ev.message).slice(0, 80) : 'needs your input', idn) });
       break;
     case 'StopFailure':
       a = a || { id, since: now, name, role };
@@ -166,7 +201,7 @@ function apply(feed, ev, runtime = 'claude') {
     case 'Stop':
       a = a || { id, since: now, name, role };
       if (a.status === 'running' || a.status === 'waiting') a.completedAt = now;
-      Object.assign(a, { status: 'idle', task: null });
+      Object.assign(a, { status: 'idle', task: taskOf('', idn) || null });
       break;
     default:
       return feed; // SubagentStart/SubagentStop without an agent_id etc.: nothing to draw
@@ -249,7 +284,7 @@ function main(runtimeName = process.argv[2]) {
       withLock(FEED, () => {
         let feed = { company: label, agents: [] };
         try { const cur = JSON.parse(fs.readFileSync(FEED, 'utf8')); if (Array.isArray(cur.agents)) feed = cur; } catch (_) {}
-        feed = apply(feed, ev, runtime);
+        feed = apply(feed, ev, runtime, process.env);
         const tmp = `${FEED}.${process.pid}.tmp`;
         fs.writeFileSync(tmp, JSON.stringify(feed));
         fs.renameSync(tmp, FEED); // atomic on the same filesystem: readers never see half a file
@@ -261,6 +296,19 @@ function main(runtimeName = process.argv[2]) {
 // ---------- install / uninstall into the CLI's settings ----------
 const EVENTS = RUNTIMES.claude.events;
 const isOurs = (h) => /cubicle-hook\.js|cubicle"? hook\b/.test(String(h && h.command));
+
+// `npx cubicle install-hooks` runs from npm's throw-away cache (…/_npx/<hash>/…). A hook that
+// points there stops working the day the cache is cleaned, so the script (one file, no
+// dependencies) is copied to ~/.cubicle/bin/ and the hooks point at the copy. Installs from a
+// clone or a global npm install keep pointing at the real file. Re-run install-hooks to refresh it.
+const isEphemeral = (p) => /[\\/]_npx[\\/]/.test(p);
+function stableScript(src = __filename, dir = DIR) {
+  if (!isEphemeral(src)) return path.resolve(src);
+  const dest = path.join(dir, 'bin', 'cubicle-hook.js');
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
+  fs.copyFileSync(src, dest);
+  return dest;
+}
 
 function install({ uninstall = false, runtime: runtimeName = 'claude', settingsFile } = {}) {
   const runtime = runtimeOf(runtimeName);
@@ -280,7 +328,7 @@ function install({ uninstall = false, runtime: runtimeName = 'claude', settingsF
     if (!hooks[ev].length) delete hooks[ev];
   }
   if (!uninstall) {
-    const command = `node "${path.resolve(__filename)}"${runtime === 'claude' ? '' : ` ${runtime}`}`;
+    const command = `node "${stableScript()}"${runtime === 'claude' ? '' : ` ${runtime}`}`;
     for (const ev of rt.events) {
       const h = { type: 'command', command, timeout: rt.timeout(ev) };
       if (runtime === 'gemini') h.name = 'cubicle';
@@ -302,4 +350,4 @@ function install({ uninstall = false, runtime: runtimeName = 'claude', settingsF
 }
 
 if (require.main === module) main();
-module.exports = { apply, summarize, main, install, EVENTS, RUNTIMES };
+module.exports = { apply, summarize, main, install, stableScript, isEphemeral, EVENTS, RUNTIMES };

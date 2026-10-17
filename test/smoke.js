@@ -34,6 +34,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
 
 (async () => {
   await require('./grok.js')();
+  await require('./headless-worker.js')();
   // hook logic
   let feed = { company: 'Claude Code', agents: [] };
   feed = apply(feed, { session_id: 's1', cwd: '/x/repo', hook_event_name: 'PreToolUse', tool_name: 'Edit', tool_input: { file_path: '/x/repo/a.ts' } });

@@ -48,6 +48,8 @@ npx @caglarutkuguler/cubicle install-hooks      # once; backs up ~/.claude/setti
 npx @caglarutkuguler/cubicle --source claude-code
 ```
 
+No Paperclip needed. Scripts that run Claude Code unattended (cron, CI, issue bots) can name their character and link it to a ticket with `CUBICLE_NAME`, `CUBICLE_TASK_URL` and `CUBICLE_LINGER`; see [Headless workers](examples/claude-code/README.md#headless-workers-cron-ci-issue-bots).
+
 **Both in one office** — Paperclip agents on the first rows, Claude Code sessions after them:
 
 ```bash
