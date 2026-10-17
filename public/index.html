@@ -3002,6 +3002,7 @@
   // Clicking an agent with its hand up opens its question; the first click may have to wait for it.
   function selectAndAsk(s) {
     select(s);
+    if (s && window.CubicleAsk && window.CubicleAsk.handle(s)) return;
     if (!s || KIOSK || !answerIssue(s)) return;
     if (!openQuestions(s)) setTimeout(() => { if (cam.sel === s.id) openQuestions(s); }, 700);
   }
@@ -3083,6 +3084,7 @@
       const b = e.target.closest('b.pick'); if (!b || !animOn()) return;
       const s = sprites.get(b.dataset.id); if (!s) return;
       select(s); stageEl.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (window.CubicleAsk) window.CubicleAsk.handle(s);
     });
     window.addEventListener('resize', clampCam);
   }
@@ -3927,58 +3929,151 @@
 })();
 </script>
 
-<div id="ceo-attn" hidden style="position:fixed;left:12px;bottom:12px;z-index:60;width:min(380px,calc(100vw - 24px));font:13px system-ui,sans-serif;background:#3a1418;color:#ffd9d9;border:1px solid #c0392b;border-radius:10px;padding:8px;box-shadow:0 4px 16px #0008;max-height:45vh;overflow:auto"></div>
-<div id="ceo-box" hidden style="position:fixed;left:12px;bottom:12px;z-index:50;width:min(380px,calc(100vw - 24px));font:13px system-ui,sans-serif;background:rgba(20,20,28,.92);color:#eee;border:1px solid #556;border-radius:10px;padding:8px;box-shadow:0 4px 16px #0006">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b>Task for the CEO</b><button id="ceo-min" type="button" style="background:none;border:0;color:#aaa;cursor:pointer">–</button></div>
-  <div id="ceo-body">
-    <textarea id="ceo-text" rows="3" placeholder="Describe the task… (Ctrl+Enter to send)" style="width:100%;box-sizing:border-box;background:#111;color:#eee;border:1px solid #445;border-radius:6px;padding:6px;resize:vertical"></textarea>
-    <div style="display:flex;gap:8px;align-items:center;margin-top:4px"><button id="ceo-send" type="button" style="padding:4px 12px;cursor:pointer">Send</button><span id="ceo-msg" style="color:#9ab;flex:1"></span></div>
-    <pre id="ceo-last" style="white-space:pre-wrap;max-height:120px;overflow:auto;margin:6px 0 0;color:#bbb;font-size:12px"></pre>
-  </div>
-</div>
+<style>
+  dialog.cdlg { width:min(560px,calc(100vw - 24px)); border:1px solid var(--line); border-radius:12px; background:var(--panel); color:var(--text); font:inherit; padding:16px; }
+  dialog.cdlg::backdrop { background:rgba(8,9,16,.6); }
+  .cdlg h3 { margin:0 0 4px; font-size:15px; font-weight:600; }
+  .cdlg .sub { color:var(--muted); font-size:12px; }
+  .cdlg .qtext { white-space:pre-wrap; margin:10px 0 4px; max-height:34vh; overflow:auto; }
+  .cdlg textarea, .cdlg input[type=text] { width:100%; box-sizing:border-box; background:#151826; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:7px 9px; font:inherit; }
+  .cdlg .row { display:flex; gap:8px; align-items:center; margin-top:12px; }
+  .cdlg button { background:#2f3552; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 12px; font:inherit; cursor:pointer; }
+  .cdlg button.pri { background:#4a5bd4; border-color:#4a5bd4; }
+  .cdlg button.link { background:none; border:0; color:var(--muted); padding:6px 4px; }
+  .cdlg .opt { display:flex; gap:10px; align-items:flex-start; padding:9px 11px; margin-top:7px; border:1px solid var(--line); border-radius:8px; cursor:pointer; background:#1b1e2e; }
+  .cdlg .opt:hover { border-color:var(--link); }
+  .cdlg .opt.sel { border-color:var(--link); background:#252a44; }
+  .cdlg .opt .mk { flex:none; width:14px; height:14px; margin-top:2px; border:2px solid var(--muted); border-radius:50%; box-sizing:border-box; }
+  .cdlg .opt.multi .mk { border-radius:4px; }
+  .cdlg .opt.sel .mk { border-color:var(--link); background:var(--link); }
+  .cdlg .runs { margin-top:12px; font-size:12px; color:var(--muted); max-height:140px; overflow:auto; }
+  .cdlg .runs div { padding:2px 0; border-top:1px solid var(--line); }
+</style>
+<dialog id="ceo-dlg" class="cdlg">
+  <h3>CEO'ya görev ver</h3>
+  <div class="sub">Görev CEO meşgulse sıraya alınır; biri bitince sıradaki başlar.</div>
+  <textarea id="ceo-text" rows="5" placeholder="Görevi yazın… (Ctrl+Enter ile gönder)" style="margin-top:10px"></textarea>
+  <div class="row"><button id="ceo-send" class="pri" type="button">Gönder</button><button id="ceo-close" type="button">Kapat</button><span id="ceo-msg" class="sub"></span></div>
+  <div id="ceo-runs" class="runs"></div>
+</dialog>
+<dialog id="ans-dlg" class="cdlg">
+  <h3 id="ans-title">Karar</h3>
+  <div id="ans-who" class="sub"></div>
+  <div id="ans-q" class="qtext"></div>
+  <div id="ans-opts"></div>
+  <div id="ans-free" style="margin-top:8px"><textarea id="ans-text" rows="3" placeholder="Cevabınızı yazın"></textarea></div>
+  <div class="row"><button id="ans-send" class="pri" type="button">Gönder</button><button id="ans-cancel" type="button">Vazgeç</button><button id="ans-dismiss" class="link" type="button">Soruyu kapat</button><span id="ans-msg" class="sub"></span></div>
+</dialog>
 <script>
 (function () {
-  var box = document.getElementById('ceo-box'); if (!box) return;
-  var msg = document.getElementById('ceo-msg'), last = document.getElementById('ceo-last'), txt = document.getElementById('ceo-text');
-  function poll() {
-    fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
-      if (!d || !d.enabled) return; box.hidden = false;
-      var r = d.runs.find(function (x) { return x.state === 'running'; }) || d.runs[0], q = d.runs.filter(function (x) { return x.state === 'queued'; }).length; if (r) last.textContent = '[' + r.state + '] ' + r.text + (q ? '\n(' + q + ' görev sırada)' : '') + (r.tail ? '\n' + r.tail : '');
-    }).catch(function () {});
-  }
-  function send() {
-    var t = txt.value.trim(); if (!t) return; msg.textContent = 'sending…';
-    fetch('/api/cubicle/dispatch', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ text: t }) })
-      .then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
-      .then(function (a) { msg.textContent = a[0] ? (a[1].queued ? 'sıraya alındı' : 'CEO is on it') : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; try { localStorage.removeItem('cubicle.ceoDraft'); } catch (_) {} setTimeout(poll, 1500); } })
-      .catch(function () { msg.textContent = 'failed'; });
-  }
-  try { txt.value = localStorage.getItem('cubicle.ceoDraft') || ''; } catch (_) {}
-  txt.addEventListener('input', function () { try { localStorage.setItem('cubicle.ceoDraft', txt.value); } catch (_) {} });
-  document.getElementById('ceo-send').onclick = send;
-  txt.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
-  document.getElementById('ceo-min').onclick = function () { var b = document.getElementById('ceo-body'); b.hidden = !b.hidden; };
-  var attn = document.getElementById('ceo-attn');
+  var H = { 'content-type': 'application/json', 'x-cubicle': '1' };
   function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function jpost(url, body) { return fetch(url, { method: 'POST', headers: H, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); }); }
+
+  // ---- open questions (kept fresh; the page shows them on the asking agent, not in a box) ----
+  window.__attn = [];
   function pollAttn() {
-    fetch('/api/cubicle/attention').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
-      window.__attn = l;
-      if (!l.length) { attn.hidden = true; box.style.bottom = '12px'; return; }
-      attn.innerHTML = '<div style="display:flex;justify-content:space-between"><b>\u26a0 Senin ilgin gerekiyor (' + l.length + ')</b><button data-d="all" style="background:none;border:0;color:#fbb;cursor:pointer">hepsini kapat</button></div>' +
-        l.slice(0, 6).map(function (x) { return '<div style="margin-top:6px;border-top:1px solid #7a2a2a;padding-top:4px"><b>' + (x.kind === 'decision' ? '\u2753 ' : '\u26a0 ') + esc(x.title) + '</b><div style="white-space:pre-wrap;font-size:12px">' + esc(x.text) + '</div>' + (x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" style="color:#9cf">ba\u011flant\u0131</a> ' : '') + (x.kind === 'decision' ? '<button data-answer="' + esc(x.id) + '" style="background:#b8860b;color:#fff;border:0;border-radius:6px;padding:2px 10px;cursor:pointer;margin-right:6px">Cevapla</button>' : '') + '<button data-d="' + esc(x.id) + '" style="background:none;border:0;color:#fbb;cursor:pointer">kapat</button></div>'; }).join('');
-      attn.hidden = false; box.hidden = false; box.style.bottom = (attn.offsetHeight + 24) + 'px';
+    fetch('/api/cubicle/attention').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { window.__attn = Array.isArray(l) ? l : []; }).catch(function () {});
+  }
+  pollAttn(); setInterval(pollAttn, 5000);
+  function itemsFor(s) {
+    var names = [s.name, s.realName].filter(Boolean), tid = s.task && typeof s.task === 'object' ? s.task.id : '';
+    return (window.__attn || []).filter(function (x) { return x.kind === 'decision' && ((x.agent && names.indexOf(x.agent) >= 0) || (x.taskId && tid && x.taskId === tid)); });
+  }
+
+  // ---- task for the CEO: opened by clicking the CEO (desk or card) ----
+  var cd = document.getElementById('ceo-dlg'), ct = document.getElementById('ceo-text'), cm = document.getElementById('ceo-msg'), cr = document.getElementById('ceo-runs');
+  function runsRefresh() {
+    fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d) return;
+      cr.innerHTML = (d.runs || []).slice(0, 6).map(function (r) { return '<div><b>' + esc(r.state === 'running' ? 'çalışıyor' : r.state === 'queued' ? 'sırada' : r.state === 'done' ? 'bitti' : r.state) + '</b> · ' + esc(r.text) + '</div>'; }).join('');
     }).catch(function () {});
   }
-  attn.addEventListener('click', function (e) {
-    var id = e.target && e.target.getAttribute && e.target.getAttribute('data-d'); if (!id) return;
-    fetch('/api/cubicle/attention', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ dismiss: id }) }).then(pollAttn);
+  function openCeo() {
+    cm.textContent = '';
+    try { ct.value = localStorage.getItem('cubicle.ceoDraft') || ''; } catch (_) { ct.value = ''; }
+    if (!cd.open) cd.showModal(); ct.focus(); runsRefresh();
+  }
+  ct.addEventListener('input', function () { try { localStorage.setItem('cubicle.ceoDraft', ct.value); } catch (_) {} });
+  function sendCeo() {
+    var t = ct.value.trim(); if (!t) return; cm.textContent = 'gönderiliyor…';
+    jpost('/api/cubicle/dispatch', { text: t }).then(function (a) {
+      if (!a[0]) { cm.textContent = a[1].error || 'başarısız'; return; }
+      ct.value = ''; try { localStorage.removeItem('cubicle.ceoDraft'); } catch (_) {}
+      cm.textContent = a[1].queued ? 'sıraya alındı' : 'CEO başladı'; runsRefresh(); setTimeout(function () { cd.close(); }, 900);
+    }).catch(function () { cm.textContent = 'başarısız'; });
+  }
+  document.getElementById('ceo-send').onclick = sendCeo;
+  document.getElementById('ceo-close').onclick = function () { cd.close(); };
+  ct.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendCeo(); });
+  cd.addEventListener('click', function (e) { if (e.target === cd) cd.close(); });
+
+  // ---- answering an agent's question, with choices ----
+  var ad = document.getElementById('ans-dlg'), cur = null, queue = [], chosen = [], aq = document.getElementById('ans-q'), ao = document.getElementById('ans-opts'),
+    af = document.getElementById('ans-free'), at = document.getElementById('ans-text'), am = document.getElementById('ans-msg'), OTHER = '__other__';
+  function renderAns() {
+    cur = queue[0]; chosen = []; am.textContent = '';
+    document.getElementById('ans-title').textContent = cur.title;
+    document.getElementById('ans-who').textContent = (cur.agent ? cur.agent + ' soruyor' : 'Soru') + (queue.length > 1 ? ' · ' + queue.length + ' açık soru' : '');
+    aq.textContent = cur.text;
+    var opts = Array.isArray(cur.options) ? cur.options : [];
+    ao.innerHTML = opts.map(function (o, i) { return '<div class="opt' + (cur.multi ? ' multi' : '') + '" data-i="' + i + '"><span class="mk"></span><span>' + esc(o) + '</span></div>'; }).join('')
+      + (opts.length ? '<div class="opt' + (cur.multi ? ' multi' : '') + '" data-i="' + OTHER + '"><span class="mk"></span><span>Diğer…</span></div>' : '');
+    try { at.value = localStorage.getItem('cubicle.ans.' + cur.id) || ''; } catch (_) { at.value = ''; }
+    at.placeholder = opts.length ? 'Ek not veya kendi cevabınız' : 'Cevabınızı yazın';
+    af.hidden = !!opts.length;
+    if (!ad.open) ad.showModal();
+  }
+  function openAns(items) { if (!items || !items.length) return false; queue = items.slice(); renderAns(); return true; }
+  ao.addEventListener('click', function (e) {
+    var el = e.target.closest('.opt'); if (!el) return; var i = el.getAttribute('data-i');
+    if (cur.multi) { var k = chosen.indexOf(i); if (k >= 0) chosen.splice(k, 1); else chosen.push(i); } else chosen = [i];
+    [].forEach.call(ao.children, function (c) { c.classList.toggle('sel', chosen.indexOf(c.getAttribute('data-i')) >= 0); });
+    if (chosen.indexOf(OTHER) >= 0 || chosen.length) { af.hidden = false; at.focus(); }
   });
-  poll(); pollAttn(); setInterval(poll, 10000); setInterval(pollAttn, 8000);
+  at.addEventListener('input', function () { if (cur) try { localStorage.setItem('cubicle.ans.' + cur.id, at.value); } catch (_) {} });
+  function next(id) {
+    try { localStorage.removeItem('cubicle.ans.' + id); } catch (_) {}
+    queue.shift(); window.__attn = (window.__attn || []).filter(function (x) { return x.id !== id; });
+    if (queue.length) renderAns(); else ad.close();
+  }
+  function dismiss(id) { return fetch('/api/cubicle/attention', { method: 'POST', headers: H, body: JSON.stringify({ dismiss: id }) }); }
+  document.getElementById('ans-cancel').onclick = function () { ad.close(); };
+  document.getElementById('ans-dismiss').onclick = function () { var id = cur.id; dismiss(id).then(function () { next(id); }); };
+  document.getElementById('ans-send').onclick = function () {
+    if (!cur) return; var opts = Array.isArray(cur.options) ? cur.options : [], note = at.value.trim(), parts = [];
+    chosen.forEach(function (i) { if (i !== OTHER && opts[+i] != null) parts.push(opts[+i]); });
+    if (chosen.indexOf(OTHER) >= 0 || !opts.length) { if (!note) { am.textContent = 'cevap yazın'; return; } }
+    if (opts.length && !parts.length && chosen.indexOf(OTHER) < 0) { am.textContent = 'bir seçenek seçin'; return; }
+    var ans = parts.join(' + '); if (note) ans = ans ? ans + ' — ' + note : note;
+    am.textContent = 'gönderiliyor…'; var item = cur, id = cur.id;
+    var task = 'Daha önce sana bir karar soruldu. SORU/DURUM: ' + item.title + '\n' + item.text + '\n\nKARARIM/CEVABIM: ' + ans + '\n\nBu cevapla işe kaldığın yerden devam et; gerekli issue/PR işlerini tamamla.' + (item.url ? '\nBağlantı: ' + item.url : '');
+    jpost('/api/cubicle/dispatch', { text: task }).then(function (a) {
+      if (!a[0]) { am.textContent = a[1].error || 'başarısız'; return; }
+      return dismiss(id).then(function () { next(id); });
+    }).catch(function () { am.textContent = 'başarısız'; });
+  };
+  ad.addEventListener('click', function (e) { if (e.target === ad) ad.close(); });
+  // The "Cevapla" button inside an agent's detail panel opens the same dialog.
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-answer]') : null; if (!b) return;
+    var it = (window.__attn || []).find(function (x) { return x.id === b.getAttribute('data-answer'); }); if (it) openAns([it]);
+  });
+
+  // Called by the page when an agent is clicked: its question first, the task box for the CEO.
+  window.CubicleAsk = {
+    handle: function (s) {
+      if (!s) return false;
+      var its = itemsFor(s); if (its.length) return openAns(its);
+      if (s.name === 'CEO' || s.realName === 'CEO') { openCeo(); return true; }
+      return false;
+    }
+  };
 })();
 </script>
 
-<button id="agents-btn" type="button" style="position:fixed;right:12px;bottom:12px;z-index:55;padding:6px 12px;border-radius:18px;border:1px solid #556;background:rgba(20,20,28,.92);color:#eee;font:13px system-ui,sans-serif;cursor:pointer">Agents</button>
-<dialog id="agents-panel" style="width:min(980px,calc(100vw - 24px));max-height:85vh;border:1px solid #556;border-radius:12px;background:#15151d;color:#eee;font:13px system-ui,sans-serif;padding:12px">
+<button id="agents-btn" type="button" style="position:fixed;right:12px;bottom:12px;z-index:55;padding:6px 12px;border-radius:18px;border:1px solid #556;background:rgba(20,20,28,.92);color:#eee;font:inherit;cursor:pointer">Agents</button>
+<dialog id="agents-panel" style="width:min(980px,calc(100vw - 24px));max-height:85vh;border:1px solid #556;border-radius:12px;background:#15151d;color:#eee;font:inherit;padding:12px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="ag-sum">Agents</b><span><button id="ag-refresh" type="button">Refresh</button> <button id="ag-close" type="button">Close</button></span></div>
   <div id="ag-body" style="overflow:auto;max-height:70vh"></div>
 </dialog>
@@ -4025,38 +4120,5 @@
 })();
 </script>
 
-<dialog id="ans-dlg" style="width:min(560px,calc(100vw - 24px));border:1px solid #b8860b;border-radius:12px;background:#15151d;color:#eee;font:13px system-ui,sans-serif;padding:14px">
-  <b id="ans-title">Karar</b>
-  <div id="ans-q" style="white-space:pre-wrap;margin:8px 0;color:#cfd8dc;max-height:40vh;overflow:auto"></div>
-  <textarea id="ans-text" rows="5" placeholder="Cevabınızı yazın; CEO bu cevapla işe devam eder" style="width:100%;box-sizing:border-box;background:#111;color:#eee;border:1px solid #445;border-radius:6px;padding:6px"></textarea>
-  <div style="display:flex;gap:8px;margin-top:8px;align-items:center"><button id="ans-send" type="button">Gönder</button><button id="ans-cancel" type="button">Vazgeç</button><span id="ans-msg" style="color:#9ab"></span></div>
-</dialog>
-<script>
-(function () {
-  var dlg = document.getElementById('ans-dlg'); if (!dlg) return; var cur = null;
-  var q = document.getElementById('ans-q'), txt = document.getElementById('ans-text'), msg = document.getElementById('ans-msg');
-  document.addEventListener('click', function (e) {
-    var b = e.target && e.target.closest ? e.target.closest('[data-answer]') : null; if (!b) return;
-    cur = (window.__attn || []).find(function (x) { return x.id === b.getAttribute('data-answer'); }); if (!cur) return;
-    document.getElementById('ans-title').textContent = cur.title; q.textContent = cur.text; msg.textContent = '';
-    try { txt.value = localStorage.getItem('cubicle.ans.' + cur.id) || ''; } catch (_) { txt.value = ''; }
-    if (!dlg.open) dlg.showModal(); txt.focus();
-  });
-  txt.addEventListener('input', function () { if (cur) try { localStorage.setItem('cubicle.ans.' + cur.id, txt.value); } catch (_) {} });
-  document.getElementById('ans-cancel').onclick = function () { dlg.close(); };
-  document.getElementById('ans-send').onclick = function () {
-    var a = txt.value.trim(); if (!a || !cur) return; msg.textContent = 'gönderiliyor…';
-    var task = 'Daha önce sana bir karar soruldu. SORU/DURUM: ' + cur.title + '\n' + cur.text + '\n\nKARARIM/CEVABIM: ' + a + '\n\nBu cevapla işe kaldığın yerden devam et; gerekli issue/PR işlerini tamamla.' + (cur.url ? '\nBağlantı: ' + cur.url : '');
-    var id = cur.id;
-    fetch('/api/cubicle/dispatch', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ text: task }) })
-      .then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
-      .then(function (a2) {
-        if (!a2[0]) { msg.textContent = a2[1].error || 'başarısız'; return; }
-        try { localStorage.removeItem('cubicle.ans.' + id); } catch (_) {}
-        return fetch('/api/cubicle/attention', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ dismiss: id }) }).then(function () { dlg.close(); });
-      }).catch(function () { msg.textContent = 'başarısız'; });
-  };
-})();
-</script>
 </body>
 </html>
