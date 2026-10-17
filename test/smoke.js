@@ -1079,9 +1079,11 @@ esac
     assert.strictEqual(replies[2].error.code, -32601);
   }
 
-  // page script parses
+  // every inline page script parses (plain <script> blocks only; JSON-LD is skipped)
   const html = require('fs').readFileSync(path.join(ROOT, 'public/index.html'), 'utf8');
-  new Function(html.slice(html.indexOf('<script>') + 8, html.lastIndexOf('</script>')));
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map((m) => m[1]);
+  assert.ok(scripts.length > 0, 'page has an inline script');
+  for (const js of scripts) new Function(js);
 
   // every UI language has every string English has, with the same kind (text or function)
   {
