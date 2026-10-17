@@ -804,10 +804,10 @@ function serveDispatch(req, res) {
     const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(cfg.budget),
       '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
       cwd: cfg.cwd, stdio: ['ignore', out, out],
-      env: { ...process.env, CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
+      env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
     const done = (state) => { dispatchFinish(pcId, state); run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} };
-    child.on('error', () => done('failed'));
-    child.on('exit', (code) => done(code === 0 ? 'done' : 'failed'));
+    child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
+    child.on('exit', (code, sig) => { if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
     console.log(`Cubicle: CEO task ${id} started.`);
     send(res, 200, JSON.stringify({ ok: true, id }));
   });
