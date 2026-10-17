@@ -3922,6 +3922,7 @@
 })();
 </script>
 
+<div id="ceo-attn" hidden style="position:fixed;left:12px;bottom:12px;z-index:60;width:min(380px,calc(100vw - 24px));font:13px system-ui,sans-serif;background:#3a1418;color:#ffd9d9;border:1px solid #c0392b;border-radius:10px;padding:8px;box-shadow:0 4px 16px #0008;max-height:45vh;overflow:auto"></div>
 <div id="ceo-box" hidden style="position:fixed;left:12px;bottom:12px;z-index:50;width:min(380px,calc(100vw - 24px));font:13px system-ui,sans-serif;background:rgba(20,20,28,.92);color:#eee;border:1px solid #556;border-radius:10px;padding:8px;box-shadow:0 4px 16px #0006">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b>Task for the CEO</b><button id="ceo-min" type="button" style="background:none;border:0;color:#aaa;cursor:pointer">–</button></div>
   <div id="ceo-body">
@@ -3950,7 +3951,21 @@
   document.getElementById('ceo-send').onclick = send;
   txt.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
   document.getElementById('ceo-min').onclick = function () { var b = document.getElementById('ceo-body'); b.hidden = !b.hidden; };
-  poll(); setInterval(poll, 10000);
+  var attn = document.getElementById('ceo-attn');
+  function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pollAttn() {
+    fetch('/api/cubicle/attention').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
+      if (!l.length) { attn.hidden = true; box.style.bottom = '12px'; return; }
+      attn.innerHTML = '<div style="display:flex;justify-content:space-between"><b>\u26a0 Senin ilgin gerekiyor (' + l.length + ')</b><button data-d="all" style="background:none;border:0;color:#fbb;cursor:pointer">hepsini kapat</button></div>' +
+        l.slice(0, 6).map(function (x) { return '<div style="margin-top:6px;border-top:1px solid #7a2a2a;padding-top:4px"><b>' + (x.kind === 'decision' ? '\u2753 ' : '\u26a0 ') + esc(x.title) + '</b><div style="white-space:pre-wrap;font-size:12px">' + esc(x.text) + '</div>' + (x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" style="color:#9cf">ba\u011flant\u0131</a> ' : '') + '<button data-d="' + esc(x.id) + '" style="background:none;border:0;color:#fbb;cursor:pointer">kapat</button></div>'; }).join('');
+      attn.hidden = false; box.hidden = false; box.style.bottom = (attn.offsetHeight + 24) + 'px';
+    }).catch(function () {});
+  }
+  attn.addEventListener('click', function (e) {
+    var id = e.target && e.target.getAttribute && e.target.getAttribute('data-d'); if (!id) return;
+    fetch('/api/cubicle/attention', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ dismiss: id }) }).then(pollAttn);
+  });
+  poll(); pollAttn(); setInterval(poll, 10000); setInterval(pollAttn, 8000);
 })();
 </script>
 </body>

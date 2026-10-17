@@ -460,6 +460,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/cubicle/settings') return serveSettings(req, res);
   if (url.pathname === '/api/cubicle/tasks') return serveTasks(req, res);
   if (url.pathname === '/api/cubicle/dispatch') return serveDispatch(req, res);
+  if (url.pathname === '/api/cubicle/attention') return serveAttention(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -807,9 +808,44 @@ function serveDispatch(req, res) {
       env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
     const done = (state) => { dispatchFinish(pcId, state); run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} };
     child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
-    child.on('exit', (code, sig) => { if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
+    child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ kind: 'error', title: `CEO görevi başarısız: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
     console.log(`Cubicle: CEO task ${id} started.`);
     send(res, 200, JSON.stringify({ ok: true, id }));
+  });
+}
+
+// ---------- "needs you": errors and open decisions from agents ----------
+// Scripts and CEO runs POST here; the page shows the list (with a dismiss button) and every linked
+// Telegram chat gets a message. Stored in ~/.cubicle/attention.json. Local machine only.
+const ATTENTION_FILE = path.join(path.dirname(CUBICLE_SETTINGS), 'attention.json');
+function attentionList() { try { const a = JSON.parse(fs.readFileSync(ATTENTION_FILE, 'utf8')); return Array.isArray(a) ? a : []; } catch (_) { return []; } }
+function attentionAdd(item) {
+  const list = attentionList();
+  const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: Date.now(), kind: item.kind === 'decision' ? 'decision' : 'error',
+    title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '' };
+  list.push(it);
+  try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
+  if (TELEGRAM && TELEGRAM.notify) {
+    const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    TELEGRAM.notify(`${it.kind === 'decision' ? '❓ <b>Karar bekliyor</b>' : '⚠️ <b>Hata</b>'}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.url ? `\n${esc(it.url)}` : ''}`);
+  }
+  console.log(`Cubicle: needs you (${it.kind}): ${it.title}`);
+  return it;
+}
+function serveAttention(req, res) {
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+  if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(attentionList().reverse()));
+  if (req.method !== 'POST') return send(res, 405, '{"error":"GET or POST"}');
+  if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
+  return readBody(req, 8000).then((d) => {
+    if (!d || typeof d !== 'object') return send(res, 400, '{"error":"bad request"}');
+    if (typeof d.dismiss === 'string') {
+      const left = attentionList().filter((x) => x.id !== d.dismiss && d.dismiss !== 'all');
+      try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(left)); } catch (_) {}
+      return send(res, 200, '{"ok":true}');
+    }
+    if (typeof d.title !== 'string' || !d.title.trim()) return send(res, 400, '{"error":"title needed"}');
+    send(res, 200, JSON.stringify({ ok: true, id: attentionAdd(d).id }));
   });
 }
 
