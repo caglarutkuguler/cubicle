@@ -475,9 +475,10 @@ const server = http.createServer((req, res) => {
     const telegram = telegramStatus(req);
     // Paperclip on 127.0.0.1 opens only on this machine. A phone (through Tailscale) gets the address
     // given for it, or none: the page then leaves out the Paperclip links instead of opening blanks.
-    const pcLinks = !HAS_PAPERCLIP ? undefined : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
+    const pcOff = cubicleSettings().paperclipLinks === false;
+    const pcLinks = !HAS_PAPERCLIP ? undefined : pcOff ? '' : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
     return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined,
-      paperclipLinks: pcLinks, redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: UPDATE } : {}) }));
+      paperclipLinks: pcLinks, ...(pcOff ? { paperclipLinksOff: true } : {}), redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: UPDATE } : {}) }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -754,6 +755,22 @@ async function serveTasks(req, res) {
 // A POST starts one headless `claude -p` run named "CEO" (so it shows up in the office), which turns
 // the task into a GitHub issue labelled agent:ready, or answers it. Local machine only, this page only.
 const DISPATCH_RUNS = [];
+// Mirror a CEO task into Paperclip (when it is a source) so the KPI board shows it with progress and ETA.
+// Workers the CEO starts inherit PC_PARENT and add their runs as subtasks.
+async function dispatchTrack(text) {
+  if (!HAS_PAPERCLIP) return '';
+  try {
+    const cs = await upstreamJSON('GET', '/api/companies');
+    const co = Array.isArray(cs.data) && cs.data[0];
+    if (!co) return '';
+    const r = await upstreamJSON('POST', `/api/companies/${co.id}/issues`, { title: `CEO: ${text.slice(0, 150)}`, description: text.slice(0, 4000), status: 'todo', priority: 'medium' });
+    const made = r.data && (r.data.issue || r.data);
+    return made && made.id ? made.id : '';
+  } catch (_) { return ''; }
+}
+function dispatchFinish(id, state) {
+  if (id) upstreamJSON('PATCH', `/api/issues/${id}`, { status: state === 'done' ? 'done' : 'cancelled' }).catch(() => {});
+}
 function dispatchCfg() {
   const d = cubicleSettings().dispatch;
   if (!d || d.enabled !== true) return null;
@@ -772,7 +789,7 @@ function serveDispatch(req, res) {
   if (req.method !== 'POST') return send(res, 405, '{"error":"GET or POST"}');
   if (!cfg) return send(res, 403, '{"error":"task box is off (set dispatch.enabled in ~/.cubicle/settings.json)"}');
   if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
-  return readBody(req, 8000).then((d) => {
+  return readBody(req, 8000).then(async (d) => {
     const text = d && typeof d.text === 'string' ? d.text.trim().slice(0, 4000) : '';
     if (!text) return send(res, 400, '{"error":"empty task"}');
     if (DISPATCH_RUNS.filter((r) => r.state === 'running').length >= 2) return send(res, 429, '{"error":"CEO is busy (2 runs going)"}');
@@ -783,11 +800,12 @@ function serveDispatch(req, res) {
     const run = { id, text: text.slice(0, 200), state: 'running', started: Date.now(), ended: 0, tail: '' };
     DISPATCH_RUNS.push(run);
     const out = fs.openSync(logFile, 'a');
+    const pcId = await dispatchTrack(text);
     const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(cfg.budget),
       '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
       cwd: cfg.cwd, stdio: ['ignore', out, out],
-      env: { ...process.env, CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1' } });
-    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} };
+      env: { ...process.env, CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
+    const done = (state) => { dispatchFinish(pcId, state); run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} };
     child.on('error', () => done('failed'));
     child.on('exit', (code) => done(code === 0 ? 'done' : 'failed'));
     console.log(`Cubicle: CEO task ${id} started.`);

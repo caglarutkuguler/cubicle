@@ -2065,6 +2065,7 @@
   const SKINS  = ['#f1c7a3','#d9a47a','#b87b52','#f5d5b8','#c68e62'];
 
   let paperclipUrl = '';
+  let pcHidden = false;   // settings.json paperclipLinks:false -> no Paperclip links and no "open on this machine" notes
   let pcLinkBase = null;   // where Paperclip links point for this browser ('' = Paperclip cannot be opened from here)
   const pcLink = () => (pcLinkBase === null ? paperclipUrl : pcLinkBase);
   let companies = [];
@@ -2245,7 +2246,7 @@
           ? { kind: 'feed', label: cfg.label, path: '/api/feed' }
           : { kind: 'paperclip', paperclipUrl: cfg.paperclipUrl }];
         providers = list.map((x) => {
-          if (x.kind === 'paperclip') { paperclipUrl = x.paperclipUrl || ''; if ('paperclipLinks' in cfg) pcLinkBase = cfg.paperclipLinks || ''; return paperclipProvider(); }
+          if (x.kind === 'paperclip') { paperclipUrl = x.paperclipUrl || ''; if ('paperclipLinks' in cfg) pcLinkBase = cfg.paperclipLinks || ''; pcHidden = cfg.paperclipLinksOff === true; return paperclipProvider(); }
           return feedProvider(x.path || '/api/feed', x.label || 'feed');
         });
         // Reload when the server was updated or restarted.
@@ -2913,7 +2914,7 @@
       `<button type="button" class="act" data-act="look" data-id="${id}">✎ ${esc(L.looksName)}</button>`,
     ].join('')}</div>` : '';
     // Seen from a phone while Paperclip runs on 127.0.0.1: say why there is no Answer button.
-    const away = pcLinkBase === '' && paperclipUrl && answerIssue(s) ? `<div class="st" style="color:var(--muted);font-size:12px;margin-top:6px">ⓘ ${esc(L.pcAway)}</div>` : '';
+    const away = pcLinkBase === '' && paperclipUrl && !pcHidden && answerIssue(s) ? `<div class="st" style="color:var(--muted);font-size:12px;margin-top:6px">ⓘ ${esc(L.pcAway)}</div>` : '';
     const nick = s.realName && s.realName !== s.name ? ` <span class="real">(${esc(s.realName)})</span>` : '';
     return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${id}">${esc(s.name)}</b>${nick}${panel ? '' : `<button type="button" class="edit" data-id="${id}" title="${esc(L.looksName)}" aria-label="${esc(L.looksName)}">✎</button>`}</div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
@@ -2966,7 +2967,7 @@
       + (i ? `<div class="sub">${taskLink(i)} ${esc(i.title || '')}</div>` : '')
       + questionsHtml(list, true)
       + `<div class="acts">${answerable(s) ? `<button type="button" class="act warn" data-q="reply" data-id="${id}">${cn && connectUrl(s) ? `🔌 ${esc(L.ciOpen)} ↗` : `✋ ${esc(ap && approvalUrl(s) ? L.apOpen : L.reply)}`}</button>` : ''}</div>`
-      + (pcLinkBase === '' && paperclipUrl ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
+      + (pcLinkBase === '' && paperclipUrl && !pcHidden ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
     if (!qDlg.open) qDlg.showModal();
     return true;
   }
@@ -2984,7 +2985,7 @@
       + (b.detail ? `<div class="qp sub">${esc(L.blkPc)}: ${esc(b.detail)}</div>` : '')
       + (s.ask.more && s.ask.more.length ? `<div class="qp"><b>${esc(L.blkMore(s.ask.more.length))}</b></div><ul class="qo">${s.ask.more.slice(0, 8).map(row).join('')}</ul>` : '')
       + `</div><div class="acts">${answerable(s) ? `<button type="button" class="act warn" data-q="reply" data-id="${id}">⛔ ${esc(L.blkLook)} ↗</button>` : ''}</div>`
-      + (pcLinkBase === '' && paperclipUrl ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
+      + (pcLinkBase === '' && paperclipUrl && !pcHidden ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
     if (!qDlg.open) qDlg.showModal();
     return true;
   }
