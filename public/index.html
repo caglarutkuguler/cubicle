@@ -1192,7 +1192,7 @@
   function deepLink() {
     if (linked) return; linked = true;
     const id = params.get('agent');
-    if (id) setTimeout(() => { const s = sprites.get(id) || [...sprites.values()].find((x) => x.realName === id || x.name === id); if (s) select(s); }, 300);
+    if (id) setTimeout(() => { const s = sprites.get(id) || [...sprites.values()].find((x) => x.realName === id || x.name === id); if (s) { select(s); if (window.CubicleAsk) window.CubicleAsk.ask(s); } }, 300);
     if (params.has('kpi')) openKpi();
   }
 
@@ -3972,11 +3972,16 @@
   function jpost(url, body) { return fetch(url, { method: 'POST', headers: H, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); }); }
 
   // ---- open questions (kept fresh; the page shows them on the asking agent, not in a box) ----
+  // From a phone this works too when it is one of your own Tailscale devices; otherwise the server
+  // refuses, and the page then neither shows questions nor offers a task box it could not send.
   window.__attn = [];
+  var canAct = null, firstAttn = null;
   function pollAttn() {
-    fetch('/api/cubicle/attention').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) { window.__attn = Array.isArray(l) ? l : []; }).catch(function () {});
+    return fetch('/api/cubicle/attention').then(function (r) { canAct = r.ok; return r.ok ? r.json() : []; }).then(function (l) { window.__attn = Array.isArray(l) ? l : []; }).catch(function () {});
   }
-  pollAttn(); setInterval(pollAttn, 5000);
+  firstAttn = pollAttn(); setInterval(pollAttn, 5000);
+  var ceoOn = false;
+  fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { ceoOn = !!(d && d.enabled); }).catch(function () {});
   function itemsFor(s) {
     var names = [s.name, s.realName].filter(Boolean), tid = s.task && typeof s.task === 'object' ? s.task.id : '';
     return (window.__attn || []).filter(function (x) { return (x.kind === 'decision' || x.kind === 'error') && ((x.agent && names.indexOf(x.agent) >= 0) || (x.taskId && tid && x.taskId === tid)); });
@@ -4064,13 +4069,18 @@
   });
 
   // Called by the page when an agent is clicked: its question first, the task box for the CEO.
+  // The first click can come before the questions have loaded (a phone opening a link): wait for them.
+  var isCeo = function (s) { return s.name === 'CEO' || s.realName === 'CEO'; };
   window.CubicleAsk = {
     handle: function (s) {
       if (!s) return false;
       var its = itemsFor(s); if (its.length) return openAns(its);
-      if (s.name === 'CEO' || s.realName === 'CEO') { openCeo(); return true; }
+      if (canAct === null && isCeo(s)) { firstAttn.then(function () { window.CubicleAsk.handle(s); }); return true; }
+      if (isCeo(s) && canAct && ceoOn) { openCeo(); return true; }
       return false;
-    }
+    },
+    // a link to an agent (e.g. from Telegram): open its question, if it has one, and nothing else
+    ask: function (s) { firstAttn.then(function () { var its = s ? itemsFor(s) : []; if (its.length) openAns(its); }); }
   };
 })();
 </script>

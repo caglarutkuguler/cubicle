@@ -708,6 +708,32 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
     } finally { p.kill('SIGTERM'); await sleep(300); tg.close(); reg.close(); }
   }
 
+  // From your own phone through `tailscale serve`: questions and the CEO task box work for a device
+  // on this machine's Tailscale account, and stay closed to anyone else on the tailnet
+  {
+    const fs = require('fs'); const os = require('os');
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-ts-'));
+    const ts = path.join(dir, 'tailscale.js');
+    fs.writeFileSync(ts, `#!${process.execPath}\nconst a = process.argv.slice(2);\n`
+      + `if (a[0] === 'status') console.log(JSON.stringify({ BackendState: 'Running', Self: { UserID: 7, DNSName: 'pc.tail.ts.net.' }, User: { '7': { LoginName: 'Me@example.com' }, '9': { LoginName: 'other@example.com' } } }));\n`
+      + `else if (a[0] === 'whois') console.log(JSON.stringify({ UserProfile: { LoginName: a[2] === '100.64.0.5' ? 'me@example.com' : 'other@example.com' } }));\n`);
+    fs.chmodSync(ts, 0o755);
+    const feed = path.join(dir, 'f.json'); fs.writeFileSync(feed, '{"agents":[]}');
+    const settings = path.join(dir, 'settings.json');
+    const port = 3400 + Math.floor(Math.random() * 500);
+    const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), '--source', feed, '--no-update-check'], { stdio: 'ignore',
+      env: { ...process.env, CUBICLE_TAILSCALE: ts, CUBICLE_SETTINGS: settings, HOME: dir, CUBICLE_TELEGRAM_TOKEN: '' } });
+    const via = (ip) => new Promise((ok) => http.get({ host: '127.0.0.1', port, path: '/api/cubicle/attention', headers: { host: 'pc.tail.ts.net:' + port, 'x-forwarded-for': ip, 'tailscale-user-login': 'whoever' } },
+      (r) => { r.resume(); ok(r.statusCode); }).on('error', () => ok(0)));
+    try {
+      await sleep(900);
+      assert.strictEqual(await via('100.64.0.5'), 200, 'your own phone may read and answer questions');
+      assert.strictEqual(await via('100.64.0.9'), 403, 'another tailnet user may not');
+      assert.strictEqual(await via('203.0.113.4'), 403, 'not a tailnet address');
+      assert.strictEqual((await get(`http://127.0.0.1:${port}/api/cubicle/attention`)).status, 200, 'this machine may');
+    } finally { p.kill(); }
+  }
+
   // Telegram filters: /mute an agent, /alerts questions|failures|all; each chat keeps its own
   {
     const fs = require('fs'); const os = require('os');

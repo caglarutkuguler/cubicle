@@ -857,8 +857,8 @@ function startRun(run) {
   child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail); attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: bud ? `CEO bütçeye takıldı: ${text.slice(0, 70)}` : `CEO görevi başarısız: ${text.slice(0, 70)}`, text: bud ? `Görev, tek çalıştırma bütçesini ($${cfg.budget}) aştığı için yarıda kaldı. Açılan issue ve PR'lar yerinde duruyor; yeniden denerken kaldığı yerden devam eder.` : `Görev bir hatayla bitti: ${tail.replace(/\s+/g, ' ').slice(-300)}`, options: bud ? ['Bütçeyi artırıp kaldığın yerden devam et', 'Görevi küçük parçalara bölüp yeniden dene', 'Vazgeç'] : ['Yeniden dene', 'Vazgeç'] }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [] }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
   console.log(`Cubicle: CEO task ${id} started.`);
 }
-function serveDispatch(req, res) {
-  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+async function serveDispatch(req, res) {
+  if (!(await fromOwner(req))) return send(res, 403, '{"error":"only from this machine or your own devices"}');
   const cfg = dispatchCfg();
   if (req.method === 'GET' || req.method === 'HEAD') {
     return send(res, 200, JSON.stringify({ enabled: !!cfg, runs: DISPATCH_RUNS.slice(-8).reverse().map(({ id, text, state, started, ended, tail }) => ({ id, text, state, started, ended, tail })) }));
@@ -898,13 +898,13 @@ function attentionAdd(item) {
   try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
   if (TELEGRAM && TELEGRAM.notify) {
     const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    TELEGRAM.notify(`${it.kind === 'decision' ? '❓ <b>Karar bekliyor</b>' : '⚠️ <b>Hata</b>'}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.options.length ? '\n' + it.options.map((x, n) => `${n + 1}) ${esc(x)}`).join('\n') : ''}${it.url ? `\n${esc(it.url)}` : ''}\n(Cubicle'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)`);
+    TELEGRAM.notify(`${it.kind === 'decision' ? '❓ <b>Karar bekliyor</b>' : '⚠️ <b>Hata</b>'}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.options.length ? '\n' + it.options.map((x, n) => `${n + 1}) ${esc(x)}`).join('\n') : ''}${it.url ? `\n${esc(it.url)}` : ''}\n${it.agent ? `<a href="${esc(`${tgPublicUrl().replace(/\/$/, '')}/?agent=${encodeURIComponent(it.agent)}`)}">Cubicle'da cevapla</a>` : "(Cubicle'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)"}`);
   }
   console.log(`Cubicle: needs you (${it.kind}): ${it.title}`);
   return it;
 }
-function serveAttention(req, res) {
-  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+async function serveAttention(req, res) {
+  if (!(await fromOwner(req))) return send(res, 403, '{"error":"only from this machine or your own devices"}');
   if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(attentionList().reverse()));
   if (req.method !== 'POST') return send(res, 405, '{"error":"GET or POST"}');
   if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
@@ -977,6 +977,32 @@ function tsRun(bin, args) {
   return new Promise((resolve) => require('child_process').execFile(bin, args, { timeout: 6000, windowsHide: true, maxBuffer: 2 * 1024 * 1024 },
     (err, out) => resolve(err && !out ? null : String(out || ''))));
 }
+// The person this machine belongs to, on the phone too: a request `tailscale serve` forwards from a
+// device signed in to the same Tailscale account as this machine (your own phone) may answer agents'
+// questions and give the CEO a task, like a browser on this machine. Someone else on the tailnet
+// (a shared or tagged device) may not. Tailscale vouches for who it is: serve forwards from loopback
+// and names the device's tailnet address, which `tailscale whois` turns into its account.
+const tsWho = new Map();            // tailnet address -> { at, login }
+let tsSelf = { at: 0, login: '' };
+async function tsLogin(args, pick) {
+  for (const bin of TS_BINS) {
+    const raw = await tsRun(bin, args); if (raw == null) continue;
+    try { return String(pick(JSON.parse(raw)) || '').toLowerCase(); } catch (_) { return ''; }
+  }
+  return '';
+}
+async function fromOwner(req) {
+  if (fromThisMachine(req)) return true;
+  if (!isLoopback(req.socket.remoteAddress)) return false;
+  const ip = String(req.headers['x-forwarded-for'] || '').split(',').pop().trim();
+  if (!/^(100\.\d+\.\d+\.\d+|fd7a:115c:a1e0:[0-9a-f:]+)$/i.test(ip)) return false;      // a tailnet address only
+  const now = Date.now();
+  if (now - tsSelf.at > 600000) tsSelf = { at: now, login: await tsLogin(['status', '--json'], (st) => st.User && st.Self && st.User[String(st.Self.UserID)] && st.User[String(st.Self.UserID)].LoginName) };
+  let w = tsWho.get(ip);
+  if (!w || now - w.at > 600000) { w = { at: now, login: await tsLogin(['whois', '--json', ip], (x) => x.UserProfile && x.UserProfile.LoginName) }; tsWho.set(ip, w); }
+  return !!tsSelf.login && w.login === tsSelf.login;
+}
+
 async function tailscaleInfo() {
   for (const bin of TS_BINS) {
     const raw = await tsRun(bin, ['status', '--json']);
