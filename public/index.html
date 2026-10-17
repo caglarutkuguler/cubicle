@@ -3977,9 +3977,9 @@
   window.__attn = [];
   var canAct = null, firstAttn = null;
   function pollAttn() {
-    return fetch('/api/cubicle/attention').then(function (r) { canAct = r.ok; return r.ok ? r.json() : []; }).then(function (l) { window.__attn = Array.isArray(l) ? l : []; }).catch(function () {});
+    return fetch('/api/cubicle/attention').then(function (r) { canAct = r.ok; if (r.status === 404 || r.status === 405) clearInterval(attnTimer); return r.ok ? r.json() : []; }).then(function (l) { window.__attn = Array.isArray(l) ? l : []; }).catch(function () {});
   }
-  firstAttn = pollAttn(); setInterval(pollAttn, 5000);
+  var attnTimer = setInterval(pollAttn, 5000); firstAttn = pollAttn();
   var ceoOn = false;
   fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) { ceoOn = !!(d && d.enabled); }).catch(function () {});
   function itemsFor(s) {
@@ -4085,7 +4085,7 @@
 })();
 </script>
 
-<button id="agents-btn" type="button" style="position:fixed;right:12px;bottom:12px;z-index:55;padding:6px 12px;border-radius:18px;border:1px solid #556;background:rgba(20,20,28,.92);color:#eee;font:inherit;cursor:pointer">Agents</button>
+<button id="agents-btn" type="button" hidden style="position:fixed;right:12px;bottom:12px;z-index:55;padding:6px 12px;border-radius:18px;border:1px solid #556;background:rgba(20,20,28,.92);color:#eee;font:inherit;cursor:pointer">Agents</button>
 <dialog id="agents-panel" style="width:min(980px,calc(100vw - 24px));max-height:85vh;border:1px solid #556;border-radius:12px;background:#15151d;color:#eee;font:inherit;padding:12px">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="ag-sum">Agents</b><span><button id="ag-refresh" type="button">Refresh</button> <button id="ag-close" type="button">Close</button></span></div>
   <div id="ag-body" style="overflow:auto;max-height:70vh"></div>
@@ -4095,9 +4095,22 @@
   var btn = document.getElementById('agents-btn'), dlg = document.getElementById('agents-panel'), body = document.getElementById('ag-body'), sum = document.getElementById('ag-sum'), timer = null;
   if (!btn || !dlg) return;
   function esc(x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
-  function ago(ms) { if (!ms) return ''; var s = Math.max(0, Math.round((Date.now() - ms) / 1000)); if (s < 60) return s + ' s'; if (s < 3600) return Math.round(s / 60) + ' dk'; if (s < 86400) return Math.round(s / 3600) + ' sa'; return Math.round(s / 86400) + ' g'; }
+  function ago(ms) { if (!ms) return ''; var s = Math.max(0, Math.round((Date.now() - ms) / 1000)); if (s < 60) return s + ' ' + W.s; if (s < 3600) return Math.round(s / 60) + ' ' + W.m; if (s < 86400) return Math.round(s / 3600) + ' ' + W.h; return Math.round(s / 86400) + ' ' + W.d; }
   var COLORS = { running: '#2e7d32', waiting: '#b8860b', error: '#b71c1c', idle: '#455a64', paused: '#6a1b9a' };
-  var NAMES = { running: 'çalışıyor', waiting: 'karar bekliyor', error: 'hata', idle: 'boşta', paused: 'durdu' };
+  // Turkish or English, after the page's own language
+  var TR = /^tr/i.test(document.documentElement.lang || '');
+  var W = TR ? { agents: 'Ajanlar', refresh: 'Yenile', close: 'Kapat', agent: 'Ajan', role: 'Rol', status: 'Durum', task: 'Üzerinde çalıştığı iş', last: 'Son işlem', time: 'Süre',
+      sum: function (n, c, subs) { return n + ' ajan · ' + (c.running || 0) + ' çalışıyor · ' + (c.waiting || 0) + ' karar bekliyor · ' + (c.error || 0) + ' hata · ' + (c.idle || 0) + ' boşta' + (subs ? ' · ' + subs + ' alt ajan' : ''); },
+      ceo: 'Son CEO görevleri', s: 'sn', m: 'dk', h: 'sa', d: 'g', NAMES: { running: 'çalışıyor', waiting: 'karar bekliyor', error: 'hata', idle: 'boşta', paused: 'durdu' } }
+    : { agents: 'Agents', refresh: 'Refresh', close: 'Close', agent: 'Agent', role: 'Role', status: 'Status', task: 'Working on', last: 'Last step', time: 'For',
+      sum: function (n, c, subs) { return n + ' agents · ' + (c.running || 0) + ' working · ' + (c.waiting || 0) + ' waiting for a decision · ' + (c.error || 0) + ' in error · ' + (c.idle || 0) + ' idle' + (subs ? ' · ' + subs + ' subagents' : ''); },
+      ceo: 'Latest CEO tasks', s: 's', m: 'min', h: 'h', d: 'd', NAMES: { running: 'working', waiting: 'needs a decision', error: 'error', idle: 'idle', paused: 'paused' } };
+  var NAMES = W.NAMES;
+  btn.textContent = W.agents; document.getElementById('ag-refresh').textContent = W.refresh; document.getElementById('ag-close').textContent = W.close;
+  // Only where this server reads agent feeds (Claude Code, Codex, any JSON feed): not in the demo or inside Paperclip.
+  fetch('/config.json').then(function (r) { return r.ok ? r.json() : null; }).then(function (c) {
+    if (c && (c.sources || []).some(function (x) { return x.kind === 'feed'; }) && !/[?&](demo|kiosk)\b/.test(location.search)) btn.hidden = false;
+  }).catch(function () {});
   function taskText(a) { var t = a.task; if (!t) return ''; if (typeof t === 'string') return t; return (t.id ? t.id + ' · ' : '') + (t.title || ''); }
   async function load() {
     var cfg = await fetch('/config.json').then(function (r) { return r.json(); }).catch(function () { return { sources: [] }; });
@@ -4111,16 +4124,16 @@
     var counts = { running: 0, waiting: 0, error: 0, idle: 0 };
     rows.forEach(function (a) { counts[a.status] = (counts[a.status] || 0) + 1; });
     var top = rows.filter(function (a) { return !String(a.id).includes(':'); }), subs = rows.length - top.length;
-    sum.textContent = top.length + ' ajan · ' + (counts.running || 0) + ' çalışıyor · ' + (counts.waiting || 0) + ' karar bekliyor · ' + (counts.error || 0) + ' hata · ' + (counts.idle || 0) + ' boşta' + (subs ? ' · ' + subs + ' alt ajan' : '');
+    sum.textContent = W.sum(top.length, counts, subs);
     rows.sort(function (a, b) { var o = { waiting: 0, error: 1, running: 2, idle: 3 }; return (o[a.status] != null ? o[a.status] : 4) - (o[b.status] != null ? o[b.status] : 4) || String(a.name).localeCompare(String(b.name)); });
-    var h = '<table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#9ab"><th>Ajan</th><th>Rol</th><th>Durum</th><th>Üzerinde çalıştığı iş</th><th>Son işlem</th><th>Süre</th></tr>';
+    var h = '<table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#9ab"><th>' + W.agent + '</th><th>' + W.role + '</th><th>' + W.status + '</th><th>' + W.task + '</th><th>' + W.last + '</th><th>' + W.time + '</th></tr>';
     rows.forEach(function (a) {
       var sub = String(a.id).includes(':'), rec = a.recent && a.recent.length ? a.recent[a.recent.length - 1][1] : '';
       h += '<tr style="border-top:1px solid #2a2a38"><td style="padding:4px 6px;' + (sub ? 'padding-left:22px;color:#9ab' : '') + '">' + (sub ? '↳ ' : '') + esc(a.name) + '</td><td>' + esc(a.role) + '</td><td><span style="background:' + (COLORS[a.status] || '#455a64') + ';border-radius:8px;padding:1px 8px">' + esc(NAMES[a.status] || a.status) + '</span>' + (a.error ? ' <span style="color:#f99">' + esc(a.error) + '</span>' : '') + '</td><td>' + esc(taskText(a)) + '</td><td style="color:#9ab">' + esc(rec) + '</td><td>' + esc(ago(a.since)) + '</td></tr>';
     });
     h += '</table>';
     if (runs.runs && runs.runs.length) {
-      h += '<h4 style="margin:12px 0 4px">Son CEO görevleri</h4><table style="width:100%;border-collapse:collapse">';
+      h += '<h4 style="margin:12px 0 4px">' + esc(W.ceo) + '</h4><table style="width:100%;border-collapse:collapse">';
       runs.runs.forEach(function (r) { h += '<tr style="border-top:1px solid #2a2a38"><td style="padding:4px 6px;width:90px">' + esc(r.state) + '</td><td>' + esc(r.text) + '</td><td style="width:70px;color:#9ab">' + esc(ago(r.started)) + '</td></tr>'; });
       h += '</table>';
     }
