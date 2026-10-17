@@ -2065,6 +2065,7 @@
   const SKINS  = ['#f1c7a3','#d9a47a','#b87b52','#f5d5b8','#c68e62'];
 
   let paperclipUrl = '';
+  let pcHidden = false;   // settings.json paperclipLinks:false -> no Paperclip links and no "open on this machine" notes
   let pcLinkBase = null;   // where Paperclip links point for this browser ('' = Paperclip cannot be opened from here)
   const pcLink = () => (pcLinkBase === null ? paperclipUrl : pcLinkBase);
   let companies = [];
@@ -2245,12 +2246,12 @@
           ? { kind: 'feed', label: cfg.label, path: '/api/feed' }
           : { kind: 'paperclip', paperclipUrl: cfg.paperclipUrl }];
         providers = list.map((x) => {
-          if (x.kind === 'paperclip') { paperclipUrl = x.paperclipUrl || ''; if ('paperclipLinks' in cfg) pcLinkBase = cfg.paperclipLinks || ''; return paperclipProvider(); }
+          if (x.kind === 'paperclip') { paperclipUrl = x.paperclipUrl || ''; if ('paperclipLinks' in cfg) pcLinkBase = cfg.paperclipLinks || ''; pcHidden = cfg.paperclipLinksOff === true; return paperclipProvider(); }
           return feedProvider(x.path || '/api/feed', x.label || 'feed');
         });
         // Reload when the server was updated or restarted.
         if (cfg.build) setInterval(async () => {
-          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) location.reload(); else showUpdate(now.update, now.version); } catch (_) {}
+          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) { const ta = document.getElementById('ceo-text'); const ceoTyping = ta && (ta.value.trim() || document.activeElement === ta); if (ceoTyping) { /* never reload under someone typing a task: try again on the next check */ } else location.reload(); } else showUpdate(now.update, now.version); } catch (_) {}
         }, 60000);
       } catch (_) {
         // No Cubicle server behind this page: show the demo instead of an error.
@@ -2913,7 +2914,7 @@
       `<button type="button" class="act" data-act="look" data-id="${id}">✎ ${esc(L.looksName)}</button>`,
     ].join('')}</div>` : '';
     // Seen from a phone while Paperclip runs on 127.0.0.1: say why there is no Answer button.
-    const away = pcLinkBase === '' && paperclipUrl && answerIssue(s) ? `<div class="st" style="color:var(--muted);font-size:12px;margin-top:6px">ⓘ ${esc(L.pcAway)}</div>` : '';
+    const away = pcLinkBase === '' && paperclipUrl && !pcHidden && answerIssue(s) ? `<div class="st" style="color:var(--muted);font-size:12px;margin-top:6px">ⓘ ${esc(L.pcAway)}</div>` : '';
     const nick = s.realName && s.realName !== s.name ? ` <span class="real">(${esc(s.realName)})</span>` : '';
     return `<div class="top"><span class="sw" style="background:${esc(s.shirt)}"></span><b class="pick" data-id="${id}">${esc(s.name)}</b>${nick}${panel ? '' : `<button type="button" class="edit" data-id="${id}" title="${esc(L.looksName)}" aria-label="${esc(L.looksName)}">✎</button>`}</div>
         <div class="role">${esc(s.role)}${spendHtml(s)}</div>
@@ -2966,7 +2967,7 @@
       + (i ? `<div class="sub">${taskLink(i)} ${esc(i.title || '')}</div>` : '')
       + questionsHtml(list, true)
       + `<div class="acts">${answerable(s) ? `<button type="button" class="act warn" data-q="reply" data-id="${id}">${cn && connectUrl(s) ? `🔌 ${esc(L.ciOpen)} ↗` : `✋ ${esc(ap && approvalUrl(s) ? L.apOpen : L.reply)}`}</button>` : ''}</div>`
-      + (pcLinkBase === '' && paperclipUrl ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
+      + (pcLinkBase === '' && paperclipUrl && !pcHidden ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
     if (!qDlg.open) qDlg.showModal();
     return true;
   }
@@ -2984,7 +2985,7 @@
       + (b.detail ? `<div class="qp sub">${esc(L.blkPc)}: ${esc(b.detail)}</div>` : '')
       + (s.ask.more && s.ask.more.length ? `<div class="qp"><b>${esc(L.blkMore(s.ask.more.length))}</b></div><ul class="qo">${s.ask.more.slice(0, 8).map(row).join('')}</ul>` : '')
       + `</div><div class="acts">${answerable(s) ? `<button type="button" class="act warn" data-q="reply" data-id="${id}">⛔ ${esc(L.blkLook)} ↗</button>` : ''}</div>`
-      + (pcLinkBase === '' && paperclipUrl ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
+      + (pcLinkBase === '' && paperclipUrl && !pcHidden ? `<p class="sub" style="margin-top:10px">ⓘ ${esc(L.pcAway)}</p>` : '');
     if (!qDlg.open) qDlg.showModal();
     return true;
   }
@@ -3921,6 +3922,7 @@
 })();
 </script>
 
+<div id="ceo-attn" hidden style="position:fixed;left:12px;bottom:12px;z-index:60;width:min(380px,calc(100vw - 24px));font:13px system-ui,sans-serif;background:#3a1418;color:#ffd9d9;border:1px solid #c0392b;border-radius:10px;padding:8px;box-shadow:0 4px 16px #0008;max-height:45vh;overflow:auto"></div>
 <div id="ceo-box" hidden style="position:fixed;left:12px;bottom:12px;z-index:50;width:min(380px,calc(100vw - 24px));font:13px system-ui,sans-serif;background:rgba(20,20,28,.92);color:#eee;border:1px solid #556;border-radius:10px;padding:8px;box-shadow:0 4px 16px #0006">
   <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b>Task for the CEO</b><button id="ceo-min" type="button" style="background:none;border:0;color:#aaa;cursor:pointer">–</button></div>
   <div id="ceo-body">
@@ -3943,13 +3945,29 @@
     var t = txt.value.trim(); if (!t) return; msg.textContent = 'sending…';
     fetch('/api/cubicle/dispatch', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ text: t }) })
       .then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
-      .then(function (a) { msg.textContent = a[0] ? 'CEO is on it' : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; setTimeout(poll, 1500); } })
+      .then(function (a) { msg.textContent = a[0] ? 'CEO is on it' : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; try { localStorage.removeItem('cubicle.ceoDraft'); } catch (_) {} setTimeout(poll, 1500); } })
       .catch(function () { msg.textContent = 'failed'; });
   }
+  try { txt.value = localStorage.getItem('cubicle.ceoDraft') || ''; } catch (_) {}
+  txt.addEventListener('input', function () { try { localStorage.setItem('cubicle.ceoDraft', txt.value); } catch (_) {} });
   document.getElementById('ceo-send').onclick = send;
   txt.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
   document.getElementById('ceo-min').onclick = function () { var b = document.getElementById('ceo-body'); b.hidden = !b.hidden; };
-  poll(); setInterval(poll, 10000);
+  var attn = document.getElementById('ceo-attn');
+  function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function pollAttn() {
+    fetch('/api/cubicle/attention').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
+      if (!l.length) { attn.hidden = true; box.style.bottom = '12px'; return; }
+      attn.innerHTML = '<div style="display:flex;justify-content:space-between"><b>\u26a0 Senin ilgin gerekiyor (' + l.length + ')</b><button data-d="all" style="background:none;border:0;color:#fbb;cursor:pointer">hepsini kapat</button></div>' +
+        l.slice(0, 6).map(function (x) { return '<div style="margin-top:6px;border-top:1px solid #7a2a2a;padding-top:4px"><b>' + (x.kind === 'decision' ? '\u2753 ' : '\u26a0 ') + esc(x.title) + '</b><div style="white-space:pre-wrap;font-size:12px">' + esc(x.text) + '</div>' + (x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" style="color:#9cf">ba\u011flant\u0131</a> ' : '') + '<button data-d="' + esc(x.id) + '" style="background:none;border:0;color:#fbb;cursor:pointer">kapat</button></div>'; }).join('');
+      attn.hidden = false; box.hidden = false; box.style.bottom = (attn.offsetHeight + 24) + 'px';
+    }).catch(function () {});
+  }
+  attn.addEventListener('click', function (e) {
+    var id = e.target && e.target.getAttribute && e.target.getAttribute('data-d'); if (!id) return;
+    fetch('/api/cubicle/attention', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ dismiss: id }) }).then(pollAttn);
+  });
+  poll(); pollAttn(); setInterval(poll, 10000); setInterval(pollAttn, 8000);
 })();
 </script>
 </body>

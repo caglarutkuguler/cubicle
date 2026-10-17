@@ -393,6 +393,23 @@ function proxyJson(res, url, headers, failBody, shape) {
   res.on('close', () => { if (!res.writableFinished) upstream.destroy(); });
 }
 
+// An agent with an open "needs you" item raises its hand at its desk (status waiting, or error for a
+// failure) until the item is dismissed, as agents waiting on a decision did in Paperclip.
+function overlayAttention(feed) {
+  try {
+    const items = attentionList().filter((x) => x.agent || x.taskId);
+    if (!items.length || !feed || !Array.isArray(feed.agents)) return feed;
+    for (const it of items) {
+      const hits = feed.agents.filter((a) => (it.taskId && a.task && typeof a.task === 'object' && a.task.id === it.taskId) || (!it.taskId && a.name === it.agent));
+      const a = hits.sort((x, y) => String(y.since || 0).localeCompare(String(x.since || 0), undefined, { numeric: true }))[0]
+        || feed.agents.filter((x) => x.name === it.agent)[0];
+      if (!a) continue;
+      if (it.kind === 'decision') { a.status = 'waiting'; a.task = { ...(typeof a.task === 'object' && a.task ? a.task : {}), title: `Karar: ${it.text}`.slice(0, 120) }; }
+      else { a.status = 'error'; a.error = it.text.slice(0, 120); }
+    }
+  } catch (_) {}
+  return feed;
+}
 function serveFeed(res, source) {
   if (source.kind === 'file') {
     return fs.readFile(source.file, 'utf8', (err, txt) => {
@@ -400,7 +417,7 @@ function serveFeed(res, source) {
       if (err && err.code === 'ENOENT' && source.emptyIfMissing) return send(res, 200, JSON.stringify({ company: source.label, agents: [] }));
       if (err) return send(res, err.code === 'ENOENT' ? 404 : 500, JSON.stringify({ error: `cannot read ${source.file}` }));
       let data; try { data = JSON.parse(txt); } catch (_) { return send(res, 502, '{"error":"feed is not valid JSON"}'); }
-      send(res, 200, JSON.stringify(shapeFeed(data)));
+      send(res, 200, JSON.stringify(overlayAttention(shapeFeed(data))));
     });
   }
   proxyJson(res, source.url, {}, '{"error":"feed unreachable"}', shapeFeed);
@@ -460,6 +477,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/cubicle/settings') return serveSettings(req, res);
   if (url.pathname === '/api/cubicle/tasks') return serveTasks(req, res);
   if (url.pathname === '/api/cubicle/dispatch') return serveDispatch(req, res);
+  if (url.pathname === '/api/cubicle/attention') return serveAttention(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -475,9 +493,10 @@ const server = http.createServer((req, res) => {
     const telegram = telegramStatus(req);
     // Paperclip on 127.0.0.1 opens only on this machine. A phone (through Tailscale) gets the address
     // given for it, or none: the page then leaves out the Paperclip links instead of opening blanks.
-    const pcLinks = !HAS_PAPERCLIP ? undefined : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
+    const pcOff = cubicleSettings().paperclipLinks === false;
+    const pcLinks = !HAS_PAPERCLIP ? undefined : pcOff ? '' : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
     return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined,
-      paperclipLinks: pcLinks, redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: UPDATE } : {}) }));
+      paperclipLinks: pcLinks, ...(pcOff ? { paperclipLinksOff: true } : {}), redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: UPDATE } : {}) }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -754,6 +773,50 @@ async function serveTasks(req, res) {
 // A POST starts one headless `claude -p` run named "CEO" (so it shows up in the office), which turns
 // the task into a GitHub issue labelled agent:ready, or answers it. Local machine only, this page only.
 const DISPATCH_RUNS = [];
+const RUNS_FILE = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch', 'runs.json');
+function saveRuns() { try { fs.mkdirSync(path.dirname(RUNS_FILE), { recursive: true }); fs.writeFileSync(RUNS_FILE, JSON.stringify(DISPATCH_RUNS.slice(-30))); } catch (_) {} }
+// After a restart: runs that were going keep going (they are detached); show them as running while their process lives.
+try {
+  for (const r of JSON.parse(fs.readFileSync(RUNS_FILE, 'utf8'))) {
+    if (r.state === 'running') { let alive = false; try { process.kill(r.pid, 0); alive = !!r.pid; } catch (_) {} if (alive) r.orphan = true; else { r.state = 'done'; r.ended = Date.now(); } }
+    DISPATCH_RUNS.push(r);
+  }
+} catch (_) {}
+setInterval(() => {   // pick up runs that ended while this server was down
+  let changed = false;
+  for (const r of DISPATCH_RUNS) if (r.state === 'running' && r.orphan) { let alive = false; try { process.kill(r.pid, 0); alive = true; } catch (_) {} if (!alive) { r.state = 'done'; r.ended = Date.now(); try { r.tail = fs.readFileSync(r.logFile, 'utf8').slice(-1500); } catch (_) {} changed = true; } }
+  if (changed) saveRuns();
+}, 5000).unref();
+// Mirror a CEO task into Paperclip (when it is a source) so the KPI board shows it with progress and ETA.
+// Workers the CEO starts inherit PC_PARENT and add their runs as subtasks.
+async function dispatchTrack(text) {
+  if (!HAS_PAPERCLIP) return '';
+  try {
+    const cs = await upstreamJSON('GET', '/api/companies');
+    const co = Array.isArray(cs.data) && cs.data[0];
+    if (!co) return '';
+    const r = await upstreamJSON('POST', `/api/companies/${co.id}/issues`, { title: `[CEO \u00b7 \u00e7al\u0131\u015f\u0131yor] ${text.slice(0, 140)}`, description: text.slice(0, 4000), status: 'todo', priority: 'medium' });
+    const made = r.data && (r.data.issue || r.data);
+    return made && made.id ? made.id : '';
+  } catch (_) { return ''; }
+}
+// Card text on the board: "[CEO · state] title", plus a comment with the run's final answer.
+async function dispatchLabel(id, status, state, note) {
+  if (!id) return;
+  try {
+    const cur = await upstreamJSON('GET', `/api/issues/${id}`);
+    const i = (cur.data && (cur.data.issue || cur.data)) || {};
+    const base = String(i.title || '').replace(/^\[[^\]]*\]\s*/, '');
+    await upstreamJSON('PATCH', `/api/issues/${id}`, { title: `[CEO \u00b7 ${state}] ${base}`.slice(0, 200), ...(status ? { status } : {}) });
+    if (note) await upstreamJSON('POST', `/api/issues/${id}/comments`, { body: `**CEO** \u2014 ${state}\n\n${String(note).slice(-1800)}` });
+  } catch (_) {}
+}
+function dispatchFinish(id, state, tail) {
+  const decision = /DECISION:\s*(?!none|yok|-)\S/i.test(String(tail || ''));
+  if (state === 'done' && decision) dispatchLabel(id, 'blocked', 'karar bekliyor', tail);
+  else if (state === 'done') dispatchLabel(id, 'done', 'tamamland\u0131', tail);
+  else dispatchLabel(id, 'blocked', 'hata', tail);
+}
 function dispatchCfg() {
   const d = cubicleSettings().dispatch;
   if (!d || d.enabled !== true) return null;
@@ -772,7 +835,7 @@ function serveDispatch(req, res) {
   if (req.method !== 'POST') return send(res, 405, '{"error":"GET or POST"}');
   if (!cfg) return send(res, 403, '{"error":"task box is off (set dispatch.enabled in ~/.cubicle/settings.json)"}');
   if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
-  return readBody(req, 8000).then((d) => {
+  return readBody(req, 8000).then(async (d) => {
     const text = d && typeof d.text === 'string' ? d.text.trim().slice(0, 4000) : '';
     if (!text) return send(res, 400, '{"error":"empty task"}');
     if (DISPATCH_RUNS.filter((r) => r.state === 'running').length >= 2) return send(res, 429, '{"error":"CEO is busy (2 runs going)"}');
@@ -780,18 +843,55 @@ function serveDispatch(req, res) {
     const dir = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch');
     fs.mkdirSync(dir, { recursive: true });
     const logFile = path.join(dir, `${id}.log`);
-    const run = { id, text: text.slice(0, 200), state: 'running', started: Date.now(), ended: 0, tail: '' };
+    const run = { id, text: text.slice(0, 200), state: 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0 };
     DISPATCH_RUNS.push(run);
     const out = fs.openSync(logFile, 'a');
+    const pcId = await dispatchTrack(text);
     const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(cfg.budget),
       '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
-      cwd: cfg.cwd, stdio: ['ignore', out, out],
-      env: { ...process.env, CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1' } });
-    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} };
-    child.on('error', () => done('failed'));
-    child.on('exit', (code) => done(code === 0 ? 'done' : 'failed'));
+      cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
+      env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
+    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); };
+    run.pid = child.pid || 0; run.orphan = false; saveRuns();
+    child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
+    child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'error', title: `CEO görevi başarısız: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
     console.log(`Cubicle: CEO task ${id} started.`);
     send(res, 200, JSON.stringify({ ok: true, id }));
+  });
+}
+
+// ---------- "needs you": errors and open decisions from agents ----------
+// Scripts and CEO runs POST here; the page shows the list (with a dismiss button) and every linked
+// Telegram chat gets a message. Stored in ~/.cubicle/attention.json. Local machine only.
+const ATTENTION_FILE = path.join(path.dirname(CUBICLE_SETTINGS), 'attention.json');
+function attentionList() { try { const a = JSON.parse(fs.readFileSync(ATTENTION_FILE, 'utf8')); return Array.isArray(a) ? a : []; } catch (_) { return []; } }
+function attentionAdd(item) {
+  const list = attentionList();
+  const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: Date.now(), kind: item.kind === 'decision' ? 'decision' : 'error',
+    title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '', agent: String(item.agent || '').slice(0, 80), taskId: String(item.taskId || '').slice(0, 80) };
+  list.push(it);
+  try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
+  if (TELEGRAM && TELEGRAM.notify) {
+    const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    TELEGRAM.notify(`${it.kind === 'decision' ? '❓ <b>Karar bekliyor</b>' : '⚠️ <b>Hata</b>'}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.url ? `\n${esc(it.url)}` : ''}`);
+  }
+  console.log(`Cubicle: needs you (${it.kind}): ${it.title}`);
+  return it;
+}
+function serveAttention(req, res) {
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+  if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(attentionList().reverse()));
+  if (req.method !== 'POST') return send(res, 405, '{"error":"GET or POST"}');
+  if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
+  return readBody(req, 8000).then((d) => {
+    if (!d || typeof d !== 'object') return send(res, 400, '{"error":"bad request"}');
+    if (typeof d.dismiss === 'string') {
+      const left = attentionList().filter((x) => x.id !== d.dismiss && d.dismiss !== 'all');
+      try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(left)); } catch (_) {}
+      return send(res, 200, '{"ok":true}');
+    }
+    if (typeof d.title !== 'string' || !d.title.trim()) return send(res, 400, '{"error":"title needed"}');
+    send(res, 200, JSON.stringify({ ok: true, id: attentionAdd(d).id }));
   });
 }
 
