@@ -3943,14 +3943,14 @@
   function poll() {
     fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d || !d.enabled) return; box.hidden = false;
-      var r = d.runs[0]; if (r) last.textContent = '[' + r.state + '] ' + r.text + (r.tail ? '\n' + r.tail : '');
+      var r = d.runs.find(function (x) { return x.state === 'running'; }) || d.runs[0], q = d.runs.filter(function (x) { return x.state === 'queued'; }).length; if (r) last.textContent = '[' + r.state + '] ' + r.text + (q ? '\n(' + q + ' görev sırada)' : '') + (r.tail ? '\n' + r.tail : '');
     }).catch(function () {});
   }
   function send() {
     var t = txt.value.trim(); if (!t) return; msg.textContent = 'sending…';
     fetch('/api/cubicle/dispatch', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ text: t }) })
       .then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
-      .then(function (a) { msg.textContent = a[0] ? 'CEO is on it' : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; try { localStorage.removeItem('cubicle.ceoDraft'); } catch (_) {} setTimeout(poll, 1500); } })
+      .then(function (a) { msg.textContent = a[0] ? (a[1].queued ? 'sıraya alındı' : 'CEO is on it') : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; try { localStorage.removeItem('cubicle.ceoDraft'); } catch (_) {} setTimeout(poll, 1500); } })
       .catch(function () { msg.textContent = 'failed'; });
   }
   try { txt.value = localStorage.getItem('cubicle.ceoDraft') || ''; } catch (_) {}
