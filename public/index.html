@@ -2832,9 +2832,14 @@
     try { return new Intl.RelativeTimeFormat(lang, { numeric: 'auto', style: 'short' }).format(-m, 'minute'); } catch (_) { return `${m} min`; }
   }
   function stepsHtml(s) {
-    if (!s.recent || !s.recent.length) return '';
+    let ans = '';
+    try {
+      const it = (window.__attn || []).find((x) => x.kind === 'decision' && ((x.taskId && s.task && typeof s.task === 'object' && s.task.id === x.taskId) || (!x.taskId && x.agent === s.name)));
+      if (it) ans = `<button type="button" class="mini" data-answer="${esc(it.id)}" style="margin:6px 0;background:#b8860b;color:#fff;border:0;border-radius:6px;padding:4px 10px;cursor:pointer">Cevapla</button>`;
+    } catch (_) {}
+    if (!s.recent || !s.recent.length) return ans;
     const items = [...s.recent].reverse().map(([t, text, d]) => `<li>${esc(text)} <span>· ${esc(ago(t))}${Number.isFinite(d) ? ` · ${(d / 1000).toFixed(d < 10000 ? 1 : 0)} s` : ''}</span></li>`).join('');
-    return `<details class="steps" data-id="${esc(s.id)}"${openSteps.has(s.id) ? ' open' : ''}><summary>${esc(L.lastSteps)} (${s.recent.length})</summary><ol>${items}</ol></details>`;
+    return ans + `<details class="steps" data-id="${esc(s.id)}"${openSteps.has(s.id) ? ' open' : ''}><summary>${esc(L.lastSteps)} (${s.recent.length})</summary><ol>${items}</ol></details>`;
   }
   cardsEl.addEventListener('toggle', (e) => {
     const d = e.target; if (!d.dataset || !d.dataset.id) return;
@@ -3957,9 +3962,10 @@
   function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function pollAttn() {
     fetch('/api/cubicle/attention').then(function (r) { return r.ok ? r.json() : []; }).then(function (l) {
+      window.__attn = l;
       if (!l.length) { attn.hidden = true; box.style.bottom = '12px'; return; }
       attn.innerHTML = '<div style="display:flex;justify-content:space-between"><b>\u26a0 Senin ilgin gerekiyor (' + l.length + ')</b><button data-d="all" style="background:none;border:0;color:#fbb;cursor:pointer">hepsini kapat</button></div>' +
-        l.slice(0, 6).map(function (x) { return '<div style="margin-top:6px;border-top:1px solid #7a2a2a;padding-top:4px"><b>' + (x.kind === 'decision' ? '\u2753 ' : '\u26a0 ') + esc(x.title) + '</b><div style="white-space:pre-wrap;font-size:12px">' + esc(x.text) + '</div>' + (x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" style="color:#9cf">ba\u011flant\u0131</a> ' : '') + '<button data-d="' + esc(x.id) + '" style="background:none;border:0;color:#fbb;cursor:pointer">kapat</button></div>'; }).join('');
+        l.slice(0, 6).map(function (x) { return '<div style="margin-top:6px;border-top:1px solid #7a2a2a;padding-top:4px"><b>' + (x.kind === 'decision' ? '\u2753 ' : '\u26a0 ') + esc(x.title) + '</b><div style="white-space:pre-wrap;font-size:12px">' + esc(x.text) + '</div>' + (x.url ? '<a href="' + esc(x.url) + '" target="_blank" rel="noopener" style="color:#9cf">ba\u011flant\u0131</a> ' : '') + (x.kind === 'decision' ? '<button data-answer="' + esc(x.id) + '" style="background:#b8860b;color:#fff;border:0;border-radius:6px;padding:2px 10px;cursor:pointer;margin-right:6px">Cevapla</button>' : '') + '<button data-d="' + esc(x.id) + '" style="background:none;border:0;color:#fbb;cursor:pointer">kapat</button></div>'; }).join('');
       attn.hidden = false; box.hidden = false; box.style.bottom = (attn.offsetHeight + 24) + 'px';
     }).catch(function () {});
   }
@@ -4016,6 +4022,40 @@
   document.getElementById('ag-close').onclick = function () { dlg.close(); };
   document.getElementById('ag-refresh').onclick = load;
   dlg.addEventListener('close', function () { clearInterval(timer); });
+})();
+</script>
+
+<dialog id="ans-dlg" style="width:min(560px,calc(100vw - 24px));border:1px solid #b8860b;border-radius:12px;background:#15151d;color:#eee;font:13px system-ui,sans-serif;padding:14px">
+  <b id="ans-title">Karar</b>
+  <div id="ans-q" style="white-space:pre-wrap;margin:8px 0;color:#cfd8dc;max-height:40vh;overflow:auto"></div>
+  <textarea id="ans-text" rows="5" placeholder="Cevabınızı yazın; CEO bu cevapla işe devam eder" style="width:100%;box-sizing:border-box;background:#111;color:#eee;border:1px solid #445;border-radius:6px;padding:6px"></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px;align-items:center"><button id="ans-send" type="button">Gönder</button><button id="ans-cancel" type="button">Vazgeç</button><span id="ans-msg" style="color:#9ab"></span></div>
+</dialog>
+<script>
+(function () {
+  var dlg = document.getElementById('ans-dlg'); if (!dlg) return; var cur = null;
+  var q = document.getElementById('ans-q'), txt = document.getElementById('ans-text'), msg = document.getElementById('ans-msg');
+  document.addEventListener('click', function (e) {
+    var b = e.target && e.target.closest ? e.target.closest('[data-answer]') : null; if (!b) return;
+    cur = (window.__attn || []).find(function (x) { return x.id === b.getAttribute('data-answer'); }); if (!cur) return;
+    document.getElementById('ans-title').textContent = cur.title; q.textContent = cur.text; msg.textContent = '';
+    try { txt.value = localStorage.getItem('cubicle.ans.' + cur.id) || ''; } catch (_) { txt.value = ''; }
+    if (!dlg.open) dlg.showModal(); txt.focus();
+  });
+  txt.addEventListener('input', function () { if (cur) try { localStorage.setItem('cubicle.ans.' + cur.id, txt.value); } catch (_) {} });
+  document.getElementById('ans-cancel').onclick = function () { dlg.close(); };
+  document.getElementById('ans-send').onclick = function () {
+    var a = txt.value.trim(); if (!a || !cur) return; msg.textContent = 'gönderiliyor…';
+    var task = 'Daha önce sana bir karar soruldu. SORU/DURUM: ' + cur.title + '\n' + cur.text + '\n\nKARARIM/CEVABIM: ' + a + '\n\nBu cevapla işe kaldığın yerden devam et; gerekli issue/PR işlerini tamamla.' + (cur.url ? '\nBağlantı: ' + cur.url : '');
+    var id = cur.id;
+    fetch('/api/cubicle/dispatch', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ text: task }) })
+      .then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
+      .then(function (a2) {
+        if (!a2[0]) { msg.textContent = a2[1].error || 'başarısız'; return; }
+        try { localStorage.removeItem('cubicle.ans.' + id); } catch (_) {}
+        return fetch('/api/cubicle/attention', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ dismiss: id }) }).then(function () { dlg.close(); });
+      }).catch(function () { msg.textContent = 'başarısız'; });
+  };
 })();
 </script>
 </body>
