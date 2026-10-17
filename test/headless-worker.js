@@ -79,6 +79,29 @@ module.exports = async function headlessWorker() {
   const copy = stableScript(path.join(fake, 'cubicle-hook.js'), path.join(dir, 'home'));
   assert.strictEqual(copy, path.join(dir, 'home', 'bin', 'cubicle-hook.js'));
   assert.ok(fs.existsSync(copy));
+  // a worker the CEO started: its main task, when the turn began, and what it said last (from the transcript)
+  const tdir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-tr-'));
+  const transcript = path.join(tdir, 't.jsonl');
+  fs.writeFileSync(transcript, [
+    JSON.stringify({ type: 'user', message: { content: 'go' } }),
+    JSON.stringify({ type: 'assistant', message: { content: [{ type: 'text', text: 'Opened PR #160; tests pass.' }, { type: 'tool_use', name: 'Bash' }] } }),
+    JSON.stringify({ type: 'system', subtype: 'stop' }), ''].join('\n'));
+  const wenv = { ...env, CUBICLE_MAIN_TASK_ID: 'T-abc', CUBICLE_MAIN_TASK: 'Make the dashboard resilient' };
+  let w = { company: 'Claude Code', agents: [] };
+  w = apply(w, { session_id: 'w3', hook_event_name: 'UserPromptSubmit', prompt: 'x' }, 'claude', wenv);
+  const started = w.agents[0].turnStart;
+  assert.ok(Number.isFinite(started), 'turn start recorded');
+  w = apply(w, { session_id: 'w3', hook_event_name: 'Stop', transcript_path: transcript }, 'claude', wenv);
+  assert.deepStrictEqual(w.agents[0].main, { id: 'T-abc', title: 'Make the dashboard resilient' });
+  assert.strictEqual(w.agents[0].result, 'Opened PR #160; tests pass.');
+  // the Stop event's own last message wins; a new turn clears the old result
+  w = apply(w, { session_id: 'w3', hook_event_name: 'Stop', last_assistant_message: 'Done.' }, 'claude', wenv);
+  assert.strictEqual(w.agents[0].result, 'Done.');
+  w = apply(w, { session_id: 'w3', hook_event_name: 'UserPromptSubmit', prompt: 'y' }, 'claude', wenv);
+  assert.ok(!('result' in w.agents[0]));
+  // the CEO's own task is not its main task
+  let c = apply({ company: 'Claude Code', agents: [] }, { session_id: 'c', hook_event_name: 'SessionStart' }, 'claude', { CUBICLE_NAME: 'CEO', CUBICLE_TASK_ID: 'T-abc', CUBICLE_MAIN_TASK_ID: 'T-abc', CUBICLE_MAIN_TASK: 'x' });
+  assert.ok(!c.agents[0].main);
   console.log('headless-worker ok');
 };
 

@@ -203,7 +203,7 @@ The ⚙ menu also has:
 
 <img src="docs/telegram.png" alt="The Telegram dialog: bot connected, a QR code to link your phone, the /start code, and one button to open the office on your phone with Tailscale" width="420" align="right">
 
-The standalone server can run a Telegram bot for your office. It tells you when an agent starts needing you, a run fails or work completes, with a link that opens Cubicle on that agent and one to the issue in Paperclip when available, and it answers `/status`, `/waiting`, `/kpi` and `/office`.
+The standalone server can run a Telegram bot for your office. It tells you when an agent starts needing you, a run fails or work completes, with a link that opens Cubicle on that agent and one to the issue in Paperclip when available, and it answers `/status`, `/waiting`, `/kpi` and `/office`. A *finished* message says what was done: the task with its link, how long the run took, what it said last (its summary or answer), the main task it is part of and how far that has come (e.g. 1 of 3 pieces done, 1 working, 1 queued), and who else is working or waiting.
 
 Setting it up takes three steps, all on the page (⚙ → **📨 Telegram…**, on the computer Cubicle runs on):
 

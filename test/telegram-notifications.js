@@ -40,7 +40,8 @@ test('completion alerts follow the existing per-chat filters, mutes and access p
   const completed = (messages) => messages.filter((m) => /finished its work|işini tamamladı/.test(m.text));
   // Whole or not at all, as the hook writes it: a half-written feed reads as an empty office for a
   // tick, and the agent's next change would then look like its first appearance.
-  const writeFeed = () => { fs.writeFileSync(`${feedFile}.tmp`, JSON.stringify({ agents: [agent] })); fs.renameSync(`${feedFile}.tmp`, feedFile); };
+  const others = [];
+  const writeFeed = () => { fs.writeFileSync(`${feedFile}.tmp`, JSON.stringify({ agents: [agent, ...others] })); fs.renameSync(`${feedFile}.tmp`, feedFile); };
   writeFeed();
   const mock = http.createServer((q, r) => {
     let raw = ''; q.on('data', (d) => { raw += d; }); q.on('end', () => {
@@ -175,6 +176,18 @@ test('completion alerts follow the existing per-chat filters, mutes and access p
     assert.equal(chats['102'].only, 'questions'); assert.equal(chats['103'].only, 'failures');
     assert.deepEqual(chats['104'].muted, ['feed agent']);
     completion(await feed({ completedAt: 10000 }));
+  });
+
+  await t.test('a completion says what was done, how long it took, its main task and what goes on now', async () => {
+    others.push({ id: 'f2', name: 'repo #8', status: 'running', task: { id: '#8', title: 'Tests' }, main: { id: 'T-1', title: 'Make it resilient' } },
+      { id: 'f3', name: 'repo #9', status: 'idle', completedAt: null, task: { id: '#9', title: '⏳ Queued' }, main: { id: 'T-1', title: 'Make it resilient' } });
+    const msgs = completed(await feed({ status: 'idle', completedAt: 20000, turnStart: 20000 - 14 * 60000, task: { id: '#7', title: 'Fix the card', url: 'https://github.com/o/r/issues/7' },
+      result: 'Opened PR #160; tests pass.', main: { id: 'T-1', title: 'Make it resilient' } }));
+    const m = msgs.find((x) => String(x.chat_id) === '101');
+    assert.ok(m, 'sent');
+    for (const want of ['https://github.com/o/r/issues/7', 'Fix the card', 'Took 14 minutes.', 'Opened PR #160; tests pass.', 'Make it resilient', '1 of 3 pieces done, 1 working, 1 queued', 'repo #8 working', 'repo #9 queued']) {
+      assert.ok(m.text.includes(want), `${want} in ${m.text}`);
+    }
   });
 });
 

@@ -62,6 +62,10 @@ const STALE_MS = 12 * 60 * 60 * 1000; // drop sessions with no event for 12 h
 //   CUBICLE_TASK_ID / CUBICLE_TASK_URL / CUBICLE_TASK
 //                     ticket id, link and title; the bubble keeps showing the current tool,
 //                     the card links to the ticket, and the title shows while idle
+//   CUBICLE_MAIN_TASK_ID / CUBICLE_MAIN_TASK
+//                     the bigger task this run is part of (e.g. the CEO task that started this
+//                     worker); a run started from inside another inherits it, so the alert when
+//                     it finishes can say how far that main task has come
 //   CUBICLE_LINGER=1  keep the character in the office after SessionEnd (idle, or in error if
 //                     the last turn failed) so a finished batch run stays visible until the next
 //                     run with the same name or the 12 h stale limit; subagents still leave
@@ -70,7 +74,34 @@ function identity(env) {
   const id = { name: s('CUBICLE_NAME'), role: s('CUBICLE_ROLE'), title: s('CUBICLE_TASK'), taskId: s('CUBICLE_TASK_ID'), url: s('CUBICLE_TASK_URL') };
   id.linger = /^(1|true|yes)$/i.test(s('CUBICLE_LINGER'));
   id.ticket = !!(id.taskId || id.url || id.title);
+  const mainId = s('CUBICLE_MAIN_TASK_ID'), mainTitle = s('CUBICLE_MAIN_TASK');
+  // a main task that is this run's own ticket is no main task
+  if ((mainId || mainTitle) && !(mainId && mainId === id.taskId)) id.main = { ...(mainId ? { id: mainId.slice(0, 80) } : {}), ...(mainTitle ? { title: mainTitle.slice(0, 160) } : {}) };
   return id;
+}
+
+// What the run said last (its answer or summary), for the alert when it finishes: from the Stop
+// event when the CLI sends it, else from the end of the session's transcript. Local file only.
+const RESULT_MAX = 1200;
+function lastAnswer(ev) {
+  const clip = (t) => { t = String(t || '').trim(); return t.length > RESULT_MAX ? '…' + t.slice(-(RESULT_MAX - 1)) : t; };
+  if (typeof ev.last_assistant_message === 'string' && ev.last_assistant_message.trim()) return clip(ev.last_assistant_message);
+  const f = ev.transcript_path;
+  if (!f || typeof f !== 'string') return '';
+  let fd = null;
+  try {
+    fd = fs.openSync(f, 'r');
+    const size = fs.fstatSync(fd).size, len = Math.min(size, 512 * 1024), buf = Buffer.alloc(len);
+    fs.readSync(fd, buf, 0, len, size - len);
+    const lines = buf.toString('utf8').split('\n');
+    for (let i = lines.length - 1; i >= 0; i--) {
+      let j; try { j = JSON.parse(lines[i]); } catch (_) { continue; }
+      const c = j && j.type === 'assistant' && j.message && j.message.content;
+      const text = Array.isArray(c) ? c.filter((x) => x && x.type === 'text').map((x) => x.text).join('\n').trim() : typeof c === 'string' ? c.trim() : '';
+      if (text) return clip(text);
+    }
+  } catch (_) {} finally { if (fd !== null) try { fs.closeSync(fd); } catch (_) {} }
+  return '';
 }
 
 // What the card shows as the task: the tool summary while running, wrapped with the ticket
@@ -180,7 +211,8 @@ function apply(feed, ev, runtime = 'claude', env = {}) {
       break;
     case 'UserPromptSubmit':
       a = a || { id, since: now, name, role };
-      Object.assign(a, { status: 'running', task: taskOf(idn.title || summarizePrompt(ev.prompt), idn), error: null });
+      Object.assign(a, { status: 'running', task: taskOf(idn.title || summarizePrompt(ev.prompt), idn), error: null, turnStart: now });
+      delete a.result;
       break;
     case 'PreToolUse':
     case 'PostToolUse':
@@ -204,15 +236,19 @@ function apply(feed, ev, runtime = 'claude', env = {}) {
       a = a || { id, since: now, name, role };
       Object.assign(a, { status: 'error', error: String(ev.error || ev.message || 'turn failed').slice(0, 120) });
       break;
-    case 'Stop':
+    case 'Stop': {
       a = a || { id, since: now, name, role };
       if (a.status === 'running' || a.status === 'waiting') a.completedAt = now;
       Object.assign(a, { status: 'idle', task: taskOf('', idn) || null });
+      const said = lastAnswer(ev);
+      if (said) a.result = said;
       break;
+    }
     default:
       return feed; // SubagentStart/SubagentStop without an agent_id etc.: nothing to draw
   }
   a.updated = now;
+  if (idn.main) a.main = idn.main;
   if (!Object.hasOwn(a, 'completedAt')) a.completedAt = null;
   if (!agents.includes(a)) agents.push(a);
   return { ...feed, agents };

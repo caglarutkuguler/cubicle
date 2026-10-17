@@ -345,6 +345,10 @@ function shapeFeed(data) {
     if (a.taskUrl && !REDACT) r.taskUrl = a.taskUrl;
     if (a.error) r.error = REDACT ? 'error' : a.error;
     if (a.parent) r.parent = String(a.parent);
+    // When the current turn began, what the run said last, and the main task it belongs to.
+    if (Number.isFinite(a.turnStart)) r.turnStart = a.turnStart;
+    if (a.result && !REDACT) r.result = String(a.result).slice(0, 1200);
+    if (a.main && typeof a.main === 'object') r.main = REDACT ? pick(a.main, ['id']) : { ...pick(a.main, ['id']), ...(a.main.title ? { title: String(a.main.title).slice(0, 160) } : {}) };
     // The last few steps: [startedAt ms, summary, duration ms?]. Redacted to the tool name.
     if (Array.isArray(a.recent)) {
       r.recent = a.recent.filter((x) => Array.isArray(x) && Number.isFinite(x[0])).slice(-10)
@@ -868,7 +872,9 @@ function startRun(run) {
   const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.min(cfg.budget * 2, 30) : cfg.budget),
     '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
     cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
-    env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
+    env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120),
+      // workers the CEO starts inherit these, so their alerts can say how far this task has come
+      CUBICLE_MAIN_TASK_ID: `T-${id}`, CUBICLE_MAIN_TASK: text.slice(0, 160), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
   let finished = false;
   const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); nextQueued(); };
   run.pid = child.pid || 0; run.orphan = false; saveRuns();

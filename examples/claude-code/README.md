@@ -49,6 +49,7 @@ A script that runs `claude -p` on a schedule (for example one that takes a GitHu
 | `CUBICLE_NAME` | Character name instead of the working directory name (`ncu-pch #42`). Its subagents are named `ncu-pch #42 › code-reviewer`. |
 | `CUBICLE_ROLE` | Role on the card (`Issue worker`). |
 | `CUBICLE_TASK_ID`, `CUBICLE_TASK`, `CUBICLE_TASK_URL` | Ticket id, title and link. The bubble keeps showing the current tool, the card links to the ticket, and the ticket title stays on the card while idle. A long prompt is no longer shown as the task. |
+| `CUBICLE_MAIN_TASK_ID`, `CUBICLE_MAIN_TASK` | The bigger task this run is part of (for example the CEO task that started the worker). A run started from inside another inherits them, so the Telegram message when it finishes says how far the main task has come (pieces done, working, queued). Cubicle's CEO task box sets them for the workers its CEO starts. |
 | `CUBICLE_LINGER=1` | Keep the character in the office after `SessionEnd`, idle (or red if the last turn failed), so a finished run stays visible until the next run with the same session or the 12-hour limit. Its subagents still leave. |
 
 ```bash

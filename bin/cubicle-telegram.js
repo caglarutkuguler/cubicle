@@ -30,7 +30,9 @@ const TEXT = {
     replyHint: 'Reply to this message to answer; it becomes a comment on the issue.',
     replyHintQ: 'Reply to this message with the option’s number, or write your own answer; it becomes a comment on the issue.', other: 'or write your own answer',
     failed: (n) => `⚠ <b>${n}</b>: the last run failed`, errored: (n) => `⚠ <b>${n}</b> is in error`,
-    completed: (n) => `✓ <b>${n}</b> finished its work`,
+    completed: (n) => `✓ <b>${n}</b> finished its work`, took: (d) => `Took ${d}.`, result: 'Result', lastSteps: 'Last steps', mainTask: 'Main task', ownTask: 'Task',
+    mainCount: (n, done, run, wait) => `${done} of ${n} pieces done${run ? `, ${run} working` : ''}${wait ? `, ${wait} queued` : ''}`, nowLine: 'Now', st: { running: 'working', waiting: 'needs you', queued: 'queued' },
+    ceoQueue: (n) => `${n} more CEO task${n === 1 ? '' : 's'} in the queue.`, mins: 'minutes', started: 'Started',
     paired: 'This chat is now linked to the office. You will get a message when an agent needs you, fails or finishes its work.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
     help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get (or just /questions, /errors, /all)\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
@@ -60,7 +62,9 @@ const TEXT = {
     replyHint: 'Yanıtlamak için bu mesajı yanıtlayın; yanıtınız işe yorum olarak yazılır.',
     replyHintQ: 'Bu mesajı seçeneğin numarasıyla ya da kendi cevabınızla yanıtlayın; yanıtınız işe yorum olarak yazılır.', other: 'ya da kendi cevabınızı yazın',
     failed: (n) => `⚠ <b>${n}</b>: son çalıştırma başarısız`, errored: (n) => `⚠ <b>${n}</b> hata durumunda`,
-    completed: (n) => `✓ <b>${n}</b> işini tamamladı`,
+    completed: (n) => `✓ <b>${n}</b> işini tamamladı`, took: (d) => `Süre: ${d}.`, result: 'Sonuç', lastSteps: 'Son adımlar', mainTask: 'Ana görev', ownTask: 'Görev',
+    mainCount: (n, done, run, wait) => `${n} işten ${done} tanesi bitti${run ? `, ${run} tanesi çalışıyor` : ''}${wait ? `, ${wait} tanesi sırada` : ''}`, nowLine: 'Şu an', st: { running: 'çalışıyor', waiting: 'sizi bekliyor', queued: 'sırada' },
+    ceoQueue: (n) => `Sırada ${n} CEO görevi daha var.`, mins: 'dakika', started: 'Başlattığı işler',
     paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde, hata aldığında veya işini tamamladığında mesaj gelecek.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
     help: '/status – ofisin şu anki hâli\n/waiting – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/office – Cubicle’ı aç\n/answer ID metin – bir işi yanıtla\n/mute ad, /unmute ad – bir ajan için bildirim kapat / aç\n/alerts all | questions | failures – hangi bildirimler gelsin (kısaca /questions, /errors, /all)\n/skip – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
@@ -181,10 +185,13 @@ async function snapshot(self) {
         const st = String(a.status || '').toLowerCase();
         const waiting = /wait|blocked|needs|input|approval|permission/.test(st);
         const status = waiting ? 'waiting' : /error|fail/.test(st) ? 'error' : /work|run|busy|active/.test(st) ? 'running' : /^(done|finished|completed)$/.test(st) ? 'idle' : st;
-        const task = a.task ? { identifier: a.task.identifier || a.task.id || '', title: a.task.title || '' } : null;
+        const task = a.task ? (typeof a.task === 'string' ? { identifier: '', title: a.task } : { identifier: a.task.identifier || a.task.id || '', title: a.task.title || '', url: a.task.url || '' }) : null;
         // The page names feed agents "<feed path>#<id>", so links select the same one.
         agents.push({ id: `${src.path}#${a.id ?? a.name ?? i}`, name: a.name || a.id, status, needs: waiting, issue: task, reason: '', task, error: a.error || '', fail: null,
-          completionId: a.completedAt ? String(a.completedAt) : null, explicitCompletion: Object.hasOwn(a, 'completedAt') });
+          completionId: a.completedAt ? String(a.completedAt) : null, explicitCompletion: Object.hasOwn(a, 'completedAt'),
+          // for the "finished" message: how long, what it said, what it is part of, its last steps
+          sub: !!a.parent, turnStart: a.turnStart || null, doneAt: a.completedAt ? Date.parse(a.completedAt) : null, result: a.result || '', main: a.main || null,
+          steps: Array.isArray(a.recent) ? a.recent.slice(-3).map((x) => x[1]).filter(Boolean) : [] });
       });
     }
   }
@@ -423,10 +430,48 @@ function start(opts) {
     }
   }
 
-  async function notifyCompleted(a) {
+  // What a finished run did and where things stand: its task (with link), how long it took, what it
+  // said last, the main task it is part of and how far that has come, and what is going on now.
+  const queuedTitle = (x) => /^⏳/.test(String((x.task && x.task.title) || ''));
+  const resultExcerpt = (r) => {
+    r = String(r || '').replace(/\r/g, '').replace(/\n{3,}/g, '\n\n').trim();
+    if (r.length <= 700) return r;
+    const tail = r.slice(-700), nl = tail.indexOf('\n');           // the end, from a line break: the summary is usually last
+    return '…' + (nl >= 0 && nl < 200 ? tail.slice(nl + 1) : tail);
+  };
+  async function completedText(a, all, lang) {
+    const t = tr(lang), out = [t.completed(esc(a.name))];
+    const task = a.task && (a.task.identifier || a.task.title) ? a.task : null;
+    if (task) out.push(`${task.url ? `<a href="${esc(task.url)}">${esc(task.identifier || '↗')}</a>` : `<b>${esc(task.identifier || '')}</b>`} ${esc(task.title || '')}`.trim());
+    if (a.turnStart && a.doneAt && a.doneAt > a.turnStart) out.push(esc(t.took(durText(a.doneAt - a.turnStart, lang))));
+    if (a.result) out.push(`<b>${esc(t.result)}:</b>\n${esc(resultExcerpt(a.result))}`);
+    else if (a.steps && a.steps.length) out.push(`<b>${esc(t.lastSteps)}:</b> ${a.steps.map(esc).join(' · ')}`);
+    // the main task: the one this run is part of (a CEO task), or the run's own when it is the CEO
+    const main = a.main && (a.main.id || a.main.title) ? a.main : null;
+    if (main) {
+      const parts = all.filter((x) => !x.sub && x.main && main.id && x.main.id === main.id);
+      const done = parts.filter((x) => x.status === 'idle' && x.doneAt && !queuedTitle(x)).length, run = parts.filter((x) => x.status === 'running').length,
+        wait = parts.filter((x) => queuedTitle(x) || (x.status === 'idle' && !x.doneAt)).length;
+      out.push(`<b>${esc(t.mainTask)}:</b> ${esc(main.title || main.id)}${parts.length > 1 ? ` — ${esc(t.mainCount(parts.length, done, run, wait))}` : ''}`);
+    } else if (task && task.identifier) {
+      // a main task itself (the CEO's): the pieces it started so far
+      const parts = all.filter((x) => !x.sub && x.id !== a.id && x.main && x.main.id === task.identifier);
+      const done = parts.filter((x) => x.status === 'idle' && x.doneAt && !queuedTitle(x)).length, run = parts.filter((x) => x.status === 'running').length,
+        wait = parts.filter((x) => queuedTitle(x) || (x.status === 'idle' && !x.doneAt)).length;
+      if (parts.length) out.push(`<b>${esc(t.started)}:</b> ${parts.slice(0, 6).map((x) => esc(x.name)).join(', ')} — ${esc(t.mainCount(parts.length, done, run, wait))}`);
+    }
+    // what else is going on: the agents still working or waiting, and the CEO queue
+    const busy = all.filter((x) => !x.sub && x.id !== a.id && (x.status === 'running' || x.status === 'waiting' || queuedTitle(x)));
+    if (busy.length) out.push(`<b>${esc(t.nowLine)}:</b> ${busy.slice(0, 5).map((x) => `${esc(x.name)} ${esc(queuedTitle(x) ? t.st.queued : t.st[x.status] || x.status)}`).join(' · ')}${busy.length > 5 ? ' …' : ''}`);
+    if (a.name === 'CEO') {
+      try { const d = JSON.parse((await self('/api/cubicle/dispatch')) || 'null'); const q = d && Array.isArray(d.runs) ? d.runs.filter((r) => r.state === 'queued').length : 0; if (q) out.push(esc(t.ceoQueue(q))); } catch (_) {}
+    }
+    out.push(links([[t.open, agentLink(a)]]));
+    return out.join('\n').slice(0, 3900);
+  }
+  async function notifyCompleted(a, all = []) {
     for (const [chat, c] of Object.entries(state.chats)) {
-      const t = tr(c.lang);
-      await send(chat, `${t.completed(esc(a.name))}\n${links([[t.open, agentLink(a)]])}`, {}, { agent: a, kind: 'completed' });
+      await send(chat, await completedText(a, all, c.lang), {}, { agent: a, kind: 'completed' });
     }
   }
 
@@ -449,7 +494,7 @@ function start(opts) {
           const finished = before && (a.explicitCompletion
             ? a.completionId && a.completionId !== before.completionId
             : before.status === 'running' && a.status === 'idle' && !a.error && !a.needs);
-          if (finished) await notifyCompleted(a);
+          if (finished) await notifyCompleted(a, agents);
         }
       }
       // An agent missing from one snapshot (a feed file read mid-write, a source that did not answer)
