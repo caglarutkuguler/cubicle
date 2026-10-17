@@ -393,6 +393,23 @@ function proxyJson(res, url, headers, failBody, shape) {
   res.on('close', () => { if (!res.writableFinished) upstream.destroy(); });
 }
 
+// An agent with an open "needs you" item raises its hand at its desk (status waiting, or error for a
+// failure) until the item is dismissed, as agents waiting on a decision did in Paperclip.
+function overlayAttention(feed) {
+  try {
+    const items = attentionList().filter((x) => x.agent || x.taskId);
+    if (!items.length || !feed || !Array.isArray(feed.agents)) return feed;
+    for (const it of items) {
+      const hits = feed.agents.filter((a) => (it.taskId && a.task && typeof a.task === 'object' && a.task.id === it.taskId) || (!it.taskId && a.name === it.agent));
+      const a = hits.sort((x, y) => String(y.since || 0).localeCompare(String(x.since || 0), undefined, { numeric: true }))[0]
+        || feed.agents.filter((x) => x.name === it.agent)[0];
+      if (!a) continue;
+      if (it.kind === 'decision') { a.status = 'waiting'; a.task = { ...(typeof a.task === 'object' && a.task ? a.task : {}), title: `Karar: ${it.text}`.slice(0, 120) }; }
+      else { a.status = 'error'; a.error = it.text.slice(0, 120); }
+    }
+  } catch (_) {}
+  return feed;
+}
 function serveFeed(res, source) {
   if (source.kind === 'file') {
     return fs.readFile(source.file, 'utf8', (err, txt) => {
@@ -400,7 +417,7 @@ function serveFeed(res, source) {
       if (err && err.code === 'ENOENT' && source.emptyIfMissing) return send(res, 200, JSON.stringify({ company: source.label, agents: [] }));
       if (err) return send(res, err.code === 'ENOENT' ? 404 : 500, JSON.stringify({ error: `cannot read ${source.file}` }));
       let data; try { data = JSON.parse(txt); } catch (_) { return send(res, 502, '{"error":"feed is not valid JSON"}'); }
-      send(res, 200, JSON.stringify(shapeFeed(data)));
+      send(res, 200, JSON.stringify(overlayAttention(shapeFeed(data))));
     });
   }
   proxyJson(res, source.url, {}, '{"error":"feed unreachable"}', shapeFeed);
@@ -764,13 +781,27 @@ async function dispatchTrack(text) {
     const cs = await upstreamJSON('GET', '/api/companies');
     const co = Array.isArray(cs.data) && cs.data[0];
     if (!co) return '';
-    const r = await upstreamJSON('POST', `/api/companies/${co.id}/issues`, { title: `CEO: ${text.slice(0, 150)}`, description: text.slice(0, 4000), status: 'todo', priority: 'medium' });
+    const r = await upstreamJSON('POST', `/api/companies/${co.id}/issues`, { title: `[CEO \u00b7 \u00e7al\u0131\u015f\u0131yor] ${text.slice(0, 140)}`, description: text.slice(0, 4000), status: 'todo', priority: 'medium' });
     const made = r.data && (r.data.issue || r.data);
     return made && made.id ? made.id : '';
   } catch (_) { return ''; }
 }
-function dispatchFinish(id, state) {
-  if (id) upstreamJSON('PATCH', `/api/issues/${id}`, { status: state === 'done' ? 'done' : 'cancelled' }).catch(() => {});
+// Card text on the board: "[CEO · state] title", plus a comment with the run's final answer.
+async function dispatchLabel(id, status, state, note) {
+  if (!id) return;
+  try {
+    const cur = await upstreamJSON('GET', `/api/issues/${id}`);
+    const i = (cur.data && (cur.data.issue || cur.data)) || {};
+    const base = String(i.title || '').replace(/^\[[^\]]*\]\s*/, '');
+    await upstreamJSON('PATCH', `/api/issues/${id}`, { title: `[CEO \u00b7 ${state}] ${base}`.slice(0, 200), ...(status ? { status } : {}) });
+    if (note) await upstreamJSON('POST', `/api/issues/${id}/comments`, { body: `**CEO** \u2014 ${state}\n\n${String(note).slice(-1800)}` });
+  } catch (_) {}
+}
+function dispatchFinish(id, state, tail) {
+  const decision = /DECISION:\s*(?!none|yok|-)\S/i.test(String(tail || ''));
+  if (state === 'done' && decision) dispatchLabel(id, 'blocked', 'karar bekliyor', tail);
+  else if (state === 'done') dispatchLabel(id, 'done', 'tamamland\u0131', tail);
+  else dispatchLabel(id, 'blocked', 'hata', tail);
 }
 function dispatchCfg() {
   const d = cubicleSettings().dispatch;
@@ -806,9 +837,9 @@ function serveDispatch(req, res) {
       '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
       cwd: cfg.cwd, stdio: ['ignore', out, out],
       env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
-    const done = (state) => { dispatchFinish(pcId, state); run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} };
+    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); };
     child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
-    child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ kind: 'error', title: `CEO görevi başarısız: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
+    child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'error', title: `CEO görevi başarısız: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
     console.log(`Cubicle: CEO task ${id} started.`);
     send(res, 200, JSON.stringify({ ok: true, id }));
   });
@@ -822,7 +853,7 @@ function attentionList() { try { const a = JSON.parse(fs.readFileSync(ATTENTION_
 function attentionAdd(item) {
   const list = attentionList();
   const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: Date.now(), kind: item.kind === 'decision' ? 'decision' : 'error',
-    title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '' };
+    title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '', agent: String(item.agent || '').slice(0, 80), taskId: String(item.taskId || '').slice(0, 80) };
   list.push(it);
   try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
   if (TELEGRAM && TELEGRAM.notify) {
