@@ -854,7 +854,7 @@ function startRun(run) {
   const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); nextQueued(); };
   run.pid = child.pid || 0; run.orphan = false; saveRuns();
   child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
-  child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'error', title: `CEO g\u00f6revi ba\u015far\u0131s\u0131z: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
+  child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'error', title: `CEO g\u00f6revi ba\u015far\u0131s\u0131z: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [] }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
   console.log(`Cubicle: CEO task ${id} started.`);
 }
 function serveDispatch(req, res) {
@@ -892,12 +892,13 @@ function attentionList() { try { const a = JSON.parse(fs.readFileSync(ATTENTION_
 function attentionAdd(item) {
   const list = attentionList();
   const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: Date.now(), kind: item.kind === 'decision' ? 'decision' : 'error',
-    title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '', agent: String(item.agent || '').slice(0, 80), taskId: String(item.taskId || '').slice(0, 80) };
+    title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '', agent: String(item.agent || '').slice(0, 80), taskId: String(item.taskId || '').slice(0, 80),
+    options: Array.isArray(item.options) ? item.options.map((x) => String(x).trim().slice(0, 160)).filter(Boolean).slice(0, 6) : [], multi: item.multi === true };
   list.push(it);
   try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
   if (TELEGRAM && TELEGRAM.notify) {
     const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    TELEGRAM.notify(`${it.kind === 'decision' ? '❓ <b>Karar bekliyor</b>' : '⚠️ <b>Hata</b>'}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.url ? `\n${esc(it.url)}` : ''}`);
+    TELEGRAM.notify(`${it.kind === 'decision' ? '❓ <b>Karar bekliyor</b>' : '⚠️ <b>Hata</b>'}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.options.length ? '\n' + it.options.map((x, n) => `${n + 1}) ${esc(x)}`).join('\n') : ''}${it.url ? `\n${esc(it.url)}` : ''}\n(Cubicle'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)`);
   }
   console.log(`Cubicle: needs you (${it.kind}): ${it.title}`);
   return it;
