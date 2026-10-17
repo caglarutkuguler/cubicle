@@ -459,6 +459,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/tailscale') return serveTailscale(req, res);
   if (url.pathname === '/api/cubicle/settings') return serveSettings(req, res);
   if (url.pathname === '/api/cubicle/tasks') return serveTasks(req, res);
+  if (url.pathname === '/api/cubicle/dispatch') return serveDispatch(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -746,6 +747,52 @@ async function serveTasks(req, res) {
   const made = r.data.issue || r.data;
   console.log(`Cubicle: created ${made.identifier || made.id} under ${parent.data.identifier || d.parentId} from KPI advice.`);
   send(res, 200, JSON.stringify({ ok: true, id: made.id, identifier: made.identifier || '' }));
+}
+
+// ---------- task box: hand a task to the CEO from the page (off unless turned on) ----------
+// Opt-in via ~/.cubicle/settings.json: { "dispatch": { "enabled": true, "cwd": "~/agents" } }.
+// A POST starts one headless `claude -p` run named "CEO" (so it shows up in the office), which turns
+// the task into a GitHub issue labelled agent:ready, or answers it. Local machine only, this page only.
+const DISPATCH_RUNS = [];
+function dispatchCfg() {
+  const d = cubicleSettings().dispatch;
+  if (!d || d.enabled !== true) return null;
+  const home = require('os').homedir();
+  const cwd = String(d.cwd || '~/agents').replace(/^~(?=\/|$)/, home);
+  return { cwd, model: String(d.model || 'sonnet'), budget: Number(d.budget) > 0 ? Number(d.budget) : 2,
+    tools: String(d.tools || 'Read|Glob|Grep|Agent|Bash(gh *)|Bash(git status*)|Bash(git log*)|Bash(cat*)|Bash(ls*)|Bash(bash ~/agents/run-issue.sh*)'),
+    prompt: String(d.prompt || 'You are the CEO of a small AI-run company. A human gave you the task below. Decide what it needs. If it is code or content work, pick the right repo from ~/agents/repos.conf (or `gh repo list`), open a GitHub issue there with a clear title and acceptance criteria, label it agent:ready (create the label if missing), and, if it is in repos.conf, start the worker with `bash ~/agents/run-issue.sh <repo> <number>` in the background. If it is just a question, answer it. Finish with 3 lines: what you did, links, what the human must decide.') };
+}
+function serveDispatch(req, res) {
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+  const cfg = dispatchCfg();
+  if (req.method === 'GET' || req.method === 'HEAD') {
+    return send(res, 200, JSON.stringify({ enabled: !!cfg, runs: DISPATCH_RUNS.slice(-8).reverse().map(({ id, text, state, started, ended, tail }) => ({ id, text, state, started, ended, tail })) }));
+  }
+  if (req.method !== 'POST') return send(res, 405, '{"error":"GET or POST"}');
+  if (!cfg) return send(res, 403, '{"error":"task box is off (set dispatch.enabled in ~/.cubicle/settings.json)"}');
+  if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
+  return readBody(req, 8000).then((d) => {
+    const text = d && typeof d.text === 'string' ? d.text.trim().slice(0, 4000) : '';
+    if (!text) return send(res, 400, '{"error":"empty task"}');
+    if (DISPATCH_RUNS.filter((r) => r.state === 'running').length >= 2) return send(res, 429, '{"error":"CEO is busy (2 runs going)"}');
+    const id = Date.now().toString(36);
+    const dir = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch');
+    fs.mkdirSync(dir, { recursive: true });
+    const logFile = path.join(dir, `${id}.log`);
+    const run = { id, text: text.slice(0, 200), state: 'running', started: Date.now(), ended: 0, tail: '' };
+    DISPATCH_RUNS.push(run);
+    const out = fs.openSync(logFile, 'a');
+    const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(cfg.budget),
+      '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
+      cwd: cfg.cwd, stdio: ['ignore', out, out],
+      env: { ...process.env, CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1' } });
+    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} };
+    child.on('error', () => done('failed'));
+    child.on('exit', (code) => done(code === 0 ? 'done' : 'failed'));
+    console.log(`Cubicle: CEO task ${id} started.`);
+    send(res, 200, JSON.stringify({ ok: true, id }));
+  });
 }
 
 function serveTelegram(req, res) {

@@ -60,3 +60,7 @@ with open("agents.json.tmp", "w") as f:
     json.dump(feed, f)
 os.replace("agents.json.tmp", "agents.json")
 ```
+
+## Task box (opt-in)
+
+Set `{ "dispatch": { "enabled": true, "cwd": "~/agents" } }` in `~/.cubicle/settings.json` to show a "Task for the CEO" box on the page. A task starts one headless `claude -p` run named CEO (visible in the office), which opens a GitHub issue labelled `agent:ready` or answers the question. Local machine only; optional keys: `model`, `budget`, `tools` (`|`-separated), `prompt`.

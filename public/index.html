@@ -3920,5 +3920,37 @@
   init();
 })();
 </script>
+
+<div id="ceo-box" hidden style="position:fixed;left:12px;bottom:12px;z-index:50;width:min(380px,calc(100vw - 24px));font:13px system-ui,sans-serif;background:rgba(20,20,28,.92);color:#eee;border:1px solid #556;border-radius:10px;padding:8px;box-shadow:0 4px 16px #0006">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b>Task for the CEO</b><button id="ceo-min" type="button" style="background:none;border:0;color:#aaa;cursor:pointer">–</button></div>
+  <div id="ceo-body">
+    <textarea id="ceo-text" rows="3" placeholder="Describe the task… (Ctrl+Enter to send)" style="width:100%;box-sizing:border-box;background:#111;color:#eee;border:1px solid #445;border-radius:6px;padding:6px;resize:vertical"></textarea>
+    <div style="display:flex;gap:8px;align-items:center;margin-top:4px"><button id="ceo-send" type="button" style="padding:4px 12px;cursor:pointer">Send</button><span id="ceo-msg" style="color:#9ab;flex:1"></span></div>
+    <pre id="ceo-last" style="white-space:pre-wrap;max-height:120px;overflow:auto;margin:6px 0 0;color:#bbb;font-size:12px"></pre>
+  </div>
+</div>
+<script>
+(function () {
+  var box = document.getElementById('ceo-box'); if (!box) return;
+  var msg = document.getElementById('ceo-msg'), last = document.getElementById('ceo-last'), txt = document.getElementById('ceo-text');
+  function poll() {
+    fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
+      if (!d || !d.enabled) return; box.hidden = false;
+      var r = d.runs[0]; if (r) last.textContent = '[' + r.state + '] ' + r.text + (r.tail ? '\n' + r.tail : '');
+    }).catch(function () {});
+  }
+  function send() {
+    var t = txt.value.trim(); if (!t) return; msg.textContent = 'sending…';
+    fetch('/api/cubicle/dispatch', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ text: t }) })
+      .then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
+      .then(function (a) { msg.textContent = a[0] ? 'CEO is on it' : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; setTimeout(poll, 1500); } })
+      .catch(function () { msg.textContent = 'failed'; });
+  }
+  document.getElementById('ceo-send').onclick = send;
+  txt.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
+  document.getElementById('ceo-min').onclick = function () { var b = document.getElementById('ceo-body'); b.hidden = !b.hidden; };
+  poll(); setInterval(poll, 10000);
+})();
+</script>
 </body>
 </html>
