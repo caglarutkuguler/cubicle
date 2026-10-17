@@ -521,6 +521,11 @@ const server = http.createServer((req, res) => {
     })();
   }
 
+  // Paperclip retired: keep it only as the task store (KPI board), but show none of its agents or runs in the office.
+  if (HAS_PAPERCLIP && /^\/api\/companies\/[\w-]+\/(agents|heartbeat-runs)$/.test(url.pathname)) {
+    const st = cubicleSettings();
+    if (st.paperclipAgents === false || (st.paperclipAgents === undefined && st.paperclipLinks === false)) return send(res, 200, '[]');
+  }
   if (url.pathname.startsWith('/api/')) {
     if (!HAS_PAPERCLIP) return send(res, 403, '{"error":"not allowed"}');
     if (!ALLOWED.some((re) => re.test(url.pathname))) return send(res, 403, '{"error":"not allowed"}');
