@@ -2834,7 +2834,7 @@
   function stepsHtml(s) {
     let ans = '';
     try {
-      const it = (window.__attn || []).find((x) => x.kind === 'decision' && ((x.taskId && s.task && typeof s.task === 'object' && s.task.id === x.taskId) || (!x.taskId && x.agent === s.name)));
+      const it = (window.__attn || []).find((x) => (x.kind === 'decision' || x.kind === 'error') && ((x.taskId && s.task && typeof s.task === 'object' && s.task.id === x.taskId) || (!x.taskId && x.agent === s.name)));
       if (it) ans = `<button type="button" class="mini" data-answer="${esc(it.id)}" style="margin:6px 0;background:#b8860b;color:#fff;border:0;border-radius:6px;padding:4px 10px;cursor:pointer">Cevapla</button>`;
     } catch (_) {}
     if (!s.recent || !s.recent.length) return ans;
@@ -3979,7 +3979,7 @@
   pollAttn(); setInterval(pollAttn, 5000);
   function itemsFor(s) {
     var names = [s.name, s.realName].filter(Boolean), tid = s.task && typeof s.task === 'object' ? s.task.id : '';
-    return (window.__attn || []).filter(function (x) { return x.kind === 'decision' && ((x.agent && names.indexOf(x.agent) >= 0) || (x.taskId && tid && x.taskId === tid)); });
+    return (window.__attn || []).filter(function (x) { return (x.kind === 'decision' || x.kind === 'error') && ((x.agent && names.indexOf(x.agent) >= 0) || (x.taskId && tid && x.taskId === tid)); });
   }
 
   // ---- task for the CEO: opened by clicking the CEO (desk or card) ----
@@ -4012,12 +4012,13 @@
   // ---- answering an agent's question, with choices ----
   var ad = document.getElementById('ans-dlg'), cur = null, queue = [], chosen = [], aq = document.getElementById('ans-q'), ao = document.getElementById('ans-opts'),
     af = document.getElementById('ans-free'), at = document.getElementById('ans-text'), am = document.getElementById('ans-msg'), OTHER = '__other__';
+  function optsOf(c) { var o = Array.isArray(c.options) ? c.options : []; return o.length || c.kind !== 'error' ? o : ['Yeniden dene', 'Vazgeç']; }
   function renderAns() {
     cur = queue[0]; chosen = []; am.textContent = '';
     document.getElementById('ans-title').textContent = cur.title;
     document.getElementById('ans-who').textContent = (cur.agent ? cur.agent + ' soruyor' : 'Soru') + (queue.length > 1 ? ' · ' + queue.length + ' açık soru' : '');
     aq.textContent = cur.text;
-    var opts = Array.isArray(cur.options) ? cur.options : [];
+    var opts = optsOf(cur);
     ao.innerHTML = opts.map(function (o, i) { return '<div class="opt' + (cur.multi ? ' multi' : '') + '" data-i="' + i + '"><span class="mk"></span><span>' + esc(o) + '</span></div>'; }).join('')
       + (opts.length ? '<div class="opt' + (cur.multi ? ' multi' : '') + '" data-i="' + OTHER + '"><span class="mk"></span><span>Diğer…</span></div>' : '');
     try { at.value = localStorage.getItem('cubicle.ans.' + cur.id) || ''; } catch (_) { at.value = ''; }
@@ -4042,12 +4043,13 @@
   document.getElementById('ans-cancel').onclick = function () { ad.close(); };
   document.getElementById('ans-dismiss').onclick = function () { var id = cur.id; dismiss(id).then(function () { next(id); }); };
   document.getElementById('ans-send').onclick = function () {
-    if (!cur) return; var opts = Array.isArray(cur.options) ? cur.options : [], note = at.value.trim(), parts = [];
+    if (!cur) return; var opts = optsOf(cur), note = at.value.trim(), parts = [];
     chosen.forEach(function (i) { if (i !== OTHER && opts[+i] != null) parts.push(opts[+i]); });
     if (chosen.indexOf(OTHER) >= 0 || !opts.length) { if (!note) { am.textContent = 'cevap yazın'; return; } }
     if (opts.length && !parts.length && chosen.indexOf(OTHER) < 0) { am.textContent = 'bir seçenek seçin'; return; }
     var ans = parts.join(' + '); if (note) ans = ans ? ans + ' — ' + note : note;
     am.textContent = 'gönderiliyor…'; var item = cur, id = cur.id;
+    if (/^Vazgeç/i.test(ans)) { dismiss(id).then(function () { next(id); }); return; }
     var task = 'Daha önce sana bir karar soruldu. SORU/DURUM: ' + item.title + '\n' + item.text + '\n\nKARARIM/CEVABIM: ' + ans + '\n\nBu cevapla işe kaldığın yerden devam et; gerekli issue/PR işlerini tamamla.' + (item.url ? '\nBağlantı: ' + item.url : '');
     jpost('/api/cubicle/dispatch', { text: task }).then(function (a) {
       if (!a[0]) { am.textContent = a[1].error || 'başarısız'; return; }
