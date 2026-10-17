@@ -773,6 +773,20 @@ async function serveTasks(req, res) {
 // A POST starts one headless `claude -p` run named "CEO" (so it shows up in the office), which turns
 // the task into a GitHub issue labelled agent:ready, or answers it. Local machine only, this page only.
 const DISPATCH_RUNS = [];
+const RUNS_FILE = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch', 'runs.json');
+function saveRuns() { try { fs.mkdirSync(path.dirname(RUNS_FILE), { recursive: true }); fs.writeFileSync(RUNS_FILE, JSON.stringify(DISPATCH_RUNS.slice(-30))); } catch (_) {} }
+// After a restart: runs that were going keep going (they are detached); show them as running while their process lives.
+try {
+  for (const r of JSON.parse(fs.readFileSync(RUNS_FILE, 'utf8'))) {
+    if (r.state === 'running') { let alive = false; try { process.kill(r.pid, 0); alive = !!r.pid; } catch (_) {} if (alive) r.orphan = true; else { r.state = 'done'; r.ended = Date.now(); } }
+    DISPATCH_RUNS.push(r);
+  }
+} catch (_) {}
+setInterval(() => {   // pick up runs that ended while this server was down
+  let changed = false;
+  for (const r of DISPATCH_RUNS) if (r.state === 'running' && r.orphan) { let alive = false; try { process.kill(r.pid, 0); alive = true; } catch (_) {} if (!alive) { r.state = 'done'; r.ended = Date.now(); try { r.tail = fs.readFileSync(r.logFile, 'utf8').slice(-1500); } catch (_) {} changed = true; } }
+  if (changed) saveRuns();
+}, 5000).unref();
 // Mirror a CEO task into Paperclip (when it is a source) so the KPI board shows it with progress and ETA.
 // Workers the CEO starts inherit PC_PARENT and add their runs as subtasks.
 async function dispatchTrack(text) {
@@ -829,15 +843,16 @@ function serveDispatch(req, res) {
     const dir = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch');
     fs.mkdirSync(dir, { recursive: true });
     const logFile = path.join(dir, `${id}.log`);
-    const run = { id, text: text.slice(0, 200), state: 'running', started: Date.now(), ended: 0, tail: '' };
+    const run = { id, text: text.slice(0, 200), state: 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0 };
     DISPATCH_RUNS.push(run);
     const out = fs.openSync(logFile, 'a');
     const pcId = await dispatchTrack(text);
     const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(cfg.budget),
       '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
-      cwd: cfg.cwd, stdio: ['ignore', out, out],
+      cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
       env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
-    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); };
+    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); };
+    run.pid = child.pid || 0; run.orphan = false; saveRuns();
     child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
     child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'error', title: `CEO görevi başarısız: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
     console.log(`Cubicle: CEO task ${id} started.`);

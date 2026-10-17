@@ -2251,7 +2251,7 @@
         });
         // Reload when the server was updated or restarted.
         if (cfg.build) setInterval(async () => {
-          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) location.reload(); else showUpdate(now.update, now.version); } catch (_) {}
+          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) { const ta = document.getElementById('ceo-text'); const ceoTyping = ta && (ta.value.trim() || document.activeElement === ta); if (ceoTyping) { /* never reload under someone typing a task: try again on the next check */ } else location.reload(); } else showUpdate(now.update, now.version); } catch (_) {}
         }, 60000);
       } catch (_) {
         // No Cubicle server behind this page: show the demo instead of an error.
@@ -3945,9 +3945,11 @@
     var t = txt.value.trim(); if (!t) return; msg.textContent = 'sending…';
     fetch('/api/cubicle/dispatch', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ text: t }) })
       .then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); })
-      .then(function (a) { msg.textContent = a[0] ? 'CEO is on it' : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; setTimeout(poll, 1500); } })
+      .then(function (a) { msg.textContent = a[0] ? 'CEO is on it' : (a[1].error || 'failed'); if (a[0]) { txt.value = ''; try { localStorage.removeItem('cubicle.ceoDraft'); } catch (_) {} setTimeout(poll, 1500); } })
       .catch(function () { msg.textContent = 'failed'; });
   }
+  try { txt.value = localStorage.getItem('cubicle.ceoDraft') || ''; } catch (_) {}
+  txt.addEventListener('input', function () { try { localStorage.setItem('cubicle.ceoDraft', txt.value); } catch (_) {} });
   document.getElementById('ceo-send').onclick = send;
   txt.addEventListener('keydown', function (e) { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) send(); });
   document.getElementById('ceo-min').onclick = function () { var b = document.getElementById('ceo-body'); b.hidden = !b.hidden; };
