@@ -786,6 +786,7 @@ setInterval(() => {   // pick up runs that ended while this server was down
   let changed = false;
   for (const r of DISPATCH_RUNS) if (r.state === 'running' && r.orphan) { let alive = false; try { process.kill(r.pid, 0); alive = true; } catch (_) {} if (!alive) { r.state = 'done'; r.ended = Date.now(); try { r.tail = fs.readFileSync(r.logFile, 'utf8').slice(-1500); } catch (_) {} changed = true; } }
   if (changed) saveRuns();
+  nextQueued();
 }, 5000).unref();
 // Mirror a CEO task into Paperclip (when it is a source) so the KPI board shows it with progress and ETA.
 // Workers the CEO starts inherit PC_PARENT and add their runs as subtasks.
@@ -826,6 +827,31 @@ function dispatchCfg() {
     tools: String(d.tools || 'Read|Glob|Grep|Agent|Bash(gh *)|Bash(git status*)|Bash(git log*)|Bash(cat*)|Bash(ls*)|Bash(bash ~/agents/run-issue.sh*)'),
     prompt: String(d.prompt || 'You are the CEO of a small AI-run company. A human gave you the task below. Decide what it needs. If it is code or content work, pick the right repo from ~/agents/repos.conf (or `gh repo list`), open a GitHub issue there with a clear title and acceptance criteria, label it agent:ready (create the label if missing), and, if it is in repos.conf, start the worker with `bash ~/agents/run-issue.sh <repo> <number>` in the background. If it is just a question, answer it. Finish with 3 lines: what you did, links, what the human must decide.') };
 }
+// One CEO at a time: a new task waits in the queue (state "queued") and starts when the running one ends.
+function nextQueued() {
+  if (DISPATCH_RUNS.some((r) => r.state === 'running')) return;
+  const n = DISPATCH_RUNS.find((r) => r.state === 'queued');
+  if (n) startRun(n);
+}
+function startRun(run) {
+  const cfg = dispatchCfg();
+  const { id, logFile, pcId } = run;
+  const text = run.fullText || run.text;
+  if (!cfg) { run.state = 'failed'; run.ended = Date.now(); saveRuns(); return nextQueued(); }
+  run.state = 'running'; run.started = Date.now();
+  if (pcId) dispatchLabel(pcId, null, '\u00e7al\u0131\u015f\u0131yor');
+  const out = fs.openSync(logFile, 'a');
+  const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(cfg.budget),
+    '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
+    cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
+    env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
+  let finished = false;
+  const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); nextQueued(); };
+  run.pid = child.pid || 0; run.orphan = false; saveRuns();
+  child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
+  child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'error', title: `CEO g\u00f6revi ba\u015far\u0131s\u0131z: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
+  console.log(`Cubicle: CEO task ${id} started.`);
+}
 function serveDispatch(req, res) {
   if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
   const cfg = dispatchCfg();
@@ -838,25 +864,18 @@ function serveDispatch(req, res) {
   return readBody(req, 8000).then(async (d) => {
     const text = d && typeof d.text === 'string' ? d.text.trim().slice(0, 4000) : '';
     if (!text) return send(res, 400, '{"error":"empty task"}');
-    if (DISPATCH_RUNS.filter((r) => r.state === 'running').length >= 2) return send(res, 429, '{"error":"CEO is busy (2 runs going)"}');
     const id = Date.now().toString(36);
     const dir = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch');
     fs.mkdirSync(dir, { recursive: true });
     const logFile = path.join(dir, `${id}.log`);
-    const run = { id, text: text.slice(0, 200), state: 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0 };
+    const busy = DISPATCH_RUNS.some((r) => r.state === 'running');
+    if (DISPATCH_RUNS.filter((r) => r.state === 'queued').length >= 20) return send(res, 429, '{"error":"queue full (20)"}');
+    const run = { id, text: text.slice(0, 200), fullText: text, state: busy ? 'queued' : 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0, pcId: '' };
     DISPATCH_RUNS.push(run);
-    const out = fs.openSync(logFile, 'a');
-    const pcId = await dispatchTrack(text);
-    const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(cfg.budget),
-      '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
-      cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
-      env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
-    const done = (state) => { run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); };
-    run.pid = child.pid || 0; run.orphan = false; saveRuns();
-    child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
-    child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'error', title: `CEO görevi başarısız: ${text.slice(0, 80)}`, text: tail.slice(-600) }); else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].trim() }); } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
-    console.log(`Cubicle: CEO task ${id} started.`);
-    send(res, 200, JSON.stringify({ ok: true, id }));
+    run.pcId = await dispatchTrack(text);
+    if (busy) { dispatchLabel(run.pcId, null, 's\u0131rada', 'CEO me\u015fgul; bu g\u00f6rev s\u0131raya al\u0131nd\u0131 (tek CEO, g\u00f6revler s\u0131rayla).'); saveRuns(); console.log(`Cubicle: CEO task ${id} queued.`); }
+    else startRun(run);
+    send(res, 200, JSON.stringify({ ok: true, id, queued: busy }));
   });
 }
 
