@@ -63,4 +63,10 @@ os.replace("agents.json.tmp", "agents.json")
 
 ## Task box (opt-in)
 
-Set `{ "dispatch": { "enabled": true, "cwd": "~/agents" } }` in `~/.cubicle/settings.json` to show a "Task for the CEO" box on the page. A task starts one headless `claude -p` run named CEO (visible in the office), which opens a GitHub issue labelled `agent:ready` or answers the question. Local machine only; optional keys: `model`, `budget`, `tools` (`|`-separated), `prompt`.
+Set `{ "dispatch": { "enabled": true, "cwd": "~/agents" } }` in `~/.cubicle/settings.json` to show a "Task for the CEO" box on the page. A task starts one headless `claude -p` run named CEO (visible in the office), which opens a GitHub issue labelled `agent:ready` or answers the question. Clicking the CEO opens the box; one CEO runs at a time and further tasks wait in a queue. It works from this machine and from your own devices on the same Tailscale account (through `tailscale serve`); optional keys: `model`, `budget`, `tools` (`|`-separated), `prompt`.
+
+## Questions and decisions
+
+A script (or a CEO run) can ask you something: `POST /api/cubicle/attention` with JSON `{ "agent": "Name", "kind": "decision", "title": "…", "text": "…", "options": ["A", "B", "Give up"], "cancel": "Give up" }` (header `x-cubicle: 1`, from this machine). The agent raises its hand; clicking it opens the question with its options (or a free answer), and a linked Telegram chat gets it too. The `cancel` option closes the question instead of answering it.
+
+The dialogs follow the page's language. What the server itself writes (decisions it raises, labels on mirrored Paperclip tasks) is English, or Turkish with `"lang": "tr"` in `~/.cubicle/settings.json`.

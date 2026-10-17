@@ -3950,8 +3950,8 @@
   .cdlg .runs div { padding:2px 0; border-top:1px solid var(--line); }
 </style>
 <dialog id="ceo-dlg" class="cdlg">
-  <h3>CEO'ya görev ver</h3>
-  <div class="sub">Görev CEO meşgulse sıraya alınır; biri bitince sıradaki başlar.</div>
+  <h3 id="ceo-h">CEO'ya görev ver</h3>
+  <div id="ceo-sub" class="sub">Görev CEO meşgulse sıraya alınır; biri bitince sıradaki başlar.</div>
   <textarea id="ceo-text" rows="5" placeholder="Görevi yazın… (Ctrl+Enter ile gönder)" style="margin-top:10px"></textarea>
   <div class="row"><button id="ceo-send" class="pri" type="button">Gönder</button><button id="ceo-close" type="button">Kapat</button><span id="ceo-msg" class="sub"></span></div>
   <div id="ceo-runs" class="runs"></div>
@@ -3969,6 +3969,45 @@
 (function () {
   var H = { 'content-type': 'application/json', 'x-cubicle': '1' };
   function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  // The two dialogs below, in the page's language.
+  var DT = {
+    en: { ceoTitle: 'Give the CEO a task', ceoSub: 'If the CEO is busy the task waits in the queue; the next one starts when one ends.', ceoPh: 'Write the task… (Ctrl+Enter sends)', send: 'Send', close: 'Close',
+      st: { running: 'working', queued: 'queued', done: 'done', failed: 'failed' }, sending: 'sending…', failed: 'failed', queuedMsg: 'queued', started: 'The CEO started',
+      decision: 'Decision', asks: function (a) { return a + ' asks'; }, question: 'Question', open: function (n) { return n + ' open questions'; }, ansPh: 'Write your answer', notePh: 'A note, or your own answer', other: 'Other…',
+      cancel: 'Cancel', dismiss: 'Close the question', needAnswer: 'write an answer', pick: 'pick an option', errOpts: ['Retry', 'Give up'],
+      task: function (t, x, a, u) { return 'You were asked for a decision earlier. QUESTION/SITUATION: ' + t + '\n' + x + '\n\nMY DECISION/ANSWER: ' + a + '\n\nGo on from where you left off with this answer and finish the issue/PR work it needs.' + (u ? '\nLink: ' + u : ''); } },
+    tr: { ceoTitle: 'CEO\'ya görev ver', ceoSub: 'Görev CEO meşgulse sıraya alınır; biri bitince sıradaki başlar.', ceoPh: 'Görevi yazın… (Ctrl+Enter ile gönder)', send: 'Gönder', close: 'Kapat',
+      st: { running: 'çalışıyor', queued: 'sırada', done: 'bitti', failed: 'başarısız' }, sending: 'gönderiliyor…', failed: 'başarısız', queuedMsg: 'sıraya alındı', started: 'CEO başladı',
+      decision: 'Karar', asks: function (a) { return a + ' soruyor'; }, question: 'Soru', open: function (n) { return n + ' açık soru'; }, ansPh: 'Cevabınızı yazın', notePh: 'Ek not veya kendi cevabınız', other: 'Diğer…',
+      cancel: 'Vazgeç', dismiss: 'Soruyu kapat', needAnswer: 'cevap yazın', pick: 'bir seçenek seçin', errOpts: ['Yeniden dene', 'Vazgeç'],
+      task: function (t, x, a, u) { return 'Daha önce sana bir karar soruldu. SORU/DURUM: ' + t + '\n' + x + '\n\nKARARIM/CEVABIM: ' + a + '\n\nBu cevapla işe kaldığın yerden devam et; gerekli issue/PR işlerini tamamla.' + (u ? '\nBağlantı: ' + u : ''); } },
+    de: { ceoTitle: 'Dem CEO eine Aufgabe geben', ceoSub: 'Ist der CEO beschäftigt, wartet die Aufgabe in der Schlange; die nächste beginnt, wenn eine fertig ist.', ceoPh: 'Aufgabe schreiben… (Strg+Enter sendet)', send: 'Senden', close: 'Schließen',
+      st: { running: 'arbeitet', queued: 'wartet', done: 'fertig', failed: 'fehlgeschlagen' }, sending: 'wird gesendet…', failed: 'fehlgeschlagen', queuedMsg: 'in der Schlange', started: 'Der CEO hat begonnen',
+      decision: 'Entscheidung', asks: function (a) { return a + ' fragt'; }, question: 'Frage', open: function (n) { return n + ' offene Fragen'; }, ansPh: 'Antwort schreiben', notePh: 'Eine Notiz oder deine eigene Antwort', other: 'Andere…',
+      cancel: 'Abbrechen', dismiss: 'Frage schließen', needAnswer: 'Antwort schreiben', pick: 'Option wählen', errOpts: ['Erneut versuchen', 'Aufgeben'] },
+    es: { ceoTitle: 'Dar una tarea al CEO', ceoSub: 'Si el CEO está ocupado, la tarea espera en cola; la siguiente empieza cuando termina una.', ceoPh: 'Escribe la tarea… (Ctrl+Enter envía)', send: 'Enviar', close: 'Cerrar',
+      st: { running: 'trabajando', queued: 'en cola', done: 'hecha', failed: 'fallida' }, sending: 'enviando…', failed: 'falló', queuedMsg: 'en cola', started: 'El CEO empezó',
+      decision: 'Decisión', asks: function (a) { return a + ' pregunta'; }, question: 'Pregunta', open: function (n) { return n + ' preguntas abiertas'; }, ansPh: 'Escribe tu respuesta', notePh: 'Una nota, o tu propia respuesta', other: 'Otra…',
+      cancel: 'Cancelar', dismiss: 'Cerrar la pregunta', needAnswer: 'escribe una respuesta', pick: 'elige una opción', errOpts: ['Reintentar', 'Abandonar'] },
+    fr: { ceoTitle: 'Confier une tâche au CEO', ceoSub: 'Si le CEO est occupé, la tâche attend dans la file ; la suivante démarre quand une se termine.', ceoPh: 'Écrivez la tâche… (Ctrl+Entrée envoie)', send: 'Envoyer', close: 'Fermer',
+      st: { running: 'en cours', queued: 'en attente', done: 'terminée', failed: 'échouée' }, sending: 'envoi…', failed: 'échec', queuedMsg: 'mise en file', started: 'Le CEO a commencé',
+      decision: 'Décision', asks: function (a) { return a + ' demande'; }, question: 'Question', open: function (n) { return n + ' questions ouvertes'; }, ansPh: 'Écrivez votre réponse', notePh: 'Une note, ou votre propre réponse', other: 'Autre…',
+      cancel: 'Annuler', dismiss: 'Fermer la question', needAnswer: 'écrivez une réponse', pick: 'choisissez une option', errOpts: ['Réessayer', 'Abandonner'] },
+    zh: { ceoTitle: '给 CEO 一个任务', ceoSub: 'CEO 忙时任务会排队；一个结束后下一个开始。', ceoPh: '写下任务…（Ctrl+Enter 发送）', send: '发送', close: '关闭',
+      st: { running: '进行中', queued: '排队中', done: '已完成', failed: '失败' }, sending: '发送中…', failed: '失败', queuedMsg: '已排队', started: 'CEO 已开始',
+      decision: '决定', asks: function (a) { return a + ' 在问'; }, question: '问题', open: function (n) { return n + ' 个未答问题'; }, ansPh: '写下你的回答', notePh: '备注，或你自己的回答', other: '其他…',
+      cancel: '取消', dismiss: '关闭此问题', needAnswer: '请写下回答', pick: '请选择一个选项', errOpts: ['重试', '放弃'] },
+    ar: { ceoTitle: 'أعطِ الرئيس التنفيذي مهمة', ceoSub: 'إذا كان مشغولًا تنتظر المهمة في الطابور؛ تبدأ التالية حين تنتهي واحدة.', ceoPh: 'اكتب المهمة… (Ctrl+Enter للإرسال)', send: 'إرسال', close: 'إغلاق',
+      st: { running: 'يعمل', queued: 'في الطابور', done: 'انتهت', failed: 'فشلت' }, sending: 'جارٍ الإرسال…', failed: 'فشل', queuedMsg: 'أُضيفت إلى الطابور', started: 'بدأ الرئيس التنفيذي',
+      decision: 'قرار', asks: function (a) { return a + ' يسأل'; }, question: 'سؤال', open: function (n) { return n + ' أسئلة مفتوحة'; }, ansPh: 'اكتب إجابتك', notePh: 'ملاحظة، أو إجابتك الخاصة', other: 'أخرى…',
+      cancel: 'إلغاء', dismiss: 'أغلق السؤال', needAnswer: 'اكتب إجابة', pick: 'اختر خيارًا', errOpts: ['أعد المحاولة', 'تخلَّ عنها'] },
+  };
+  var D = DT[String(document.documentElement.lang || 'en').slice(0, 2)] || DT.en;
+  if (!D.task) D.task = DT.en.task;
+  function setText(id, t) { var el = document.getElementById(id); if (el) el.textContent = t; }
+  setText('ceo-h', D.ceoTitle); setText('ceo-sub', D.ceoSub); setText('ceo-send', D.send); setText('ceo-close', D.close);
+  setText('ans-title', D.decision); setText('ans-send', D.send); setText('ans-cancel', D.cancel); setText('ans-dismiss', D.dismiss);
+  document.getElementById('ceo-text').placeholder = D.ceoPh; document.getElementById('ans-text').placeholder = D.ansPh;
   function jpost(url, body) { return fetch(url, { method: 'POST', headers: H, body: JSON.stringify(body) }).then(function (r) { return r.json().then(function (j) { return [r.ok, j]; }); }); }
 
   // ---- open questions (kept fresh; the page shows them on the asking agent, not in a box) ----
@@ -3992,7 +4031,7 @@
   function runsRefresh() {
     fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d) return;
-      cr.innerHTML = (d.runs || []).slice(0, 6).map(function (r) { return '<div><b>' + esc(r.state === 'running' ? 'çalışıyor' : r.state === 'queued' ? 'sırada' : r.state === 'done' ? 'bitti' : r.state) + '</b> · ' + esc(r.text) + '</div>'; }).join('');
+      cr.innerHTML = (d.runs || []).slice(0, 6).map(function (r) { return '<div><b>' + esc(D.st[r.state] || r.state) + '</b> · ' + esc(r.text) + '</div>'; }).join('');
     }).catch(function () {});
   }
   function openCeo() {
@@ -4002,12 +4041,12 @@
   }
   ct.addEventListener('input', function () { try { localStorage.setItem('cubicle.ceoDraft', ct.value); } catch (_) {} });
   function sendCeo() {
-    var t = ct.value.trim(); if (!t) return; cm.textContent = 'gönderiliyor…';
+    var t = ct.value.trim(); if (!t) return; cm.textContent = D.sending;
     jpost('/api/cubicle/dispatch', { text: t }).then(function (a) {
-      if (!a[0]) { cm.textContent = a[1].error || 'başarısız'; return; }
+      if (!a[0]) { cm.textContent = a[1].error || D.failed; return; }
       ct.value = ''; try { localStorage.removeItem('cubicle.ceoDraft'); } catch (_) {}
-      cm.textContent = a[1].queued ? 'sıraya alındı' : 'CEO başladı'; runsRefresh(); setTimeout(function () { cd.close(); }, 900);
-    }).catch(function () { cm.textContent = 'başarısız'; });
+      cm.textContent = a[1].queued ? D.queuedMsg : D.started; runsRefresh(); setTimeout(function () { cd.close(); }, 900);
+    }).catch(function () { cm.textContent = D.failed; });
   }
   document.getElementById('ceo-send').onclick = sendCeo;
   document.getElementById('ceo-close').onclick = function () { cd.close(); };
@@ -4017,17 +4056,19 @@
   // ---- answering an agent's question, with choices ----
   var ad = document.getElementById('ans-dlg'), cur = null, queue = [], chosen = [], aq = document.getElementById('ans-q'), ao = document.getElementById('ans-opts'),
     af = document.getElementById('ans-free'), at = document.getElementById('ans-text'), am = document.getElementById('ans-msg'), OTHER = '__other__';
-  function optsOf(c) { var o = Array.isArray(c.options) ? c.options : []; return o.length || c.kind !== 'error' ? o : ['Yeniden dene', 'Vazgeç']; }
+  function optsOf(c) { var o = Array.isArray(c.options) ? c.options : []; return o.length || c.kind !== 'error' ? o : D.errOpts; }
+  // the option that closes the question instead of answering it
+  function cancelOf(c) { return c.cancel || (!(c.options || []).length && c.kind === 'error' ? D.errOpts[D.errOpts.length - 1] : ''); }
   function renderAns() {
     cur = queue[0]; chosen = []; am.textContent = '';
-    document.getElementById('ans-title').textContent = cur.title;
-    document.getElementById('ans-who').textContent = (cur.agent ? cur.agent + ' soruyor' : 'Soru') + (queue.length > 1 ? ' · ' + queue.length + ' açık soru' : '');
+    document.getElementById('ans-title').textContent = cur.title || D.decision;
+    document.getElementById('ans-who').textContent = (cur.agent ? D.asks(cur.agent) : D.question) + (queue.length > 1 ? ' · ' + D.open(queue.length) : '');
     aq.textContent = cur.text;
     var opts = optsOf(cur);
     ao.innerHTML = opts.map(function (o, i) { return '<div class="opt' + (cur.multi ? ' multi' : '') + '" data-i="' + i + '"><span class="mk"></span><span>' + esc(o) + '</span></div>'; }).join('')
-      + (opts.length ? '<div class="opt' + (cur.multi ? ' multi' : '') + '" data-i="' + OTHER + '"><span class="mk"></span><span>Diğer…</span></div>' : '');
+      + (opts.length ? '<div class="opt' + (cur.multi ? ' multi' : '') + '" data-i="' + OTHER + '"><span class="mk"></span><span>' + esc(D.other) + '</span></div>' : '');
     try { at.value = localStorage.getItem('cubicle.ans.' + cur.id) || ''; } catch (_) { at.value = ''; }
-    at.placeholder = opts.length ? 'Ek not veya kendi cevabınız' : 'Cevabınızı yazın';
+    at.placeholder = opts.length ? D.notePh : D.ansPh;
     af.hidden = !!opts.length;
     if (!ad.open) ad.showModal();
   }
@@ -4050,16 +4091,17 @@
   document.getElementById('ans-send').onclick = function () {
     if (!cur) return; var opts = optsOf(cur), note = at.value.trim(), parts = [];
     chosen.forEach(function (i) { if (i !== OTHER && opts[+i] != null) parts.push(opts[+i]); });
-    if (chosen.indexOf(OTHER) >= 0 || !opts.length) { if (!note) { am.textContent = 'cevap yazın'; return; } }
-    if (opts.length && !parts.length && chosen.indexOf(OTHER) < 0) { am.textContent = 'bir seçenek seçin'; return; }
+    if (chosen.indexOf(OTHER) >= 0 || !opts.length) { if (!note) { am.textContent = D.needAnswer; return; } }
+    if (opts.length && !parts.length && chosen.indexOf(OTHER) < 0) { am.textContent = D.pick; return; }
     var ans = parts.join(' + '); if (note) ans = ans ? ans + ' — ' + note : note;
-    am.textContent = 'gönderiliyor…'; var item = cur, id = cur.id;
-    if (/^Vazgeç/i.test(ans)) { dismiss(id).then(function () { next(id); }); return; }
-    var task = 'Daha önce sana bir karar soruldu. SORU/DURUM: ' + item.title + '\n' + item.text + '\n\nKARARIM/CEVABIM: ' + ans + '\n\nBu cevapla işe kaldığın yerden devam et; gerekli issue/PR işlerini tamamla.' + (item.url ? '\nBağlantı: ' + item.url : '');
+    am.textContent = D.sending; var item = cur, id = cur.id, cancel = cancelOf(cur);
+    // the "give up" option closes the question; older items carry no marker, so Vazgeç still counts
+    if ((cancel && parts.indexOf(cancel) >= 0) || (!cancel && /^Vazgeç/i.test(ans))) { dismiss(id).then(function () { next(id); }); return; }
+    var task = D.task(item.title, item.text, ans, item.url);
     jpost('/api/cubicle/dispatch', { text: task }).then(function (a) {
-      if (!a[0]) { am.textContent = a[1].error || 'başarısız'; return; }
+      if (!a[0]) { am.textContent = a[1].error || D.failed; return; }
       return dismiss(id).then(function () { next(id); });
-    }).catch(function () { am.textContent = 'başarısız'; });
+    }).catch(function () { am.textContent = D.failed; });
   };
   ad.addEventListener('click', function (e) { if (e.target === ad) ad.close(); });
   // The "Cevapla" button inside an agent's detail panel opens the same dialog.

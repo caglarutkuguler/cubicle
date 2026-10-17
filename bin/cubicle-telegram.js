@@ -606,7 +606,8 @@ function start(opts) {
     setAccess(access) { allowEveryone = access.allowEveryone !== false; allowedUsers = new Set((access.allowedUsers || []).filter(isUserId)); },
     setReplies(v) { opts.replies = !!v; },
     // a plain message to every linked chat (used for "needs you" alerts from the task box)
-    async notify(html) { for (const id of Object.keys(state.chats).filter(canSend)) { try { await send(id, html); } catch (_) {} } },
+    // html, or a function of the chat's language that returns it
+    async notify(html) { for (const id of Object.keys(state.chats).filter(canSend)) { try { await send(id, typeof html === 'function' ? html(state.chats[id].lang || 'en') : html); } catch (_) {} } },
     setPublicUrl(u) { opts.publicUrl = u; },
     stop() { stopped = true; if (pending) pending.destroy(new Error('stopped')); },
     snapshot: () => snapshot(self),

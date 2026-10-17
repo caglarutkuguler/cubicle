@@ -395,6 +395,24 @@ function proxyJson(res, url, headers, failBody, shape) {
 
 // An agent with an open "needs you" item raises its hand at its desk (status waiting, or error for a
 // failure) until the item is dismissed, as agents waiting on a decision did in Paperclip.
+// What the server itself writes (decisions it raises, labels on mirrored Paperclip tasks, the
+// Telegram alert): Turkish or English, from "lang" in ~/.cubicle/settings.json, else the system's.
+const SRV_TEXT = {
+  en: { working: 'working', queued: 'queued', done: 'done', waiting: 'needs a decision', error: 'error', decision: 'Decision', busy: 'The CEO is busy; this task waits in the queue (one CEO, tasks in turn).',
+    budgetTitle: (t) => `CEO ran out of budget: ${t}`, budgetText: (b) => `The task stopped halfway because it went over the budget for one run ($${b}). The issues and PRs it opened stay; a retry continues where it left off.`,
+    failTitle: (t) => `CEO task failed: ${t}`, failText: (t) => `The task ended with an error: ${t}`,
+    budgetOpts: ['Raise the budget and continue where you left off', 'Split the task into smaller parts and retry', 'Give up'], failOpts: ['Retry', 'Give up'],
+    tgDecision: '❓ <b>Needs a decision</b>', tgError: '⚠️ <b>Error</b>', tgAnswer: 'Answer in Cubicle', tgHint: '(click the agent in Cubicle to answer)' },
+  tr: { working: '\u00e7al\u0131\u015f\u0131yor', queued: 's\u0131rada', done: 'tamamland\u0131', waiting: 'karar bekliyor', error: 'hata', decision: 'Karar', busy: 'CEO me\u015fgul; bu g\u00f6rev s\u0131raya al\u0131nd\u0131 (tek CEO, g\u00f6revler s\u0131rayla).',
+    budgetTitle: (t) => `CEO bütçeye takıldı: ${t}`, budgetText: (b) => `Görev, tek çalıştırma bütçesini ($${b}) aştığı için yarıda kaldı. Açılan issue ve PR'lar yerinde duruyor; yeniden denerken kaldığı yerden devam eder.`,
+    failTitle: (t) => `CEO görevi başarısız: ${t}`, failText: (t) => `Görev bir hatayla bitti: ${t}`,
+    budgetOpts: ['Bütçeyi artırıp kaldığın yerden devam et', 'Görevi küçük parçalara bölüp yeniden dene', 'Vazgeç'], failOpts: ['Yeniden dene', 'Vazgeç'],
+    tgDecision: '❓ <b>Karar bekliyor</b>', tgError: '⚠️ <b>Hata</b>', tgAnswer: 'Cubicle\'da cevapla', tgHint: '(Cubicle\'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)' },
+};
+const srvLang = () => { const l = String(cubicleSettings().lang || process.env.CUBICLE_LANG || process.env.LANG || '').slice(0, 2).toLowerCase(); return SRV_TEXT[l] ? l : 'en'; };
+const ST = (lang) => SRV_TEXT[lang || srvLang()] || SRV_TEXT.en;
+// "raise the budget" in either language: the retry gets twice the budget
+const MORE_BUDGET = /Bütçeyi artırıp|Raise the budget/i;
 function overlayAttention(feed) {
   try {
     const items = attentionList().filter((x) => x.agent || x.taskId);
@@ -404,7 +422,7 @@ function overlayAttention(feed) {
       const a = hits.sort((x, y) => String(y.since || 0).localeCompare(String(x.since || 0), undefined, { numeric: true }))[0]
         || feed.agents.filter((x) => x.name === it.agent)[0];
       if (!a) continue;
-      if (it.kind === 'decision') { a.status = 'waiting'; a.task = { ...(typeof a.task === 'object' && a.task ? a.task : {}), title: `Karar: ${it.text}`.slice(0, 120) }; }
+      if (it.kind === 'decision') { a.status = 'waiting'; a.task = { ...(typeof a.task === 'object' && a.task ? a.task : {}), title: `${ST().decision}: ${it.text}`.slice(0, 120) }; }
       else { a.status = 'error'; a.error = it.text.slice(0, 120); }
     }
   } catch (_) {}
@@ -801,7 +819,7 @@ async function dispatchTrack(text) {
     const cs = await upstreamJSON('GET', '/api/companies');
     const co = Array.isArray(cs.data) && cs.data[0];
     if (!co) return '';
-    const r = await upstreamJSON('POST', `/api/companies/${co.id}/issues`, { title: `[CEO \u00b7 \u00e7al\u0131\u015f\u0131yor] ${text.slice(0, 140)}`, description: text.slice(0, 4000), status: 'todo', priority: 'medium' });
+    const r = await upstreamJSON('POST', `/api/companies/${co.id}/issues`, { title: `[CEO \u00b7 ${ST().working}] ${text.slice(0, 140)}`, description: text.slice(0, 4000), status: 'todo', priority: 'medium' });
     const made = r.data && (r.data.issue || r.data);
     return made && made.id ? made.id : '';
   } catch (_) { return ''; }
@@ -819,9 +837,10 @@ async function dispatchLabel(id, status, state, note) {
 }
 function dispatchFinish(id, state, tail) {
   const decision = /DECISION:\s*(?!none|yok|-)\S/i.test(String(tail || ''));
-  if (state === 'done' && decision) dispatchLabel(id, 'blocked', 'karar bekliyor', tail);
-  else if (state === 'done') dispatchLabel(id, 'done', 'tamamland\u0131', tail);
-  else dispatchLabel(id, 'blocked', 'hata', tail);
+  const t = ST();
+  if (state === 'done' && decision) dispatchLabel(id, 'blocked', t.waiting, tail);
+  else if (state === 'done') dispatchLabel(id, 'done', t.done, tail);
+  else dispatchLabel(id, 'blocked', t.error, tail);
 }
 function dispatchCfg() {
   const d = cubicleSettings().dispatch;
@@ -844,9 +863,9 @@ function startRun(run) {
   const text = run.fullText || run.text;
   if (!cfg) { run.state = 'failed'; run.ended = Date.now(); saveRuns(); return nextQueued(); }
   run.state = 'running'; run.started = Date.now();
-  if (pcId) dispatchLabel(pcId, null, '\u00e7al\u0131\u015f\u0131yor');
+  if (pcId) dispatchLabel(pcId, null, ST().working);
   const out = fs.openSync(logFile, 'a');
-  const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(/Bütçeyi artırıp/i.test(text) ? Math.min(cfg.budget * 2, 30) : cfg.budget),
+  const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.min(cfg.budget * 2, 30) : cfg.budget),
     '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
     cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
     env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
@@ -854,7 +873,7 @@ function startRun(run) {
   const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); nextQueued(); };
   run.pid = child.pid || 0; run.orphan = false; saveRuns();
   child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
-  child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail); attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: bud ? `CEO bütçeye takıldı: ${text.slice(0, 70)}` : `CEO görevi başarısız: ${text.slice(0, 70)}`, text: bud ? `Görev, tek çalıştırma bütçesini ($${cfg.budget}) aştığı için yarıda kaldı. Açılan issue ve PR'lar yerinde duruyor; yeniden denerken kaldığı yerden devam eder.` : `Görev bir hatayla bitti: ${tail.replace(/\s+/g, ' ').slice(-300)}`, options: bud ? ['Bütçeyi artırıp kaldığın yerden devam et', 'Görevi küçük parçalara bölüp yeniden dene', 'Vazgeç'] : ['Yeniden dene', 'Vazgeç'] }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [] }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
+  child.on('exit', (code, sig) => { setTimeout(() => { try { const tail = fs.readFileSync(logFile, 'utf8').slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail), t = ST(), opts = bud ? t.budgetOpts : t.failOpts; attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: bud ? t.budgetTitle(text.slice(0, 70)) : t.failTitle(text.slice(0, 70)), text: bud ? t.budgetText(cfg.budget) : t.failText(tail.replace(/\s+/g, ' ').slice(-300)), options: opts, cancel: opts[opts.length - 1] }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [] }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
   console.log(`Cubicle: CEO task ${id} started.`);
 }
 async function serveDispatch(req, res) {
@@ -878,7 +897,7 @@ async function serveDispatch(req, res) {
     const run = { id, text: text.slice(0, 200), fullText: text, state: busy ? 'queued' : 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0, pcId: '' };
     DISPATCH_RUNS.push(run);
     run.pcId = await dispatchTrack(text);
-    if (busy) { dispatchLabel(run.pcId, null, 's\u0131rada', 'CEO me\u015fgul; bu g\u00f6rev s\u0131raya al\u0131nd\u0131 (tek CEO, g\u00f6revler s\u0131rayla).'); saveRuns(); console.log(`Cubicle: CEO task ${id} queued.`); }
+    if (busy) { dispatchLabel(run.pcId, null, ST().queued, ST().busy); saveRuns(); console.log(`Cubicle: CEO task ${id} queued.`); }
     else startRun(run);
     send(res, 200, JSON.stringify({ ok: true, id, queued: busy }));
   });
@@ -893,12 +912,15 @@ function attentionAdd(item) {
   const list = attentionList();
   const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: Date.now(), kind: item.kind === 'decision' ? 'decision' : 'error',
     title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '', agent: String(item.agent || '').slice(0, 80), taskId: String(item.taskId || '').slice(0, 80),
-    options: Array.isArray(item.options) ? item.options.map((x) => String(x).trim().slice(0, 160)).filter(Boolean).slice(0, 6) : [], multi: item.multi === true };
+    options: Array.isArray(item.options) ? item.options.map((x) => String(x).trim().slice(0, 160)).filter(Boolean).slice(0, 6) : [], multi: item.multi === true,
+    ...(typeof item.cancel === 'string' && item.cancel.trim() ? { cancel: item.cancel.trim().slice(0, 160) } : {}) };
   list.push(it);
   try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
   if (TELEGRAM && TELEGRAM.notify) {
     const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-    TELEGRAM.notify(`${it.kind === 'decision' ? '❓ <b>Karar bekliyor</b>' : '⚠️ <b>Hata</b>'}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.options.length ? '\n' + it.options.map((x, n) => `${n + 1}) ${esc(x)}`).join('\n') : ''}${it.url ? `\n${esc(it.url)}` : ''}\n${it.agent ? `<a href="${esc(`${tgPublicUrl().replace(/\/$/, '')}/?agent=${encodeURIComponent(it.agent)}`)}">Cubicle'da cevapla</a>` : "(Cubicle'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)"}`);
+    // in each chat's own language (Turkish or English)
+    TELEGRAM.notify((lang) => { const t = ST(lang === 'tr' ? 'tr' : 'en');
+      return `${it.kind === 'decision' ? t.tgDecision : t.tgError}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.options.length ? '\n' + it.options.map((x, n) => `${n + 1}) ${esc(x)}`).join('\n') : ''}${it.url ? `\n${esc(it.url)}` : ''}\n${it.agent ? `<a href="${esc(`${tgPublicUrl().replace(/\/$/, '')}/?agent=${encodeURIComponent(it.agent)}`)}">${t.tgAnswer}</a>` : t.tgHint}`; });
   }
   console.log(`Cubicle: needs you (${it.kind}): ${it.title}`);
   return it;
