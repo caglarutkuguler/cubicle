@@ -157,6 +157,12 @@ function apply(feed, ev, runtime = 'claude', env = {}) {
 
   let a = agents.find((x) => x.id === id);
   const name = idn.name || path.basename(ev.cwd || '') || runtimeOf(runtime);
+  // one card per name: a new run under a CUBICLE_NAME replaces the idle/finished card of the earlier run
+  // with that name (and its subagents), so a repeating worker is one character, not a row of copies.
+  if (idn.name && ev.hook_event_name === 'SessionStart') {
+    const old = agents.filter((x) => x.id !== id && !x.parent && x.name === name && x.status !== 'running' && x.status !== 'waiting').map((x) => x.id);
+    if (old.length) { const keep = agents.filter((x) => !old.includes(x.id) && !old.includes(x.parent)); agents.length = 0; agents.push(...keep); }
+  }
 
   switch (ev.hook_event_name) {
     case 'SessionEnd':
