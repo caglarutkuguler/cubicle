@@ -2251,7 +2251,7 @@
         });
         // Reload when the server was updated or restarted.
         if (cfg.build) setInterval(async () => {
-          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) { const ta = document.getElementById('ceo-text'); const ceoTyping = ta && (ta.value.trim() || document.activeElement === ta); if (ceoTyping) { /* never reload under someone typing a task: try again on the next check */ } else location.reload(); } else showUpdate(now.update, now.version); } catch (_) {}
+          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) { const ae = document.activeElement; const busy = document.querySelector('dialog[open]') || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) || (Date.now() - (window.__lastTouch || 0) < 45000); if (busy) { /* never reload under someone using the page (dialog open, typing, or touched in the last 45 s): try again on the next check */ } else location.reload(); } else showUpdate(now.update, now.version); } catch (_) {}
         }, 60000);
       } catch (_) {
         // No Cubicle server behind this page: show the demo instead of an error.
@@ -3965,6 +3965,7 @@
   <div class="row"><button id="ans-send" class="pri" type="button">Gönder</button><button id="ans-cancel" type="button">Vazgeç</button><button id="ans-dismiss" class="link" type="button">Soruyu kapat</button><span id="ans-msg" class="sub"></span></div>
 </dialog>
 <script>
+['pointerdown', 'keydown', 'wheel'].forEach(function (t) { window.addEventListener(t, function () { window.__lastTouch = Date.now(); }, true); });
 (function () {
   var H = { 'content-type': 'application/json', 'x-cubicle': '1' };
   function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
