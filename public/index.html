@@ -3970,5 +3970,53 @@
   poll(); pollAttn(); setInterval(poll, 10000); setInterval(pollAttn, 8000);
 })();
 </script>
+
+<button id="agents-btn" type="button" style="position:fixed;right:12px;bottom:12px;z-index:55;padding:6px 12px;border-radius:18px;border:1px solid #556;background:rgba(20,20,28,.92);color:#eee;font:13px system-ui,sans-serif;cursor:pointer">Agents</button>
+<dialog id="agents-panel" style="width:min(980px,calc(100vw - 24px));max-height:85vh;border:1px solid #556;border-radius:12px;background:#15151d;color:#eee;font:13px system-ui,sans-serif;padding:12px">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><b id="ag-sum">Agents</b><span><button id="ag-refresh" type="button">Refresh</button> <button id="ag-close" type="button">Close</button></span></div>
+  <div id="ag-body" style="overflow:auto;max-height:70vh"></div>
+</dialog>
+<script>
+(function () {
+  var btn = document.getElementById('agents-btn'), dlg = document.getElementById('agents-panel'), body = document.getElementById('ag-body'), sum = document.getElementById('ag-sum'), timer = null;
+  if (!btn || !dlg) return;
+  function esc(x) { return String(x == null ? '' : x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function ago(ms) { if (!ms) return ''; var s = Math.max(0, Math.round((Date.now() - ms) / 1000)); if (s < 60) return s + ' s'; if (s < 3600) return Math.round(s / 60) + ' dk'; if (s < 86400) return Math.round(s / 3600) + ' sa'; return Math.round(s / 86400) + ' g'; }
+  var COLORS = { running: '#2e7d32', waiting: '#b8860b', error: '#b71c1c', idle: '#455a64', paused: '#6a1b9a' };
+  var NAMES = { running: 'çalışıyor', waiting: 'karar bekliyor', error: 'hata', idle: 'boşta', paused: 'durdu' };
+  function taskText(a) { var t = a.task; if (!t) return ''; if (typeof t === 'string') return t; return (t.id ? t.id + ' · ' : '') + (t.title || ''); }
+  async function load() {
+    var cfg = await fetch('/config.json').then(function (r) { return r.json(); }).catch(function () { return { sources: [] }; });
+    var rows = [];
+    for (var s of cfg.sources || []) {
+      if (s.kind !== 'feed') continue;
+      var f = await fetch(s.path).then(function (r) { return r.json(); }).catch(function () { return null; });
+      if (f && f.agents) f.agents.forEach(function (a) { rows.push(a); });
+    }
+    var runs = await fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : { runs: [] }; }).catch(function () { return { runs: [] }; });
+    var counts = { running: 0, waiting: 0, error: 0, idle: 0 };
+    rows.forEach(function (a) { counts[a.status] = (counts[a.status] || 0) + 1; });
+    var top = rows.filter(function (a) { return !String(a.id).includes(':'); }), subs = rows.length - top.length;
+    sum.textContent = top.length + ' ajan · ' + (counts.running || 0) + ' çalışıyor · ' + (counts.waiting || 0) + ' karar bekliyor · ' + (counts.error || 0) + ' hata · ' + (counts.idle || 0) + ' boşta' + (subs ? ' · ' + subs + ' alt ajan' : '');
+    rows.sort(function (a, b) { var o = { waiting: 0, error: 1, running: 2, idle: 3 }; return (o[a.status] != null ? o[a.status] : 4) - (o[b.status] != null ? o[b.status] : 4) || String(a.name).localeCompare(String(b.name)); });
+    var h = '<table style="width:100%;border-collapse:collapse"><tr style="text-align:left;color:#9ab"><th>Ajan</th><th>Rol</th><th>Durum</th><th>Üzerinde çalıştığı iş</th><th>Son işlem</th><th>Süre</th></tr>';
+    rows.forEach(function (a) {
+      var sub = String(a.id).includes(':'), rec = a.recent && a.recent.length ? a.recent[a.recent.length - 1][1] : '';
+      h += '<tr style="border-top:1px solid #2a2a38"><td style="padding:4px 6px;' + (sub ? 'padding-left:22px;color:#9ab' : '') + '">' + (sub ? '↳ ' : '') + esc(a.name) + '</td><td>' + esc(a.role) + '</td><td><span style="background:' + (COLORS[a.status] || '#455a64') + ';border-radius:8px;padding:1px 8px">' + esc(NAMES[a.status] || a.status) + '</span>' + (a.error ? ' <span style="color:#f99">' + esc(a.error) + '</span>' : '') + '</td><td>' + esc(taskText(a)) + '</td><td style="color:#9ab">' + esc(rec) + '</td><td>' + esc(ago(a.since)) + '</td></tr>';
+    });
+    h += '</table>';
+    if (runs.runs && runs.runs.length) {
+      h += '<h4 style="margin:12px 0 4px">Son CEO görevleri</h4><table style="width:100%;border-collapse:collapse">';
+      runs.runs.forEach(function (r) { h += '<tr style="border-top:1px solid #2a2a38"><td style="padding:4px 6px;width:90px">' + esc(r.state) + '</td><td>' + esc(r.text) + '</td><td style="width:70px;color:#9ab">' + esc(ago(r.started)) + '</td></tr>'; });
+      h += '</table>';
+    }
+    body.innerHTML = h;
+  }
+  btn.onclick = function () { dlg.showModal(); load(); timer = setInterval(load, 4000); };
+  document.getElementById('ag-close').onclick = function () { dlg.close(); };
+  document.getElementById('ag-refresh').onclick = load;
+  dlg.addEventListener('close', function () { clearInterval(timer); });
+})();
+</script>
 </body>
 </html>
