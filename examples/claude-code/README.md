@@ -12,6 +12,8 @@ node ~/cubicle/bin/cubicle.js install-hooks          # adds the hooks to ~/.clau
 node ~/cubicle/bin/cubicle.js --source claude-code   # then open http://127.0.0.1:3200
 ```
 
+No Paperclip, ECC or other plugin is needed: plain Claude Code is enough. Run through `npx`, `install-hooks` copies the hook script to `~/.cubicle/bin/` so the hooks keep working after npm cleans its cache; run it again after an update to refresh the copy.
+
 `install-hooks` keeps everything else in your settings, can be run again safely, and `install-hooks --uninstall` removes only Cubicle's entries. Restart running Claude Code sessions so they load the hooks.
 
 Prefer to edit by hand? Merge [`settings.json`](settings.json) from this folder into `~/.claude/settings.json` (user-wide) or `.claude/settings.json` (one project), replacing `/path/to/cubicle`.
@@ -37,6 +39,26 @@ Cubicle hook ignores those foreign invocations; use the dedicated
 [`../grok/`](../grok/) example to display Grok without duplicate Claude characters.
 
 The character is named after the working directory, so two sessions in different repos are easy to tell apart. Subagents started through the Agent (Task) tool get their own character next to the session that started them, so a session fanning out to four subagents shows five people at work; the session's own bubble keeps showing what it asked them to do. Claude Code versions that don't send `agent_id` on hook events fall back to one character per session. Sessions with no events for 12 hours are dropped.
+
+## Headless workers (cron, CI, issue bots)
+
+A script that runs `claude -p` on a schedule (for example one that takes a GitHub issue, works in a git worktree and opens a pull request) can tell Cubicle who it is through environment variables. Claude Code passes its environment to the hooks, so nothing else has to be configured.
+
+| Variable | Effect |
+| --- | --- |
+| `CUBICLE_NAME` | Character name instead of the working directory name (`ncu-pch #42`). Its subagents are named `ncu-pch #42 › code-reviewer`. |
+| `CUBICLE_ROLE` | Role on the card (`Issue worker`). |
+| `CUBICLE_TASK_ID`, `CUBICLE_TASK`, `CUBICLE_TASK_URL` | Ticket id, title and link. The bubble keeps showing the current tool, the card links to the ticket, and the ticket title stays on the card while idle. A long prompt is no longer shown as the task. |
+| `CUBICLE_LINGER=1` | Keep the character in the office after `SessionEnd`, idle (or red if the last turn failed), so a finished run stays visible until the next run with the same session or the 12-hour limit. Its subagents still leave. |
+
+```bash
+export CUBICLE_NAME="ncu-pch #42" CUBICLE_ROLE="Issue worker" CUBICLE_LINGER=1 \
+       CUBICLE_TASK_ID="#42" CUBICLE_TASK="Add partner export" \
+       CUBICLE_TASK_URL="https://github.com/acme/ncu-pch/issues/42"
+claude -p "Implement issue 42" --permission-mode dontAsk
+```
+
+Without these variables nothing changes. They work the same with or without the [Everything Claude Code](https://github.com/affaan-m/ECC) plugin: its agents are ordinary Claude Code subagents, so each one gets its own desk. Tip for several parallel workers: give each its own `CUBICLE_NAME`, since sessions are told apart by name in the office.
 
 ## Cost and safety
 
