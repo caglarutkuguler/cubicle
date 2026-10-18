@@ -51,7 +51,7 @@ const TEXT = {
     elsewhere: (id) => `${id} was answered elsewhere; moving on.`, allDone: '✓ That was the last one; nobody else is waiting for you.',
     updated: (v) => `✓ Cubicle was updated to <b>${v}</b>.`, newVersion: (v, cur) => `⬆ Cubicle <b>${v}</b> is out (you have ${cur}).`, notes: 'What’s new',
     howTo: 'To update:', autoHint: 'Or start Cubicle with --auto-update and it updates itself.',
-    oneTap: 'Send /update to install it now.', updating: (v) => `⬆ Updating to <b>${v}</b>; Cubicle restarts in a moment.`, upNone: 'You already have the latest version.', upFail: 'It could not update from here. On the computer, run:',
+    ceoOnIt: '🛠 The CEO is on it; you will hear from it only if it cannot fix it.', oneTap: 'Send /update to install it now.', updating: (v) => `⬆ Updating to <b>${v}</b>; Cubicle restarts in a moment.`, upNone: 'You already have the latest version.', upFail: 'It could not update from here. On the computer, run:',
     stuck: (n) => `⛔ <b>${n}</b> is stuck`, since: (d) => `stopped ${d} ago`, look: 'Look at', more: (n) => `${n} more stuck task${n === 1 ? '' : 's'}.`,
     stuckHint: 'Write the next step and who takes it (a comment wakes the agent).',
     blk: { stalled: (o) => (o ? `the chain it waits on stopped at ${o}` : 'nothing will move it on'), unassigned: (o) => `waits on ${o || 'a task'}, which has no one assigned`, backlog: (o) => `waits on ${o || 'a task'}, which sits in the backlog`, uninvokable: (o) => `waits on ${o || 'a task'}, whose agent cannot run`, cancelled: (o) => `waits on ${o || 'a task'}, which was cancelled`, review: (o) => `waits on the review of ${o || 'a task'}, which nobody is doing`, disposition: () => 'its run finished but nobody decided what comes next', decision: () => 'waits for your decision', external: () => 'waits on someone outside', recovery: (o) => `a recovery task is open${o ? ` (${o})` : ''}`, other: () => 'blocked and needs someone' },
@@ -84,7 +84,7 @@ const TEXT = {
     elsewhere: (id) => `${id} başka yerden yanıtlanmış; sıradakine geçiliyor.`, allDone: '✓ Sonuncusuydu; sizi bekleyen kalmadı.',
     updated: (v) => `✓ Cubicle <b>${v}</b> sürümüne güncellendi.`, newVersion: (v, cur) => `⬆ Cubicle <b>${v}</b> çıktı (sizdeki ${cur}).`, notes: 'Yenilikler',
     howTo: 'Güncellemek için:', autoHint: 'Ya da Cubicle’ı --auto-update ile başlatın, kendiliğinden güncellensin.',
-    oneTap: 'Hemen kurmak için /update gönderin.', updating: (v) => `⬆ <b>${v}</b> sürümüne güncelleniyor; Cubicle birazdan yeniden başlar.`, upNone: 'Zaten en son sürüm sizde.', upFail: 'Buradan güncellenemedi. Bilgisayarda şunu çalıştırın:',
+    ceoOnIt: '🛠 CEO müdahale ediyor; çözemezse size sorulacak.', oneTap: 'Hemen kurmak için /update gönderin.', updating: (v) => `⬆ <b>${v}</b> sürümüne güncelleniyor; Cubicle birazdan yeniden başlar.`, upNone: 'Zaten en son sürüm sizde.', upFail: 'Buradan güncellenemedi. Bilgisayarda şunu çalıştırın:',
     stuck: (n) => `⛔ <b>${n}</b> takıldı`, since: (d) => `${d}${/gün$/.test(d) ? 'dür' : /saat$/.test(d) ? 'tir' : 'dır'} bekliyor`, look: 'Bakılacak iş', more: (n) => `${n} takılı iş daha var.`,
     stuckHint: 'Bir sonraki adımı ve kimin yapacağını yazın (yorum ajanı uyandırır).',
     blk: { stalled: (o) => (o ? `beklediği iş zinciri ${o} işinde kaldı` : 'onu ilerletecek kimse yok'), unassigned: (o) => `${o || 'bir iş'} bekleniyor ama o işin sahibi yok`, backlog: (o) => `${o || 'bir iş'} bekleniyor ama o iş beklemede (backlog)`, uninvokable: (o) => `${o || 'bir iş'} bekleniyor ama o işin ajanı çalışamıyor`, cancelled: (o) => `${o || 'bir iş'} bekleniyor ama o iş iptal edildi`, review: (o) => `${o || 'bir iş'} incelemede ama inceleyen yok`, disposition: () => 'çalışma bitti ama sonrasına kimse karar vermedi', decision: () => 'kararınızı bekliyor', external: () => 'dışarıdan biri bekleniyor', recovery: (o) => `bir kurtarma işi açık${o ? ` (${o})` : ''}`, other: () => 'takıldı, birinin bakması gerekiyor' },
@@ -408,10 +408,12 @@ function start(opts) {
     if (!c.current) await send(chat, esc(t.allDone));
   }
   async function notifyFail(a) {
+    // with the CEO as first responder, the failure goes to it first: the chat hears that it is on it
+    const ceo = !!(opts.ceoTakes && opts.ceoTakes(a));
     for (const [chat, c] of Object.entries(state.chats)) {
       if (!wants(c, a, 'failures')) continue;
       const t = tr(c.lang), f = a.fail;
-      await send(chat, [f ? t.failed(esc(a.name)) : t.errored(esc(a.name)), esc((f && f.error) || a.error), f && f.code ? `<code>${esc(f.code)}</code>` : '', '', links([[t.open, agentLink(a)]])].filter((x, k, all) => x || k === all.length - 2).join('\n'));
+      await send(chat, [f ? t.failed(esc(a.name)) : t.errored(esc(a.name)), esc((f && f.error) || a.error), f && f.code ? `<code>${esc(f.code)}</code>` : '', ceo ? `<i>${esc(t.ceoOnIt)}</i>` : '', '', links([[t.open, agentLink(a)]])].filter((x, k, all) => x || k === all.length - 2).join('\n'));
     }
   }
 

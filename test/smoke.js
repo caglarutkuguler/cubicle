@@ -29,7 +29,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function withServer(args, fn, env = {}) {
   const port = 3400 + Math.floor(Math.random() * 500);
-  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, CUBICLE_TELEGRAM_SETTINGS: path.join(require('os').tmpdir(), 'cubicle-no-telegram.json'), ...env } });
+  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, CUBICLE_TELEGRAM_SETTINGS: path.join(require('os').tmpdir(), 'cubicle-no-telegram.json'), CUBICLE_CLAUDE: process.platform === 'win32' ? 'cmd' : 'true', ...env } });   // never a real claude run from a test
   try { await sleep(500); await fn(`http://127.0.0.1:${port}`); } finally { p.kill(); }
 }
 

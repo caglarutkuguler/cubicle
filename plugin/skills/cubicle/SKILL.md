@@ -30,7 +30,7 @@ node -e "const f=require('os').homedir()+'/.cubicle/settings.json',fs=require('f
 | --- | --- | --- |
 | Start Cubicle by itself when a Claude session starts | `"autostart": true` | The hook starts it in the background (with `--auto-update`) when nothing answers on the port. `"port"` and `"sources"` (e.g. `"paperclip,claude-code"`) are optional. |
 | Server texts in Turkish | `"lang": "tr"` | The page itself follows the browser or ⚙ → Language. |
-| A task box that hands tasks to a "CEO" Claude run | `"dispatch": { "enabled": true, "cwd": "~/agents" }` | Optional: `model`, `budget` (USD per run), `tools`, `prompt`. Explain that it runs `claude -p` unattended with the listed tools before turning it on. |
+| A task box that hands tasks to a "CEO" Claude run | `"dispatch": { "enabled": true, "cwd": "~/agents" }` | Optional: `model`, `budget` (USD per run), `tools`, `prompt`, `fixFailures` (default on: a failed agent goes to the CEO first, and the user is asked only if it cannot fix it). Explain that it runs `claude -p` unattended with the listed tools before turning it on. |
 | Hide Paperclip shortcuts and agents | `"paperclipLinks": false`, `"paperclipAgents": false` | |
 
 The same settings can also be changed on the page, ⚙ → 🛠 Cubicle settings (on this computer). Restart Cubicle after a change only when the user asks to apply it now: stop the running process and open the office again as above (with `--auto-update` it also restarts by itself on updates).

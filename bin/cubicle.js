@@ -416,12 +416,14 @@ const SRV_TEXT = {
     budgetTitle: (t) => `CEO ran out of budget: ${t}`, budgetText: (b) => `The task stopped halfway because it went over the budget for one run ($${b}). The issues and PRs it opened stay; a retry continues where it left off.`,
     failTitle: (t) => `CEO task failed: ${t}`, failText: (t) => `The task ended with an error: ${t}`,
     budgetOpts: ['Raise the budget and continue where you left off', 'Split the task into smaller parts and retry', 'Give up'], failOpts: ['Retry', 'Give up'],
-    tgDecision: '❓ <b>Needs a decision</b>', tgError: '⚠️ <b>Error</b>', tgAnswer: 'Answer in Cubicle', tgHint: '(click the agent in Cubicle to answer)' },
+    tgDecision: '❓ <b>Needs a decision</b>', tgError: '⚠️ <b>Error</b>', tgAnswer: 'Answer in Cubicle', tgHint: '(click the agent in Cubicle to answer)',
+    fixTask: (f) => `[First responder] The agent "${f.name}" stopped with an error and no one has looked at it yet.\nTask: ${f.task || '(unknown)'}\nError: ${f.error || '(no message)'}${f.code ? `\nCode: ${f.code}` : ''}${f.steps ? `\nLast steps: ${f.steps}` : ''}\n\nFind out why and fix it if you can: read its log or issue, retry or relaunch the work, adjust the task, or close it if it is already done. Decide what you can decide yourself; the human only hears from you if you cannot fix it. In that case explain what you found and end with DECISION: <one question for the human> and OPTIONS: <2-4 options>. If you fixed it, end with DECISION: none.`, },
   tr: { working: '\u00e7al\u0131\u015f\u0131yor', queued: 's\u0131rada', done: 'tamamland\u0131', waiting: 'karar bekliyor', error: 'hata', decision: 'Karar', busy: 'CEO me\u015fgul; bu g\u00f6rev s\u0131raya al\u0131nd\u0131 (tek CEO, g\u00f6revler s\u0131rayla).',
     budgetTitle: (t) => `CEO bütçeye takıldı: ${t}`, budgetText: (b) => `Görev, tek çalıştırma bütçesini ($${b}) aştığı için yarıda kaldı. Açılan issue ve PR'lar yerinde duruyor; yeniden denerken kaldığı yerden devam eder.`,
     failTitle: (t) => `CEO görevi başarısız: ${t}`, failText: (t) => `Görev bir hatayla bitti: ${t}`,
     budgetOpts: ['Bütçeyi artırıp kaldığın yerden devam et', 'Görevi küçük parçalara bölüp yeniden dene', 'Vazgeç'], failOpts: ['Yeniden dene', 'Vazgeç'],
-    tgDecision: '❓ <b>Karar bekliyor</b>', tgError: '⚠️ <b>Hata</b>', tgAnswer: 'Cubicle\'da cevapla', tgHint: '(Cubicle\'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)' },
+    tgDecision: '❓ <b>Karar bekliyor</b>', tgError: '⚠️ <b>Hata</b>', tgAnswer: 'Cubicle\'da cevapla', tgHint: '(Cubicle\'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)',
+    fixTask: (f) => `[İlk müdahale] "${f.name}" ajanı hata verip durdu, henüz kimse bakmadı.\nGörev: ${f.task || '(bilinmiyor)'}\nHata: ${f.error || '(mesaj yok)'}${f.code ? `\nKod: ${f.code}` : ''}${f.steps ? `\nSon adımlar: ${f.steps}` : ''}\n\nNedenini bul ve çözebiliyorsan çöz: kaydını ya da issue'sunu oku, işi yeniden dene ya da yeniden başlat, görevi düzelt, iş zaten bitmişse kapat. Kendin karar verebileceğin şeyleri sormadan yap; insan ancak çözemezsen haberdar olsun. O durumda ne bulduğunu açıkla ve DECISION: <insana tek soru> ile OPTIONS: <2-4 seçenek> satırlarıyla bitir. Çözdüysen DECISION: none ile bitir.`, },
 };
 const srvLang = () => { const l = String(cubicleSettings().lang || process.env.CUBICLE_LANG || process.env.LANG || '').slice(0, 2).toLowerCase(); return SRV_TEXT[l] ? l : 'en'; };
 const ST = (lang) => SRV_TEXT[lang || srvLang()] || SRV_TEXT.en;
@@ -707,6 +709,7 @@ server.listen(PORT, HOST, () => {
   if (HAS_PAPERCLIP) console.log(`No Paperclip yet? Try the demo: http://${HOST}:${PORT}/?demo`);
   for (const x of SOURCES) if (x.kind === 'file' && !fs.existsSync(x.file)) console.log(`Note: ${x.file} does not exist yet; it counts as no agents until something writes it.`);
   restartTelegram();
+  setInterval(watchFailures, Number(process.env.CUBICLE_FIX_INTERVAL || 15000)).unref();
   if (UPDATE_CHECK || AUTO_UPDATE) {
     UPDATES.watch({ every: AUTO_UPDATE ? 3600000 : 6 * 3600000, onNewer(v) {
       const kind = process.env.CUBICLE_INSTALL_KIND || UPDATES.installKind();
@@ -791,6 +794,7 @@ const SETTING_KEYS = {
 };
 const DISPATCH_KEYS = {
   enabled: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  fixFailures: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   cwd: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 500 && !/[\0\n\r]/.test(v) ? v.trim() : Symbol.for('bad'),
   model: (v) => v === '' || v === null ? undefined : typeof v === 'string' && /^[\w.:\-\[\]]{1,80}$/.test(v) ? v : Symbol.for('bad'),
   budget: (v) => v === '' || v === null ? undefined : typeof v === 'number' && v >= 0.01 && v <= 100000 ? Math.round(v * 100) / 100 : Symbol.for('bad'),
@@ -978,7 +982,7 @@ function startRun(run) {
   run.state = 'running'; run.started = Date.now();
   if (pcId) dispatchLabel(pcId, null, ST().working);
   const out = fs.openSync(logFile, 'a');
-  const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.max(cfg.budget, Math.min(cfg.budget * 2, 30)) : cfg.budget),
+  const child = require('child_process').spawn(process.env.CUBICLE_CLAUDE || 'claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.max(cfg.budget, Math.min(cfg.budget * 2, 30)) : cfg.budget),
     '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
     cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
     env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: taskRef(id), CUBICLE_TASK: text.slice(0, 120),
@@ -1003,19 +1007,63 @@ async function serveDispatch(req, res) {
   return readBody(req, 8000).then(async (d) => {
     const text = d && typeof d.text === 'string' ? d.text.trim().slice(0, 4000) : '';
     if (!text) return send(res, 400, '{"error":"empty task"}');
-    const id = nextRunId();
-    const dir = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch');
-    fs.mkdirSync(dir, { recursive: true });
-    const logFile = path.join(dir, `${id}.log`);
-    const busy = DISPATCH_RUNS.some((r) => r.state === 'running');
-    if (DISPATCH_RUNS.filter((r) => r.state === 'queued').length >= 20) return send(res, 429, '{"error":"queue full (20)"}');
-    const run = { id, text: text.slice(0, 200), fullText: text, state: busy ? 'queued' : 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0, pcId: '' };
-    DISPATCH_RUNS.push(run);
-    run.pcId = await dispatchTrack(text);
-    if (busy) { dispatchLabel(run.pcId, null, ST().queued, ST().busy); saveRuns(); console.log(`Cubicle: CEO task ${id} queued.`); }
-    else startRun(run);
-    send(res, 200, JSON.stringify({ ok: true, id, queued: busy }));
+    const r = await queueCeo(text);
+    if (!r) return send(res, 429, '{"error":"queue full (20)"}');
+    send(res, 200, JSON.stringify({ ok: true, id: r.id, queued: r.queued }));
   });
+}
+// A task for the CEO: runs now, or waits its turn. Returns null when the queue is full.
+async function queueCeo(text, extra = {}) {
+  if (DISPATCH_RUNS.filter((r) => r.state === 'queued').length >= 20) return null;
+  const id = nextRunId();
+  const dir = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch');
+  fs.mkdirSync(dir, { recursive: true });
+  const logFile = path.join(dir, `${id}.log`);
+  const busy = DISPATCH_RUNS.some((r) => r.state === 'running');
+  const run = { id, text: text.slice(0, 200), fullText: text, state: busy ? 'queued' : 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0, pcId: '', ...extra };
+  DISPATCH_RUNS.push(run);
+  run.pcId = await dispatchTrack(text);
+  if (busy) { dispatchLabel(run.pcId, null, ST().queued, ST().busy); saveRuns(); console.log(`Cubicle: CEO task ${id} queued.`); }
+  else startRun(run);
+  return { id, queued: busy };
+}
+
+// ---------- first responder: a failed agent goes to the CEO before it comes to you ----------
+// With the task box on (and dispatch.fixFailures not false), an agent that stops with an error is
+// handed to the CEO with what is known about the failure. The CEO fixes it (retries, relaunches,
+// adjusts the task) or ends with a DECISION, which reaches you as a question like any other. A
+// failure is handed over once; at most 2 per agent in 6 hours and 6 in all per hour, the rest wait
+// for you as before. The CEO's own failures always come to you.
+const FIX = { seen: new Map(), recent: [] };
+const failKey = (a) => a.fail ? `${a.id}|run:${a.fail.id}` : `${a.id}|err:${String(a.error || '').slice(0, 80)}|${a.task ? a.task.identifier || a.task.title || '' : ''}`;
+const isCeo = (a) => /^ceo\b/i.test(String(a.name || '')) || /CEO-\d+/.test(String(a.task && (a.task.identifier || a.task.title) || ''));
+function fixFailuresOn() { const d = cubicleSettings().dispatch; return !!dispatchCfg() && !(d && d.fixFailures === false); }
+// true when the CEO has this failure (now or already); false when it stays with you
+function ceoTakes(a) {
+  if (!a || !(a.fail || a.status === 'error') || isCeo(a) || a.sub || !fixFailuresOn()) return false;
+  const key = failKey(a);
+  if (FIX.seen.has(key)) return FIX.seen.get(key);
+  const now = Date.now();
+  FIX.recent = FIX.recent.filter((x) => now - x.t < 6 * 3600000);
+  const mine = FIX.recent.filter((x) => x.agent === a.id).length, hour = FIX.recent.filter((x) => now - x.t < 3600000).length;
+  if (mine >= 2 || hour >= 6) { FIX.seen.set(key, false); return false; }
+  FIX.seen.set(key, true); FIX.recent.push({ agent: a.id, t: now });
+  const t = ST(), task = a.task ? [a.task.identifier, a.task.title].filter(Boolean).join(' ') + (a.task.url ? ` (${a.task.url})` : '') : '';
+  const text = t.fixTask({ name: a.name, task, error: (a.fail && a.fail.error) || a.error || '', code: a.fail ? a.fail.code : '', steps: (a.steps || []).join(' → ') });
+  queueCeo(text, { auto: true, forAgent: a.id }).then((r) => console.log(`Cubicle: ${a.name} failed; ${r ? `handed to the CEO (${r.id})` : 'the CEO queue is full, so it stays with you'}.`)).catch(() => {});
+  return true;
+}
+let fixKnown = null;
+async function watchFailures() {
+  if (!fixFailuresOn()) { fixKnown = null; return; }
+  try {
+    const { agents } = await require('./cubicle-telegram.js').snapshot(self);
+    if (fixKnown) for (const a of agents) {
+      const before = fixKnown.get(a.id);
+      if ((a.fail && (!before || before.failId !== a.fail.id)) || (!a.fail && a.status === 'error' && before && before.status !== 'error')) ceoTakes(a);
+    }
+    fixKnown = new Map([...(fixKnown || []), ...agents.map((a) => [a.id, { failId: a.fail && a.fail.id, status: a.status }])]);
+  } catch (_) {}
 }
 
 // ---------- "needs you": errors and open decisions from agents ----------
@@ -1188,7 +1236,7 @@ function serveTailscale(req, res) {
 
 function startTelegram(token) {
   const bot = require('./cubicle-telegram.js').start({
-    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(), version: VERSION, update: () => UPDATE, applyUpdate: () => applyUpdate('Telegram'),
+    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(), version: VERSION, update: () => UPDATE, applyUpdate: () => applyUpdate('Telegram'), ceoTakes,
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),

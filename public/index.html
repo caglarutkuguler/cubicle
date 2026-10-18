@@ -3925,7 +3925,7 @@
       port: 'Port', sources: 'What to watch', sourcesNote: 'Used by autostart. Empty: claude-code, Claude Code sessions only. For several, separate them with commas: paperclip,claude-code.', dfltIs: (v) => `Default: ${v}`, bad: (f) => `Check this value: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Show links to Paperclip', pcAgents: 'Show Paperclip agents', createTasks: 'Let KPI advice become Paperclip tasks',
       ceo: 'Task box (CEO)', ceoOn: 'Show the task box', ceoNote: 'A task starts an unattended Claude run (claude -p) in the folder below, with only the tools listed.',
-      cwd: 'Working folder', model: 'Model', budget: 'Budget per task (USD)', tools: 'Allowed tools', prompt: 'Instructions', dflt: 'Empty: the default',
+      fix: 'When an agent fails, the CEO tries to fix it first; you are asked only if it cannot', cwd: 'Working folder', model: 'Model', budget: 'Budget per task (USD)', tools: 'Allowed tools', prompt: 'Instructions', dflt: 'Empty: the default',
       alerts: 'Alerts', save: 'Save', saving: 'Saving…', saved: 'Saved.', failed: 'Could not save:' },
     tr: { title: 'Cubicle ayarları', intro: (f) => `Bu bilgisayarda ${f} dosyasında tutulur. Aksi yazmıyorsa değişiklikler hemen geçerli olur.`,
       onlyHere: 'Bu ayarlar yalnızca Cubicle’ın çalıştığı bilgisayardan değiştirilebilir.', embed: 'Bu ayarlar bağımsız çalışan Cubicle’a ait. Onu çalıştığı bilgisayarda açın.',
@@ -3936,7 +3936,7 @@
       port: 'Port', sources: 'Neler izlensin', sourcesNote: 'Otomatik başlatmada kullanılır. Boş bırakılırsa claude-code, yani yalnızca Claude Code oturumları. Birden fazlası virgülle yazılır: paperclip,claude-code.', dfltIs: (v) => `Varsayılan: ${v}`, bad: (f) => `Bu değeri kontrol edin: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Paperclip bağlantılarını göster', pcAgents: 'Paperclip ajanlarını göster', createTasks: 'KPI tavsiyeleri Paperclip görevine dönüştürülebilsin',
       ceo: 'Görev kutusu (CEO)', ceoOn: 'Görev kutusunu göster', ceoNote: 'Her görev, aşağıdaki klasörde yalnızca listelenen araçlarla gözetimsiz bir Claude çalıştırması (claude -p) başlatır.',
-      cwd: 'Çalışma klasörü', model: 'Model', budget: 'Görev başına bütçe (USD)', tools: 'İzin verilen araçlar', prompt: 'Talimatlar', dflt: 'Boş: varsayılan',
+      fix: 'Bir ajan hata verince önce CEO çözmeye çalışsın; çözemezse size sorulsun', cwd: 'Çalışma klasörü', model: 'Model', budget: 'Görev başına bütçe (USD)', tools: 'İzin verilen araçlar', prompt: 'Talimatlar', dflt: 'Boş: varsayılan',
       alerts: 'Bildirimler', save: 'Kaydet', saving: 'Kaydediliyor…', saved: 'Kaydedildi.', failed: 'Kaydedilemedi:' },
     de: { title: 'Cubicle-Einstellungen', intro: (f) => `Auf diesem Computer in ${f} gespeichert. Änderungen gelten sofort, sofern nichts anderes dabeisteht.`,
       onlyHere: 'Diese Einstellungen lassen sich nur auf dem Computer ändern, auf dem Cubicle läuft.', embed: 'Diese Einstellungen gehören zum eigenständigen Cubicle. Öffne es auf dem Computer, auf dem es läuft.',
@@ -3947,7 +3947,7 @@
       port: 'Port', sources: 'Was beobachtet wird', sourcesNote: 'Für den Autostart. Leer: claude-code, nur Claude-Code-Sitzungen. Mehrere mit Kommas trennen: paperclip,claude-code.', dfltIs: (v) => `Standard: ${v}`, bad: (f) => `Bitte prüfen: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Links zu Paperclip zeigen', pcAgents: 'Paperclip-Agenten zeigen', createTasks: 'KPI-Tipps dürfen Paperclip-Aufgaben werden',
       ceo: 'Aufgabenfeld (CEO)', ceoOn: 'Aufgabenfeld zeigen', ceoNote: 'Eine Aufgabe startet einen unbeaufsichtigten Claude-Lauf (claude -p) im Ordner unten, nur mit den aufgeführten Werkzeugen.',
-      cwd: 'Arbeitsordner', model: 'Modell', budget: 'Budget pro Aufgabe (USD)', tools: 'Erlaubte Werkzeuge', prompt: 'Anweisungen', dflt: 'Leer: Standard',
+      fix: 'Scheitert ein Agent, versucht zuerst der CEO, es zu beheben; gefragt wirst du nur, wenn er es nicht schafft', cwd: 'Arbeitsordner', model: 'Modell', budget: 'Budget pro Aufgabe (USD)', tools: 'Erlaubte Werkzeuge', prompt: 'Anweisungen', dflt: 'Leer: Standard',
       alerts: 'Hinweise', save: 'Speichern', saving: 'Wird gespeichert…', saved: 'Gespeichert.', failed: 'Nicht gespeichert:' },
     es: { title: 'Ajustes de Cubicle', intro: (f) => `Se guardan en este equipo, en ${f}. Los cambios se aplican al momento salvo que se indique lo contrario.`,
       onlyHere: 'Estos ajustes solo se pueden cambiar en el equipo donde se ejecuta Cubicle.', embed: 'Estos ajustes son del Cubicle independiente. Ábrelo en el equipo donde se ejecuta.',
@@ -3958,7 +3958,7 @@
       port: 'Puerto', sources: 'Qué observar', sourcesNote: 'Para el inicio automático. Vacío: claude-code, solo sesiones de Claude Code. Para varias, sepáralas con comas: paperclip,claude-code.', dfltIs: (v) => `Predeterminado: ${v}`, bad: (f) => `Revisa este valor: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Mostrar enlaces a Paperclip', pcAgents: 'Mostrar agentes de Paperclip', createTasks: 'Permitir que los consejos KPI se conviertan en tareas de Paperclip',
       ceo: 'Cuadro de tareas (CEO)', ceoOn: 'Mostrar el cuadro de tareas', ceoNote: 'Cada tarea inicia una ejecución desatendida de Claude (claude -p) en la carpeta de abajo, solo con las herramientas indicadas.',
-      cwd: 'Carpeta de trabajo', model: 'Modelo', budget: 'Presupuesto por tarea (USD)', tools: 'Herramientas permitidas', prompt: 'Instrucciones', dflt: 'Vacío: el predeterminado',
+      fix: 'Si un agente falla, el CEO intenta arreglarlo primero; solo te pregunta si no puede', cwd: 'Carpeta de trabajo', model: 'Modelo', budget: 'Presupuesto por tarea (USD)', tools: 'Herramientas permitidas', prompt: 'Instrucciones', dflt: 'Vacío: el predeterminado',
       alerts: 'Avisos', save: 'Guardar', saving: 'Guardando…', saved: 'Guardado.', failed: 'No se pudo guardar:' },
     fr: { title: 'Réglages de Cubicle', intro: (f) => `Conservés sur cet ordinateur dans ${f}. Les changements s’appliquent tout de suite, sauf mention contraire.`,
       onlyHere: 'Ces réglages ne se changent que sur l’ordinateur où tourne Cubicle.', embed: 'Ces réglages appartiennent au Cubicle autonome. Ouvrez-le sur l’ordinateur où il tourne.',
@@ -3969,7 +3969,7 @@
       port: 'Port', sources: 'Ce qu’il surveille', sourcesNote: 'Pour le démarrage auto. Vide : claude-code, les sessions Claude Code seulement. Pour plusieurs, séparez-les par des virgules : paperclip,claude-code.', dfltIs: (v) => `Par défaut : ${v}`, bad: (f) => `Vérifiez cette valeur : ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Afficher les liens vers Paperclip', pcAgents: 'Afficher les agents Paperclip', createTasks: 'Les conseils KPI peuvent devenir des tâches Paperclip',
       ceo: 'Boîte à tâches (CEO)', ceoOn: 'Afficher la boîte à tâches', ceoNote: 'Une tâche lance une exécution Claude sans surveillance (claude -p) dans le dossier ci-dessous, avec les seuls outils listés.',
-      cwd: 'Dossier de travail', model: 'Modèle', budget: 'Budget par tâche (USD)', tools: 'Outils autorisés', prompt: 'Consignes', dflt: 'Vide : par défaut',
+      fix: 'Quand un agent échoue, le CEO essaie d’abord de le réparer ; on ne vous demande que s’il n’y arrive pas', cwd: 'Dossier de travail', model: 'Modèle', budget: 'Budget par tâche (USD)', tools: 'Outils autorisés', prompt: 'Consignes', dflt: 'Vide : par défaut',
       alerts: 'Alertes', save: 'Enregistrer', saving: 'Enregistrement…', saved: 'Enregistré.', failed: 'Échec de l’enregistrement :' },
     zh: { title: 'Cubicle 设置', intro: (f) => `保存在这台电脑的 ${f} 中。除非另有说明，修改立即生效。`,
       onlyHere: '这些设置只能在运行 Cubicle 的电脑上修改。', embed: '这些设置属于独立运行的 Cubicle。请在运行它的电脑上打开。',
@@ -3980,7 +3980,7 @@
       port: '端口', sources: '监视内容', sourcesNote: '用于自动启动。留空：claude-code，只看 Claude Code 会话。多个时用逗号分隔：paperclip,claude-code。', dfltIs: (v) => `默认：${v}`, bad: (f) => `请检查这个值：${f}`,
       paperclip: 'Paperclip', pcLinks: '显示 Paperclip 链接', pcAgents: '显示 Paperclip 代理', createTasks: '允许把 KPI 建议变成 Paperclip 任务',
       ceo: '任务框（CEO）', ceoOn: '显示任务框', ceoNote: '每个任务都会在下面的文件夹中启动一次无人值守的 Claude 运行（claude -p），只能使用列出的工具。',
-      cwd: '工作文件夹', model: '模型', budget: '每个任务的预算（美元）', tools: '允许的工具', prompt: '指令', dflt: '留空：使用默认值',
+      fix: '代理出错时先由 CEO 尝试修复；修不好才问你', cwd: '工作文件夹', model: '模型', budget: '每个任务的预算（美元）', tools: '允许的工具', prompt: '指令', dflt: '留空：使用默认值',
       alerts: '提醒', save: '保存', saving: '正在保存…', saved: '已保存。', failed: '保存失败：' },
     ar: { title: 'إعدادات Cubicle', intro: (f) => `تُحفظ على هذا الحاسوب في ${f}. تسري التغييرات فورًا ما لم يُذكر غير ذلك.`,
       onlyHere: 'لا يمكن تغيير هذه الإعدادات إلا على الحاسوب الذي يعمل عليه Cubicle.', embed: 'هذه الإعدادات خاصة بـ Cubicle المستقل. افتحه على الحاسوب الذي يعمل عليه.',
@@ -3991,7 +3991,7 @@
       port: 'المنفذ', sources: 'ما يُراقَب', sourcesNote: 'للتشغيل التلقائي. فارغ: claude-code، أي جلسات Claude Code فقط. لأكثر من مصدر افصل بفواصل: paperclip,claude-code.', dfltIs: (v) => `الافتراضي: ${v}`, bad: (f) => `تحقّق من هذه القيمة: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'إظهار روابط Paperclip', pcAgents: 'إظهار وكلاء Paperclip', createTasks: 'السماح بتحويل نصائح KPI إلى مهام في Paperclip',
       ceo: 'صندوق المهام (CEO)', ceoOn: 'إظهار صندوق المهام', ceoNote: 'كل مهمة تبدأ تشغيلًا لـ Claude دون إشراف (claude -p) في المجلد أدناه، بالأدوات المذكورة فقط.',
-      cwd: 'مجلد العمل', model: 'النموذج', budget: 'الميزانية لكل مهمة (دولار)', tools: 'الأدوات المسموح بها', prompt: 'التعليمات', dflt: 'فارغ: الافتراضي',
+      fix: 'عندما يفشل وكيل يحاول الـ CEO إصلاحه أولًا، ولا يسألك إلا إذا عجز', cwd: 'مجلد العمل', model: 'النموذج', budget: 'الميزانية لكل مهمة (دولار)', tools: 'الأدوات المسموح بها', prompt: 'التعليمات', dflt: 'فارغ: الافتراضي',
       alerts: 'التنبيهات', save: 'حفظ', saving: 'جارٍ الحفظ…', saved: 'تم الحفظ.', failed: 'تعذّر الحفظ:' },
   };
   const C = { ...CFG_TEXT.en, ...(CFG_TEXT[lang] || {}) };
@@ -4015,7 +4015,7 @@
       + `<section><h3>${esc(C.claude)}</h3>${chk('cfg-autostart', v.autostart === true, C.autostart, C.autostartNote)}`
       + `<div class="cfgpair">${field('cfg-port', C.port, v.port, st.defaults.port, 'number')}${field('cfg-sources', C.sources, v.sources, st.defaults.sources)}</div><div class="note">${esc(C.sourcesNote)}</div></section>`
       + (st.paperclip || v.paperclipLinks !== undefined || v.paperclipAgents !== undefined ? `<section><h3>${esc(C.paperclip)}</h3>${chk('cfg-pclinks', v.paperclipLinks !== false, C.pcLinks)}${chk('cfg-pcagents', pcAgents, C.pcAgents)}${st.available ? chk('cfg-tasks', v.createTasks === true, C.createTasks) : ''}</section>` : '')
-      + `<section><h3>${esc(C.ceo)}</h3>${chk('cfg-ceo', d.enabled === true, C.ceoOn, C.ceoNote)}<div class="cfgceo"${d.enabled === true ? '' : ' hidden'}>`
+      + `<section><h3>${esc(C.ceo)}</h3>${chk('cfg-ceo', d.enabled === true, C.ceoOn, C.ceoNote)}<div class="cfgceo"${d.enabled === true ? '' : ' hidden'}>${chk('cfg-fix', d.fixFailures !== false, C.fix)}`
       + `<div class="cfgpair">${field('cfg-cwd', C.cwd, d.cwd, D.cwd)}${field('cfg-model', C.model, d.model, D.model)}</div>`
       + field('cfg-budget', C.budget, d.budget, D.budget, 'number') + field('cfg-tools', C.tools, d.tools, D.tools)
       + `<label class="cfgf"><span>${esc(C.prompt)}</span><textarea id="cfg-prompt" rows="4" placeholder="${esc(C.dflt)}">${esc(d.prompt || '')}</textarea></label></div></section>`
@@ -4028,7 +4028,7 @@
     const q = (id) => cfgDlg.querySelector('#' + id), msg = cfgDlg.querySelector('.cfgmsg');
     const num = (id) => { const x = q(id).value.trim(); return x === '' ? null : Number(x); };
     const body = { lang: q('cfg-lang').value, autostart: q('cfg-autostart').checked, port: num('cfg-port'), sources: q('cfg-sources').value.trim(),
-      dispatch: { enabled: q('cfg-ceo').checked, cwd: q('cfg-cwd').value.trim(), model: q('cfg-model').value.trim(), budget: num('cfg-budget'), tools: q('cfg-tools').value.trim(), prompt: q('cfg-prompt').value } };
+      dispatch: { enabled: q('cfg-ceo').checked, fixFailures: q('cfg-fix').checked, cwd: q('cfg-cwd').value.trim(), model: q('cfg-model').value.trim(), budget: num('cfg-budget'), tools: q('cfg-tools').value.trim(), prompt: q('cfg-prompt').value } };
     if (q('cfg-pclinks')) { body.paperclipLinks = q('cfg-pclinks').checked; body.paperclipAgents = q('cfg-pcagents').checked; }
     if (q('cfg-tasks')) body.createTasks = q('cfg-tasks').checked;
     btn.disabled = true; msg.textContent = C.saving;
