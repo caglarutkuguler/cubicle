@@ -848,6 +848,19 @@ try {
     DISPATCH_RUNS.push(r);
   }
 } catch (_) {}
+// CEO tasks get readable ids (CEO-001, CEO-002, ...) instead of a base-36 timestamp. The counter is kept in a file,
+// so it keeps counting after old runs fall off the 30-run list.
+const SEQ_FILE = path.join(path.dirname(RUNS_FILE), 'seq.txt');
+function nextRunId() {
+  let n = 0;
+  try { n = parseInt(fs.readFileSync(SEQ_FILE, 'utf8'), 10) || 0; } catch (_) {}
+  for (const r of DISPATCH_RUNS) { const m = /^CEO-(\d+)$/.exec(r.id || ''); if (m) n = Math.max(n, Number(m[1])); }
+  n++;
+  try { fs.mkdirSync(path.dirname(SEQ_FILE), { recursive: true }); fs.writeFileSync(SEQ_FILE, String(n)); } catch (_) {}
+  return 'CEO-' + String(n).padStart(3, '0');
+}
+// the task id on the card and on its questions: readable ids as they are, old timestamp ids keep their T- prefix
+const taskRef = (id) => (/^CEO-\d+$/.test(id) ? id : `T-${id}`);
 setInterval(() => {   // pick up runs that ended while this server was down
   let changed = false;
   for (const r of DISPATCH_RUNS) if (r.state === 'running' && r.orphan) { let alive = false; try { process.kill(r.pid, 0); alive = true; } catch (_) {} if (!alive) { r.state = 'done'; r.ended = Date.now(); try { r.tail = fs.readFileSync(r.logFile, 'utf8').slice(-1500); } catch (_) {} changed = true; } }
@@ -911,14 +924,14 @@ function startRun(run) {
   const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.min(cfg.budget * 2, 30) : cfg.budget),
     '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
     cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
-    env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: `T-${id}`, CUBICLE_TASK: text.slice(0, 120),
+    env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: taskRef(id), CUBICLE_TASK: text.slice(0, 120),
       // workers the CEO starts inherit these, so their alerts can say how far this task has come
-      CUBICLE_MAIN_TASK_ID: `T-${id}`, CUBICLE_MAIN_TASK: text.slice(0, 160), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
+      CUBICLE_MAIN_TASK_ID: taskRef(id), CUBICLE_MAIN_TASK: text.slice(0, 160), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
   let finished = false;
   const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); nextQueued(); };
   run.pid = child.pid || 0; run.orphan = false; saveRuns();
   child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
-  child.on('exit', (code, sig) => { setTimeout(() => { try { const full = fs.readFileSync(logFile, 'utf8').slice(-14000), tail = full.slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail), t = ST(), opts = bud ? t.budgetOpts : t.failOpts; attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: bud ? t.budgetTitle(text.slice(0, 70)) : t.failTitle(text.slice(0, 70)), text: bud ? t.budgetText(cfg.budget) : t.failText(tail.replace(/\s+/g, ' ').slice(-300)), options: opts, cancel: opts[opts.length - 1], detail: full.slice(-3000).trim() }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: `T-${id}`, kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [], detail: ceoDetail(full) }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
+  child.on('exit', (code, sig) => { setTimeout(() => { try { const full = fs.readFileSync(logFile, 'utf8').slice(-14000), tail = full.slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail), t = ST(), opts = bud ? t.budgetOpts : t.failOpts; attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: bud ? t.budgetTitle(text.slice(0, 70)) : t.failTitle(text.slice(0, 70)), text: bud ? t.budgetText(cfg.budget) : t.failText(tail.replace(/\s+/g, ' ').slice(-300)), options: opts, cancel: opts[opts.length - 1], detail: full.slice(-3000).trim() }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [], detail: ceoDetail(full) }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
   console.log(`Cubicle: CEO task ${id} started.`);
 }
 async function serveDispatch(req, res) {
@@ -933,7 +946,7 @@ async function serveDispatch(req, res) {
   return readBody(req, 8000).then(async (d) => {
     const text = d && typeof d.text === 'string' ? d.text.trim().slice(0, 4000) : '';
     if (!text) return send(res, 400, '{"error":"empty task"}');
-    const id = Date.now().toString(36);
+    const id = nextRunId();
     const dir = path.join(path.dirname(CUBICLE_SETTINGS), 'dispatch');
     fs.mkdirSync(dir, { recursive: true });
     const logFile = path.join(dir, `${id}.log`);
