@@ -5,6 +5,10 @@ const assert = require('assert');
 const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
+// Isolate from the developer's real ~/.cubicle: its settings leaked into spawned servers and made tests flaky.
+const SMOKE_HOME = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'cubicle-smoke-home-'));
+process.env.HOME = SMOKE_HOME; process.env.USERPROFILE = SMOKE_HOME;
+process.on('exit', () => { try { require('fs').rmSync(SMOKE_HOME, { recursive: true, force: true }); } catch {} });
 const { apply, summarize } = require('../bin/cubicle-hook.js');
 
 const ROOT = path.join(__dirname, '..');
