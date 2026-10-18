@@ -768,18 +768,64 @@ function readBody(req, max) {
     req.on('end', () => { if (over) return resolve(undefined); try { resolve(JSON.parse(body)); } catch (_) { resolve(undefined); } });
   });
 }
+// What ⚙ → Cubicle settings shows and changes. Everyone gets the switches the page needs; the values,
+// the file and what this process runs with only go to this machine, which alone may change them.
+const SETTING_KEYS = {
+  lang: (v) => v === '' || v === null ? undefined : ['en', 'tr'].includes(v) ? v : Symbol.for('bad'),
+  autostart: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  port: (v) => v === '' || v === null ? undefined : Number.isInteger(v) && v >= 1 && v <= 65535 ? v : Symbol.for('bad'),
+  sources: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 500 && /^[^\0\n\r"'`$;&|<>]+$/.test(v) ? v.trim() : Symbol.for('bad'),
+  paperclipLinks: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  paperclipAgents: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  createTasks: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+};
+const DISPATCH_KEYS = {
+  enabled: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  cwd: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 500 && !/[\0\n\r]/.test(v) ? v.trim() : Symbol.for('bad'),
+  model: (v) => v === '' || v === null ? undefined : typeof v === 'string' && /^[\w.:\-\[\]]{1,80}$/.test(v) ? v : Symbol.for('bad'),
+  budget: (v) => v === '' || v === null ? undefined : typeof v === 'number' && v >= 0.1 && v <= 30 ? Math.round(v * 100) / 100 : Symbol.for('bad'),
+  tools: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 2000 && !/[\0\n\r]/.test(v) ? v.trim() : Symbol.for('bad'),
+  prompt: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 8000 ? v : Symbol.for('bad'),
+};
+function settingsStatus(req) {
+  const local = fromThisMachine(req), c = cubicleSettings();
+  const out = { createTasks: canCreateTasks(), available: HAS_PAPERCLIP && !REDACT, canEdit: local, paperclip: HAS_PAPERCLIP };
+  if (!local) return out;
+  const pick = (o, keys) => Object.fromEntries(Object.keys(keys).filter((k) => o && o[k] !== undefined).map((k) => [k, o[k]]));
+  return { ...out, file: CUBICLE_SETTINGS, values: { ...pick(c, SETTING_KEYS), dispatch: pick(c.dispatch, DISPATCH_KEYS) },
+    defaults: { port: 3200, sources: 'claude-code', dispatch: DISPATCH_DEFAULTS },
+    running: { version: VERSION, host: HOST, port: PORT, sources: SOURCES.map((x) => x.kind === 'paperclip' ? `paperclip (${PAPERCLIP.origin})` : x.kind === 'file' ? x.file : x.kind === 'replay' ? 'replay' : x.url ? x.url.href : x.kind),
+      autoUpdate: AUTO_UPDATE, updateCheck: UPDATE_CHECK, redact: REDACT, install: UPDATES.installKind(), lang: srvLang() } };
+}
 async function serveSettings(req, res) {
-  const status = () => ({ createTasks: canCreateTasks(), available: HAS_PAPERCLIP && !REDACT, canEdit: fromThisMachine(req) });
-  if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(status()));
+  if (req.method === 'GET' || req.method === 'HEAD') return send(res, 200, JSON.stringify(settingsStatus(req)));
   if (req.method !== 'PUT') return send(res, 405, '{"error":"GET or PUT"}');
   if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
   if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
-  const data = await readBody(req, 2000);
-  if (!data || typeof data !== 'object' || Array.isArray(data) || typeof data.createTasks !== 'boolean') return send(res, 400, '{"error":"bad request"}');
-  try { require('./cubicle-telegram.js').writeFileAtomic(CUBICLE_SETTINGS, JSON.stringify({ ...cubicleSettings(), createTasks: data.createTasks })); }
+  const data = await readBody(req, 16000);
+  if (!data || typeof data !== 'object' || Array.isArray(data)) return send(res, 400, '{"error":"bad request"}');
+  const next = { ...cubicleSettings() }, changed = [];
+  const apply = (target, keys, src, prefix) => {
+    for (const [k, v] of Object.entries(src)) {
+      if (!keys[k]) return `unknown setting ${prefix}${k}`;
+      const val = keys[k](v);
+      if (val === Symbol.for('bad')) return `bad value for ${prefix}${k}`;
+      if (val === undefined) delete target[k]; else target[k] = val;
+      changed.push(prefix + k);
+    }
+    return null;
+  };
+  const { dispatch, ...top } = data;
+  let err = apply(next, SETTING_KEYS, top, '');
+  if (!err && dispatch !== undefined) {
+    if (!dispatch || typeof dispatch !== 'object' || Array.isArray(dispatch)) err = 'bad value for dispatch';
+    else { next.dispatch = { ...(next.dispatch && typeof next.dispatch === 'object' ? next.dispatch : {}) }; err = apply(next.dispatch, DISPATCH_KEYS, dispatch, 'dispatch.'); if (!Object.keys(next.dispatch).length) delete next.dispatch; }
+  }
+  if (err) return send(res, 400, JSON.stringify({ error: err }));
+  try { fs.mkdirSync(path.dirname(CUBICLE_SETTINGS), { recursive: true }); require('./cubicle-telegram.js').writeFileAtomic(CUBICLE_SETTINGS, JSON.stringify(next, null, 2)); }
   catch (_) { return send(res, 500, JSON.stringify({ error: `cannot write ${CUBICLE_SETTINGS}` })); }
-  console.log(`Cubicle: turning KPI advice into Paperclip tasks is ${data.createTasks ? 'on' : 'off'}.`);
-  send(res, 200, JSON.stringify(status()));
+  if (changed.length) console.log(`Cubicle: settings changed from the page: ${changed.join(', ')}.`);
+  send(res, 200, JSON.stringify(settingsStatus(req)));
 }
 // ---------- "Update now": from the page on this machine, or /update from a linked Telegram chat ----------
 let updating = false;
@@ -898,14 +944,15 @@ function dispatchFinish(id, state, tail) {
   else if (state === 'done') dispatchLabel(id, 'done', t.done, tail);
   else dispatchLabel(id, 'blocked', t.error, tail);
 }
+const DISPATCH_DEFAULTS = { cwd: '~/agents', model: 'sonnet', budget: 2,
+  tools: 'Read|Glob|Grep|Agent|Bash(gh *)|Bash(git status*)|Bash(git log*)|Bash(cat*)|Bash(ls*)|Bash(bash ~/agents/run-issue.sh*)',
+  prompt: 'You are the CEO of a small AI-run company. A human gave you the task below. Decide what it needs. If it is code or content work, pick the right repo from ~/agents/repos.conf (or `gh repo list`), open a GitHub issue there with a clear title and acceptance criteria, label it agent:ready (create the label if missing), and, if it is in repos.conf, start the worker with `bash ~/agents/run-issue.sh <repo> <number>` in the background. If it is just a question, answer it. Finish with 3 lines: what you did, links, what the human must decide. Make the DECISION understandable on its own: never write "the snippet above"; if the human must run something, put the full command in a fenced code block in your answer (it is shown to them as details with a copy button).' };
 function dispatchCfg() {
   const d = cubicleSettings().dispatch;
   if (!d || d.enabled !== true) return null;
-  const home = require('os').homedir();
-  const cwd = String(d.cwd || '~/agents').replace(/^~(?=\/|$)/, home);
-  return { cwd, model: String(d.model || 'sonnet'), budget: Number(d.budget) > 0 ? Number(d.budget) : 2,
-    tools: String(d.tools || 'Read|Glob|Grep|Agent|Bash(gh *)|Bash(git status*)|Bash(git log*)|Bash(cat*)|Bash(ls*)|Bash(bash ~/agents/run-issue.sh*)'),
-    prompt: String(d.prompt || 'You are the CEO of a small AI-run company. A human gave you the task below. Decide what it needs. If it is code or content work, pick the right repo from ~/agents/repos.conf (or `gh repo list`), open a GitHub issue there with a clear title and acceptance criteria, label it agent:ready (create the label if missing), and, if it is in repos.conf, start the worker with `bash ~/agents/run-issue.sh <repo> <number>` in the background. If it is just a question, answer it. Finish with 3 lines: what you did, links, what the human must decide. Make the DECISION understandable on its own: never write "the snippet above"; if the human must run something, put the full command in a fenced code block in your answer (it is shown to them as details with a copy button).') };
+  const home = require('os').homedir(), D = DISPATCH_DEFAULTS;
+  const cwd = String(d.cwd || D.cwd).replace(/^~(?=\/|$)/, home);
+  return { cwd, model: String(d.model || D.model), budget: Number(d.budget) > 0 ? Number(d.budget) : D.budget, tools: String(d.tools || D.tools), prompt: String(d.prompt || D.prompt) };
 }
 // One CEO at a time: a new task waits in the queue (state "queued") and starts when the running one ends.
 function nextQueued() {

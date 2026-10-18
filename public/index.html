@@ -188,6 +188,21 @@
   #qdlg .qs { font-size:14px; } #qdlg .qs .qt { font-size:15px; } #qdlg .qs .qp { margin:8px 0 4px; }
   #qdlg .acts { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
   dialog#tg::backdrop { background:rgba(8,9,15,.6); }
+  dialog#cfgdlg { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:16px 18px; width:min(640px, 94vw); max-height:88vh; overflow:auto; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  dialog#cfgdlg::backdrop { background:rgba(8,9,15,.6); }
+  #cfgdlg h2 { font-size:15px; margin:0 0 8px; display:flex; } #cfgdlg h2 button { margin-inline-start:auto; background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; }
+  #cfgdlg p { font-size:13px; margin:6px 0; } #cfgdlg .note { font-size:12px; color:var(--muted); margin:2px 0 6px; overflow-wrap:anywhere; }
+  #cfgdlg section { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:10px 0; background:#1d2030; }
+  #cfgdlg h3 { font-size:13.5px; margin:0 0 8px; }
+  #cfgdlg .check { display:flex; align-items:center; gap:6px; margin:6px 0 2px; font-size:13px; }
+  #cfgdlg .cfgf { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--muted); margin:6px 0; flex:1; min-width:0; }
+  #cfgdlg .cfgf input, #cfgdlg .cfgf select, #cfgdlg .cfgf textarea { background:#151826; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 7px; font:inherit; font-size:13px; }
+  #cfgdlg .cfgf textarea { resize:vertical; min-height:70px; }
+  #cfgdlg .cfgpair { display:flex; gap:10px; flex-wrap:wrap; }
+  #cfgdlg .cfgrun { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:12.5px; margin:0 0 4px; } #cfgdlg .cfgrun dt { color:var(--muted); } #cfgdlg .cfgrun dd { margin:0; overflow-wrap:anywhere; }
+  #cfgdlg .cfgbtns { margin-top:8px; } #cfgdlg .cfgbtns button { background:#2f3552; color:var(--text); border:1px solid #4a5175; border-radius:6px; padding:4px 10px; cursor:pointer; font:inherit; font-size:12.5px; }
+  #cfgdlg .cfgfoot { display:flex; align-items:center; justify-content:flex-end; gap:10px; position:sticky; bottom:-16px; background:var(--panel); padding:8px 0 2px; }
+  #cfgdlg .cfgmsg { font-size:12.5px; color:var(--muted); } #cfgdlg .cfgfoot button { background:#3d6fd9; color:#fff; border:0; border-radius:6px; padding:6px 16px; cursor:pointer; font:inherit; } #cfgdlg .cfgfoot button:disabled { opacity:.6; cursor:wait; }
   #tg h2 { font-size:15px; margin:0 0 8px; display:flex; } #tg h2 button { margin-inline-start:auto; background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; }
   #tg p { font-size:13px; margin:6px 0; } #tg ol { font-size:13px; padding-inline-start:20px; margin:8px 0; } #tg li { margin:6px 0; line-height:1.45; }
   #tg code { background:#1d2030; border:1px solid var(--line); border-radius:4px; padding:0 4px; font-size:12px; }
@@ -314,6 +329,7 @@
   <dialog id="looks"></dialog>
   <dialog id="kpi"></dialog>
   <dialog id="tg"></dialog>
+  <dialog id="cfgdlg"></dialog>
   <dialog id="qdlg"></dialog>
   <dialog id="answer"><div class="head"><b></b><a target="_blank" rel="noopener"></a><button type="button" class="x"></button></div><iframe title="Paperclip"></iframe><div class="note"></div></dialog>
   <footer>
@@ -3859,6 +3875,142 @@
     if (!animOn()) renderCards();          // desk cards are drawn with the theme
   }
 
+  // ---------- ⚙ → Cubicle settings: what ~/.cubicle/settings.json holds, edited from this machine ----------
+  const CFG_TEXT = {
+    en: { title: 'Cubicle settings', intro: (f) => `Kept on this computer in ${f}. Changes apply right away unless a line says otherwise.`,
+      onlyHere: 'These settings can be changed only on the computer Cubicle runs on.', embed: 'These settings belong to the standalone Cubicle. Open it on the computer it runs on.',
+      run: 'Running now', version: 'Version', address: 'Address', watching: 'Watching', updates: 'Updates', upAuto: 'installs new versions by itself', upCheck: 'tells you about new versions', upOff: 'not checked', redacted: 'Redacted: ids and statuses only',
+      runNote: 'These come from how Cubicle was started (its command line or service).',
+      general: 'General', srvLang: 'Language of alerts and messages', srvAuto: 'Automatic (from the system)',
+      claude: 'Claude Code', autostart: 'Start Cubicle with every Claude session', autostartNote: 'When a Claude session starts and Cubicle is not running, it starts in the background and keeps itself up to date. Applies from the next session.',
+      port: 'Port', sources: 'What to watch', sourcesNote: 'Used by autostart, e.g. claude-code or paperclip,claude-code.',
+      paperclip: 'Paperclip', pcLinks: 'Show links to Paperclip', pcAgents: 'Show Paperclip agents', createTasks: 'Let KPI advice become Paperclip tasks',
+      ceo: 'Task box (CEO)', ceoOn: 'Show the task box', ceoNote: 'A task starts an unattended Claude run (claude -p) in the folder below, with only the tools listed.',
+      cwd: 'Working folder', model: 'Model', budget: 'Budget per task (USD)', tools: 'Allowed tools', prompt: 'Instructions', dflt: 'Empty: the default',
+      alerts: 'Alerts', save: 'Save', saving: 'Saving…', saved: 'Saved.', failed: 'Could not save:' },
+    tr: { title: 'Cubicle ayarları', intro: (f) => `Bu bilgisayarda ${f} dosyasında tutulur. Aksi yazmıyorsa değişiklikler hemen geçerli olur.`,
+      onlyHere: 'Bu ayarlar yalnızca Cubicle’ın çalıştığı bilgisayardan değiştirilebilir.', embed: 'Bu ayarlar bağımsız çalışan Cubicle’a ait. Onu çalıştığı bilgisayarda açın.',
+      run: 'Şu an çalışan', version: 'Sürüm', address: 'Adres', watching: 'İzlenen', updates: 'Güncellemeler', upAuto: 'yeni sürümleri kendisi kurar', upCheck: 'yeni sürümü haber verir', upOff: 'kontrol edilmiyor', redacted: 'Gizli mod: yalnızca kimlik ve durumlar',
+      runNote: 'Bunlar Cubicle’ın nasıl başlatıldığından gelir (komut satırı ya da servis).',
+      general: 'Genel', srvLang: 'Bildirim ve mesajların dili', srvAuto: 'Otomatik (sistemden)',
+      claude: 'Claude Code', autostart: 'Cubicle her Claude oturumuyla açılsın', autostartNote: 'Bir Claude oturumu başladığında Cubicle çalışmıyorsa arka planda başlar ve kendini güncel tutar. Sonraki oturumdan itibaren geçerli.',
+      port: 'Port', sources: 'Neler izlensin', sourcesNote: 'Otomatik başlatmada kullanılır; örn. claude-code ya da paperclip,claude-code.',
+      paperclip: 'Paperclip', pcLinks: 'Paperclip bağlantılarını göster', pcAgents: 'Paperclip ajanlarını göster', createTasks: 'KPI tavsiyeleri Paperclip görevine dönüştürülebilsin',
+      ceo: 'Görev kutusu (CEO)', ceoOn: 'Görev kutusunu göster', ceoNote: 'Her görev, aşağıdaki klasörde yalnızca listelenen araçlarla gözetimsiz bir Claude çalıştırması (claude -p) başlatır.',
+      cwd: 'Çalışma klasörü', model: 'Model', budget: 'Görev başına bütçe (USD)', tools: 'İzin verilen araçlar', prompt: 'Talimatlar', dflt: 'Boş: varsayılan',
+      alerts: 'Bildirimler', save: 'Kaydet', saving: 'Kaydediliyor…', saved: 'Kaydedildi.', failed: 'Kaydedilemedi:' },
+    de: { title: 'Cubicle-Einstellungen', intro: (f) => `Auf diesem Computer in ${f} gespeichert. Änderungen gelten sofort, sofern nichts anderes dabeisteht.`,
+      onlyHere: 'Diese Einstellungen lassen sich nur auf dem Computer ändern, auf dem Cubicle läuft.', embed: 'Diese Einstellungen gehören zum eigenständigen Cubicle. Öffne es auf dem Computer, auf dem es läuft.',
+      run: 'Läuft gerade', version: 'Version', address: 'Adresse', watching: 'Beobachtet', updates: 'Updates', upAuto: 'installiert neue Versionen selbst', upCheck: 'meldet neue Versionen', upOff: 'nicht geprüft', redacted: 'Geschwärzt: nur IDs und Status',
+      runNote: 'Das ergibt sich daraus, wie Cubicle gestartet wurde (Befehlszeile oder Dienst).',
+      general: 'Allgemein', srvLang: 'Sprache von Hinweisen und Nachrichten', srvAuto: 'Automatisch (vom System)',
+      claude: 'Claude Code', autostart: 'Cubicle mit jeder Claude-Sitzung starten', autostartNote: 'Startet eine Claude-Sitzung und Cubicle läuft nicht, startet es im Hintergrund und hält sich aktuell. Gilt ab der nächsten Sitzung.',
+      port: 'Port', sources: 'Was beobachtet wird', sourcesNote: 'Für den Autostart, z. B. claude-code oder paperclip,claude-code.',
+      paperclip: 'Paperclip', pcLinks: 'Links zu Paperclip zeigen', pcAgents: 'Paperclip-Agenten zeigen', createTasks: 'KPI-Tipps dürfen Paperclip-Aufgaben werden',
+      ceo: 'Aufgabenfeld (CEO)', ceoOn: 'Aufgabenfeld zeigen', ceoNote: 'Eine Aufgabe startet einen unbeaufsichtigten Claude-Lauf (claude -p) im Ordner unten, nur mit den aufgeführten Werkzeugen.',
+      cwd: 'Arbeitsordner', model: 'Modell', budget: 'Budget pro Aufgabe (USD)', tools: 'Erlaubte Werkzeuge', prompt: 'Anweisungen', dflt: 'Leer: Standard',
+      alerts: 'Hinweise', save: 'Speichern', saving: 'Wird gespeichert…', saved: 'Gespeichert.', failed: 'Nicht gespeichert:' },
+    es: { title: 'Ajustes de Cubicle', intro: (f) => `Se guardan en este equipo, en ${f}. Los cambios se aplican al momento salvo que se indique lo contrario.`,
+      onlyHere: 'Estos ajustes solo se pueden cambiar en el equipo donde se ejecuta Cubicle.', embed: 'Estos ajustes son del Cubicle independiente. Ábrelo en el equipo donde se ejecuta.',
+      run: 'En marcha ahora', version: 'Versión', address: 'Dirección', watching: 'Observa', updates: 'Actualizaciones', upAuto: 'instala las nuevas versiones solo', upCheck: 'avisa de nuevas versiones', upOff: 'sin comprobar', redacted: 'Ocultado: solo ids y estados',
+      runNote: 'Esto depende de cómo se inició Cubicle (línea de comandos o servicio).',
+      general: 'General', srvLang: 'Idioma de avisos y mensajes', srvAuto: 'Automático (del sistema)',
+      claude: 'Claude Code', autostart: 'Iniciar Cubicle con cada sesión de Claude', autostartNote: 'Cuando empieza una sesión de Claude y Cubicle no está en marcha, se inicia en segundo plano y se mantiene al día. Se aplica desde la próxima sesión.',
+      port: 'Puerto', sources: 'Qué observar', sourcesNote: 'Para el inicio automático, p. ej. claude-code o paperclip,claude-code.',
+      paperclip: 'Paperclip', pcLinks: 'Mostrar enlaces a Paperclip', pcAgents: 'Mostrar agentes de Paperclip', createTasks: 'Permitir que los consejos KPI se conviertan en tareas de Paperclip',
+      ceo: 'Cuadro de tareas (CEO)', ceoOn: 'Mostrar el cuadro de tareas', ceoNote: 'Cada tarea inicia una ejecución desatendida de Claude (claude -p) en la carpeta de abajo, solo con las herramientas indicadas.',
+      cwd: 'Carpeta de trabajo', model: 'Modelo', budget: 'Presupuesto por tarea (USD)', tools: 'Herramientas permitidas', prompt: 'Instrucciones', dflt: 'Vacío: el predeterminado',
+      alerts: 'Avisos', save: 'Guardar', saving: 'Guardando…', saved: 'Guardado.', failed: 'No se pudo guardar:' },
+    fr: { title: 'Réglages de Cubicle', intro: (f) => `Conservés sur cet ordinateur dans ${f}. Les changements s’appliquent tout de suite, sauf mention contraire.`,
+      onlyHere: 'Ces réglages ne se changent que sur l’ordinateur où tourne Cubicle.', embed: 'Ces réglages appartiennent au Cubicle autonome. Ouvrez-le sur l’ordinateur où il tourne.',
+      run: 'En cours', version: 'Version', address: 'Adresse', watching: 'Surveille', updates: 'Mises à jour', upAuto: 'installe seul les nouvelles versions', upCheck: 'signale les nouvelles versions', upOff: 'non vérifiées', redacted: 'Masqué : identifiants et statuts seulement',
+      runNote: 'Cela dépend de la façon dont Cubicle a été lancé (ligne de commande ou service).',
+      general: 'Général', srvLang: 'Langue des alertes et messages', srvAuto: 'Automatique (système)',
+      claude: 'Claude Code', autostart: 'Lancer Cubicle avec chaque session Claude', autostartNote: 'Quand une session Claude démarre et que Cubicle ne tourne pas, il démarre en arrière-plan et se tient à jour. S’applique dès la prochaine session.',
+      port: 'Port', sources: 'Ce qu’il surveille', sourcesNote: 'Pour le démarrage auto, p. ex. claude-code ou paperclip,claude-code.',
+      paperclip: 'Paperclip', pcLinks: 'Afficher les liens vers Paperclip', pcAgents: 'Afficher les agents Paperclip', createTasks: 'Les conseils KPI peuvent devenir des tâches Paperclip',
+      ceo: 'Boîte à tâches (CEO)', ceoOn: 'Afficher la boîte à tâches', ceoNote: 'Une tâche lance une exécution Claude sans surveillance (claude -p) dans le dossier ci-dessous, avec les seuls outils listés.',
+      cwd: 'Dossier de travail', model: 'Modèle', budget: 'Budget par tâche (USD)', tools: 'Outils autorisés', prompt: 'Consignes', dflt: 'Vide : par défaut',
+      alerts: 'Alertes', save: 'Enregistrer', saving: 'Enregistrement…', saved: 'Enregistré.', failed: 'Échec de l’enregistrement :' },
+    zh: { title: 'Cubicle 设置', intro: (f) => `保存在这台电脑的 ${f} 中。除非另有说明，修改立即生效。`,
+      onlyHere: '这些设置只能在运行 Cubicle 的电脑上修改。', embed: '这些设置属于独立运行的 Cubicle。请在运行它的电脑上打开。',
+      run: '当前运行', version: '版本', address: '地址', watching: '监视', updates: '更新', upAuto: '自动安装新版本', upCheck: '提示新版本', upOff: '不检查', redacted: '已脱敏：只显示 id 和状态',
+      runNote: '这些取决于 Cubicle 的启动方式（命令行或服务）。',
+      general: '常规', srvLang: '提醒和消息的语言', srvAuto: '自动（跟随系统）',
+      claude: 'Claude Code', autostart: '每次 Claude 会话都启动 Cubicle', autostartNote: 'Claude 会话开始时若 Cubicle 未运行，就在后台启动并自动保持最新。从下一个会话起生效。',
+      port: '端口', sources: '监视内容', sourcesNote: '用于自动启动，例如 claude-code 或 paperclip,claude-code。',
+      paperclip: 'Paperclip', pcLinks: '显示 Paperclip 链接', pcAgents: '显示 Paperclip 代理', createTasks: '允许把 KPI 建议变成 Paperclip 任务',
+      ceo: '任务框（CEO）', ceoOn: '显示任务框', ceoNote: '每个任务都会在下面的文件夹中启动一次无人值守的 Claude 运行（claude -p），只能使用列出的工具。',
+      cwd: '工作文件夹', model: '模型', budget: '每个任务的预算（美元）', tools: '允许的工具', prompt: '指令', dflt: '留空：使用默认值',
+      alerts: '提醒', save: '保存', saving: '正在保存…', saved: '已保存。', failed: '保存失败：' },
+    ar: { title: 'إعدادات Cubicle', intro: (f) => `تُحفظ على هذا الحاسوب في ${f}. تسري التغييرات فورًا ما لم يُذكر غير ذلك.`,
+      onlyHere: 'لا يمكن تغيير هذه الإعدادات إلا على الحاسوب الذي يعمل عليه Cubicle.', embed: 'هذه الإعدادات خاصة بـ Cubicle المستقل. افتحه على الحاسوب الذي يعمل عليه.',
+      run: 'يعمل الآن', version: 'الإصدار', address: 'العنوان', watching: 'يراقب', updates: 'التحديثات', upAuto: 'يثبّت الإصدارات الجديدة بنفسه', upCheck: 'ينبّهك إلى الإصدارات الجديدة', upOff: 'لا يتحقق', redacted: 'مُخفى: المعرّفات والحالات فقط',
+      runNote: 'يأتي هذا من طريقة تشغيل Cubicle (سطر الأوامر أو الخدمة).',
+      general: 'عام', srvLang: 'لغة التنبيهات والرسائل', srvAuto: 'تلقائي (من النظام)',
+      claude: 'Claude Code', autostart: 'شغّل Cubicle مع كل جلسة Claude', autostartNote: 'عند بدء جلسة Claude وCubicle لا يعمل، يبدأ في الخلفية ويُبقي نفسه محدّثًا. يسري من الجلسة التالية.',
+      port: 'المنفذ', sources: 'ما يُراقَب', sourcesNote: 'للتشغيل التلقائي، مثل claude-code أو paperclip,claude-code.',
+      paperclip: 'Paperclip', pcLinks: 'إظهار روابط Paperclip', pcAgents: 'إظهار وكلاء Paperclip', createTasks: 'السماح بتحويل نصائح KPI إلى مهام في Paperclip',
+      ceo: 'صندوق المهام (CEO)', ceoOn: 'إظهار صندوق المهام', ceoNote: 'كل مهمة تبدأ تشغيلًا لـ Claude دون إشراف (claude -p) في المجلد أدناه، بالأدوات المذكورة فقط.',
+      cwd: 'مجلد العمل', model: 'النموذج', budget: 'الميزانية لكل مهمة (دولار)', tools: 'الأدوات المسموح بها', prompt: 'التعليمات', dflt: 'فارغ: الافتراضي',
+      alerts: 'التنبيهات', save: 'حفظ', saving: 'جارٍ الحفظ…', saved: 'تم الحفظ.', failed: 'تعذّر الحفظ:' },
+  };
+  const C = { ...CFG_TEXT.en, ...(CFG_TEXT[lang] || {}) };
+  const cfgDlg = document.getElementById('cfgdlg');
+  async function openConfig() {
+    const head = `<h2>🛠 ${esc(C.title)} <button type="button" data-cfg="close" aria-label="${esc(L.close)}">✕</button></h2>`;
+    const show = (html) => { cfgDlg.innerHTML = head + html; if (!cfgDlg.open) cfgDlg.showModal(); };
+    if (EMBED || DEMO) return show(`<p>${esc(C.embed)}</p>`);
+    const st = await fetch('/api/cubicle/settings', { cache: 'no-store' }).then((r) => r.json()).catch(() => null);
+    if (!st || !st.canEdit || !st.values) return show(`<p>${esc(C.onlyHere)}</p><div class="cfgbtns"><button type="button" data-cfg="tg">${esc(L.tgButton)}</button></div>`);
+    const v = st.values, d = v.dispatch || {}, D = st.defaults.dispatch, run = st.running;
+    const chk = (id, on, label, note) => `<label class="check"><input type="checkbox" id="${id}"${on ? ' checked' : ''}> ${esc(label)}</label>${note ? `<div class="note">${esc(note)}</div>` : ''}`;
+    const field = (id, label, val, ph, type = 'text', note) => `<label class="cfgf"><span>${esc(label)}</span><input id="${id}" type="${type}" value="${esc(val == null ? '' : String(val))}" placeholder="${esc(ph == null ? '' : String(ph))}"${type === 'number' ? ' step="any"' : ''}></label>${note ? `<div class="note">${esc(note)}</div>` : ''}`;
+    const upd = run.autoUpdate ? C.upAuto : run.updateCheck ? C.upCheck : C.upOff;
+    const pcAgents = v.paperclipAgents !== undefined ? v.paperclipAgents : v.paperclipLinks !== false;
+    show(`<p class="note">${esc(C.intro(st.file))}</p>`
+      + `<section><h3>${esc(C.run)}</h3><dl class="cfgrun"><dt>${esc(C.version)}</dt><dd>${esc(run.version)}</dd><dt>${esc(C.address)}</dt><dd>http://${esc(run.host)}:${esc(run.port)}</dd>`
+      + `<dt>${esc(C.watching)}</dt><dd>${run.sources.map(esc).join('<br>')}</dd><dt>${esc(C.updates)}</dt><dd>${esc(upd)}</dd>${run.redact ? `<dt></dt><dd>${esc(C.redacted)}</dd>` : ''}</dl><div class="note">${esc(C.runNote)}</div></section>`
+      + `<section><h3>${esc(C.general)}</h3><label class="cfgf"><span>${esc(C.srvLang)}</span><select id="cfg-lang"><option value="">${esc(C.srvAuto)}</option><option value="en"${v.lang === 'en' ? ' selected' : ''}>English</option><option value="tr"${v.lang === 'tr' ? ' selected' : ''}>Türkçe</option></select></label>`
+      + `<div class="cfgbtns"><button type="button" data-cfg="tg">${esc(L.tgButton)}</button></div></section>`
+      + `<section><h3>${esc(C.claude)}</h3>${chk('cfg-autostart', v.autostart === true, C.autostart, C.autostartNote)}`
+      + `<div class="cfgpair">${field('cfg-port', C.port, v.port, st.defaults.port, 'number')}${field('cfg-sources', C.sources, v.sources, st.defaults.sources)}</div><div class="note">${esc(C.sourcesNote)}</div></section>`
+      + (st.paperclip || v.paperclipLinks !== undefined || v.paperclipAgents !== undefined ? `<section><h3>${esc(C.paperclip)}</h3>${chk('cfg-pclinks', v.paperclipLinks !== false, C.pcLinks)}${chk('cfg-pcagents', pcAgents, C.pcAgents)}${st.available ? chk('cfg-tasks', v.createTasks === true, C.createTasks) : ''}</section>` : '')
+      + `<section><h3>${esc(C.ceo)}</h3>${chk('cfg-ceo', d.enabled === true, C.ceoOn, C.ceoNote)}<div class="cfgceo"${d.enabled === true ? '' : ' hidden'}>`
+      + `<div class="cfgpair">${field('cfg-cwd', C.cwd, d.cwd, D.cwd)}${field('cfg-model', C.model, d.model, D.model)}</div>`
+      + field('cfg-budget', C.budget, d.budget, D.budget, 'number') + field('cfg-tools', C.tools, d.tools, D.tools)
+      + `<label class="cfgf"><span>${esc(C.prompt)}</span><textarea id="cfg-prompt" rows="4" placeholder="${esc(C.dflt)}">${esc(d.prompt || '')}</textarea></label></div></section>`
+      + `<div class="cfgfoot"><span class="cfgmsg" role="status"></span><button type="button" class="act" data-cfg="save">${esc(C.save)}</button></div>`);
+    const q = (id) => cfgDlg.querySelector('#' + id);
+    q('cfg-ceo').addEventListener('change', (e) => { cfgDlg.querySelector('.cfgceo').hidden = !e.target.checked; });
+    cfgDlg.dataset.was = JSON.stringify({ links: v.paperclipLinks !== false, agents: pcAgents, ceo: d.enabled === true });
+  }
+  async function saveConfig(btn) {
+    const q = (id) => cfgDlg.querySelector('#' + id), msg = cfgDlg.querySelector('.cfgmsg');
+    const num = (id) => { const x = q(id).value.trim(); return x === '' ? null : Number(x); };
+    const body = { lang: q('cfg-lang').value, autostart: q('cfg-autostart').checked, port: num('cfg-port'), sources: q('cfg-sources').value.trim(),
+      dispatch: { enabled: q('cfg-ceo').checked, cwd: q('cfg-cwd').value.trim(), model: q('cfg-model').value.trim(), budget: num('cfg-budget'), tools: q('cfg-tools').value.trim(), prompt: q('cfg-prompt').value } };
+    if (q('cfg-pclinks')) { body.paperclipLinks = q('cfg-pclinks').checked; body.paperclipAgents = q('cfg-pcagents').checked; }
+    if (q('cfg-tasks')) body.createTasks = q('cfg-tasks').checked;
+    btn.disabled = true; msg.textContent = C.saving;
+    const r = await fetch('/api/cubicle/settings', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify(body) }).catch(() => null);
+    const d = r ? await r.json().catch(() => ({})) : {};
+    btn.disabled = false;
+    if (!r || !r.ok) { msg.textContent = `${C.failed} ${d.error || (r ? r.status : '')}`; return; }
+    msg.textContent = C.saved;
+    if (typeof d.createTasks === 'boolean') { taskCfg = { ...taskCfg, createTasks: d.createTasks, on: d.createTasks }; }
+    const was = JSON.parse(cfgDlg.dataset.was || '{}');
+    // the page reads these when it loads: show the change at once
+    if (was.links !== body.paperclipLinks && body.paperclipLinks !== undefined || was.agents !== body.paperclipAgents && body.paperclipAgents !== undefined || was.ceo !== body.dispatch.enabled) setTimeout(() => location.reload(), 700);
+  }
+  cfgDlg.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-cfg]');
+    if (e.target === cfgDlg || (b && b.dataset.cfg === 'close')) return cfgDlg.close();
+    if (!b) return;
+    if (b.dataset.cfg === 'tg') { cfgDlg.close(); openTelegram(); }
+    else if (b.dataset.cfg === 'save') saveConfig(b);
+  });
+
   const gear = document.getElementById('gear');
   const panel = document.getElementById('settings');
   gear.title = L.settings; gear.setAttribute('aria-label', L.settings);
@@ -3889,7 +4041,7 @@
       `<div class="checks">${check('set-notify', settings.notify, L.sNotify, L.notify)}</div>` +
       own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
       `<div class="shead">${esc(L.sMore)}</div><div class="sbtns">` +
-      btn('set-tg', L.tgButton) + btn('set-copy', '🔗 ' + L.sCopy, L.settingsNote) +
+      btn('set-cfg', '🛠 ' + C.title) + btn('set-tg', L.tgButton) + btn('set-copy', '🔗 ' + L.sCopy, L.settingsNote) +
       btn('set-logo', '🖼 ' + L.sLogo, L.logoPick) + (looks.logo ? btn('set-nologo', '✕ ' + L.sNoLogo, L.logoRemove) : '') +
       btn('set-export', '⤓ ' + L.sExport, L.exportLooks) + btn('set-import', '⤒ ' + L.sImport, L.importLooks) +
       (animOn() ? btn('set-record', recording ? L.recording(Math.ceil(recording.until - performance.now() / 1000)) : '⏺ ' + L.sRecord, L.record) : '') + '</div>';
@@ -3930,6 +4082,7 @@
     const rec = panel.querySelector('#set-record');
     if (rec) rec.addEventListener('click', (e) => { if (!recording) startRecording(e.target); });
     panel.querySelector('#set-tg').addEventListener('click', () => { panel.hidden = true; openTelegram(); });
+    panel.querySelector('#set-cfg').addEventListener('click', () => { panel.hidden = true; openConfig(); });
     const hb = panel.querySelector('#set-human');
     if (hb) hb.addEventListener('change', (e) => { settings.human = e.target.checked; save(); if (!settings.human) hideHuman(); renderSettings(); poll(); });
     const ml = panel.querySelector('#set-mylook');

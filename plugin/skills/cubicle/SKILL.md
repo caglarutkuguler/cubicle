@@ -33,7 +33,7 @@ node -e "const f=require('os').homedir()+'/.cubicle/settings.json',fs=require('f
 | A task box that hands tasks to a "CEO" Claude run | `"dispatch": { "enabled": true, "cwd": "~/agents" }` | Optional: `model`, `budget` (USD per run), `tools`, `prompt`. Explain that it runs `claude -p` unattended with the listed tools before turning it on. |
 | Hide Paperclip shortcuts and agents | `"paperclipLinks": false`, `"paperclipAgents": false` | |
 
-Restart Cubicle after a change only when the user asks to apply it now: stop the running process and open the office again as above (with `--auto-update` it also restarts by itself on updates).
+The same settings can also be changed on the page, ⚙ → 🛠 Cubicle settings (on this computer). Restart Cubicle after a change only when the user asks to apply it now: stop the running process and open the office again as above (with `--auto-update` it also restarts by itself on updates).
 
 ## Things set up on the page, not here
 

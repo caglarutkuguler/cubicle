@@ -457,6 +457,20 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
         assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { createTasks: true }, { 'x-cubicle': '' })).status, 400, 'only this page');
         assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { createTasks: true })).data.createTasks, true);
         assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', task, { origin: 'http://evil.example' })).status, 400, 'no other site');
+        // ⚙ → Cubicle settings: the rest of settings.json, checked key by key; only this machine sees the values
+        const all = await call(`${base}/api/cubicle/settings`, 'PUT', { lang: 'tr', autostart: true, port: 3201, sources: 'paperclip,claude-code', paperclipAgents: false,
+          dispatch: { enabled: true, model: 'opus', budget: 3.5, cwd: '~/work', tools: 'Read|Grep', prompt: 'Be brief.' } });
+        assert.strictEqual(all.status, 200);
+        assert.deepStrictEqual(all.data.values, { lang: 'tr', autostart: true, port: 3201, sources: 'paperclip,claude-code', paperclipAgents: false, createTasks: true,
+          dispatch: { enabled: true, model: 'opus', budget: 3.5, cwd: '~/work', tools: 'Read|Grep', prompt: 'Be brief.' } });
+        assert.strictEqual(all.data.running.version, require('../package.json').version);
+        assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { dispatch: { model: '', budget: null } })).data.values.dispatch.model, undefined, 'empty means the default');
+        assert.strictEqual(JSON.parse(require('fs').readFileSync(path.join(dir, 'settings.json'), 'utf8')).dispatch.budget, undefined);
+        for (const bad of [{ shell: 'rm -rf /' }, { port: 70000 }, { lang: 'xx' }, { sources: 'a; rm -rf ~' }, { dispatch: { model: 'a b' } }, { dispatch: { budget: 500 } }, { autostart: 'yes' }])
+          assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', bad)).status, 400, JSON.stringify(bad));
+        const away = await call(`${base}/api/cubicle/settings`, 'GET', null, { 'x-forwarded-for': '1.2.3.4' });
+        assert.strictEqual(away.data.canEdit, false); assert.ok(!('values' in away.data) && !('file' in away.data), 'values only for this machine');
+        await call(`${base}/api/cubicle/settings`, 'PUT', { lang: '', autostart: false, port: null, sources: '', paperclipAgents: true, dispatch: { enabled: false, cwd: '', tools: '', prompt: '' } });
         assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', { ...task, assigneeAgentId: '33333333-3333-4333-8333-333333333333' })).status, 400, 'an agent of the company');
         assert.strictEqual((await call(`${base}/api/cubicle/tasks`, 'POST', { ...task, parentId: '44444444-4444-4444-8444-444444444444' })).status, 404, 'a real parent');
         const made = await call(`${base}/api/cubicle/tasks`, 'POST', task);
