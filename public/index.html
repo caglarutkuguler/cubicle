@@ -4058,7 +4058,7 @@
   function runsRefresh() {
     fetch('/api/cubicle/dispatch').then(function (r) { return r.ok ? r.json() : null; }).then(function (d) {
       if (!d) return;
-      cr.innerHTML = (d.runs || []).slice(0, 6).map(function (r) { return '<div><b>' + esc(D.st[r.state] || r.state) + '</b> · ' + esc(r.text) + '</div>'; }).join('');
+      cr.innerHTML = (d.runs || []).slice(0, 6).map(function (r) { return '<div><b>' + esc(r.id) + '</b> · <b>' + esc(D.st[r.state] || r.state) + '</b> · ' + esc(r.text) + '</div>'; }).join('');
     }).catch(function () {});
   }
   function openCeo() {
