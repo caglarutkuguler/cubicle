@@ -246,9 +246,13 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
 
   // feed mode
   require('./launchd.js')();
+  // open pages reload on a new build: a restart alone must not make one
+  let firstBuild = '';
+  await withServer(['--source', path.join(ROOT, 'examples/feed.json')], async (base) => { firstBuild = JSON.parse((await get(`${base}/config.json`)).body).build; });
   await withServer(['--source', path.join(ROOT, 'examples/feed.json')], async (base) => {
     assert.strictEqual((await get(`${base}/`)).status, 200);
     const cfg = JSON.parse((await get(`${base}/config.json`)).body);
+    assert.strictEqual(cfg.build, firstBuild, 'the same page after a restart');
     assert.strictEqual(cfg.source, 'feed'); assert.strictEqual(cfg.label, 'feed.json'); assert.ok(cfg.build);
     const f = JSON.parse((await get(`${base}/api/feed`)).body);
     assert.strictEqual(f.agents.length, 4);

@@ -106,10 +106,20 @@ const AUTO_UPDATE = process.env.CUBICLE_WORKER === '1';
 let UPDATE = null;
 // Changes when the server restarts or index.html changes on disk; open pages
 // compare it and reload themselves, so a wall display picks up updates.
+// Open pages reload when this changes, so it changes only when what they run changes: the page
+// itself, its script, its themes. A restart (an update of the server alone, a service restart)
+// leaves it as it was and the office goes on undisturbed.
+let buildCache = { key: '', id: '' };
 function build() {
-  let mtime = 0;
-  try { mtime = fs.statSync(path.join(PUBLIC_DIR, 'index.html')).mtimeMs; } catch (_) {}
-  return `${VERSION}-${STARTED}-${Math.round(mtime)}`;
+  const files = ['index.html', 'index.js', 'themes/index.json'].map((f) => path.join(PUBLIC_DIR, f));
+  let key = '';
+  for (const f of files) { try { const st = fs.statSync(f); key += `${st.mtimeMs}:${st.size};`; } catch (_) { key += '-;'; } }
+  if (key !== buildCache.key) {
+    const h = require('crypto').createHash('sha1');
+    for (const f of files) { try { h.update(fs.readFileSync(f)); } catch (_) {} }
+    buildCache = { key, id: `${VERSION}-${h.digest('hex').slice(0, 12)}` };
+  }
+  return buildCache.id;
 }
 const CLAUDE_CODE_FEED = path.join(os.homedir(), '.cubicle', 'claude-code.json');
 

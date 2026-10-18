@@ -442,7 +442,7 @@
       lookServer: 'Saved on the machine running Cubicle, so every screen of this office shows it.', lookLocal: 'Saved in this browser. Export it to use it in another one.',
       lookDenied: 'Only a browser on the machine running Cubicle can change the appearance. Saved in this browser for now.',
       needsYouTitle: (n) => `${n} needs you`,
-      lastSteps: 'Last steps', whatsNew: (v) => `Cubicle was updated to ${v}.`, whatsNewLink: "What's new", upNew: (v, cur) => `⬆ Cubicle ${v} is out (you have ${cur}).`, upHow: 'To update:', upCopy: 'Copy', upCopied: 'Copied', upAuto: 'It updates itself in a moment; this page then reloads.', upAutoHint: 'Start Cubicle with --auto-update and it updates itself.', upNow: 'Update now', upBusy: 'Updating…', upDone: 'Updated; reloading.', upErr: 'It could not update from here. Run this instead:', upFail: 'Could not update from here (it needs an instance admin). Run this where Paperclip runs:',
+      lastSteps: 'Last steps', whatsNew: (v) => `Cubicle was updated to ${v}.`, whatsNewLink: "What's new", reloadNote: 'Cubicle was updated.', reloadBtn: 'Reload the page', upNew: (v, cur) => `⬆ Cubicle ${v} is out (you have ${cur}).`, upHow: 'To update:', upCopy: 'Copy', upCopied: 'Copied', upAuto: 'It updates itself in a moment; this page then reloads.', upAutoHint: 'Start Cubicle with --auto-update and it updates itself.', upNow: 'Update now', upBusy: 'Updating…', upDone: 'Updated; reloading.', upErr: 'It could not update from here. Run this instead:', upFail: 'Could not update from here (it needs an instance admin). Run this where Paperclip runs:',
       pairs: [['Did you merge it?', 'Tests first. Always tests first.'], ['Coffee or tea?', 'Whatever keeps the tokens flowing.'], ['Who broke the build?', 'Not me, I was in the lounge.'],
         ['Busy day?', 'Forty tool calls and counting.'], ['Any news from the board?', 'Still waiting on an approval.'], ['Nice desk.', 'It has two monitors now!']],
       chatter: ['☕', 'coffee break', '…', 'hmm', "what's next?"],
@@ -549,7 +549,7 @@
       lookServer: 'Cubicle’ın çalıştığı makinede saklanır; bu ofisi gösteren her ekran aynı görünümü görür.', lookLocal: 'Bu tarayıcıda saklanır. Başka bir tarayıcıda kullanmak için dışa aktarın.',
       lookDenied: 'Görünümü yalnızca Cubicle’ın çalıştığı makinedeki bir tarayıcı değiştirebilir. Şimdilik bu tarayıcıda saklandı.',
       needsYouTitle: (n) => `${n} sizi bekliyor`,
-      lastSteps: 'Son adımlar', whatsNew: (v) => `Cubicle ${v} sürümüne güncellendi.`, whatsNewLink: 'Yenilikler', upNew: (v, cur) => `⬆ Cubicle ${v} çıktı (sizdeki ${cur}).`, upHow: 'Güncellemek için:', upCopy: 'Kopyala', upCopied: 'Kopyalandı', upAuto: 'Birazdan kendiliğinden güncellenecek; sayfa da yenilenir.', upAutoHint: 'Cubicle’ı --auto-update ile başlatırsanız kendiliğinden güncellenir.', upNow: 'Şimdi güncelle', upBusy: 'Güncelleniyor…', upDone: 'Güncellendi; sayfa yenileniyor.', upErr: 'Buradan güncellenemedi. Bunun yerine şunu çalıştırın:', upFail: 'Buradan güncellenemedi (yönetici yetkisi gerekir). Paperclip’in çalıştığı yerde şunu çalıştırın:',
+      lastSteps: 'Son adımlar', whatsNew: (v) => `Cubicle ${v} sürümüne güncellendi.`, whatsNewLink: 'Yenilikler', reloadNote: 'Cubicle güncellendi.', reloadBtn: 'Sayfayı yenile', upNew: (v, cur) => `⬆ Cubicle ${v} çıktı (sizdeki ${cur}).`, upHow: 'Güncellemek için:', upCopy: 'Kopyala', upCopied: 'Kopyalandı', upAuto: 'Birazdan kendiliğinden güncellenecek; sayfa da yenilenir.', upAutoHint: 'Cubicle’ı --auto-update ile başlatırsanız kendiliğinden güncellenir.', upNow: 'Şimdi güncelle', upBusy: 'Güncelleniyor…', upDone: 'Güncellendi; sayfa yenileniyor.', upErr: 'Buradan güncellenemedi. Bunun yerine şunu çalıştırın:', upFail: 'Buradan güncellenemedi (yönetici yetkisi gerekir). Paperclip’in çalıştığı yerde şunu çalıştırın:',
       pairs: [['Merge ettin mi?', 'Önce testler. Her zaman önce testler.'], ['Kahve mi çay mı?', 'Tokenları akıtan hangisiyse.'], ['Build’i kim bozdu?', 'Ben değilim, moladaydım.'],
         ['Yoğun gün mü?', 'Kırk araç çağrısı, sayıyorum.'], ['Yönetimden haber var mı?', 'Hâlâ bir onay bekliyorum.'], ['Masan güzelmiş.', 'Artık iki monitörü var!']],
       chatter: ['☕', 'kahve molası', '…', 'hmm', 'sıradaki iş?'],
@@ -656,7 +656,7 @@
       lookServer: 'Auf dem Rechner gespeichert, auf dem Cubicle läuft, damit jeder Bildschirm dieses Büros es zeigt.', lookLocal: 'In diesem Browser gespeichert. Exportieren, um es in einem anderen zu nutzen.',
       lookDenied: 'Nur ein Browser auf dem Rechner, auf dem Cubicle läuft, kann das Aussehen ändern. Vorerst in diesem Browser gespeichert.',
       needsYouTitle: (n) => `${n} braucht dich`,
-      lastSteps: 'Letzte Schritte', whatsNew: (v) => `Cubicle wurde auf ${v} aktualisiert.`, whatsNewLink: 'Was ist neu', upNew: (v, cur) => `⬆ Cubicle ${v} ist da (du hast ${cur}).`, upHow: 'Zum Aktualisieren:', upCopy: 'Kopieren', upCopied: 'Kopiert', upAuto: 'Es aktualisiert sich gleich selbst; die Seite lädt dann neu.', upAutoHint: 'Mit --auto-update gestartet, aktualisiert sich Cubicle selbst.', upNow: 'Jetzt aktualisieren', upBusy: 'Wird aktualisiert…', upDone: 'Aktualisiert; lädt neu.', upErr: 'Von hier ging es nicht. Stattdessen ausführen:', upFail: 'Von hier ging es nicht (dafür braucht es einen Instanz-Admin). Dort ausführen, wo Paperclip läuft:',
+      lastSteps: 'Letzte Schritte', whatsNew: (v) => `Cubicle wurde auf ${v} aktualisiert.`, whatsNewLink: 'Was ist neu', reloadNote: 'Cubicle wurde aktualisiert.', reloadBtn: 'Seite neu laden', upNew: (v, cur) => `⬆ Cubicle ${v} ist da (du hast ${cur}).`, upHow: 'Zum Aktualisieren:', upCopy: 'Kopieren', upCopied: 'Kopiert', upAuto: 'Es aktualisiert sich gleich selbst; die Seite lädt dann neu.', upAutoHint: 'Mit --auto-update gestartet, aktualisiert sich Cubicle selbst.', upNow: 'Jetzt aktualisieren', upBusy: 'Wird aktualisiert…', upDone: 'Aktualisiert; lädt neu.', upErr: 'Von hier ging es nicht. Stattdessen ausführen:', upFail: 'Von hier ging es nicht (dafür braucht es einen Instanz-Admin). Dort ausführen, wo Paperclip läuft:',
       pairs: [['Hast du es gemergt?', 'Erst die Tests. Immer erst die Tests.'], ['Kaffee oder Tee?', 'Hauptsache, die Tokens fließen.'], ['Wer hat den Build kaputt gemacht?', 'Ich nicht, ich war in der Pause.'],
         ['Viel los heute?', 'Vierzig Tool-Aufrufe und es werden mehr.'], ['Neues vom Vorstand?', 'Ich warte noch auf eine Freigabe.'], ['Schöner Schreibtisch.', 'Jetzt mit zwei Monitoren!']],
       chatter: ['☕', 'Kaffeepause', '…', 'hmm', 'was kommt jetzt?'],
@@ -763,7 +763,7 @@
       lookServer: 'Guardado en el equipo donde corre Cubicle, así cada pantalla de esta oficina lo muestra.', lookLocal: 'Guardado en este navegador. Expórtalo para usarlo en otro.',
       lookDenied: 'Solo un navegador en el equipo donde corre Cubicle puede cambiar la apariencia. Guardado en este navegador por ahora.',
       needsYouTitle: (n) => `${n} te necesita`,
-      lastSteps: 'Últimos pasos', whatsNew: (v) => `Cubicle se actualizó a la ${v}.`, whatsNewLink: 'Novedades', upNew: (v, cur) => `⬆ Ya está Cubicle ${v} (tienes ${cur}).`, upHow: 'Para actualizar:', upCopy: 'Copiar', upCopied: 'Copiado', upAuto: 'Se actualizará solo en un momento; luego esta página se recarga.', upAutoHint: 'Inicia Cubicle con --auto-update y se actualiza solo.', upNow: 'Actualizar ahora', upBusy: 'Actualizando…', upDone: 'Actualizado; recargando.', upErr: 'No se pudo actualizar desde aquí. Ejecuta esto en su lugar:', upFail: 'No se pudo actualizar desde aquí (hace falta un administrador de la instancia). Ejecuta esto donde corre Paperclip:',
+      lastSteps: 'Últimos pasos', whatsNew: (v) => `Cubicle se actualizó a la ${v}.`, whatsNewLink: 'Novedades', reloadNote: 'Cubicle se ha actualizado.', reloadBtn: 'Recargar la página', upNew: (v, cur) => `⬆ Ya está Cubicle ${v} (tienes ${cur}).`, upHow: 'Para actualizar:', upCopy: 'Copiar', upCopied: 'Copiado', upAuto: 'Se actualizará solo en un momento; luego esta página se recarga.', upAutoHint: 'Inicia Cubicle con --auto-update y se actualiza solo.', upNow: 'Actualizar ahora', upBusy: 'Actualizando…', upDone: 'Actualizado; recargando.', upErr: 'No se pudo actualizar desde aquí. Ejecuta esto en su lugar:', upFail: 'No se pudo actualizar desde aquí (hace falta un administrador de la instancia). Ejecuta esto donde corre Paperclip:',
       pairs: [['¿Ya lo fusionaste?', 'Primero las pruebas. Siempre primero las pruebas.'], ['¿Café o té?', 'Lo que mantenga los tokens fluyendo.'], ['¿Quién rompió el build?', 'Yo no, estaba en el descanso.'],
         ['¿Día ajetreado?', 'Cuarenta llamadas a herramientas y contando.'], ['¿Noticias de la dirección?', 'Sigo esperando una aprobación.'], ['Bonito escritorio.', '¡Ahora tiene dos monitores!']],
       chatter: ['☕', 'pausa para el café', '…', 'mmm', '¿y ahora qué?'],
@@ -870,7 +870,7 @@
       lookServer: 'Enregistré sur la machine où tourne Cubicle : chaque écran de ce bureau l’affiche.', lookLocal: 'Enregistré dans ce navigateur. Exportez-le pour l’utiliser ailleurs.',
       lookDenied: 'Seul un navigateur sur la machine où tourne Cubicle peut changer l’apparence. Enregistré dans ce navigateur pour l’instant.',
       needsYouTitle: (n) => `${n} a besoin de vous`,
-      lastSteps: 'Dernières étapes', whatsNew: (v) => `Cubicle est passé en ${v}.`, whatsNewLink: 'Nouveautés', upNew: (v, cur) => `⬆ Cubicle ${v} est sorti (vous avez ${cur}).`, upHow: 'Pour mettre à jour :', upCopy: 'Copier', upCopied: 'Copié', upAuto: 'Il se met à jour tout seul dans un instant ; la page se recharge ensuite.', upAutoHint: 'Lancé avec --auto-update, Cubicle se met à jour tout seul.', upNow: 'Mettre à jour', upBusy: 'Mise à jour…', upDone: 'Mis à jour ; rechargement.', upErr: 'Impossible depuis ici. Lancez plutôt ceci :', upFail: 'Impossible depuis ici (il faut un administrateur de l’instance). Lancez ceci là où tourne Paperclip :',
+      lastSteps: 'Dernières étapes', whatsNew: (v) => `Cubicle est passé en ${v}.`, whatsNewLink: 'Nouveautés', reloadNote: 'Cubicle a été mis à jour.', reloadBtn: 'Recharger la page', upNew: (v, cur) => `⬆ Cubicle ${v} est sorti (vous avez ${cur}).`, upHow: 'Pour mettre à jour :', upCopy: 'Copier', upCopied: 'Copié', upAuto: 'Il se met à jour tout seul dans un instant ; la page se recharge ensuite.', upAutoHint: 'Lancé avec --auto-update, Cubicle se met à jour tout seul.', upNow: 'Mettre à jour', upBusy: 'Mise à jour…', upDone: 'Mis à jour ; rechargement.', upErr: 'Impossible depuis ici. Lancez plutôt ceci :', upFail: 'Impossible depuis ici (il faut un administrateur de l’instance). Lancez ceci là où tourne Paperclip :',
       pairs: [['Tu l’as fusionné ?', 'D’abord les tests. Toujours les tests d’abord.'], ['Café ou thé ?', 'Ce qui fait couler les tokens.'], ['Qui a cassé le build ?', 'Pas moi, j’étais en pause.'],
         ['Grosse journée ?', 'Quarante appels d’outils, et ça continue.'], ['Des nouvelles de la direction ?', 'J’attends encore une validation.'], ['Joli bureau.', 'Il a deux écrans maintenant !']],
       chatter: ['☕', 'pause café', '…', 'hum', 'et maintenant ?'],
@@ -977,7 +977,7 @@
       lookServer: '保存在运行 Cubicle 的电脑上，这个办公室的每块屏幕都会显示。', lookLocal: '保存在此浏览器中。导出后可在其他浏览器使用。',
       lookDenied: '只有运行 Cubicle 的电脑上的浏览器才能更改外观。暂时保存在此浏览器中。',
       needsYouTitle: (n) => `${n} 需要你`,
-      lastSteps: '最近步骤', whatsNew: (v) => `Cubicle 已更新到 ${v}。`, whatsNewLink: '更新内容', upNew: (v, cur) => `⬆ Cubicle ${v} 已发布（你的是 ${cur}）。`, upHow: '更新方法：', upCopy: '复制', upCopied: '已复制', upAuto: '稍后会自动更新，然后页面会重新加载。', upAutoHint: '用 --auto-update 启动 Cubicle，它会自动更新。', upNow: '立即更新', upBusy: '正在更新…', upDone: '已更新，正在重新加载。', upErr: '无法在这里更新。请改为运行：', upFail: '无法在这里更新（需要实例管理员）。请在运行 Paperclip 的地方执行：',
+      lastSteps: '最近步骤', whatsNew: (v) => `Cubicle 已更新到 ${v}。`, whatsNewLink: '更新内容', reloadNote: 'Cubicle 已更新。', reloadBtn: '重新加载页面', upNew: (v, cur) => `⬆ Cubicle ${v} 已发布（你的是 ${cur}）。`, upHow: '更新方法：', upCopy: '复制', upCopied: '已复制', upAuto: '稍后会自动更新，然后页面会重新加载。', upAutoHint: '用 --auto-update 启动 Cubicle，它会自动更新。', upNow: '立即更新', upBusy: '正在更新…', upDone: '已更新，正在重新加载。', upErr: '无法在这里更新。请改为运行：', upFail: '无法在这里更新（需要实例管理员）。请在运行 Paperclip 的地方执行：',
       pairs: [['合并了吗？', '先跑测试。永远先跑测试。'], ['咖啡还是茶？', '能让 token 流动的都行。'], ['谁把构建弄坏了？', '不是我，我在休息区。'],
         ['今天忙吗？', '已经四十次工具调用了。'], ['董事会有消息吗？', '还在等一个批准。'], ['桌子不错。', '现在有两台显示器了！']],
       chatter: ['☕', '喝杯咖啡', '…', '嗯', '下一个是什么？'],
@@ -1084,7 +1084,7 @@
       lookServer: 'يُحفظ على الجهاز الذي يشغّل Cubicle، فتعرضه كل شاشات هذا المكتب.', lookLocal: 'يُحفظ في هذا المتصفح. صدّره لاستخدامه في متصفح آخر.',
       lookDenied: 'لا يغيّر المظهر إلا متصفح على الجهاز الذي يشغّل Cubicle. حُفظ في هذا المتصفح مؤقتًا.',
       needsYouTitle: (n) => `${n} يحتاجك`,
-      lastSteps: 'آخر الخطوات', whatsNew: (v) => `تم تحديث Cubicle إلى ${v}.`, whatsNewLink: 'ما الجديد', upNew: (v, cur) => `⬆ صدر Cubicle ${v} (لديك ${cur}).`, upHow: 'للتحديث:', upCopy: 'نسخ', upCopied: 'تم النسخ', upAuto: 'سيتحدّث تلقائيًا بعد قليل، ثم تُعاد تحميل الصفحة.', upAutoHint: 'شغّل Cubicle مع ‎--auto-update‎ ليتحدّث تلقائيًا.', upNow: 'حدّث الآن', upBusy: 'جارٍ التحديث…', upDone: 'تم التحديث؛ جارٍ إعادة التحميل.', upErr: 'تعذّر التحديث من هنا. شغّل هذا بدلًا من ذلك:', upFail: 'تعذّر التحديث من هنا (يلزم مسؤول المثيل). شغّل هذا حيث يعمل Paperclip:',
+      lastSteps: 'آخر الخطوات', whatsNew: (v) => `تم تحديث Cubicle إلى ${v}.`, whatsNewLink: 'ما الجديد', reloadNote: 'تم تحديث Cubicle.', reloadBtn: 'أعد تحميل الصفحة', upNew: (v, cur) => `⬆ صدر Cubicle ${v} (لديك ${cur}).`, upHow: 'للتحديث:', upCopy: 'نسخ', upCopied: 'تم النسخ', upAuto: 'سيتحدّث تلقائيًا بعد قليل، ثم تُعاد تحميل الصفحة.', upAutoHint: 'شغّل Cubicle مع ‎--auto-update‎ ليتحدّث تلقائيًا.', upNow: 'حدّث الآن', upBusy: 'جارٍ التحديث…', upDone: 'تم التحديث؛ جارٍ إعادة التحميل.', upErr: 'تعذّر التحديث من هنا. شغّل هذا بدلًا من ذلك:', upFail: 'تعذّر التحديث من هنا (يلزم مسؤول المثيل). شغّل هذا حيث يعمل Paperclip:',
       pairs: [['هل دمجته؟', 'الاختبارات أولًا. دائمًا الاختبارات أولًا.'], ['قهوة أم شاي؟', 'أي شيء يُبقي الرموز تتدفق.'], ['من كسر البناء؟', 'لست أنا، كنت في الاستراحة.'],
         ['يوم مزدحم؟', 'أربعون استدعاءً للأدوات حتى الآن.'], ['أي أخبار من الإدارة؟', 'ما زلت أنتظر موافقة.'], ['مكتب جميل.', 'صار فيه شاشتان الآن!']],
       chatter: ['☕', 'استراحة قهوة', '…', 'همم', 'ما التالي؟'],
@@ -2271,7 +2271,7 @@
         });
         // Reload when the server was updated or restarted.
         if (cfg.build) setInterval(async () => {
-          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) { const ae = document.activeElement; const busy = document.querySelector('dialog[open]') || (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) || (Date.now() - (window.__lastTouch || 0) < 45000); if (busy) { /* never reload under someone using the page (dialog open, typing, or touched in the last 45 s): try again on the next check */ } else location.reload(); } else showUpdate(now.update, now.version); } catch (_) {}
+          try { const now = await getJSON('/config.json'); if (now.build !== cfg.build) pageChanged(); else showUpdate(now.update, now.version); } catch (_) {}
         }, 60000);
       } catch (_) {
         // No Cubicle server behind this page: show the demo instead of an error.
@@ -2406,7 +2406,7 @@
           // Looks come from the id, so an agent keeps its colours when others join or leave.
           // (>>> keeps the index positive: h is an unsigned 32-bit hash.)
           baseShirt: SHIRTS[(h >>> 6) % SHIRTS.length], baseHair: HAIRS[h % HAIRS.length], baseSkin: SKINS[(h >>> 3) % SKINS.length],
-          x: spot[0] * T, y: spot[1] * T,
+          ...(() => { const k = keptSpot(a.id); return k ? { x: k[0], y: k[1] } : { x: spot[0] * T, y: spot[1] * T }; })(),
           lounge: idx % LOUNGE.length, nextWander: performance.now() / 1000 + 5 + (h % 10),
           bubble: null, bubbleClass: '', bubbleUntil: 0, prevStatus: a.status,
         };
@@ -3146,6 +3146,43 @@
   // Standalone: the server asks npm and says which command updates this install (or that it updates
   // itself under --auto-update). As a Paperclip plugin: the page asks npm (twice a day at most) and
   // offers Paperclip's own plugin upgrade, which an instance admin can run from here.
+  // A new page (after an update): reload only when nobody is using it, i.e. the tab is in the
+  // background, or a kiosk nobody touched for a minute, or nothing was done here for 15 minutes.
+  // Otherwise a note offers the reload, so it never comes in the middle of typing a task.
+  let reloadWanted = false;
+  function quietNow() {
+    if (document.hidden) return true;
+    const ae = document.activeElement, idle = Date.now() - (window.__lastTouch || 0);
+    if (document.querySelector('dialog[open]') || (ae && (/^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName) || ae.isContentEditable))) return false;
+    return idle > (KIOSK ? 60000 : 15 * 60000);
+  }
+  function pageChanged() {
+    if (quietNow()) return location.reload();
+    if (reloadWanted) return;
+    reloadWanted = true;
+    const el = document.getElementById('news');
+    if (!el.hidden && el.querySelector('[data-up="apply"]')) return;   // the update box is up: it reloads by itself
+    el.innerHTML = `${esc(L.reloadNote)} <button type="button" class="act" data-up="reload">↻ ${esc(L.reloadBtn)}</button><button type="button" data-up="x" aria-label="${esc(L.cancel)}">✕</button>`;
+    el.hidden = false;
+  }
+  document.addEventListener('visibilitychange', () => { if (reloadWanted && document.hidden) location.reload(); });
+  setInterval(() => { if (reloadWanted && quietNow()) location.reload(); }, 30000);
+  // Where everyone stood, kept for a reload a moment later: agents stay at their desks instead of walking in again.
+  addEventListener('pagehide', () => {
+    try { sessionStorage.setItem('cubicle.spots', JSON.stringify({ at: Date.now(), theme: theme && theme.id, spots: [...sprites.values()].map((s) => [s.id, Math.round(s.x), Math.round(s.y)]) })); } catch (_) {}
+  });
+  let keptSpots = null;
+  function keptSpot(id) {
+    if (keptSpots === null) {
+      keptSpots = new Map();
+      try {
+        const k = JSON.parse(sessionStorage.getItem('cubicle.spots') || 'null'); sessionStorage.removeItem('cubicle.spots');
+        if (k && Date.now() - k.at < 120000 && k.theme === (theme && theme.id)) for (const [i, x, y] of k.spots) keptSpots.set(i, [x, y]);
+      } catch (_) {}
+    }
+    const p = keptSpots.get(id); if (p) keptSpots.delete(id);
+    return p || null;
+  }
   function updateBox(html) {
     const el = document.getElementById('news');
     el.innerHTML = html + `<button type="button" data-up="x" aria-label="${esc(L.cancel)}">✕</button>`;
@@ -3187,6 +3224,7 @@
     const el = e.currentTarget, b = e.target.closest('[data-up]'); if (!b) return;
     if (b.dataset.up === 'x') { if (el.dataset.v) try { localStorage.setItem('cubicle.updateDismissed', el.dataset.v); } catch (_) {} el.hidden = true; }
     else if (b.dataset.up === 'copy') { try { await navigator.clipboard.writeText(b.dataset.cmd); b.textContent = L.upCopied; } catch (_) {} }
+    else if (b.dataset.up === 'reload') location.reload();
     else if (b.dataset.up === 'apply') {
       // This server updates itself and starts again; the page waits for the new version, then reloads.
       const msg = el.querySelector('[data-up="msg"]'); b.disabled = true; msg.textContent = L.upBusy;
