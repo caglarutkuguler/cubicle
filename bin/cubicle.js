@@ -783,7 +783,7 @@ const DISPATCH_KEYS = {
   enabled: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   cwd: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 500 && !/[\0\n\r]/.test(v) ? v.trim() : Symbol.for('bad'),
   model: (v) => v === '' || v === null ? undefined : typeof v === 'string' && /^[\w.:\-\[\]]{1,80}$/.test(v) ? v : Symbol.for('bad'),
-  budget: (v) => v === '' || v === null ? undefined : typeof v === 'number' && v >= 0.1 && v <= 30 ? Math.round(v * 100) / 100 : Symbol.for('bad'),
+  budget: (v) => v === '' || v === null ? undefined : typeof v === 'number' && v >= 0.01 && v <= 100000 ? Math.round(v * 100) / 100 : Symbol.for('bad'),
   tools: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 2000 && !/[\0\n\r]/.test(v) ? v.trim() : Symbol.for('bad'),
   prompt: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 8000 ? v : Symbol.for('bad'),
 };
@@ -968,7 +968,7 @@ function startRun(run) {
   run.state = 'running'; run.started = Date.now();
   if (pcId) dispatchLabel(pcId, null, ST().working);
   const out = fs.openSync(logFile, 'a');
-  const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.min(cfg.budget * 2, 30) : cfg.budget),
+  const child = require('child_process').spawn('claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.max(cfg.budget, Math.min(cfg.budget * 2, 30)) : cfg.budget),
     '--permission-mode', 'dontAsk', '--allowedTools', ...cfg.tools.split('|')], {
     cwd: cfg.cwd, stdio: ['ignore', out, out], detached: true,
     env: { ...process.env, PATH: [path.dirname(process.execPath), path.join(require('os').homedir(), '.local', 'bin'), process.env.PATH || ''].join(path.delimiter), CUBICLE_NAME: 'CEO', CUBICLE_ROLE: 'CEO', CUBICLE_TASK_ID: taskRef(id), CUBICLE_TASK: text.slice(0, 120),

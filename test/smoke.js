@@ -469,8 +469,10 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
           dispatch: { enabled: true, model: 'opus', budget: 3.5, cwd: '~/work', tools: 'Read|Grep', prompt: 'Be brief.' } });
         assert.strictEqual(all.data.running.version, require('../package.json').version);
         assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { dispatch: { model: '', budget: null } })).data.values.dispatch.model, undefined, 'empty means the default');
+        assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { dispatch: { budget: 1000 } })).data.values.dispatch.budget, 1000, 'a large budget is fine');
+        await call(`${base}/api/cubicle/settings`, 'PUT', { dispatch: { budget: null } });
         assert.strictEqual(JSON.parse(require('fs').readFileSync(path.join(dir, 'settings.json'), 'utf8')).dispatch.budget, undefined);
-        for (const bad of [{ shell: 'rm -rf /' }, { port: 70000 }, { lang: 'xx' }, { sources: 'a; rm -rf ~' }, { dispatch: { model: 'a b' } }, { dispatch: { budget: 500 } }, { autostart: 'yes' }])
+        for (const bad of [{ shell: 'rm -rf /' }, { port: 70000 }, { lang: 'xx' }, { sources: 'a; rm -rf ~' }, { dispatch: { model: 'a b' } }, { dispatch: { budget: 0 } }, { dispatch: { budget: '5' } }, { autostart: 'yes' }])
           assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', bad)).status, 400, JSON.stringify(bad));
         const away = await call(`${base}/api/cubicle/settings`, 'GET', null, { 'x-forwarded-for': '1.2.3.4' });
         assert.strictEqual(away.data.canEdit, false); assert.ok(!('values' in away.data) && !('file' in away.data), 'values only for this machine');

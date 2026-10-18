@@ -198,6 +198,7 @@
   #cfgdlg .cfgf { display:flex; flex-direction:column; gap:3px; font-size:12px; color:var(--muted); margin:6px 0; flex:1; min-width:0; }
   #cfgdlg .cfgf input, #cfgdlg .cfgf select, #cfgdlg .cfgf textarea { background:#151826; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:5px 7px; font:inherit; font-size:13px; }
   #cfgdlg .cfgf textarea { resize:vertical; min-height:70px; }
+  #cfgdlg .cfgf .bad { border-color:#e5534b; box-shadow:0 0 0 2px rgba(229,83,75,.25); }
   #cfgdlg .cfgpair { display:flex; gap:10px; flex-wrap:wrap; }
   #cfgdlg .cfgrun { display:grid; grid-template-columns:auto 1fr; gap:3px 12px; font-size:12.5px; margin:0 0 4px; } #cfgdlg .cfgrun dt { color:var(--muted); } #cfgdlg .cfgrun dd { margin:0; overflow-wrap:anywhere; }
   #cfgdlg .cfgbtns { margin-top:8px; } #cfgdlg .cfgbtns button { background:#2f3552; color:var(--text); border:1px solid #4a5175; border-radius:6px; padding:4px 10px; cursor:pointer; font:inherit; font-size:12.5px; }
@@ -3883,7 +3884,7 @@
       runNote: 'These come from how Cubicle was started (its command line or service).',
       general: 'General', srvLang: 'Language of alerts and messages', srvAuto: 'Automatic (from the system)',
       claude: 'Claude Code', autostart: 'Start Cubicle with every Claude session', autostartNote: 'When a Claude session starts and Cubicle is not running, it starts in the background and keeps itself up to date. Applies from the next session.',
-      port: 'Port', sources: 'What to watch', sourcesNote: 'Used by autostart, e.g. claude-code or paperclip,claude-code.',
+      port: 'Port', sources: 'What to watch', sourcesNote: 'Used by autostart. Empty: claude-code, Claude Code sessions only. For several, separate them with commas: paperclip,claude-code.', dfltIs: (v) => `Default: ${v}`, bad: (f) => `Check this value: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Show links to Paperclip', pcAgents: 'Show Paperclip agents', createTasks: 'Let KPI advice become Paperclip tasks',
       ceo: 'Task box (CEO)', ceoOn: 'Show the task box', ceoNote: 'A task starts an unattended Claude run (claude -p) in the folder below, with only the tools listed.',
       cwd: 'Working folder', model: 'Model', budget: 'Budget per task (USD)', tools: 'Allowed tools', prompt: 'Instructions', dflt: 'Empty: the default',
@@ -3894,7 +3895,7 @@
       runNote: 'Bunlar Cubicle’ın nasıl başlatıldığından gelir (komut satırı ya da servis).',
       general: 'Genel', srvLang: 'Bildirim ve mesajların dili', srvAuto: 'Otomatik (sistemden)',
       claude: 'Claude Code', autostart: 'Cubicle her Claude oturumuyla açılsın', autostartNote: 'Bir Claude oturumu başladığında Cubicle çalışmıyorsa arka planda başlar ve kendini güncel tutar. Sonraki oturumdan itibaren geçerli.',
-      port: 'Port', sources: 'Neler izlensin', sourcesNote: 'Otomatik başlatmada kullanılır; örn. claude-code ya da paperclip,claude-code.',
+      port: 'Port', sources: 'Neler izlensin', sourcesNote: 'Otomatik başlatmada kullanılır. Boş bırakılırsa claude-code, yani yalnızca Claude Code oturumları. Birden fazlası virgülle yazılır: paperclip,claude-code.', dfltIs: (v) => `Varsayılan: ${v}`, bad: (f) => `Bu değeri kontrol edin: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Paperclip bağlantılarını göster', pcAgents: 'Paperclip ajanlarını göster', createTasks: 'KPI tavsiyeleri Paperclip görevine dönüştürülebilsin',
       ceo: 'Görev kutusu (CEO)', ceoOn: 'Görev kutusunu göster', ceoNote: 'Her görev, aşağıdaki klasörde yalnızca listelenen araçlarla gözetimsiz bir Claude çalıştırması (claude -p) başlatır.',
       cwd: 'Çalışma klasörü', model: 'Model', budget: 'Görev başına bütçe (USD)', tools: 'İzin verilen araçlar', prompt: 'Talimatlar', dflt: 'Boş: varsayılan',
@@ -3905,7 +3906,7 @@
       runNote: 'Das ergibt sich daraus, wie Cubicle gestartet wurde (Befehlszeile oder Dienst).',
       general: 'Allgemein', srvLang: 'Sprache von Hinweisen und Nachrichten', srvAuto: 'Automatisch (vom System)',
       claude: 'Claude Code', autostart: 'Cubicle mit jeder Claude-Sitzung starten', autostartNote: 'Startet eine Claude-Sitzung und Cubicle läuft nicht, startet es im Hintergrund und hält sich aktuell. Gilt ab der nächsten Sitzung.',
-      port: 'Port', sources: 'Was beobachtet wird', sourcesNote: 'Für den Autostart, z. B. claude-code oder paperclip,claude-code.',
+      port: 'Port', sources: 'Was beobachtet wird', sourcesNote: 'Für den Autostart. Leer: claude-code, nur Claude-Code-Sitzungen. Mehrere mit Kommas trennen: paperclip,claude-code.', dfltIs: (v) => `Standard: ${v}`, bad: (f) => `Bitte prüfen: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Links zu Paperclip zeigen', pcAgents: 'Paperclip-Agenten zeigen', createTasks: 'KPI-Tipps dürfen Paperclip-Aufgaben werden',
       ceo: 'Aufgabenfeld (CEO)', ceoOn: 'Aufgabenfeld zeigen', ceoNote: 'Eine Aufgabe startet einen unbeaufsichtigten Claude-Lauf (claude -p) im Ordner unten, nur mit den aufgeführten Werkzeugen.',
       cwd: 'Arbeitsordner', model: 'Modell', budget: 'Budget pro Aufgabe (USD)', tools: 'Erlaubte Werkzeuge', prompt: 'Anweisungen', dflt: 'Leer: Standard',
@@ -3916,7 +3917,7 @@
       runNote: 'Esto depende de cómo se inició Cubicle (línea de comandos o servicio).',
       general: 'General', srvLang: 'Idioma de avisos y mensajes', srvAuto: 'Automático (del sistema)',
       claude: 'Claude Code', autostart: 'Iniciar Cubicle con cada sesión de Claude', autostartNote: 'Cuando empieza una sesión de Claude y Cubicle no está en marcha, se inicia en segundo plano y se mantiene al día. Se aplica desde la próxima sesión.',
-      port: 'Puerto', sources: 'Qué observar', sourcesNote: 'Para el inicio automático, p. ej. claude-code o paperclip,claude-code.',
+      port: 'Puerto', sources: 'Qué observar', sourcesNote: 'Para el inicio automático. Vacío: claude-code, solo sesiones de Claude Code. Para varias, sepáralas con comas: paperclip,claude-code.', dfltIs: (v) => `Predeterminado: ${v}`, bad: (f) => `Revisa este valor: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Mostrar enlaces a Paperclip', pcAgents: 'Mostrar agentes de Paperclip', createTasks: 'Permitir que los consejos KPI se conviertan en tareas de Paperclip',
       ceo: 'Cuadro de tareas (CEO)', ceoOn: 'Mostrar el cuadro de tareas', ceoNote: 'Cada tarea inicia una ejecución desatendida de Claude (claude -p) en la carpeta de abajo, solo con las herramientas indicadas.',
       cwd: 'Carpeta de trabajo', model: 'Modelo', budget: 'Presupuesto por tarea (USD)', tools: 'Herramientas permitidas', prompt: 'Instrucciones', dflt: 'Vacío: el predeterminado',
@@ -3927,7 +3928,7 @@
       runNote: 'Cela dépend de la façon dont Cubicle a été lancé (ligne de commande ou service).',
       general: 'Général', srvLang: 'Langue des alertes et messages', srvAuto: 'Automatique (système)',
       claude: 'Claude Code', autostart: 'Lancer Cubicle avec chaque session Claude', autostartNote: 'Quand une session Claude démarre et que Cubicle ne tourne pas, il démarre en arrière-plan et se tient à jour. S’applique dès la prochaine session.',
-      port: 'Port', sources: 'Ce qu’il surveille', sourcesNote: 'Pour le démarrage auto, p. ex. claude-code ou paperclip,claude-code.',
+      port: 'Port', sources: 'Ce qu’il surveille', sourcesNote: 'Pour le démarrage auto. Vide : claude-code, les sessions Claude Code seulement. Pour plusieurs, séparez-les par des virgules : paperclip,claude-code.', dfltIs: (v) => `Par défaut : ${v}`, bad: (f) => `Vérifiez cette valeur : ${f}`,
       paperclip: 'Paperclip', pcLinks: 'Afficher les liens vers Paperclip', pcAgents: 'Afficher les agents Paperclip', createTasks: 'Les conseils KPI peuvent devenir des tâches Paperclip',
       ceo: 'Boîte à tâches (CEO)', ceoOn: 'Afficher la boîte à tâches', ceoNote: 'Une tâche lance une exécution Claude sans surveillance (claude -p) dans le dossier ci-dessous, avec les seuls outils listés.',
       cwd: 'Dossier de travail', model: 'Modèle', budget: 'Budget par tâche (USD)', tools: 'Outils autorisés', prompt: 'Consignes', dflt: 'Vide : par défaut',
@@ -3938,7 +3939,7 @@
       runNote: '这些取决于 Cubicle 的启动方式（命令行或服务）。',
       general: '常规', srvLang: '提醒和消息的语言', srvAuto: '自动（跟随系统）',
       claude: 'Claude Code', autostart: '每次 Claude 会话都启动 Cubicle', autostartNote: 'Claude 会话开始时若 Cubicle 未运行，就在后台启动并自动保持最新。从下一个会话起生效。',
-      port: '端口', sources: '监视内容', sourcesNote: '用于自动启动，例如 claude-code 或 paperclip,claude-code。',
+      port: '端口', sources: '监视内容', sourcesNote: '用于自动启动。留空：claude-code，只看 Claude Code 会话。多个时用逗号分隔：paperclip,claude-code。', dfltIs: (v) => `默认：${v}`, bad: (f) => `请检查这个值：${f}`,
       paperclip: 'Paperclip', pcLinks: '显示 Paperclip 链接', pcAgents: '显示 Paperclip 代理', createTasks: '允许把 KPI 建议变成 Paperclip 任务',
       ceo: '任务框（CEO）', ceoOn: '显示任务框', ceoNote: '每个任务都会在下面的文件夹中启动一次无人值守的 Claude 运行（claude -p），只能使用列出的工具。',
       cwd: '工作文件夹', model: '模型', budget: '每个任务的预算（美元）', tools: '允许的工具', prompt: '指令', dflt: '留空：使用默认值',
@@ -3949,7 +3950,7 @@
       runNote: 'يأتي هذا من طريقة تشغيل Cubicle (سطر الأوامر أو الخدمة).',
       general: 'عام', srvLang: 'لغة التنبيهات والرسائل', srvAuto: 'تلقائي (من النظام)',
       claude: 'Claude Code', autostart: 'شغّل Cubicle مع كل جلسة Claude', autostartNote: 'عند بدء جلسة Claude وCubicle لا يعمل، يبدأ في الخلفية ويُبقي نفسه محدّثًا. يسري من الجلسة التالية.',
-      port: 'المنفذ', sources: 'ما يُراقَب', sourcesNote: 'للتشغيل التلقائي، مثل claude-code أو paperclip,claude-code.',
+      port: 'المنفذ', sources: 'ما يُراقَب', sourcesNote: 'للتشغيل التلقائي. فارغ: claude-code، أي جلسات Claude Code فقط. لأكثر من مصدر افصل بفواصل: paperclip,claude-code.', dfltIs: (v) => `الافتراضي: ${v}`, bad: (f) => `تحقّق من هذه القيمة: ${f}`,
       paperclip: 'Paperclip', pcLinks: 'إظهار روابط Paperclip', pcAgents: 'إظهار وكلاء Paperclip', createTasks: 'السماح بتحويل نصائح KPI إلى مهام في Paperclip',
       ceo: 'صندوق المهام (CEO)', ceoOn: 'إظهار صندوق المهام', ceoNote: 'كل مهمة تبدأ تشغيلًا لـ Claude دون إشراف (claude -p) في المجلد أدناه، بالأدوات المذكورة فقط.',
       cwd: 'مجلد العمل', model: 'النموذج', budget: 'الميزانية لكل مهمة (دولار)', tools: 'الأدوات المسموح بها', prompt: 'التعليمات', dflt: 'فارغ: الافتراضي',
@@ -3965,7 +3966,7 @@
     if (!st || !st.canEdit || !st.values) return show(`<p>${esc(C.onlyHere)}</p><div class="cfgbtns"><button type="button" data-cfg="tg">${esc(L.tgButton)}</button></div>`);
     const v = st.values, d = v.dispatch || {}, D = st.defaults.dispatch, run = st.running;
     const chk = (id, on, label, note) => `<label class="check"><input type="checkbox" id="${id}"${on ? ' checked' : ''}> ${esc(label)}</label>${note ? `<div class="note">${esc(note)}</div>` : ''}`;
-    const field = (id, label, val, ph, type = 'text', note) => `<label class="cfgf"><span>${esc(label)}</span><input id="${id}" type="${type}" value="${esc(val == null ? '' : String(val))}" placeholder="${esc(ph == null ? '' : String(ph))}"${type === 'number' ? ' step="any"' : ''}></label>${note ? `<div class="note">${esc(note)}</div>` : ''}`;
+    const field = (id, label, val, ph, type = 'text', note) => `<label class="cfgf"><span>${esc(label)}</span><input id="${id}" type="${type}" value="${esc(val == null ? '' : String(val))}" placeholder="${esc(ph == null ? '' : C.dfltIs(ph))}"${type === 'number' ? ' step="any" min="0"' : ''} data-label="${esc(label)}"></label>${note ? `<div class="note">${esc(note)}</div>` : ''}`;
     const upd = run.autoUpdate ? C.upAuto : run.updateCheck ? C.upCheck : C.upOff;
     const pcAgents = v.paperclipAgents !== undefined ? v.paperclipAgents : v.paperclipLinks !== false;
     show(`<p class="note">${esc(C.intro(st.file))}</p>`
@@ -3996,7 +3997,16 @@
     const r = await fetch('/api/cubicle/settings', { method: 'PUT', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify(body) }).catch(() => null);
     const d = r ? await r.json().catch(() => ({})) : {};
     btn.disabled = false;
-    if (!r || !r.ok) { msg.textContent = `${C.failed} ${d.error || (r ? r.status : '')}`; return; }
+    cfgDlg.querySelectorAll('.bad').forEach((x) => x.classList.remove('bad'));
+    if (!r || !r.ok) {
+      // point at the field the server refused, in the page's language
+      const key = (/for ([\w.]+)/.exec(d.error || '') || [])[1];
+      const ids = { lang: 'cfg-lang', port: 'cfg-port', sources: 'cfg-sources', 'dispatch.cwd': 'cfg-cwd', 'dispatch.model': 'cfg-model', 'dispatch.budget': 'cfg-budget', 'dispatch.tools': 'cfg-tools', 'dispatch.prompt': 'cfg-prompt' };
+      const el = key && ids[key] && q(ids[key]);
+      if (el) { el.classList.add('bad'); el.focus(); msg.textContent = C.bad(el.dataset.label || el.closest('label').querySelector('span').textContent); }
+      else msg.textContent = `${C.failed} ${d.error || (r ? r.status : '')}`;
+      return;
+    }
     msg.textContent = C.saved;
     if (typeof d.createTasks === 'boolean') { taskCfg = { ...taskCfg, createTasks: d.createTasks, on: d.createTasks }; }
     const was = JSON.parse(cfgDlg.dataset.was || '{}');
