@@ -35,7 +35,7 @@ const TEXT = {
     ceoQueue: (n) => `${n} more CEO task${n === 1 ? '' : 's'} in the queue.`, mins: 'minutes', started: 'Started',
     paired: 'This chat is now linked to the office. You will get a message when an agent needs you, fails or finishes its work.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
-    help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get (or just /questions, /errors, /all)\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
+    help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/update – install a new Cubicle version\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get (or just /questions, /errors, /all)\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
     muted: (n) => `🔕 No more alerts for <b>${n}</b>. /unmute ${n} turns them back on.`, unmuted: (n) => `🔔 Alerts for <b>${n}</b> are back on.`,
     mutedList: (l) => (l.length ? `🔕 Muted: ${l.join(', ')}` : '🔔 No agent is muted.'), noAgent: (q, l) => `No agent called “${q}”. Agents: ${l.join(', ')}`,
     alerts: { all: '🔔 You get every alert: questions and waiting agents, failed runs, and completed work.', questions: '🔔 You get only agents that need you (questions, approvals).', failures: '🔔 You get only failed runs and errors.' },
@@ -51,6 +51,7 @@ const TEXT = {
     elsewhere: (id) => `${id} was answered elsewhere; moving on.`, allDone: '✓ That was the last one; nobody else is waiting for you.',
     updated: (v) => `✓ Cubicle was updated to <b>${v}</b>.`, newVersion: (v, cur) => `⬆ Cubicle <b>${v}</b> is out (you have ${cur}).`, notes: 'What’s new',
     howTo: 'To update:', autoHint: 'Or start Cubicle with --auto-update and it updates itself.',
+    oneTap: 'Send /update to install it now.', updating: (v) => `⬆ Updating to <b>${v}</b>; Cubicle restarts in a moment.`, upNone: 'You already have the latest version.', upFail: 'It could not update from here. On the computer, run:',
     stuck: (n) => `⛔ <b>${n}</b> is stuck`, since: (d) => `stopped ${d} ago`, look: 'Look at', more: (n) => `${n} more stuck task${n === 1 ? '' : 's'}.`,
     stuckHint: 'Write the next step and who takes it (a comment wakes the agent).',
     blk: { stalled: (o) => (o ? `the chain it waits on stopped at ${o}` : 'nothing will move it on'), unassigned: (o) => `waits on ${o || 'a task'}, which has no one assigned`, backlog: (o) => `waits on ${o || 'a task'}, which sits in the backlog`, uninvokable: (o) => `waits on ${o || 'a task'}, whose agent cannot run`, cancelled: (o) => `waits on ${o || 'a task'}, which was cancelled`, review: (o) => `waits on the review of ${o || 'a task'}, which nobody is doing`, disposition: () => 'its run finished but nobody decided what comes next', decision: () => 'waits for your decision', external: () => 'waits on someone outside', recovery: (o) => `a recovery task is open${o ? ` (${o})` : ''}`, other: () => 'blocked and needs someone' },
@@ -67,7 +68,7 @@ const TEXT = {
     ceoQueue: (n) => `Sırada ${n} CEO görevi daha var.`, mins: 'dakika', started: 'Başlattığı işler',
     paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde, hata aldığında veya işini tamamladığında mesaj gelecek.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
-    help: '/status – ofisin şu anki hâli\n/waiting – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/office – Cubicle’ı aç\n/answer ID metin – bir işi yanıtla\n/mute ad, /unmute ad – bir ajan için bildirim kapat / aç\n/alerts all | questions | failures – hangi bildirimler gelsin (kısaca /questions, /errors, /all)\n/skip – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
+    help: '/status – ofisin şu anki hâli\n/waiting – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/office – Cubicle’ı aç\n/update – yeni Cubicle sürümünü kur\n/answer ID metin – bir işi yanıtla\n/mute ad, /unmute ad – bir ajan için bildirim kapat / aç\n/alerts all | questions | failures – hangi bildirimler gelsin (kısaca /questions, /errors, /all)\n/skip – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
     muted: (n) => `🔕 <b>${n}</b> için bildirim gelmeyecek. Yeniden açmak için: /unmute ${n}`, unmuted: (n) => `🔔 <b>${n}</b> için bildirimler yeniden açık.`,
     mutedList: (l) => (l.length ? `🔕 Susturulan: ${l.join(', ')}` : '🔔 Susturulan ajan yok.'), noAgent: (q, l) => `“${q}” adında ajan yok. Ajanlar: ${l.join(', ')}`,
     alerts: { all: '🔔 Bütün bildirimler gelir: sizi bekleyen ajanlar, sorular, başarısız çalıştırmalar ve tamamlanan işler.', questions: '🔔 Yalnızca sizi bekleyen ajanlar (sorular, onaylar) bildirilir.', failures: '🔔 Yalnızca başarısız çalıştırmalar ve hatalar bildirilir.' },
@@ -83,6 +84,7 @@ const TEXT = {
     elsewhere: (id) => `${id} başka yerden yanıtlanmış; sıradakine geçiliyor.`, allDone: '✓ Sonuncusuydu; sizi bekleyen kalmadı.',
     updated: (v) => `✓ Cubicle <b>${v}</b> sürümüne güncellendi.`, newVersion: (v, cur) => `⬆ Cubicle <b>${v}</b> çıktı (sizdeki ${cur}).`, notes: 'Yenilikler',
     howTo: 'Güncellemek için:', autoHint: 'Ya da Cubicle’ı --auto-update ile başlatın, kendiliğinden güncellensin.',
+    oneTap: 'Hemen kurmak için /update gönderin.', updating: (v) => `⬆ <b>${v}</b> sürümüne güncelleniyor; Cubicle birazdan yeniden başlar.`, upNone: 'Zaten en son sürüm sizde.', upFail: 'Buradan güncellenemedi. Bilgisayarda şunu çalıştırın:',
     stuck: (n) => `⛔ <b>${n}</b> takıldı`, since: (d) => `${d}${/gün$/.test(d) ? 'dür' : /saat$/.test(d) ? 'tir' : 'dır'} bekliyor`, look: 'Bakılacak iş', more: (n) => `${n} takılı iş daha var.`,
     stuckHint: 'Bir sonraki adımı ve kimin yapacağını yazın (yorum ajanı uyandırır).',
     blk: { stalled: (o) => (o ? `beklediği iş zinciri ${o} işinde kaldı` : 'onu ilerletecek kimse yok'), unassigned: (o) => `${o || 'bir iş'} bekleniyor ama o işin sahibi yok`, backlog: (o) => `${o || 'bir iş'} bekleniyor ama o iş beklemede (backlog)`, uninvokable: (o) => `${o || 'bir iş'} bekleniyor ama o işin ajanı çalışamıyor`, cancelled: (o) => `${o || 'bir iş'} bekleniyor ama o iş iptal edildi`, review: (o) => `${o || 'bir iş'} incelemede ama inceleyen yok`, disposition: () => 'çalışma bitti ama sonrasına kimse karar vermedi', decision: () => 'kararınızı bekliyor', external: () => 'dışarıdan biri bekleniyor', recovery: (o) => `bir kurtarma işi açık${o ? ` (${o})` : ''}`, other: () => 'takıldı, birinin bakması gerekiyor' },
@@ -426,7 +428,8 @@ function start(opts) {
     state.offered = u.latest; saveState();
     for (const [chat, c] of Object.entries(state.chats)) {
       const t = tr(c.lang);
-      await send(chat, [t.newVersion(esc(u.latest), esc(opts.version)), links([[t.notes, notesLink(u.latest)]]), `${esc(t.howTo)} <code>${esc(u.command)}</code>`, `<i>${esc(t.autoHint)}</i>`].join('\n'));
+      const tap = !!opts.applyUpdate && require('./cubicle-update.js').canApply(u.kind, u.auto);
+      await send(chat, [t.newVersion(esc(u.latest), esc(opts.version)), links([[t.notes, notesLink(u.latest)]]), tap ? `<b>${esc(t.oneTap)}</b>` : '', `${esc(t.howTo)} <code>${esc(u.command)}</code>`, tap ? '' : `<i>${esc(t.autoHint)}</i>`].filter(Boolean).join('\n'));
     }
   }
 
@@ -587,6 +590,12 @@ function start(opts) {
       return send(chatId, `📊 <b>${esc(t.kpi)}</b>\n${k ? esc(t.kpiLine(k.open, k.avg, k.done7)) : ''}\n${links([[t.kpi, cubicleLink('?kpi')]])}`);
     }
     if (command === 'office' || command === 'cubicle') return send(chatId, links([[t.office, cubicleLink()]]));
+    if (command === 'update') {
+      const u = opts.update && opts.update();
+      if (!u || !u.latest || !opts.applyUpdate) return send(chatId, esc(t.upNone));
+      const r = opts.applyUpdate();
+      return send(chatId, r.ok ? t.updating(esc(r.version || u.latest)) : `${esc(t.upFail)} <code>${esc(r.command || u.command)}</code>`);
+    }
     const me = state.chats[chatId];
     if (['mute', 'unmute', 'muted'].includes(command)) {
       const off = command === 'mute', on = command === 'unmute';

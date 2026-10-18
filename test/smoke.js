@@ -686,17 +686,44 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
     try {
       await sleep(1800);
       const cfg = JSON.parse((await get(`http://127.0.0.1:${port}/config.json`)).body);
-      assert.deepStrictEqual(cfg.update, { latest: '99.0.0', kind: 'npm', command: 'npm install -g @caglarutkuguler/cubicle@latest', auto: false });
+      assert.deepStrictEqual(cfg.update, { latest: '99.0.0', kind: 'npm', command: 'npm install -g @caglarutkuguler/cubicle@latest', auto: false, canApply: true });
       const offers = sent.filter((m) => m.text.includes('99.0.0'));
-      assert.strictEqual(offers.length, 1, 'offered once'); assert.ok(offers[0].text.includes('npm install -g @caglarutkuguler/cubicle@latest'), offers[0].text);
+      assert.strictEqual(offers.length, 1, 'offered once'); assert.ok(offers[0].text.includes('npm install -g @caglarutkuguler/cubicle@latest') && offers[0].text.includes('/update'), offers[0].text);
     } finally { p.kill(); }
     // turned off: nothing is asked
     let asked = 0; reg.on('request', () => asked++);
     p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port + 1), '--source', feed, '--no-update-check'], { stdio: 'ignore', env: { ...env, CUBICLE_TELEGRAM_TOKEN: '' } });
     try { await sleep(1200); assert.strictEqual(asked, 0, 'no request with --no-update-check'); assert.ok(!JSON.parse((await get(`http://127.0.0.1:${port + 1}/config.json`)).body).update); } finally { p.kill(); }
-    // --auto-update: the worker steps aside and the supervisor starts the new version through npx
     const fakeNpx = path.join(dir, 'npx.js'), marker = path.join(dir, 'ran.txt');
     fs.writeFileSync(fakeNpx, `#!${process.execPath}\nrequire('fs').writeFileSync(${JSON.stringify(marker)}, process.argv.slice(2).join(' '));\n`); fs.chmodSync(fakeNpx, 0o755);
+    // "Update now" on the page: only from this machine and this page; Cubicle lets go of its port and
+    // starts the new version itself (an npx install here)
+    {
+      const port3 = port + 3, clean = { ...env, CUBICLE_TELEGRAM_TOKEN: '', CUBICLE_INSTALL_KIND: 'npx', CUBICLE_NPX: fakeNpx, HOME: dir, INVOCATION_ID: '', JOURNAL_STREAM: '', XPC_SERVICE_NAME: '' };
+      const q = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port3), '--source', feed], { stdio: 'ignore', env: clean });
+      let exited = null; q.on('exit', (c) => { exited = c; });
+      const call = (u, method, headers, body) => new Promise((resolve, reject) => {
+        const x = http.request(u, { method, headers }, (r) => { let b = ''; r.on('data', (d) => (b += d)); r.on('end', () => resolve({ status: r.statusCode, body: b })); });
+        x.on('error', reject); x.end(body);
+      });
+      const get = (u, headers = {}) => call(u, 'GET', headers);
+      const post = (u, body, headers) => call(u, 'POST', headers, body);
+      try {
+        await sleep(1500);
+        const cfg3 = JSON.parse((await get(`http://127.0.0.1:${port3}/config.json`)).body);
+        assert.strictEqual(cfg3.update.canApply, true);
+        assert.strictEqual(JSON.parse((await get(`http://127.0.0.1:${port3}/config.json`, { 'x-forwarded-for': '100.64.0.9' })).body).update.canApply, false, 'not from elsewhere');
+        assert.strictEqual((await post(`http://127.0.0.1:${port3}/api/cubicle/update`, '{}', { 'content-type': 'application/json' })).status, 400, 'needs the page header');
+        assert.strictEqual((await post(`http://127.0.0.1:${port3}/api/cubicle/update`, '{}', { 'content-type': 'application/json', 'x-cubicle': '1', 'x-forwarded-for': '100.64.0.9' })).status, 403, 'only from this machine');
+        const r = await post(`http://127.0.0.1:${port3}/api/cubicle/update`, '{}', { 'content-type': 'application/json', 'x-cubicle': '1' });
+        assert.strictEqual(r.status, 202); assert.strictEqual(JSON.parse(r.body).version, '99.0.0');
+        await sleep(2500);
+        assert.strictEqual(exited, 0, 'the old version stepped aside');
+        assert.strictEqual(fs.readFileSync(marker, 'utf8'), `-y @caglarutkuguler/cubicle@99.0.0 --port ${port3} --source ${feed}`);
+        fs.unlinkSync(marker);
+      } finally { q.kill(); }
+    }
+    // --auto-update: the worker steps aside and the supervisor starts the new version through npx
     p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port + 2), '--source', feed, '--auto-update'], { stdio: 'ignore', env: { ...env, CUBICLE_TELEGRAM_TOKEN: '', CUBICLE_NPX: fakeNpx } });
     try {
       await sleep(4500);

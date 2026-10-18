@@ -500,6 +500,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/cubicle/tasks') return serveTasks(req, res);
   if (url.pathname === '/api/cubicle/dispatch') return serveDispatch(req, res);
   if (url.pathname === '/api/cubicle/attention') return serveAttention(req, res);
+  if (url.pathname === '/api/cubicle/update') return serveUpdate(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -518,7 +519,7 @@ const server = http.createServer((req, res) => {
     const pcOff = cubicleSettings().paperclipLinks === false;
     const pcLinks = !HAS_PAPERCLIP ? undefined : pcOff ? '' : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
     return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined,
-      paperclipLinks: pcLinks, ...(pcOff ? { paperclipLinksOff: true } : {}), redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: UPDATE } : {}) }));
+      paperclipLinks: pcLinks, ...(pcOff ? { paperclipLinksOff: true } : {}), redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: { ...UPDATE, canApply: fromThisMachine(req) && UPDATES.canApply(UPDATE.kind, UPDATE.auto) } } : {}) }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -779,6 +780,30 @@ async function serveSettings(req, res) {
   catch (_) { return send(res, 500, JSON.stringify({ error: `cannot write ${CUBICLE_SETTINGS}` })); }
   console.log(`Cubicle: turning KPI advice into Paperclip tasks is ${data.createTasks ? 'on' : 'off'}.`);
   send(res, 200, JSON.stringify(status()));
+}
+// ---------- "Update now": from the page on this machine, or /update from a linked Telegram chat ----------
+let updating = false;
+function applyUpdate(from) {
+  if (!UPDATE) return { ok: false, error: 'none' };
+  if (updating) return { ok: true, version: UPDATE.latest };
+  const r = UPDATES.prepare({ kind: UPDATE.kind, version: UPDATE.latest, auto: UPDATE.auto, argv: process.argv.slice(2) });
+  if (!r.ok) { console.log(`Cubicle: could not update to ${UPDATE.latest} from ${from} (${r.error}); run: ${r.command}`); return { ok: false, error: r.error, command: r.command }; }
+  updating = true;
+  console.log(`Cubicle: updating to ${UPDATE.latest} (asked from ${from}).`);
+  setTimeout(() => {   // let the answer go out first, then let go of the port, then start the new version
+    if (TELEGRAM) TELEGRAM.stop();
+    process.exitCode = r.exitCode;
+    server.close(); server.closeAllConnections?.();
+    setTimeout(() => { try { if (r.restart) r.restart(); } catch (e) { console.error(`Cubicle: could not start the new version (${e.message})`); } process.exit(r.exitCode); }, 700);
+  }, 300);
+  return { ok: true, version: UPDATE.latest };
+}
+async function serveUpdate(req, res) {
+  if (req.method !== 'POST') return send(res, 405, '{"error":"POST"}');
+  if (!fromThisMachine(req)) return send(res, 403, '{"error":"only from this machine"}');
+  if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
+  const r = applyUpdate('the page');
+  send(res, r.ok ? 202 : r.error === 'none' ? 404 : 409, JSON.stringify(r));
 }
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const PRIORITIES = new Set(['critical', 'high', 'medium', 'low']);
@@ -1093,7 +1118,7 @@ function serveTailscale(req, res) {
 
 function startTelegram(token) {
   const bot = require('./cubicle-telegram.js').start({
-    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(), version: VERSION, update: () => UPDATE,
+    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(), version: VERSION, update: () => UPDATE, applyUpdate: () => applyUpdate('Telegram'),
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),

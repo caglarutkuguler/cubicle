@@ -106,4 +106,41 @@ function supervise(argv) {
   run();
 }
 
-module.exports = { PKG, UPDATE_EXIT, newer, latest, installKind, command, watch, supervise };
+// "Update now", from the page or Telegram. Gets the new version in place and says how this process
+// should then go: exit with UPDATE_EXIT for a supervisor (--auto-update) or a service manager that
+// starts it again (systemd, launchd), or start the new version itself and exit. Never two at once:
+// the replacement starts only after this process has let go of the port.
+const managed = () => !!(process.env.INVOCATION_ID || process.env.JOURNAL_STREAM || (process.env.XPC_SERVICE_NAME && process.env.XPC_SERVICE_NAME !== '0') || process.env.CUBICLE_SERVICE === '1');
+function canApply(kind, auto) { return auto || !(kind === 'npx' && managed()); }
+function prepare({ kind, version, auto, argv, log = console.log }) {
+  if (auto) return { ok: true, exitCode: UPDATE_EXIT };
+  if (!canApply(kind, auto)) return { ok: false, error: 'service', command: command(kind) };
+  const win = process.platform === 'win32';
+  const logFile = path.join(require('os').homedir(), '.cubicle', 'server.log');
+  const relaunch = (cmd, args) => () => {
+    let out = 'ignore';
+    try { fs.mkdirSync(path.dirname(logFile), { recursive: true }); out = fs.openSync(logFile, 'a'); } catch (_) {}
+    const c = spawn(cmd, args, { detached: true, stdio: ['ignore', out, out], windowsHide: true, shell: win && /npx/.test(cmd), env: { ...process.env, CUBICLE_UPDATE_FIRST: '600000' } });
+    c.unref();
+  };
+  const self = relaunch(process.execPath, [process.argv[1], ...argv]);
+  const viaNpx = relaunch(process.env.CUBICLE_NPX || (win ? 'npx.cmd' : 'npx'), ['-y', `${PKG}@${version}`, ...argv]);
+  if (kind === 'git') {
+    const dirty = spawnSync('git', ['-C', ROOT, 'status', '--porcelain', '--untracked-files=no'], { encoding: 'utf8', timeout: 20000 });
+    if (dirty.error || String(dirty.stdout || '').trim()) return { ok: false, error: 'git', command: command(kind) };
+    const pull = spawnSync('git', ['-C', ROOT, 'pull', '--ff-only', '--quiet'], { encoding: 'utf8', timeout: 120000 });
+    if (pull.error || pull.status !== 0) return { ok: false, error: 'git', command: command(kind) };
+    log(`Cubicle: updated the clone at ${ROOT}.`);
+    return managed() ? { ok: true, exitCode: UPDATE_EXIT } : { ok: true, exitCode: 0, restart: self };
+  }
+  if (kind === 'npm') {
+    const r = spawnSync(win ? 'npm.cmd' : 'npm', ['install', '-g', `${PKG}@${version}`], { encoding: 'utf8', timeout: 300000, shell: win });
+    if (!r.error && r.status === 0) { log(`Cubicle: installed ${version} globally.`); return managed() ? { ok: true, exitCode: UPDATE_EXIT } : { ok: true, exitCode: 0, restart: self }; }
+    if (managed()) return { ok: false, error: 'npm', command: command(kind) };
+    log(`Cubicle: npm install -g failed; starting ${version} through npx instead.`);
+    return { ok: true, exitCode: 0, restart: viaNpx };
+  }
+  return { ok: true, exitCode: 0, restart: viaNpx };   // npx: the new version is fetched as it starts
+}
+
+module.exports = { PKG, UPDATE_EXIT, newer, latest, installKind, command, watch, supervise, canApply, prepare };
