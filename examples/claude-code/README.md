@@ -40,6 +40,14 @@ Cubicle hook ignores those foreign invocations; use the dedicated
 
 The character is named after the working directory, so two sessions in different repos are easy to tell apart. Subagents started through the Agent (Task) tool get their own character next to the session that started them, so a session fanning out to four subagents shows five people at work; the session's own bubble keeps showing what it asked them to do. Claude Code versions that don't send `agent_id` on hook events fall back to one character per session. Sessions with no events for 12 hours are dropped.
 
+## Background tasks
+
+A command a session starts in the background (`run_in_background`), a monitor or another background task gets a character of its own, named after its session (`shop › bg`), for as long as it runs. Claude Code lists the tasks still running each time a turn ends, so finished ones leave then; ending the session takes them along. Background subagents come and go like other subagents.
+
+## Claude on Windows next to WSL
+
+Sessions of the Claude desktop app (its Code tab) and of Claude Code on Windows use Windows' own `%USERPROFILE%\.claude\settings.json`. Install the hooks there too, with Node for Windows: `npx @caglarutkuguler/cubicle install-hooks` in a Windows terminal. They write `%USERPROFILE%\.cubicle\claude-code.json`; add that file as a source of the Cubicle running in WSL, e.g. `--source "claude-code,/mnt/c/Users/<you>/.cubicle/claude-code.json"`. Cubicle keeps the Windows copy of the hook script up to date when it is updated itself.
+
 ## Headless workers (cron, CI, issue bots)
 
 A script that runs `claude -p` on a schedule (for example one that takes a GitHub issue, works in a git worktree and opens a pull request) can tell Cubicle who it is through environment variables. Claude Code passes its environment to the hooks, so nothing else has to be configured.

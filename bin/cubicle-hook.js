@@ -170,6 +170,40 @@ function applySubagent(feed, agents, ev, now) {
   return { ...feed, agents };
 }
 
+// Background tasks a session starts (a shell command with run_in_background, a monitor, …): each
+// is a character of its own while it runs, named after its session. Claude Code reports a started
+// shell's id in PostToolUse, and on every Stop/SubagentStop the list of tasks still running, so
+// finished ones leave then; a stopped session takes its tasks along. Background subagents already
+// come and go with SubagentStart/SubagentStop.
+function syncBackground(feed, agents, ev, now) {
+  const sid = ev.session_id || 'unknown';
+  const short = (t, n = 60) => { t = String(t || '').replace(/\s+/g, ' ').trim(); return t.length > n ? t.slice(0, n - 1) + '…' : t; };
+  const session = agents.find((x) => x.id === sid);
+  const base = (session && session.name) || path.basename(ev.cwd || '') || 'claude';
+  const put = (taskId, kind, text) => {
+    const id = `${sid}:bg:${taskId}`;
+    let a = agents.find((x) => x.id === id);
+    if (!a) { a = { id, since: now, parent: sid, bg: true, completedAt: null }; agents.push(a); }
+    Object.assign(a, { name: `${base} › ${kind === 'shell' ? 'bg' : kind || 'bg'}`, role: `${feed.company || 'Claude Code'} background task`, status: 'running', task: short(text) || 'background task', error: null, updated: now });
+  };
+  const resp = ev.tool_response && typeof ev.tool_response === 'object' ? ev.tool_response : null;
+  if (ev.hook_event_name === 'PostToolUse' && resp && resp.backgroundTaskId && !ev.agent_id) {
+    const inp = ev.tool_input || {};
+    put(String(resp.backgroundTaskId).slice(0, 60), 'shell', inp.description || inp.command);
+  }
+  if (Array.isArray(ev.background_tasks)) {
+    const running = ev.background_tasks.filter((t) => t && t.id && t.type !== 'subagent' && (!t.status || t.status === 'running'));
+    for (const t of running) put(String(t.id).slice(0, 60), t.type, t.description || t.command);
+    const keep = new Set(running.map((t) => `${sid}:bg:${String(t.id).slice(0, 60)}`));
+    for (let i = agents.length - 1; i >= 0; i--) if (agents[i].bg && agents[i].parent === sid && !keep.has(agents[i].id)) agents.splice(i, 1);
+  }
+  // a task stopped by hand (KillShell / TaskStop) leaves at once
+  if (ev.hook_event_name === 'PostToolUse' && /^(KillShell|TaskStop|KillBash)$/.test(ev.tool_name || '')) {
+    const inp = ev.tool_input || {}, tid = String(inp.shell_id || inp.task_id || inp.bash_id || '');
+    const i = agents.findIndex((x) => x.id === `${sid}:bg:${tid}`); if (tid && i >= 0) agents.splice(i, 1);
+  }
+}
+
 function apply(feed, ev, runtime = 'claude', env = {}) {
   // Grok discovers Claude settings too, but has its own feed example. Do not
   // combine its camelCase sessions under Claude's fallback "unknown" id.
@@ -180,6 +214,7 @@ function apply(feed, ev, runtime = 'claude', env = {}) {
   const id = ev.session_id || 'unknown';
   const now = Date.now();
   const agents = feed.agents.filter((a) => now - (a.updated || 0) < STALE_MS);
+  syncBackground(feed, agents, ev, now);
 
   if (ev.agent_id) {
     const out = applySubagent(feed, agents, ev, now);
@@ -370,7 +405,9 @@ function install({ uninstall = false, runtime: runtimeName = 'claude', settingsF
     if (!hooks[ev].length) delete hooks[ev];
   }
   if (!uninstall) {
-    const command = `node "${stableScript()}"${runtime === 'claude' ? '' : ` ${runtime}`}`;
+    // forward slashes on Windows: Claude Code runs hooks through Git Bash there
+    const script = process.platform === 'win32' ? stableScript().replace(/\\/g, '/') : stableScript();
+    const command = `node "${script}"${runtime === 'claude' ? '' : ` ${runtime}`}`;
     for (const ev of rt.events) {
       const h = { type: 'command', command, timeout: rt.timeout(ev) };
       if (runtime === 'gemini') h.name = 'cubicle';

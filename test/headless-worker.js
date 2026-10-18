@@ -102,6 +102,24 @@ module.exports = async function headlessWorker() {
   // the CEO's own task is not its main task
   let c = apply({ company: 'Claude Code', agents: [] }, { session_id: 'c', hook_event_name: 'SessionStart' }, 'claude', { CUBICLE_NAME: 'CEO', CUBICLE_TASK_ID: 'T-abc', CUBICLE_MAIN_TASK_ID: 'T-abc', CUBICLE_MAIN_TASK: 'x' });
   assert.ok(!c.agents[0].main);
+  // background tasks: a character each while they run, gone when the session's Stop no longer lists them
+  let b = { company: 'Claude Code', agents: [] };
+  const bev = (ev) => { b = apply(b, { session_id: 's9', cwd: '/x/shop', ...ev }, 'claude', {}); return b; };
+  bev({ hook_event_name: 'UserPromptSubmit', prompt: 'go' });
+  bev({ hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'npm run dev', description: 'Start the dev server', run_in_background: true }, tool_response: { backgroundTaskId: 'b1' } });
+  const bg = (f) => f.agents.filter((x) => x.bg);
+  assert.deepStrictEqual(bg(b).map((x) => [x.id, x.name, x.status, x.task, x.parent]), [['s9:bg:b1', 'shop › bg', 'running', 'Start the dev server', 's9']]);
+  // a task the hooks did not see start shows up from the Stop list; finished ones leave
+  bev({ hook_event_name: 'Stop', background_tasks: [{ id: 'b1', type: 'shell', status: 'running', description: 'Start the dev server' }, { id: 'm2', type: 'monitor', status: 'running', description: 'Watch the logs' }, { id: 'a3', type: 'subagent', status: 'running' }] });
+  assert.deepStrictEqual(bg(b).map((x) => x.id).sort(), ['s9:bg:b1', 's9:bg:m2']);
+  bev({ hook_event_name: 'Stop', background_tasks: [{ id: 'm2', type: 'monitor', status: 'running', description: 'Watch the logs' }] });
+  assert.deepStrictEqual(bg(b).map((x) => x.id), ['s9:bg:m2']);
+  bev({ hook_event_name: 'PostToolUse', tool_name: 'TaskStop', tool_input: { task_id: 'm2' }, tool_response: {} });
+  assert.strictEqual(bg(b).length, 0);
+  // the session ending takes its tasks along
+  bev({ hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'sleep 99', run_in_background: true }, tool_response: { backgroundTaskId: 'b4' } });
+  bev({ hook_event_name: 'SessionEnd' });
+  assert.strictEqual(b.agents.length, 0);
   console.log('headless-worker ok');
 };
 

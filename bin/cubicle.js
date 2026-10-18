@@ -666,6 +666,20 @@ function serveReplay(req, res, url) {
 
 if (REPLAY) loadReplay(REPLAY.file);
 
+// Hooks installed with npx (or for another OS, e.g. Windows next to WSL) run a copy of the hook
+// script in <feed folder>/bin/. Keep such copies the same as this version's, so a Cubicle update
+// reaches them too. Only a copy that already exists is refreshed.
+function refreshHookCopies() {
+  const mine = path.join(__dirname, 'cubicle-hook.js');
+  let src; try { src = fs.readFileSync(mine); } catch (_) { return; }
+  const dirs = new Set(SOURCES.filter((x) => x.kind === 'file').map((x) => path.join(path.dirname(x.file), 'bin')));
+  for (const d of dirs) {
+    const copy = path.join(d, 'cubicle-hook.js');
+    try { if (path.resolve(copy) !== path.resolve(mine) && fs.existsSync(copy) && !fs.readFileSync(copy).equals(src)) { fs.writeFileSync(`${copy}.tmp`, src); fs.renameSync(`${copy}.tmp`, copy); console.log(`Cubicle: updated the hook script at ${copy}`); } } catch (_) {}
+  }
+}
+refreshHookCopies();
+
 server.listen(PORT, HOST, () => {
   if (REPLAY) {
     const mins = Math.round((replay.to - replay.from) / 60000);
