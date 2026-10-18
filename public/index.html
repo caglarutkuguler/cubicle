@@ -1193,6 +1193,8 @@
     if (linked) return; linked = true;
     const id = params.get('agent');
     if (id) setTimeout(() => { const s = sprites.get(id) || [...sprites.values()].find((x) => x.realName === id || x.name === id); if (s) { select(s); if (window.CubicleAsk) window.CubicleAsk.ask(s); } }, 300);
+    // used once: the page reloads itself after updates, and must not zoom in on that agent again each time
+    if (id || params.has('kpi')) { try { const u = new URL(location.href); u.searchParams.delete('agent'); u.searchParams.delete('kpi'); history.replaceState(null, '', u); } catch (_) {} }
     if (params.has('kpi')) openKpi();
   }
 
@@ -2832,10 +2834,12 @@
     try { return new Intl.RelativeTimeFormat(lang, { numeric: 'auto', style: 'short' }).format(-m, 'minute'); } catch (_) { return `${m} min`; }
   }
   function stepsHtml(s) {
+    // an open question from this agent: what it asks, and a button that opens it with its choices
     let ans = '';
     try {
-      const it = (window.__attn || []).find((x) => (x.kind === 'decision' || x.kind === 'error') && ((x.taskId && s.task && typeof s.task === 'object' && s.task.id === x.taskId) || (!x.taskId && x.agent === s.name)));
-      if (it) ans = `<button type="button" class="mini" data-answer="${esc(it.id)}" style="margin:6px 0;background:#b8860b;color:#fff;border:0;border-radius:6px;padding:4px 10px;cursor:pointer">Cevapla</button>`;
+      const its = window.CubicleAsk && window.CubicleAsk.itemsFor ? window.CubicleAsk.itemsFor(s) : [];
+      if (its.length) ans = `<div class="st qline">❓ ${esc(its[0].title || '')}${its.length > 1 ? ` <span style="color:var(--muted)">· +${its.length - 1}</span>` : ''}</div>`
+        + `<button type="button" class="mini qbtn" data-answer-agent="${esc(s.id)}">✋ ${esc(window.CubicleAsk.label())}</button>`;
     } catch (_) {}
     if (!s.recent || !s.recent.length) return ans;
     const items = [...s.recent].reverse().map(([t, text, d]) => `<li>${esc(text)} <span>· ${esc(ago(t))}${Number.isFinite(d) ? ` · ${(d / 1000).toFixed(d < 10000 ? 1 : 0)} s` : ''}</span></li>`).join('');
@@ -2857,10 +2861,11 @@
     stageEl.classList.toggle('zoomed', cam.z > 1);
   }
   function zoomAtPoint(z, px, py) {
+    cam.auto = false;                                  // zoomed by hand: stays until changed by hand
     const nz = Math.max(1, Math.min(4, z));
     cam.x = px - (px - cam.x) * (nz / cam.z); cam.y = py - (py - cam.y) * (nz / cam.z); cam.z = nz; clampCam();
   }
-  function resetCam() { cam.z = 1; cam.x = cam.y = 0; cam.follow = cam.sel = null; detailEl.hidden = true; clampCam(); }
+  function resetCam() { cam.z = 1; cam.x = cam.y = 0; cam.follow = cam.sel = null; cam.auto = false; detailEl.hidden = true; clampCam(); }
   function officePoint(clientX, clientY) {
     const r = stageEl.getBoundingClientRect(), k = cv.clientWidth / CW;
     return [((clientX - r.left - cam.x) / cam.z) / k, ((clientY - r.top - cam.y) / cam.z) / k];
@@ -2874,14 +2879,17 @@
     }
     return best;
   }
+  // Picking an agent zooms in on it; that zoom (not one made by hand) goes away again when the panel
+  // is closed or the agent leaves the office, so the view never stays zoomed on an empty desk.
   function select(s) {
     cam.follow = cam.sel = s ? s.id : null;
-    if (s && cam.z < 2.2) cam.z = 2.2;
+    if (s && cam.z < 2.2) { cam.z = 2.2; cam.auto = true; }
+    if (!s && cam.auto) { cam.z = 1; cam.x = cam.y = 0; cam.auto = false; clampCam(); }
     renderDetail();
   }
   function followCam() {
     if (!cam.follow) return;
-    const s = sprites.get(cam.follow); if (!s) { cam.follow = null; return; }
+    const s = sprites.get(cam.follow); if (!s) { cam.follow = null; if (cam.auto) resetCam(); return; }
     const k = cv.clientWidth / CW, w = stageEl.clientWidth, h = stageEl.clientHeight;
     const tx = w / 2 - s.x * k * cam.z, ty = h / 2 - (s.y - 10) * k * cam.z;
     cam.x += (tx - cam.x) * 0.12; cam.y += (ty - cam.y) * 0.12; clampCam();
@@ -3000,6 +3008,7 @@
     const a = e.target.closest('a[data-issue]'); if (a && !e.ctrlKey && !e.metaKey) { e.preventDefault(); const s = [...sprites.values()].find((x) => answerIssue(x) && answerIssue(x).identifier === a.dataset.issue); qDlg.close(); if (s) openAnswer(s); }
   });
   // Clicking an agent with its hand up opens its question; the first click may have to wait for it.
+  window.CubicleAgent = (id) => sprites.get(id) || null;
   function selectAndAsk(s) {
     select(s);
     if (s && window.CubicleAsk && window.CubicleAsk.handle(s)) return;
@@ -3030,7 +3039,7 @@
   function narrow() { return window.innerWidth <= 640 && !KIOSK; }
   function renderDetail() {
     const s = cam.sel && sprites.get(cam.sel);
-    if (!s || KIOSK) { detailEl.hidden = true; if (cam.sel && !s) cam.sel = null; return; }
+    if (!s || KIOSK) { detailEl.hidden = true; if (cam.sel && !s) { cam.sel = null; if (cam.auto) resetCam(); } return; }
     detailEl.innerHTML = `<button type="button" class="x" title="${esc(L.close)}" aria-label="${esc(L.close)}">✕</button>` + cardHtml(s, true);
     detailEl.hidden = false;
     placeDetail();
@@ -3064,7 +3073,7 @@
     window.addEventListener('pointermove', (e) => {
       if (!drag) return;
       if (Math.hypot(e.clientX - drag.x, e.clientY - drag.y) > 4) drag.moved = true;
-      if (drag.moved && cam.z > 1) { cam.follow = null; cam.x = drag.cx + e.clientX - drag.x; cam.y = drag.cy + e.clientY - drag.y; stageEl.classList.add('panning'); clampCam(); }
+      if (drag.moved && cam.z > 1) { cam.follow = null; cam.auto = false; cam.x = drag.cx + e.clientX - drag.x; cam.y = drag.cy + e.clientY - drag.y; stageEl.classList.add('panning'); clampCam(); }
     });
     window.addEventListener('pointerup', (e) => {
       if (!drag) return;
@@ -3939,6 +3948,7 @@
   .cdlg .row { display:flex; gap:8px; align-items:center; margin-top:12px; }
   .cdlg button { background:#2f3552; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px 12px; font:inherit; cursor:pointer; }
   .cdlg button.pri { background:#4a5bd4; border-color:#4a5bd4; }
+  .qline { color:#ffe08a; } .qbtn { margin:6px 0; background:#b8860b; color:#fff; border:0; border-radius:6px; padding:4px 10px; cursor:pointer; font:inherit; font-size:12px; }
   .cdlg button.link { background:none; border:0; color:var(--muted); padding:6px 4px; }
   .cdlg .opt { display:flex; gap:10px; align-items:flex-start; padding:9px 11px; margin-top:7px; border:1px solid var(--line); border-radius:8px; cursor:pointer; background:#1b1e2e; }
   .cdlg .opt:hover { border-color:var(--link); }
@@ -3971,33 +3981,33 @@
   function esc(x) { return String(x).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   // The two dialogs below, in the page's language.
   var DT = {
-    en: { ceoTitle: 'Give the CEO a task', ceoSub: 'If the CEO is busy the task waits in the queue; the next one starts when one ends.', ceoPh: 'Write the task… (Ctrl+Enter sends)', send: 'Send', close: 'Close',
+    en: { answer: 'Answer', ceoTitle: 'Give the CEO a task', ceoSub: 'If the CEO is busy the task waits in the queue; the next one starts when one ends.', ceoPh: 'Write the task… (Ctrl+Enter sends)', send: 'Send', close: 'Close',
       st: { running: 'working', queued: 'queued', done: 'done', failed: 'failed' }, sending: 'sending…', failed: 'failed', queuedMsg: 'queued', started: 'The CEO started',
       decision: 'Decision', asks: function (a) { return a + ' asks'; }, question: 'Question', open: function (n) { return n + ' open questions'; }, ansPh: 'Write your answer', notePh: 'A note, or your own answer', other: 'Other…',
       cancel: 'Cancel', dismiss: 'Close the question', needAnswer: 'write an answer', pick: 'pick an option', errOpts: ['Retry', 'Give up'],
       task: function (t, x, a, u) { return 'You were asked for a decision earlier. QUESTION/SITUATION: ' + t + '\n' + x + '\n\nMY DECISION/ANSWER: ' + a + '\n\nGo on from where you left off with this answer and finish the issue/PR work it needs.' + (u ? '\nLink: ' + u : ''); } },
-    tr: { ceoTitle: 'CEO\'ya görev ver', ceoSub: 'Görev CEO meşgulse sıraya alınır; biri bitince sıradaki başlar.', ceoPh: 'Görevi yazın… (Ctrl+Enter ile gönder)', send: 'Gönder', close: 'Kapat',
+    tr: { answer: 'Cevapla', ceoTitle: 'CEO\'ya görev ver', ceoSub: 'Görev CEO meşgulse sıraya alınır; biri bitince sıradaki başlar.', ceoPh: 'Görevi yazın… (Ctrl+Enter ile gönder)', send: 'Gönder', close: 'Kapat',
       st: { running: 'çalışıyor', queued: 'sırada', done: 'bitti', failed: 'başarısız' }, sending: 'gönderiliyor…', failed: 'başarısız', queuedMsg: 'sıraya alındı', started: 'CEO başladı',
       decision: 'Karar', asks: function (a) { return a + ' soruyor'; }, question: 'Soru', open: function (n) { return n + ' açık soru'; }, ansPh: 'Cevabınızı yazın', notePh: 'Ek not veya kendi cevabınız', other: 'Diğer…',
       cancel: 'Vazgeç', dismiss: 'Soruyu kapat', needAnswer: 'cevap yazın', pick: 'bir seçenek seçin', errOpts: ['Yeniden dene', 'Vazgeç'],
       task: function (t, x, a, u) { return 'Daha önce sana bir karar soruldu. SORU/DURUM: ' + t + '\n' + x + '\n\nKARARIM/CEVABIM: ' + a + '\n\nBu cevapla işe kaldığın yerden devam et; gerekli issue/PR işlerini tamamla.' + (u ? '\nBağlantı: ' + u : ''); } },
-    de: { ceoTitle: 'Dem CEO eine Aufgabe geben', ceoSub: 'Ist der CEO beschäftigt, wartet die Aufgabe in der Schlange; die nächste beginnt, wenn eine fertig ist.', ceoPh: 'Aufgabe schreiben… (Strg+Enter sendet)', send: 'Senden', close: 'Schließen',
+    de: { answer: 'Antworten', ceoTitle: 'Dem CEO eine Aufgabe geben', ceoSub: 'Ist der CEO beschäftigt, wartet die Aufgabe in der Schlange; die nächste beginnt, wenn eine fertig ist.', ceoPh: 'Aufgabe schreiben… (Strg+Enter sendet)', send: 'Senden', close: 'Schließen',
       st: { running: 'arbeitet', queued: 'wartet', done: 'fertig', failed: 'fehlgeschlagen' }, sending: 'wird gesendet…', failed: 'fehlgeschlagen', queuedMsg: 'in der Schlange', started: 'Der CEO hat begonnen',
       decision: 'Entscheidung', asks: function (a) { return a + ' fragt'; }, question: 'Frage', open: function (n) { return n + ' offene Fragen'; }, ansPh: 'Antwort schreiben', notePh: 'Eine Notiz oder deine eigene Antwort', other: 'Andere…',
       cancel: 'Abbrechen', dismiss: 'Frage schließen', needAnswer: 'Antwort schreiben', pick: 'Option wählen', errOpts: ['Erneut versuchen', 'Aufgeben'] },
-    es: { ceoTitle: 'Dar una tarea al CEO', ceoSub: 'Si el CEO está ocupado, la tarea espera en cola; la siguiente empieza cuando termina una.', ceoPh: 'Escribe la tarea… (Ctrl+Enter envía)', send: 'Enviar', close: 'Cerrar',
+    es: { answer: 'Responder', ceoTitle: 'Dar una tarea al CEO', ceoSub: 'Si el CEO está ocupado, la tarea espera en cola; la siguiente empieza cuando termina una.', ceoPh: 'Escribe la tarea… (Ctrl+Enter envía)', send: 'Enviar', close: 'Cerrar',
       st: { running: 'trabajando', queued: 'en cola', done: 'hecha', failed: 'fallida' }, sending: 'enviando…', failed: 'falló', queuedMsg: 'en cola', started: 'El CEO empezó',
       decision: 'Decisión', asks: function (a) { return a + ' pregunta'; }, question: 'Pregunta', open: function (n) { return n + ' preguntas abiertas'; }, ansPh: 'Escribe tu respuesta', notePh: 'Una nota, o tu propia respuesta', other: 'Otra…',
       cancel: 'Cancelar', dismiss: 'Cerrar la pregunta', needAnswer: 'escribe una respuesta', pick: 'elige una opción', errOpts: ['Reintentar', 'Abandonar'] },
-    fr: { ceoTitle: 'Confier une tâche au CEO', ceoSub: 'Si le CEO est occupé, la tâche attend dans la file ; la suivante démarre quand une se termine.', ceoPh: 'Écrivez la tâche… (Ctrl+Entrée envoie)', send: 'Envoyer', close: 'Fermer',
+    fr: { answer: 'Répondre', ceoTitle: 'Confier une tâche au CEO', ceoSub: 'Si le CEO est occupé, la tâche attend dans la file ; la suivante démarre quand une se termine.', ceoPh: 'Écrivez la tâche… (Ctrl+Entrée envoie)', send: 'Envoyer', close: 'Fermer',
       st: { running: 'en cours', queued: 'en attente', done: 'terminée', failed: 'échouée' }, sending: 'envoi…', failed: 'échec', queuedMsg: 'mise en file', started: 'Le CEO a commencé',
       decision: 'Décision', asks: function (a) { return a + ' demande'; }, question: 'Question', open: function (n) { return n + ' questions ouvertes'; }, ansPh: 'Écrivez votre réponse', notePh: 'Une note, ou votre propre réponse', other: 'Autre…',
       cancel: 'Annuler', dismiss: 'Fermer la question', needAnswer: 'écrivez une réponse', pick: 'choisissez une option', errOpts: ['Réessayer', 'Abandonner'] },
-    zh: { ceoTitle: '给 CEO 一个任务', ceoSub: 'CEO 忙时任务会排队；一个结束后下一个开始。', ceoPh: '写下任务…（Ctrl+Enter 发送）', send: '发送', close: '关闭',
+    zh: { answer: '回答', ceoTitle: '给 CEO 一个任务', ceoSub: 'CEO 忙时任务会排队；一个结束后下一个开始。', ceoPh: '写下任务…（Ctrl+Enter 发送）', send: '发送', close: '关闭',
       st: { running: '进行中', queued: '排队中', done: '已完成', failed: '失败' }, sending: '发送中…', failed: '失败', queuedMsg: '已排队', started: 'CEO 已开始',
       decision: '决定', asks: function (a) { return a + ' 在问'; }, question: '问题', open: function (n) { return n + ' 个未答问题'; }, ansPh: '写下你的回答', notePh: '备注，或你自己的回答', other: '其他…',
       cancel: '取消', dismiss: '关闭此问题', needAnswer: '请写下回答', pick: '请选择一个选项', errOpts: ['重试', '放弃'] },
-    ar: { ceoTitle: 'أعطِ الرئيس التنفيذي مهمة', ceoSub: 'إذا كان مشغولًا تنتظر المهمة في الطابور؛ تبدأ التالية حين تنتهي واحدة.', ceoPh: 'اكتب المهمة… (Ctrl+Enter للإرسال)', send: 'إرسال', close: 'إغلاق',
+    ar: { answer: 'أجب', ceoTitle: 'أعطِ الرئيس التنفيذي مهمة', ceoSub: 'إذا كان مشغولًا تنتظر المهمة في الطابور؛ تبدأ التالية حين تنتهي واحدة.', ceoPh: 'اكتب المهمة… (Ctrl+Enter للإرسال)', send: 'إرسال', close: 'إغلاق',
       st: { running: 'يعمل', queued: 'في الطابور', done: 'انتهت', failed: 'فشلت' }, sending: 'جارٍ الإرسال…', failed: 'فشل', queuedMsg: 'أُضيفت إلى الطابور', started: 'بدأ الرئيس التنفيذي',
       decision: 'قرار', asks: function (a) { return a + ' يسأل'; }, question: 'سؤال', open: function (n) { return n + ' أسئلة مفتوحة'; }, ansPh: 'اكتب إجابتك', notePh: 'ملاحظة، أو إجابتك الخاصة', other: 'أخرى…',
       cancel: 'إلغاء', dismiss: 'أغلق السؤال', needAnswer: 'اكتب إجابة', pick: 'اختر خيارًا', errOpts: ['أعد المحاولة', 'تخلَّ عنها'] },
@@ -4121,10 +4131,12 @@
     }).catch(function () { am.textContent = D.failed; });
   };
   ad.addEventListener('click', function (e) { if (e.target === ad) ad.close(); });
-  // The "Cevapla" button inside an agent's detail panel opens the same dialog.
+  // The answer button on an agent's card or panel opens the same dialog, with all its open questions.
   document.addEventListener('click', function (e) {
-    var b = e.target && e.target.closest ? e.target.closest('[data-answer]') : null; if (!b) return;
-    var it = (window.__attn || []).find(function (x) { return x.id === b.getAttribute('data-answer'); }); if (it) openAns([it]);
+    var b = e.target && e.target.closest ? e.target.closest('[data-answer-agent],[data-answer]') : null; if (!b) return;
+    if (b.hasAttribute('data-answer')) { var it = (window.__attn || []).find(function (x) { return x.id === b.getAttribute('data-answer'); }); if (it) openAns([it]); return; }
+    var s = window.CubicleAgent ? window.CubicleAgent(b.getAttribute('data-answer-agent')) : null;
+    if (s) { e.stopPropagation(); openAns(itemsFor(s)); }
   });
 
   // Called by the page when an agent is clicked: its question first, the task box for the CEO.
@@ -4138,6 +4150,8 @@
       if (isCeo(s) && canAct && ceoOn) { openCeo(); return true; }
       return false;
     },
+    itemsFor: function (s) { return s ? itemsFor(s) : []; },
+    label: function () { return D.answer; },
     // a link to an agent (e.g. from Telegram): open its question, if it has one, and nothing else
     ask: function (s) { firstAttn.then(function () { var its = s ? itemsFor(s) : []; if (its.length) openAns(its); }); }
   };
