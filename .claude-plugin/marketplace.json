@@ -1,0 +1,12 @@
+{
+  "name": "cubicle",
+  "owner": { "name": "Çağlar Utku Güler", "url": "https://github.com/caglarutkuguler" },
+  "metadata": { "description": "Cubicle: a live pixel office for your AI agents." },
+  "plugins": [
+    {
+      "name": "cubicle",
+      "source": "./plugin",
+      "description": "Watch Claude Code sessions, subagents and background tasks in a live pixel office, with alerts when they need you."
+    }
+  ]
+}

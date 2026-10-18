@@ -361,13 +361,41 @@ function main(runtimeName = process.argv[2]) {
       withLock(FEED, () => {
         let feed = { company: label, agents: [] };
         try { const cur = JSON.parse(fs.readFileSync(FEED, 'utf8')); if (Array.isArray(cur.agents)) feed = cur; } catch (_) {}
-        feed = apply(feed, ev, runtime, process.env);
+        // The same event twice (hooks installed both in settings.json and as the Claude plugin) counts once.
+        const key = [ev.session_id, ev.hook_event_name, ev.tool_use_id, ev.agent_id, ev.prompt_id].map((x) => x || '').join('|');
+        if (feed.lastEvent && feed.lastEvent.k === key && Date.now() - feed.lastEvent.t < 3000) return;
+        feed = { ...apply(feed, ev, runtime, process.env), lastEvent: { k: key, t: Date.now() } };
         const tmp = `${FEED}.${process.pid}.tmp`;
         fs.writeFileSync(tmp, JSON.stringify(feed));
         fs.renameSync(tmp, FEED); // atomic on the same filesystem: readers never see half a file
       });
     } catch (_) {}
+    if (ev.hook_event_name === 'SessionStart') autostart();
   });
+}
+
+// "autostart": true in ~/.cubicle/settings.json (the Claude plugin's /cubicle skill turns it on): when
+// a session starts and nothing answers on Cubicle's port, start Cubicle in the background, kept up to
+// date with --auto-update. It never waits for it: the session is not held up.
+function autostart(dir = DIR) {
+  let st = {};
+  try { st = JSON.parse(fs.readFileSync(path.join(dir, 'settings.json'), 'utf8')) || {}; } catch (_) { return; }
+  if (st.autostart !== true) return;
+  const port = Number(st.port) || 3200;
+  const sock = require('net').connect({ host: '127.0.0.1', port });
+  sock.setTimeout(400);
+  const start = () => {
+    sock.destroy();
+    try {
+      const out = fs.openSync(path.join(dir, 'server.log'), 'a');
+      const win = process.platform === 'win32';
+      const args = ['-y', '@caglarutkuguler/cubicle', '--port', String(port), '--source', String(st.sources || 'claude-code'), '--auto-update'];
+      require('child_process').spawn(win ? 'npx.cmd' : 'npx', args, { detached: true, stdio: ['ignore', out, out], shell: win, windowsHide: true }).unref();
+    } catch (_) {}
+  };
+  sock.on('connect', () => sock.destroy());   // already running
+  sock.on('error', start);
+  sock.on('timeout', () => sock.destroy());
 }
 
 // ---------- install / uninstall into the CLI's settings ----------
@@ -429,4 +457,4 @@ function install({ uninstall = false, runtime: runtimeName = 'claude', settingsF
 }
 
 if (require.main === module) main();
-module.exports = { apply, summarize, main, install, stableScript, isEphemeral, EVENTS, RUNTIMES };
+module.exports = { apply, summarize, main, install, stableScript, isEphemeral, autostart, EVENTS, RUNTIMES };

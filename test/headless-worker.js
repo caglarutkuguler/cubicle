@@ -120,6 +120,13 @@ module.exports = async function headlessWorker() {
   bev({ hook_event_name: 'PostToolUse', tool_name: 'Bash', tool_input: { command: 'sleep 99', run_in_background: true }, tool_response: { backgroundTaskId: 'b4' } });
   bev({ hook_event_name: 'SessionEnd' });
   assert.strictEqual(b.agents.length, 0);
+  // hooks installed twice (settings.json and the Claude plugin): the same event counts once
+  const home = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-dup-'));
+  const fire = (ev) => require('child_process').spawnSync(process.execPath, [path.join(__dirname, '../bin/cubicle-hook.js')], { input: JSON.stringify(ev), env: { ...process.env, HOME: home, USERPROFILE: home } });
+  const tool = { session_id: 'd1', cwd: '/x/app', hook_event_name: 'PreToolUse', tool_name: 'Read', tool_input: { file_path: '/x/app/a.md' }, tool_use_id: 'tu1' };
+  fire(tool); fire(tool); fire({ ...tool, tool_use_id: 'tu2' });
+  const dup = JSON.parse(fs.readFileSync(path.join(home, '.cubicle', 'claude-code.json'), 'utf8'));
+  assert.strictEqual(dup.agents[0].recent.length, 2, 'the doubled event was applied once');
   console.log('headless-worker ok');
 };
 
