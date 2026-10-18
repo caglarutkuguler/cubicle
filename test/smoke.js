@@ -5,6 +5,10 @@ const assert = require('assert');
 const http = require('http');
 const path = require('path');
 const { spawn } = require('child_process');
+// Isolate from the developer's real ~/.cubicle: its settings leaked into spawned servers and made tests flaky.
+const SMOKE_HOME = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'cubicle-smoke-home-'));
+process.env.HOME = SMOKE_HOME; process.env.USERPROFILE = SMOKE_HOME;
+process.on('exit', () => { try { require('fs').rmSync(SMOKE_HOME, { recursive: true, force: true }); } catch {} });
 const { apply, summarize } = require('../bin/cubicle-hook.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -25,10 +29,8 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 async function withServer(args, fn, env = {}) {
   const port = 3400 + Math.floor(Math.random() * 500);
-  // Isolate from the developer's real ~/.cubicle (settings/paperclip config leaked into tests and made them flaky).
-  const home = require('fs').mkdtempSync(path.join(require('os').tmpdir(), 'cubicle-smoke-home-'));
-  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, HOME: home, USERPROFILE: home, CUBICLE_TELEGRAM_SETTINGS: path.join(require('os').tmpdir(), 'cubicle-no-telegram.json'), ...env } });
-  try { await sleep(500); await fn(`http://127.0.0.1:${port}`); } finally { p.kill(); try { require('fs').rmSync(home, { recursive: true, force: true }); } catch {} }
+  const p = spawn(process.execPath, [path.join(ROOT, 'bin/cubicle.js'), '--port', String(port), ...args], { stdio: 'ignore', env: { ...process.env, CUBICLE_TELEGRAM_SETTINGS: path.join(require('os').tmpdir(), 'cubicle-no-telegram.json'), ...env } });
+  try { await sleep(500); await fn(`http://127.0.0.1:${port}`); } finally { p.kill(); }
 }
 
 // Fail fast instead of hanging CI if a server stops answering.
