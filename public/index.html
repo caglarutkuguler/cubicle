@@ -282,6 +282,7 @@
   [dir="rtl"] .card .edit { margin-left:0; margin-right:auto; }
   [dir="rtl"] #settings { right:auto; left:0; }
   [dir="rtl"] #news { right:auto; left:16px; }
+  body:has(#agents-btn:not([hidden])) #news { bottom:56px; }   /* sit above the Agents button, not under it */
   footer { color:var(--muted); font-size:12px; margin-top:12px; display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; }
 </style>
 </head>
