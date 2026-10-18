@@ -204,13 +204,35 @@ function syncBackground(feed, agents, ev, now) {
   }
 }
 
+// Where a Claude Code session was started: the CLAUDE_CODE_ENTRYPOINT the CLI sets for its hooks, or the
+// "entrypoint" field in the session's transcript. Shown on the card so terminal, VS Code, desktop app and
+// headless (Agent SDK) sessions can be told apart.
+const ORIGINS = { 'claude-vscode': 'VS Code', cli: 'Terminal', 'claude-desktop': 'Desktop app', remote: 'Cloud',
+  'sdk-cli': 'Agent SDK', 'sdk-ts': 'Agent SDK', 'sdk-py': 'Agent SDK', mcp: 'MCP' };
+function originOf(ev, env = {}) {
+  let ep = String(env.CLAUDE_CODE_ENTRYPOINT || '').trim();
+  if (!ep && /^(1|true)$/i.test(String(env.CLAUDE_CODE_REMOTE || ''))) ep = 'remote';
+  if (!ep) {
+    const tp = ev && (ev.transcript_path || ev.transcriptPath);
+    if (tp) {
+      try {
+        const fd = fs.openSync(String(tp), 'r'); const buf = Buffer.alloc(65536);
+        const n = fs.readSync(fd, buf, 0, buf.length, 0); fs.closeSync(fd);
+        const m = /"entrypoint":"([^"]+)"/.exec(buf.toString('utf8', 0, n)); if (m) ep = m[1];
+      } catch (_) {}
+    }
+  }
+  return ep ? (ORIGINS[ep] || ep) : '';
+}
+
 function apply(feed, ev, runtime = 'claude', env = {}) {
   // Grok discovers Claude settings too, but has its own feed example. Do not
   // combine its camelCase sessions under Claude's fallback "unknown" id.
   if (runtime === 'claude' && (ev.sessionId || ev.hookEventName)) return feed;
   ev = normalize(ev, runtime);
   const idn = identity(env);
-  const role = idn.role || RUNTIMES[runtimeOf(runtime)].label;
+  const label = RUNTIMES[runtimeOf(runtime)].label, origin = runtimeOf(runtime) === 'claude' ? originOf(ev, env) : '';
+  const role = idn.role || (origin ? `${label} · ${origin}` : label);
   const id = ev.session_id || 'unknown';
   const now = Date.now();
   const agents = feed.agents.filter((a) => now - (a.updated || 0) < STALE_MS);
