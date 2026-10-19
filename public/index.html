@@ -2416,6 +2416,9 @@
         labelsEl.appendChild(el);
         s.el = el;
         sprites.set(a.id, s);
+        // Seen for the first time when the page opens, or while the tab is in the background: it
+        // is already in place, not walking in (nobody was there to see it arrive).
+        if (!synced || document.hidden) s.settle = true;
         // A subagent walks in: its session sends it the work.
         const parent = a.parent && sprites.get(a.parent);
         if (synced && parent) sendEnvelope(parent, s, '#dff1ff');
@@ -2445,11 +2448,15 @@
       if (synced && needs && !s.needed) alertNeed(s);
       if (needs && !s.needed) s.waitSince = performance.now();
       s.needed = needs;
+      s.missing = 0;
+      if (s.settle || (document.hidden && s.prevStatus !== s.status)) { s.settle = false; settle(s); }
       s.prevStatus = s.status;
       applyLook(s);
       s.el.querySelector('.name').textContent = s.name;
     });
-    for (const [id, s] of sprites) if (!seen.has(id)) { s.el.remove(); sprites.delete(id); }
+    // An agent missing from one answer (a source slow to reply, a feed read mid-write) stays a
+    // moment: gone for good only after two answers in a row, so it does not walk in again.
+    for (const [id, s] of sprites) if (!seen.has(id) && ++s.missing >= 2) { s.el.remove(); sprites.delete(id); }
     handOffs(issues);
     renderCards();
     synced = true;     // alerts only for changes after the first look at the office
@@ -2612,6 +2619,17 @@
   }
 
   // ---------- movement ----------
+  // Put an agent where it is going at once: no walk across the office that nobody saw happen.
+  function settle(s) {
+    if (!s.desk || s.queueIdx >= 0 || s.meetUntil > performance.now() / 1000 || s.chat) return;
+    const desk = s.status === 'running' || s.status === 'error' || s.status === 'waiting';
+    const p = LOUNGE[s.lounge % LOUNGE.length];
+    s.x = desk ? s.desk[0] * T + 22 : p[0] * T; s.y = desk ? s.desk[1] * T + 12 : p[1] * T;
+    s.path = null; s.pathKey = null; s.walking = false;
+  }
+  // Back to the tab: whatever happened meanwhile is already done (the drawing stood still while
+  // the tab was hidden, so arrivals and moves would otherwise all play out now).
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) for (const s of sprites.values()) if (s.walking) settle(s); });
   function targetFor(s, now) {
     if (s.meetUntil > now) return [s.meetSpot[0] * T, s.meetSpot[1] * T, false];
     if (s.queueIdx >= 0) { const q = queueSpots()[s.queueIdx]; if (q) return [q[0], q[1], false]; }
