@@ -713,6 +713,12 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
       assert.deepStrictEqual(cfg.update, { latest: '99.0.0', kind: 'npm', command: 'npm install -g @caglarutkuguler/cubicle@latest', auto: false, canApply: true });
       const offers = sent.filter((m) => m.text.includes('99.0.0'));
       assert.strictEqual(offers.length, 1, 'offered once'); assert.ok(offers[0].text.includes('npm install -g @caglarutkuguler/cubicle@latest') && offers[0].text.includes('/update'), offers[0].text);
+      // a decision carries its longer answer: a question about "the commands above" shows them
+      await new Promise((ok, no) => { const q = http.request(`http://127.0.0.1:${port}/api/cubicle/attention`, { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' } }, (r) => { r.resume(); r.on('end', ok); }); q.on('error', no);
+        q.end(JSON.stringify({ kind: 'decision', agent: 'CEO', title: 'Patch', text: 'Add the patterns above to ALLOWED_TOOLS?', detail: '**Done:** reviewed.\n\n```\n|Bash(gh pr view*)|Bash(gh run list*)\n```' })); });
+      await sleep(600);
+      const dm = sent.find((m) => m.text.includes('Add the patterns above'));
+      assert.ok(dm && dm.text.includes('<pre>|Bash(gh pr view*)|Bash(gh run list*)</pre>') && dm.text.indexOf('<pre>') < dm.text.indexOf('Add the patterns above') && dm.text.includes('<b>Done:</b>'), dm && dm.text);
     } finally { p.kill(); }
     // turned off: nothing is asked
     let asked = 0; reg.on('request', () => asked++);

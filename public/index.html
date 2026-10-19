@@ -4284,10 +4284,10 @@
   // ---- answering an agent's question, with choices ----
   var ad = document.getElementById('ans-dlg'), cur = null, queue = [], chosen = [], aq = document.getElementById('ans-q'), ao = document.getElementById('ans-opts'),
     af = document.getElementById('ans-free'), at = document.getElementById('ans-text'), am = document.getElementById('ans-msg'), OTHER = '__other__';
-  // the agent's longer answer (steps, commands in code blocks) shown under the question
+  // the agent's longer answer (what it did, commands in code blocks) shown above the question, which often refers to it
   var adt = document.createElement('div'); adt.id = 'ans-detail'; adt.hidden = true;
   adt.style.cssText = 'margin:8px 0;max-height:38vh;overflow:auto;font-size:12.5px;line-height:1.45;border:1px solid rgba(128,128,128,.35);border-radius:8px;padding:8px 10px;white-space:pre-wrap;word-break:break-word';
-  aq.insertAdjacentElement('afterend', adt);
+  aq.insertAdjacentElement('beforebegin', adt);
   var COPY = /^tr/i.test(navigator.language || '') ? 'Kopyala' : 'Copy';
   function showDetail(s) {
     s = String(s || '').trim(); adt.hidden = !s; if (!s) { adt.innerHTML = ''; return; }

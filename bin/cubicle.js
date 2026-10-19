@@ -1083,9 +1083,20 @@ function attentionAdd(item) {
   try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
   if (TELEGRAM && TELEGRAM.notify) {
     const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    // The longer answer goes along (a question often refers to "the commands above"): its code
+    // blocks whole, as much of the rest as fits in one message.
+    const detail = (() => {
+      const d = String(it.detail || '').trim(); if (!d) return '';
+      const parts = d.split(/```[a-zA-Z0-9_-]*\n?/);
+      let code = ''; for (const c of parts.filter((_, i) => i % 2)) { const block = `<pre>${esc(c.replace(/\n$/, '').slice(0, 1500))}</pre>`; if (code.length + block.length > 2000) break; code += (code ? '\n' : '') + block; }
+      const prose = parts.filter((_, i) => i % 2 === 0).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+      const room = Math.max(0, 2600 - code.length);
+      const text = prose.length > room ? prose.slice(0, room).replace(/\s+\S*$/, '') + ' …' : prose;
+      return `${text ? esc(text).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>') + '\n' : ''}${code}`.trim();
+    })();
     // in each chat's own language (Turkish or English)
     TELEGRAM.notify((lang) => { const t = ST(lang === 'tr' ? 'tr' : 'en');
-      return `${it.kind === 'decision' ? t.tgDecision : t.tgError}: ${esc(it.title)}\n${esc(it.text.slice(0, 600))}${it.options.length ? '\n' + it.options.map((x, n) => `${n + 1}) ${esc(x)}`).join('\n') : ''}${it.url ? `\n${esc(it.url)}` : ''}\n${it.agent ? `<a href="${esc(`${tgPublicUrl().replace(/\/$/, '')}/?agent=${encodeURIComponent(it.agent)}`)}">${t.tgAnswer}</a>` : t.tgHint}`; });
+      return `${it.kind === 'decision' ? t.tgDecision : t.tgError}: ${esc(it.title)}\n${detail ? detail + '\n\n' : ''}${esc(it.text.slice(0, 600))}${it.options.length ? '\n' + it.options.map((x, n) => `${n + 1}) ${esc(x)}`).join('\n') : ''}${it.url ? `\n${esc(it.url)}` : ''}\n${it.agent ? `<a href="${esc(`${tgPublicUrl().replace(/\/$/, '')}/?agent=${encodeURIComponent(it.agent)}`)}">${t.tgAnswer}</a>` : t.tgHint}`; });
   }
   console.log(`Cubicle: needs you (${it.kind}): ${it.title}`);
   return it;
