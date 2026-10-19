@@ -417,13 +417,31 @@ const SRV_TEXT = {
     failTitle: (t) => `CEO task failed: ${t}`, failText: (t) => `The task ended with an error: ${t}`,
     budgetOpts: ['Raise the budget and continue where you left off', 'Split the task into smaller parts and retry', 'Give up'], failOpts: ['Retry', 'Give up'],
     tgDecision: '❓ <b>Needs a decision</b>', tgError: '⚠️ <b>Error</b>', tgAnswer: 'Answer in Cubicle', tgHint: '(click the agent in Cubicle to answer)',
-    fixTask: (f) => `[First responder] The agent "${f.name}" stopped with an error and no one has looked at it yet.\nTask: ${f.task || '(unknown)'}\nError: ${f.error || '(no message)'}${f.code ? `\nCode: ${f.code}` : ''}${f.steps ? `\nLast steps: ${f.steps}` : ''}\n\nFind out why and fix it if you can: read its log or issue, retry or relaunch the work, adjust the task, or close it if it is already done. Decide what you can decide yourself; the human only hears from you if you cannot fix it. In that case explain what you found and end with DECISION: <one question for the human> and OPTIONS: <2-4 options>. If you fixed it, end with DECISION: none.`, },
+    fixTask: (f) => `[First responder] The agent "${f.name}" stopped with an error and no one has looked at it yet.\nTask: ${f.task || '(unknown)'}\nError: ${f.error || '(no message)'}${f.code ? `\nCode: ${f.code}` : ''}${f.steps ? `\nLast steps: ${f.steps}` : ''}\n\nFind out why and fix it if you can: read its log or issue, retry or relaunch the work, adjust the task, or close it if it is already done. Decide what you can decide yourself; the human only hears from you if you cannot fix it. In that case explain what you found and end with DECISION: <one question for the human> and OPTIONS: <2-4 options>. If you fixed it, end with DECISION: none.`,
+    ghTell: (why, it) => ({
+      blocked: `✋ <b>${it.ref}</b> needs you: ${it.title}\n<a href="${it.url}">Open the issue</a>`,
+      failed: `⚠️ <b>${it.ref}</b> failed: ${it.title}\n<a href="${it.url}">Open the issue</a>`,
+      review: `👀 <b>${it.ref}</b> has a PR for you to review: ${it.title}${it.pr ? `\n<a href="${it.pr.url}">PR #${it.pr.number}</a> · CI ${it.pr.ci}` : ''}`,
+      noCi: `👀 <b>${it.ref}</b>: its PR has no CI, so the CEO does not merge it by itself. Please review it: ${it.title}${it.pr ? `\n<a href="${it.pr.url}">PR #${it.pr.number}</a>` : ''}`,
+    })[why] || '',
+    ghIdle: (list) => `💤 <b>No agent is working, and ${list.length} ${list.length === 1 ? 'item waits' : 'items wait'} for you:</b>\n` + list.slice(0, 10).map((it) => `• <a href="${(it.state === 'review' && it.pr ? it.pr.url : it.url)}">${it.ref}</a> ${({ blocked: 'needs a decision', failed: 'failed', review: 'PR to review' })[it.state] || it.state}: ${it.title}`).join('\n'),
+    mergeTask: (it) => `[Review and merge] PR #${it.pr.number} in ${it.repo} (${it.pr.url}) for issue #${it.number} "${it.title}" is labelled agent:review and its CI passed.\n\nReview it (use the code-reviewer and security-reviewer subagents). If it is sound, merge it: gh pr merge ${it.pr.number} --repo ${it.repo} --squash --delete-branch, then remove the agent:review label from issue #${it.number} (and close it if the merge did not). If it needs work, comment on the PR what must change and put issue #${it.number} back to agent:ready so a worker picks it up. Merge only what you would sign off yourself. If it needs a human call (risky, unclear, or outside the issue), leave it unmerged and end with DECISION: <one question> and OPTIONS: <2-4 options>. If you merged it or sent it back, end with DECISION: none.`,
+    sendBackTask: (it) => `[Fix the PR] PR #${it.pr.number} in ${it.repo} (${it.pr.url}) for issue #${it.number} "${it.title}" is labelled agent:review, but ${it.pr.mergeable === 'CONFLICTING' ? 'it conflicts with the base branch' : `its CI is red${it.pr.failing.length ? ` (${it.pr.failing.join('; ')})` : ''}`}.\n\nFind out why. If a worker can fix it, comment on the issue what to fix (the failing checks, or rebase on main) and put issue #${it.number} back to agent:ready. If the failure is not caused by this PR (main itself is broken, a flaky check), say so in a comment and fix or open what is needed. If it needs a human, end with DECISION: <one question> and OPTIONS: <2-4 options>; otherwise end with DECISION: none.`, },
   tr: { working: '\u00e7al\u0131\u015f\u0131yor', queued: 's\u0131rada', done: 'tamamland\u0131', waiting: 'karar bekliyor', error: 'hata', decision: 'Karar', busy: 'CEO me\u015fgul; bu g\u00f6rev s\u0131raya al\u0131nd\u0131 (tek CEO, g\u00f6revler s\u0131rayla).',
     budgetTitle: (t) => `CEO bütçeye takıldı: ${t}`, budgetText: (b) => `Görev, tek çalıştırma bütçesini ($${b}) aştığı için yarıda kaldı. Açılan issue ve PR'lar yerinde duruyor; yeniden denerken kaldığı yerden devam eder.`,
     failTitle: (t) => `CEO görevi başarısız: ${t}`, failText: (t) => `Görev bir hatayla bitti: ${t}`,
     budgetOpts: ['Bütçeyi artırıp kaldığın yerden devam et', 'Görevi küçük parçalara bölüp yeniden dene', 'Vazgeç'], failOpts: ['Yeniden dene', 'Vazgeç'],
     tgDecision: '❓ <b>Karar bekliyor</b>', tgError: '⚠️ <b>Hata</b>', tgAnswer: 'Cubicle\'da cevapla', tgHint: '(Cubicle\'da ajan\u0131n \u00fczerine t\u0131klayarak cevaplayabilirsin)',
-    fixTask: (f) => `[İlk müdahale] "${f.name}" ajanı hata verip durdu, henüz kimse bakmadı.\nGörev: ${f.task || '(bilinmiyor)'}\nHata: ${f.error || '(mesaj yok)'}${f.code ? `\nKod: ${f.code}` : ''}${f.steps ? `\nSon adımlar: ${f.steps}` : ''}\n\nNedenini bul ve çözebiliyorsan çöz: kaydını ya da issue'sunu oku, işi yeniden dene ya da yeniden başlat, görevi düzelt, iş zaten bitmişse kapat. Kendin karar verebileceğin şeyleri sormadan yap; insan ancak çözemezsen haberdar olsun. O durumda ne bulduğunu açıkla ve DECISION: <insana tek soru> ile OPTIONS: <2-4 seçenek> satırlarıyla bitir. Çözdüysen DECISION: none ile bitir.`, },
+    fixTask: (f) => `[İlk müdahale] "${f.name}" ajanı hata verip durdu, henüz kimse bakmadı.\nGörev: ${f.task || '(bilinmiyor)'}\nHata: ${f.error || '(mesaj yok)'}${f.code ? `\nKod: ${f.code}` : ''}${f.steps ? `\nSon adımlar: ${f.steps}` : ''}\n\nNedenini bul ve çözebiliyorsan çöz: kaydını ya da issue'sunu oku, işi yeniden dene ya da yeniden başlat, görevi düzelt, iş zaten bitmişse kapat. Kendin karar verebileceğin şeyleri sormadan yap; insan ancak çözemezsen haberdar olsun. O durumda ne bulduğunu açıkla ve DECISION: <insana tek soru> ile OPTIONS: <2-4 seçenek> satırlarıyla bitir. Çözdüysen DECISION: none ile bitir.`,
+    ghTell: (why, it) => ({
+      blocked: `✋ <b>${it.ref}</b> sizi bekliyor: ${it.title}\n<a href="${it.url}">İşi aç</a>`,
+      failed: `⚠️ <b>${it.ref}</b> başarısız oldu: ${it.title}\n<a href="${it.url}">İşi aç</a>`,
+      review: `👀 <b>${it.ref}</b> için incelemenizi bekleyen bir PR var: ${it.title}${it.pr ? `\n<a href="${it.pr.url}">PR #${it.pr.number}</a> · CI ${it.pr.ci}` : ''}`,
+      noCi: `👀 <b>${it.ref}</b>: PR'ında CI yok, bu yüzden CEO kendisi birleştirmiyor. Lütfen inceleyin: ${it.title}${it.pr ? `\n<a href="${it.pr.url}">PR #${it.pr.number}</a>` : ''}`,
+    })[why] || '',
+    ghIdle: (list) => `💤 <b>Çalışan ajan yok; ${list.length} iş sizi bekliyor:</b>\n` + list.slice(0, 10).map((it) => `• <a href="${(it.state === 'review' && it.pr ? it.pr.url : it.url)}">${it.ref}</a> ${({ blocked: 'karar bekliyor', failed: 'başarısız', review: 'PR incelemesi' })[it.state] || it.state}: ${it.title}`).join('\n'),
+    mergeTask: (it) => `[İncele ve birleştir] ${it.repo} deposundaki PR #${it.pr.number} (${it.pr.url}), #${it.number} "${it.title}" işi için açıldı; agent:review etiketli ve CI'ı geçti.\n\nİncele (code-reviewer ve security-reviewer subagent'larını kullan). Sağlamsa birleştir: gh pr merge ${it.pr.number} --repo ${it.repo} --squash --delete-branch, ardından #${it.number} işinden agent:review etiketini kaldır (birleştirme kapatmadıysa işi kapat). Düzeltme gerekiyorsa PR'a neyin değişmesi gerektiğini yaz ve #${it.number} işini agent:ready'ye geri al ki bir işçi alsın. Yalnızca kendin onaylayacağın şeyi birleştir. İnsan kararı gerekiyorsa (riskli, belirsiz ya da işin kapsamı dışında) birleştirme ve DECISION: <tek soru> ile OPTIONS: <2-4 seçenek> satırlarıyla bitir. Birleştirdiysen ya da geri gönderdiysen DECISION: none ile bitir.`,
+    sendBackTask: (it) => `[PR'ı düzelt] ${it.repo} deposundaki PR #${it.pr.number} (${it.pr.url}), #${it.number} "${it.title}" işi için açıldı ve agent:review etiketli, ama ${it.pr.mergeable === 'CONFLICTING' ? 'ana dalla çakışıyor' : `CI'ı kırmızı${it.pr.failing.length ? ` (${it.pr.failing.join('; ')})` : ''}`}.\n\nNedenini bul. Bir işçi düzeltebilirse işe neyin düzeltileceğini yaz (kırmızı kontroller ya da main üzerine rebase) ve #${it.number} işini agent:ready'ye geri al. Hata bu PR'dan kaynaklanmıyorsa (main kırık, kararsız bir kontrol) bunu yorumla ve gerekeni düzelt ya da aç. İnsan gerekiyorsa DECISION: <tek soru> ile OPTIONS: <2-4 seçenek> ile bitir; değilse DECISION: none.`, },
 };
 const srvLang = () => { const l = String(cubicleSettings().lang || process.env.CUBICLE_LANG || process.env.LANG || '').slice(0, 2).toLowerCase(); return SRV_TEXT[l] ? l : 'en'; };
 const ST = (lang) => SRV_TEXT[lang || srvLang()] || SRV_TEXT.en;
@@ -513,6 +531,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/cubicle/dispatch') return serveDispatch(req, res);
   if (url.pathname === '/api/cubicle/attention') return serveAttention(req, res);
   if (url.pathname === '/api/cubicle/update') return serveUpdate(req, res);
+  if (url.pathname === '/api/cubicle/github') return serveGithub(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -710,6 +729,7 @@ server.listen(PORT, HOST, () => {
   for (const x of SOURCES) if (x.kind === 'file' && !fs.existsSync(x.file)) console.log(`Note: ${x.file} does not exist yet; it counts as no agents until something writes it.`);
   restartTelegram();
   setInterval(watchFailures, Number(process.env.CUBICLE_FIX_INTERVAL || 15000)).unref();
+  setTimeout(watchGithub, Number(process.env.CUBICLE_GITHUB_FIRST || 5000)).unref(); setInterval(watchGithub, Number(process.env.CUBICLE_GITHUB_INTERVAL || 120000)).unref();
   if (UPDATE_CHECK || AUTO_UPDATE) {
     UPDATES.watch({ every: AUTO_UPDATE ? 3600000 : 6 * 3600000, onNewer(v) {
       const kind = process.env.CUBICLE_INSTALL_KIND || UPDATES.installKind();
@@ -792,6 +812,11 @@ const SETTING_KEYS = {
   paperclipAgents: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   createTasks: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
 };
+const GITHUB_KEYS = {
+  enabled: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  autoMerge: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  repos: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 1000 && /^[\w.\/\s,-]+$/.test(v) ? v.trim() : Symbol.for('bad'),
+};
 const DISPATCH_KEYS = {
   enabled: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   fixFailures: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
@@ -806,8 +831,8 @@ function settingsStatus(req) {
   const out = { createTasks: canCreateTasks(), available: HAS_PAPERCLIP && !REDACT, canEdit: local, paperclip: HAS_PAPERCLIP };
   if (!local) return out;
   const pick = (o, keys) => Object.fromEntries(Object.keys(keys).filter((k) => o && o[k] !== undefined).map((k) => [k, o[k]]));
-  return { ...out, file: CUBICLE_SETTINGS, values: { ...pick(c, SETTING_KEYS), dispatch: pick(c.dispatch, DISPATCH_KEYS) },
-    defaults: { port: 3200, sources: 'claude-code', dispatch: DISPATCH_DEFAULTS },
+  return { ...out, file: CUBICLE_SETTINGS, values: { ...pick(c, SETTING_KEYS), dispatch: pick(c.dispatch, DISPATCH_KEYS), github: pick(c.github, GITHUB_KEYS) },
+    defaults: { port: 3200, sources: 'claude-code', dispatch: DISPATCH_DEFAULTS, github: { repos: GITHUB.reposFromConf().join(', ') } },
     running: { version: VERSION, host: HOST, port: PORT, sources: SOURCES.map((x) => x.kind === 'paperclip' ? `paperclip (${PAPERCLIP.origin})` : x.kind === 'file' ? x.file : x.kind === 'replay' ? 'replay' : x.url ? x.url.href : x.kind),
       autoUpdate: AUTO_UPDATE, updateCheck: UPDATE_CHECK, redact: REDACT, install: UPDATES.installKind(), lang: srvLang() } };
 }
@@ -829,11 +854,14 @@ async function serveSettings(req, res) {
     }
     return null;
   };
-  const { dispatch, ...top } = data;
+  const { dispatch, github, ...top } = data;
   let err = apply(next, SETTING_KEYS, top, '');
-  if (!err && dispatch !== undefined) {
-    if (!dispatch || typeof dispatch !== 'object' || Array.isArray(dispatch)) err = 'bad value for dispatch';
-    else { next.dispatch = { ...(next.dispatch && typeof next.dispatch === 'object' ? next.dispatch : {}) }; err = apply(next.dispatch, DISPATCH_KEYS, dispatch, 'dispatch.'); if (!Object.keys(next.dispatch).length) delete next.dispatch; }
+  for (const [name, val, keys] of [['dispatch', dispatch, DISPATCH_KEYS], ['github', github, GITHUB_KEYS]]) {
+    if (err || val === undefined) continue;
+    if (!val || typeof val !== 'object' || Array.isArray(val)) { err = `bad value for ${name}`; continue; }
+    next[name] = { ...(next[name] && typeof next[name] === 'object' ? next[name] : {}) };
+    err = apply(next[name], keys, val, `${name}.`);
+    if (!Object.keys(next[name]).length) delete next[name];
   }
   if (err) return send(res, 400, JSON.stringify({ error: err }));
   try { fs.mkdirSync(path.dirname(CUBICLE_SETTINGS), { recursive: true }); require('./cubicle-telegram.js').writeFileAtomic(CUBICLE_SETTINGS, JSON.stringify(next, null, 2)); }
@@ -1052,6 +1080,70 @@ function ceoTakes(a) {
   const text = t.fixTask({ name: a.name, task, error: (a.fail && a.fail.error) || a.error || '', code: a.fail ? a.fail.code : '', steps: (a.steps || []).join(' → ') });
   queueCeo(text, { auto: true, forAgent: a.id }).then((r) => console.log(`Cubicle: ${a.name} failed; ${r ? `handed to the CEO (${r.id})` : 'the CEO queue is full, so it stays with you'}.`)).catch(() => {});
   return true;
+}
+// ---------- the GitHub queue: what waits for a worker, the CEO or you ----------
+// Issues labelled agent:ready / working / review / blocked-human / failed in the repos of
+// settings.github.repos (or ~/agents/repos.conf), read with `gh`. You hear about what waits for
+// you; with github.autoMerge (and the task box on) the CEO reviews each PR whose CI passed and
+// merges it, or sends a red or conflicting one back to a worker. When no agent works while work
+// waits for you, you are told so, at most every 4 hours.
+const GITHUB = require('./cubicle-github.js');
+const GH_HANDED_FILE = path.join(path.dirname(CUBICLE_SETTINGS), 'github-handed.json');
+const GHQ = { items: [], at: 0, errors: [], repos: [], seen: new Map(), idleTold: 0, handed: new Set((() => { try { return JSON.parse(fs.readFileSync(GH_HANDED_FILE, 'utf8')); } catch (_) { return []; } })()) };
+function githubCfg() {
+  const g = cubicleSettings().github || {};
+  if (g.enabled === false) return null;
+  const repos = String(g.repos || '').split(/[\s,]+/).filter((r) => /^[\w.-]+\/[\w.-]+$/.test(r));
+  return { repos: repos.length ? repos : GITHUB.reposFromConf(), autoMerge: g.autoMerge === true };
+}
+const ceoMerges = (cfg) => !!(cfg && cfg.autoMerge && dispatchCfg());
+function tellGithub(it, why) {
+  if (!TELEGRAM || !TELEGRAM.notify) return;
+  const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  TELEGRAM.notify((lang) => { const t = ST(lang === 'tr' ? 'tr' : 'en'); return t.ghTell(why || it.state, { ...it, title: esc(it.title), ref: `${esc(it.repo)}#${it.number}` }); });
+}
+function handReview(it) {
+  const p = it.pr;
+  if (!p || p.draft || p.ci === 'pending') return;
+  const key = `${it.repo}#${p.number}@${p.sha}`;
+  if (GHQ.handed.has(key)) return;
+  if (p.ci === 'none') { GHQ.handed.add(key); saveHanded(); return tellGithub(it, 'noCi'); }
+  if (DISPATCH_RUNS.filter((r) => r.forPr && (r.state === 'queued' || r.state === 'running')).length >= 3) return;   // a few at a time
+  GHQ.handed.add(key); saveHanded();
+  const t = ST(), merge = p.ci === 'green' && p.mergeable !== 'CONFLICTING';
+  queueCeo(merge ? t.mergeTask(it) : t.sendBackTask(it), { auto: true, forPr: key })
+    .then((r) => console.log(`Cubicle: ${it.repo}#${it.number} (PR #${p.number}) ${merge ? 'to the CEO to review and merge' : 'back through the CEO: CI red or a conflict'}${r ? ` (${r.id})` : ', but the CEO queue is full'}.`)).catch(() => {});
+}
+function saveHanded() { try { fs.writeFileSync(GH_HANDED_FILE, JSON.stringify([...GHQ.handed].slice(-300))); } catch (_) {} }
+const forYou = (it, cfg) => it.state === 'blocked' || it.state === 'failed' || (it.state === 'review' && (!ceoMerges(cfg) || (it.pr && it.pr.ci === 'none')));
+async function watchGithub() {
+  const cfg = githubCfg();
+  if (!cfg || !cfg.repos.length) { GHQ.items = []; GHQ.repos = []; return; }
+  const r = await GITHUB.scan(cfg.repos);
+  if (r.errors.length && !r.items.length) { GHQ.errors = r.errors; return; }
+  const first = !GHQ.at;
+  Object.assign(GHQ, { items: r.items, errors: r.errors, at: Date.now(), repos: cfg.repos });
+  for (const it of r.items) {
+    const key = `${it.repo}#${it.number}`, before = GHQ.seen.get(key);
+    GHQ.seen.set(key, it.state);
+    if (it.state === 'review' && ceoMerges(cfg)) handReview(it);
+    else if (!first && before !== it.state && forYou(it, cfg)) tellGithub(it);
+  }
+  // nobody at work while work waits for you: say so (not more than every 4 hours)
+  const waiting = r.items.filter((it) => forYou(it, cfg));
+  const busy = r.items.some((it) => it.state === 'ready' || it.state === 'working') || DISPATCH_RUNS.some((x) => x.state === 'running' || x.state === 'queued');
+  if (!busy && waiting.length && Date.now() - GHQ.idleTold > 4 * 3600000 && TELEGRAM && TELEGRAM.notify) {
+    GHQ.idleTold = Date.now();
+    const esc = (x) => String(x).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+    TELEGRAM.notify((lang) => ST(lang === 'tr' ? 'tr' : 'en').ghIdle(waiting.map((it) => ({ ...it, title: esc(it.title), ref: `${esc(it.repo)}#${it.number}` }))));
+  }
+}
+async function serveGithub(req, res) {
+  if (!(await fromOwner(req))) return send(res, 403, '{"error":"only from this machine or your own devices"}');
+  if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"GET"}');
+  const cfg = githubCfg();
+  send(res, 200, JSON.stringify({ enabled: !!(cfg && cfg.repos.length), autoMerge: ceoMerges(cfg), repos: GHQ.repos, at: GHQ.at, errors: GHQ.errors,
+    items: GHQ.items.map((it) => ({ ...it, forYou: forYou(it, cfg), handed: !!(it.pr && GHQ.handed.has(`${it.repo}#${it.pr.number}@${it.pr.sha}`)) })) }));
 }
 let fixKnown = null;
 async function watchFailures() {

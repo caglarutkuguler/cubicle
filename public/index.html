@@ -189,7 +189,18 @@
   #qdlg .acts { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
   dialog#tg::backdrop { background:rgba(8,9,15,.6); }
   dialog#cfgdlg { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:16px 18px; width:min(640px, 94vw); max-height:88vh; overflow:auto; box-shadow:0 18px 50px rgba(0,0,0,.5); }
-  dialog#cfgdlg::backdrop { background:rgba(8,9,15,.6); }
+  dialog#cfgdlg::backdrop, dialog#ghdlg::backdrop { background:rgba(8,9,15,.6); }
+  #ghq { background:#2f3552; color:var(--text); border:1px solid #4a5175; border-radius:14px; padding:3px 10px; font:inherit; font-size:12.5px; cursor:pointer; }
+  #ghq.hot { background:#4a3d12; border-color:#8a7020; color:#ffe08a; } #ghq.idle { animation:ghpulse 2s ease-in-out infinite; }
+  @keyframes ghpulse { 50% { box-shadow:0 0 0 4px rgba(255,200,80,.25); } }
+  dialog#ghdlg { background:var(--panel); color:var(--text); border:1px solid var(--line); border-radius:12px; padding:16px 18px; width:min(720px, 94vw); max-height:86vh; overflow:auto; box-shadow:0 18px 50px rgba(0,0,0,.5); }
+  #ghdlg h2 { font-size:15px; margin:0 0 8px; display:flex; } #ghdlg h2 button { margin-inline-start:auto; background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; }
+  #ghdlg section { border:1px solid var(--line); border-radius:10px; padding:8px 12px; margin:10px 0; background:#1d2030; }
+  #ghdlg h3 { font-size:13px; margin:2px 0 6px; } #ghdlg h3 small { color:var(--muted); font-weight:400; }
+  #ghdlg ul { list-style:none; margin:0; padding:0; } #ghdlg li { font-size:12.5px; padding:5px 0; border-top:1px solid rgba(255,255,255,.05); line-height:1.45; } #ghdlg li:first-child { border-top:0; }
+  #ghdlg a { color:#8ab4ff; } #ghdlg .ghmeta { display:inline-flex; gap:6px; align-items:center; margin-inline-start:6px; flex-wrap:wrap; }
+  #ghdlg .ghtag, #ghdlg .ghci { font-size:11px; border-radius:8px; padding:0 6px; background:#2f3552; } #ghdlg .ghtag.blocked, #ghdlg .ghtag.failed, #ghdlg .ghci.red { background:#5a2323; color:#ffb3b3; }
+  #ghdlg .ghtag.review { background:#4a3d12; color:#ffe08a; } #ghdlg .ghci.green { background:#1f4a2c; color:#a8f0c0; } #ghdlg .note { font-size:12px; color:var(--muted); }
   #cfgdlg h2 { font-size:15px; margin:0 0 8px; display:flex; } #cfgdlg h2 button { margin-inline-start:auto; background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; }
   #cfgdlg p { font-size:13px; margin:6px 0; } #cfgdlg .note { font-size:12px; color:var(--muted); margin:2px 0 6px; overflow-wrap:anywhere; }
   #cfgdlg section { border:1px solid var(--line); border-radius:10px; padding:10px 12px; margin:10px 0; background:#1d2030; }
@@ -309,6 +320,7 @@
     <div class="right">
       <select id="company" hidden></select>
       <span id="nav"></span>
+      <button id="ghq" type="button" hidden></button>
       <span id="status"></span>
       <button id="gear" type="button" aria-expanded="false" aria-controls="settings">⚙</button>
       <div id="settings" hidden></div>
@@ -331,6 +343,7 @@
   <dialog id="kpi"></dialog>
   <dialog id="tg"></dialog>
   <dialog id="cfgdlg"></dialog>
+  <dialog id="ghdlg"></dialog>
   <dialog id="qdlg"></dialog>
   <dialog id="answer"><div class="head"><b></b><a target="_blank" rel="noopener"></a><button type="button" class="x"></button></div><iframe title="Paperclip"></iframe><div class="note"></div></dialog>
   <footer>
@@ -3944,7 +3957,7 @@
       paperclip: 'Paperclip', pcLinks: 'Show links to Paperclip', pcAgents: 'Show Paperclip agents', createTasks: 'Let KPI advice become Paperclip tasks',
       ceo: 'Task box (CEO)', ceoOn: 'Show the task box', ceoNote: 'A task starts an unattended Claude run (claude -p) in the folder below, with only the tools listed.',
       fix: 'When an agent fails, the CEO tries to fix it first; you are asked only if it cannot', cwd: 'Working folder', model: 'Model', budget: 'Budget per task (USD)', tools: 'Allowed tools', prompt: 'Instructions', dflt: 'Empty: the default',
-      alerts: 'Alerts', save: 'Save', saving: 'Saving…', saved: 'Saved.', failed: 'Could not save:' },
+      ghSec: 'GitHub', ghOn: 'Watch the work queue on GitHub', ghRepos: 'Repos (owner/repo, separated by commas)', ghReposNote: 'Empty: the repos in ~/agents/repos.conf. Read with the gh CLI signed in on this computer.', ghMerge: 'The CEO reviews PRs whose CI passed and merges them', ghMergeNote: 'A red or conflicting PR goes back to a worker; anything risky or unclear is asked to you. Needs the task box.', alerts: 'Alerts', save: 'Save', saving: 'Saving…', saved: 'Saved.', failed: 'Could not save:' },
     tr: { title: 'Cubicle ayarları', intro: (f) => `Bu bilgisayarda ${f} dosyasında tutulur. Aksi yazmıyorsa değişiklikler hemen geçerli olur.`,
       onlyHere: 'Bu ayarlar yalnızca Cubicle’ın çalıştığı bilgisayardan değiştirilebilir.', embed: 'Bu ayarlar bağımsız çalışan Cubicle’a ait. Onu çalıştığı bilgisayarda açın.',
       run: 'Şu an çalışan', version: 'Sürüm', address: 'Adres', watching: 'İzlenen', updates: 'Güncellemeler', upAuto: 'yeni sürümleri kendisi kurar', upCheck: 'yeni sürümü haber verir', upOff: 'kontrol edilmiyor', redacted: 'Gizli mod: yalnızca kimlik ve durumlar',
@@ -3955,7 +3968,7 @@
       paperclip: 'Paperclip', pcLinks: 'Paperclip bağlantılarını göster', pcAgents: 'Paperclip ajanlarını göster', createTasks: 'KPI tavsiyeleri Paperclip görevine dönüştürülebilsin',
       ceo: 'Görev kutusu (CEO)', ceoOn: 'Görev kutusunu göster', ceoNote: 'Her görev, aşağıdaki klasörde yalnızca listelenen araçlarla gözetimsiz bir Claude çalıştırması (claude -p) başlatır.',
       fix: 'Bir ajan hata verince önce CEO çözmeye çalışsın; çözemezse size sorulsun', cwd: 'Çalışma klasörü', model: 'Model', budget: 'Görev başına bütçe (USD)', tools: 'İzin verilen araçlar', prompt: 'Talimatlar', dflt: 'Boş: varsayılan',
-      alerts: 'Bildirimler', save: 'Kaydet', saving: 'Kaydediliyor…', saved: 'Kaydedildi.', failed: 'Kaydedilemedi:' },
+      ghSec: 'GitHub', ghOn: 'GitHub’daki iş kuyruğunu izle', ghRepos: 'Depolar (sahip/depo, virgülle ayrılmış)', ghReposNote: 'Boş: ~/agents/repos.conf içindeki depolar. Bu bilgisayarda oturum açmış gh ile okunur.', ghMerge: 'CEO, CI’ı geçen PR’ları inceleyip birleştirsin', ghMergeNote: 'CI’ı kırmızı ya da çakışan PR bir işçiye geri gider; riskli ya da belirsiz olan size sorulur. Görev kutusu açık olmalı.', alerts: 'Bildirimler', save: 'Kaydet', saving: 'Kaydediliyor…', saved: 'Kaydedildi.', failed: 'Kaydedilemedi:' },
     de: { title: 'Cubicle-Einstellungen', intro: (f) => `Auf diesem Computer in ${f} gespeichert. Änderungen gelten sofort, sofern nichts anderes dabeisteht.`,
       onlyHere: 'Diese Einstellungen lassen sich nur auf dem Computer ändern, auf dem Cubicle läuft.', embed: 'Diese Einstellungen gehören zum eigenständigen Cubicle. Öffne es auf dem Computer, auf dem es läuft.',
       run: 'Läuft gerade', version: 'Version', address: 'Adresse', watching: 'Beobachtet', updates: 'Updates', upAuto: 'installiert neue Versionen selbst', upCheck: 'meldet neue Versionen', upOff: 'nicht geprüft', redacted: 'Geschwärzt: nur IDs und Status',
@@ -3966,7 +3979,7 @@
       paperclip: 'Paperclip', pcLinks: 'Links zu Paperclip zeigen', pcAgents: 'Paperclip-Agenten zeigen', createTasks: 'KPI-Tipps dürfen Paperclip-Aufgaben werden',
       ceo: 'Aufgabenfeld (CEO)', ceoOn: 'Aufgabenfeld zeigen', ceoNote: 'Eine Aufgabe startet einen unbeaufsichtigten Claude-Lauf (claude -p) im Ordner unten, nur mit den aufgeführten Werkzeugen.',
       fix: 'Scheitert ein Agent, versucht zuerst der CEO, es zu beheben; gefragt wirst du nur, wenn er es nicht schafft', cwd: 'Arbeitsordner', model: 'Modell', budget: 'Budget pro Aufgabe (USD)', tools: 'Erlaubte Werkzeuge', prompt: 'Anweisungen', dflt: 'Leer: Standard',
-      alerts: 'Hinweise', save: 'Speichern', saving: 'Wird gespeichert…', saved: 'Gespeichert.', failed: 'Nicht gespeichert:' },
+      ghSec: 'GitHub', ghOn: 'Die Arbeitswarteschlange auf GitHub beobachten', ghRepos: 'Repos (owner/repo, durch Kommas getrennt)', ghReposNote: 'Leer: die Repos aus ~/agents/repos.conf. Gelesen mit der gh-CLI, die auf diesem Computer angemeldet ist.', ghMerge: 'Der CEO prüft PRs mit bestandenem CI und führt sie zusammen', ghMergeNote: 'Ein roter oder kollidierender PR geht an einen Worker zurück; Riskantes oder Unklares wird dir vorgelegt. Braucht das Aufgabenfeld.', alerts: 'Hinweise', save: 'Speichern', saving: 'Wird gespeichert…', saved: 'Gespeichert.', failed: 'Nicht gespeichert:' },
     es: { title: 'Ajustes de Cubicle', intro: (f) => `Se guardan en este equipo, en ${f}. Los cambios se aplican al momento salvo que se indique lo contrario.`,
       onlyHere: 'Estos ajustes solo se pueden cambiar en el equipo donde se ejecuta Cubicle.', embed: 'Estos ajustes son del Cubicle independiente. Ábrelo en el equipo donde se ejecuta.',
       run: 'En marcha ahora', version: 'Versión', address: 'Dirección', watching: 'Observa', updates: 'Actualizaciones', upAuto: 'instala las nuevas versiones solo', upCheck: 'avisa de nuevas versiones', upOff: 'sin comprobar', redacted: 'Ocultado: solo ids y estados',
@@ -3977,7 +3990,7 @@
       paperclip: 'Paperclip', pcLinks: 'Mostrar enlaces a Paperclip', pcAgents: 'Mostrar agentes de Paperclip', createTasks: 'Permitir que los consejos KPI se conviertan en tareas de Paperclip',
       ceo: 'Cuadro de tareas (CEO)', ceoOn: 'Mostrar el cuadro de tareas', ceoNote: 'Cada tarea inicia una ejecución desatendida de Claude (claude -p) en la carpeta de abajo, solo con las herramientas indicadas.',
       fix: 'Si un agente falla, el CEO intenta arreglarlo primero; solo te pregunta si no puede', cwd: 'Carpeta de trabajo', model: 'Modelo', budget: 'Presupuesto por tarea (USD)', tools: 'Herramientas permitidas', prompt: 'Instrucciones', dflt: 'Vacío: el predeterminado',
-      alerts: 'Avisos', save: 'Guardar', saving: 'Guardando…', saved: 'Guardado.', failed: 'No se pudo guardar:' },
+      ghSec: 'GitHub', ghOn: 'Vigilar la cola de trabajo en GitHub', ghRepos: 'Repos (owner/repo, separados por comas)', ghReposNote: 'Vacío: los repos de ~/agents/repos.conf. Se leen con la CLI gh con sesión iniciada en este equipo.', ghMerge: 'El CEO revisa los PR con CI correcto y los fusiona', ghMergeNote: 'Un PR en rojo o con conflictos vuelve a un worker; lo arriesgado o dudoso te lo pregunta. Necesita el cuadro de tareas.', alerts: 'Avisos', save: 'Guardar', saving: 'Guardando…', saved: 'Guardado.', failed: 'No se pudo guardar:' },
     fr: { title: 'Réglages de Cubicle', intro: (f) => `Conservés sur cet ordinateur dans ${f}. Les changements s’appliquent tout de suite, sauf mention contraire.`,
       onlyHere: 'Ces réglages ne se changent que sur l’ordinateur où tourne Cubicle.', embed: 'Ces réglages appartiennent au Cubicle autonome. Ouvrez-le sur l’ordinateur où il tourne.',
       run: 'En cours', version: 'Version', address: 'Adresse', watching: 'Surveille', updates: 'Mises à jour', upAuto: 'installe seul les nouvelles versions', upCheck: 'signale les nouvelles versions', upOff: 'non vérifiées', redacted: 'Masqué : identifiants et statuts seulement',
@@ -3988,7 +4001,7 @@
       paperclip: 'Paperclip', pcLinks: 'Afficher les liens vers Paperclip', pcAgents: 'Afficher les agents Paperclip', createTasks: 'Les conseils KPI peuvent devenir des tâches Paperclip',
       ceo: 'Boîte à tâches (CEO)', ceoOn: 'Afficher la boîte à tâches', ceoNote: 'Une tâche lance une exécution Claude sans surveillance (claude -p) dans le dossier ci-dessous, avec les seuls outils listés.',
       fix: 'Quand un agent échoue, le CEO essaie d’abord de le réparer ; on ne vous demande que s’il n’y arrive pas', cwd: 'Dossier de travail', model: 'Modèle', budget: 'Budget par tâche (USD)', tools: 'Outils autorisés', prompt: 'Consignes', dflt: 'Vide : par défaut',
-      alerts: 'Alertes', save: 'Enregistrer', saving: 'Enregistrement…', saved: 'Enregistré.', failed: 'Échec de l’enregistrement :' },
+      ghSec: 'GitHub', ghOn: 'Surveiller la file de travail sur GitHub', ghRepos: 'Dépôts (owner/repo, séparés par des virgules)', ghReposNote: 'Vide : les dépôts de ~/agents/repos.conf. Lus avec la CLI gh connectée sur cet ordinateur.', ghMerge: 'Le CEO relit les PR dont la CI est passée et les fusionne', ghMergeNote: 'Une PR rouge ou en conflit retourne à un worker ; ce qui est risqué ou flou vous est demandé. Nécessite la boîte à tâches.', alerts: 'Alertes', save: 'Enregistrer', saving: 'Enregistrement…', saved: 'Enregistré.', failed: 'Échec de l’enregistrement :' },
     zh: { title: 'Cubicle 设置', intro: (f) => `保存在这台电脑的 ${f} 中。除非另有说明，修改立即生效。`,
       onlyHere: '这些设置只能在运行 Cubicle 的电脑上修改。', embed: '这些设置属于独立运行的 Cubicle。请在运行它的电脑上打开。',
       run: '当前运行', version: '版本', address: '地址', watching: '监视', updates: '更新', upAuto: '自动安装新版本', upCheck: '提示新版本', upOff: '不检查', redacted: '已脱敏：只显示 id 和状态',
@@ -3999,7 +4012,7 @@
       paperclip: 'Paperclip', pcLinks: '显示 Paperclip 链接', pcAgents: '显示 Paperclip 代理', createTasks: '允许把 KPI 建议变成 Paperclip 任务',
       ceo: '任务框（CEO）', ceoOn: '显示任务框', ceoNote: '每个任务都会在下面的文件夹中启动一次无人值守的 Claude 运行（claude -p），只能使用列出的工具。',
       fix: '代理出错时先由 CEO 尝试修复；修不好才问你', cwd: '工作文件夹', model: '模型', budget: '每个任务的预算（美元）', tools: '允许的工具', prompt: '指令', dflt: '留空：使用默认值',
-      alerts: '提醒', save: '保存', saving: '正在保存…', saved: '已保存。', failed: '保存失败：' },
+      ghSec: 'GitHub', ghOn: '关注 GitHub 上的工作队列', ghRepos: '仓库（owner/repo，用逗号分隔）', ghReposNote: '留空：使用 ~/agents/repos.conf 中的仓库。通过本机已登录的 gh 命令行读取。', ghMerge: 'CEO 审查 CI 通过的 PR 并合并', ghMergeNote: 'CI 失败或有冲突的 PR 退回给 worker；有风险或不明确的会问你。需要开启任务框。', alerts: '提醒', save: '保存', saving: '正在保存…', saved: '已保存。', failed: '保存失败：' },
     ar: { title: 'إعدادات Cubicle', intro: (f) => `تُحفظ على هذا الحاسوب في ${f}. تسري التغييرات فورًا ما لم يُذكر غير ذلك.`,
       onlyHere: 'لا يمكن تغيير هذه الإعدادات إلا على الحاسوب الذي يعمل عليه Cubicle.', embed: 'هذه الإعدادات خاصة بـ Cubicle المستقل. افتحه على الحاسوب الذي يعمل عليه.',
       run: 'يعمل الآن', version: 'الإصدار', address: 'العنوان', watching: 'يراقب', updates: 'التحديثات', upAuto: 'يثبّت الإصدارات الجديدة بنفسه', upCheck: 'ينبّهك إلى الإصدارات الجديدة', upOff: 'لا يتحقق', redacted: 'مُخفى: المعرّفات والحالات فقط',
@@ -4010,7 +4023,7 @@
       paperclip: 'Paperclip', pcLinks: 'إظهار روابط Paperclip', pcAgents: 'إظهار وكلاء Paperclip', createTasks: 'السماح بتحويل نصائح KPI إلى مهام في Paperclip',
       ceo: 'صندوق المهام (CEO)', ceoOn: 'إظهار صندوق المهام', ceoNote: 'كل مهمة تبدأ تشغيلًا لـ Claude دون إشراف (claude -p) في المجلد أدناه، بالأدوات المذكورة فقط.',
       fix: 'عندما يفشل وكيل يحاول الـ CEO إصلاحه أولًا، ولا يسألك إلا إذا عجز', cwd: 'مجلد العمل', model: 'النموذج', budget: 'الميزانية لكل مهمة (دولار)', tools: 'الأدوات المسموح بها', prompt: 'التعليمات', dflt: 'فارغ: الافتراضي',
-      alerts: 'التنبيهات', save: 'حفظ', saving: 'جارٍ الحفظ…', saved: 'تم الحفظ.', failed: 'تعذّر الحفظ:' },
+      ghSec: 'GitHub', ghOn: 'راقب طابور العمل على GitHub', ghRepos: 'المستودعات (owner/repo، مفصولة بفواصل)', ghReposNote: 'فارغ: المستودعات في ~/agents/repos.conf. تُقرأ بأداة gh المسجّلة على هذا الحاسوب.', ghMerge: 'الـ CEO يراجع طلبات الدمج التي نجح CI فيها ويدمجها', ghMergeNote: 'الطلب الأحمر أو المتعارض يعود إلى عامل؛ وما فيه خطر أو غموض يُسأل عنه أنت. يتطلب صندوق المهام.', alerts: 'التنبيهات', save: 'حفظ', saving: 'جارٍ الحفظ…', saved: 'تم الحفظ.', failed: 'تعذّر الحفظ:' },
   };
   const C = { ...CFG_TEXT.en, ...(CFG_TEXT[lang] || {}) };
   const cfgDlg = document.getElementById('cfgdlg');
@@ -4037,6 +4050,7 @@
       + `<div class="cfgpair">${field('cfg-cwd', C.cwd, d.cwd, D.cwd)}${field('cfg-model', C.model, d.model, D.model)}</div>`
       + field('cfg-budget', C.budget, d.budget, D.budget, 'number') + field('cfg-tools', C.tools, d.tools, D.tools)
       + `<label class="cfgf"><span>${esc(C.prompt)}</span><textarea id="cfg-prompt" rows="4" placeholder="${esc(C.dflt)}">${esc(d.prompt || '')}</textarea></label></div></section>`
+      + `<section><h3>${esc(C.ghSec)}</h3>${chk('cfg-ghon', (v.github || {}).enabled !== false, C.ghOn)}${field('cfg-ghrepos', C.ghRepos, (v.github || {}).repos, st.defaults.github && st.defaults.github.repos || null, 'text', C.ghReposNote)}${chk('cfg-ghmerge', (v.github || {}).autoMerge === true, C.ghMerge, C.ghMergeNote)}</section>`
       + `<div class="cfgfoot"><span class="cfgmsg" role="status"></span><button type="button" class="act" data-cfg="save">${esc(C.save)}</button></div>`);
     const q = (id) => cfgDlg.querySelector('#' + id);
     q('cfg-ceo').addEventListener('change', (e) => { cfgDlg.querySelector('.cfgceo').hidden = !e.target.checked; });
@@ -4047,6 +4061,7 @@
     const num = (id) => { const x = q(id).value.trim(); return x === '' ? null : Number(x); };
     const body = { lang: q('cfg-lang').value, autostart: q('cfg-autostart').checked, port: num('cfg-port'), sources: q('cfg-sources').value.trim(),
       dispatch: { enabled: q('cfg-ceo').checked, fixFailures: q('cfg-fix').checked, cwd: q('cfg-cwd').value.trim(), model: q('cfg-model').value.trim(), budget: num('cfg-budget'), tools: q('cfg-tools').value.trim(), prompt: q('cfg-prompt').value } };
+    body.github = { enabled: q('cfg-ghon').checked, repos: q('cfg-ghrepos').value.trim(), autoMerge: q('cfg-ghmerge').checked };
     if (q('cfg-pclinks')) { body.paperclipLinks = q('cfg-pclinks').checked; body.paperclipAgents = q('cfg-pcagents').checked; }
     if (q('cfg-tasks')) body.createTasks = q('cfg-tasks').checked;
     btn.disabled = true; msg.textContent = C.saving;
@@ -4057,7 +4072,7 @@
     if (!r || !r.ok) {
       // point at the field the server refused, in the page's language
       const key = (/for ([\w.]+)/.exec(d.error || '') || [])[1];
-      const ids = { lang: 'cfg-lang', port: 'cfg-port', sources: 'cfg-sources', 'dispatch.cwd': 'cfg-cwd', 'dispatch.model': 'cfg-model', 'dispatch.budget': 'cfg-budget', 'dispatch.tools': 'cfg-tools', 'dispatch.prompt': 'cfg-prompt' };
+      const ids = { 'github.repos': 'cfg-ghrepos', lang: 'cfg-lang', port: 'cfg-port', sources: 'cfg-sources', 'dispatch.cwd': 'cfg-cwd', 'dispatch.model': 'cfg-model', 'dispatch.budget': 'cfg-budget', 'dispatch.tools': 'cfg-tools', 'dispatch.prompt': 'cfg-prompt' };
       const el = key && ids[key] && q(ids[key]);
       if (el) { el.classList.add('bad'); el.focus(); msg.textContent = C.bad(el.dataset.label || el.closest('label').querySelector('span').textContent); }
       else msg.textContent = `${C.failed} ${d.error || (r ? r.status : '')}`;
@@ -4076,6 +4091,66 @@
     if (b.dataset.cfg === 'tg') { cfgDlg.close(); openTelegram(); }
     else if (b.dataset.cfg === 'save') saveConfig(b);
   });
+
+  // ---------- 📥 the work queue on GitHub: what waits for you, the CEO or a worker ----------
+  const GH_TEXT = {
+    en: { title: 'Work on GitHub', forYou: 'Waiting for you', ceo: 'The CEO reviews and merges', ready: 'Queued for a worker', working: 'A worker is on it', empty: 'No open work with agent:* labels.',
+      blocked: 'needs a decision', failed: 'failed', review: 'PR to review', ciGreen: 'CI passed', ciRed: 'CI failed', ciPending: 'CI running', ciNone: 'no CI', conflict: 'conflict',
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} waiting for you`, tip: (n) => `${n} open item(s) on GitHub wait for you`, idleTip: (n) => `No agent is working, and ${n} item(s) on GitHub wait for you`, repos: 'Repos', errors: 'Could not read' },
+    tr: { title: 'GitHub’daki işler', forYou: 'Sizi bekleyenler', ceo: 'CEO inceleyip birleştiriyor', ready: 'İşçi sırasında', working: 'Bir işçi çalışıyor', empty: 'agent:* etiketli açık iş yok.',
+      blocked: 'karar bekliyor', failed: 'başarısız', review: 'PR incelemesi', ciGreen: 'CI geçti', ciRed: 'CI kırmızı', ciPending: 'CI çalışıyor', ciNone: 'CI yok', conflict: 'çakışma',
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} iş sizi bekliyor`, tip: (n) => `GitHub’da ${n} iş sizi bekliyor`, idleTip: (n) => `Çalışan ajan yok; GitHub’da ${n} iş sizi bekliyor`, repos: 'Depolar', errors: 'Okunamadı' },
+    de: { title: 'Arbeit auf GitHub', forYou: 'Wartet auf dich', ceo: 'Der CEO prüft und führt zusammen', ready: 'Wartet auf einen Worker', working: 'Ein Worker ist dran', empty: 'Keine offene Arbeit mit agent:*-Labels.',
+      blocked: 'braucht eine Entscheidung', failed: 'fehlgeschlagen', review: 'PR zu prüfen', ciGreen: 'CI bestanden', ciRed: 'CI fehlgeschlagen', ciPending: 'CI läuft', ciNone: 'kein CI', conflict: 'Konflikt',
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} warten auf dich`, tip: (n) => `${n} offene Punkte auf GitHub warten auf dich`, idleTip: (n) => `Kein Agent arbeitet, und ${n} Punkte auf GitHub warten auf dich`, repos: 'Repos', errors: 'Nicht lesbar' },
+    es: { title: 'Trabajo en GitHub', forYou: 'Te espera', ceo: 'El CEO revisa y fusiona', ready: 'En cola para un worker', working: 'Un worker está en ello', empty: 'No hay trabajo abierto con etiquetas agent:*.',
+      blocked: 'necesita una decisión', failed: 'falló', review: 'PR por revisar', ciGreen: 'CI correcto', ciRed: 'CI fallido', ciPending: 'CI en curso', ciNone: 'sin CI', conflict: 'conflicto',
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} te esperan`, tip: (n) => `${n} elementos en GitHub te esperan`, idleTip: (n) => `Ningún agente trabaja y ${n} elementos en GitHub te esperan`, repos: 'Repos', errors: 'No se pudo leer' },
+    fr: { title: 'Travail sur GitHub', forYou: 'Vous attend', ceo: 'Le CEO relit et fusionne', ready: 'En file pour un worker', working: 'Un worker s’en occupe', empty: 'Aucun travail ouvert avec des étiquettes agent:*.',
+      blocked: 'attend une décision', failed: 'en échec', review: 'PR à relire', ciGreen: 'CI réussie', ciRed: 'CI en échec', ciPending: 'CI en cours', ciNone: 'pas de CI', conflict: 'conflit',
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} vous attendent`, tip: (n) => `${n} éléments sur GitHub vous attendent`, idleTip: (n) => `Aucun agent ne travaille et ${n} éléments sur GitHub vous attendent`, repos: 'Dépôts', errors: 'Illisible' },
+    zh: { title: 'GitHub 上的工作', forYou: '等你处理', ceo: 'CEO 审查并合并', ready: '排队等待 worker', working: 'worker 正在处理', empty: '没有带 agent:* 标签的未完成工作。',
+      blocked: '需要决定', failed: '失败', review: '待审 PR', ciGreen: 'CI 通过', ciRed: 'CI 失败', ciPending: 'CI 运行中', ciNone: '无 CI', conflict: '冲突',
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} 项等你`, tip: (n) => `GitHub 上有 ${n} 项等你处理`, idleTip: (n) => `没有代理在工作，GitHub 上有 ${n} 项等你处理`, repos: '仓库', errors: '无法读取' },
+    ar: { title: 'العمل على GitHub', forYou: 'بانتظارك', ceo: 'الـ CEO يراجع ويدمج', ready: 'في الطابور لعامل', working: 'عامل يعمل عليه', empty: 'لا عمل مفتوح بوسوم agent:*.',
+      blocked: 'يحتاج قرارًا', failed: 'فشل', review: 'PR للمراجعة', ciGreen: 'نجح CI', ciRed: 'فشل CI', ciPending: 'CI قيد التشغيل', ciNone: 'بلا CI', conflict: 'تعارض',
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} بانتظارك`, tip: (n) => `${n} عناصر على GitHub بانتظارك`, idleTip: (n) => `لا وكيل يعمل، و${n} عناصر على GitHub بانتظارك`, repos: 'المستودعات', errors: 'تعذّرت القراءة' },
+  };
+  const G = { ...GH_TEXT.en, ...(GH_TEXT[lang] || {}) };
+  const ghBtn = document.getElementById('ghq'), ghDlg = document.getElementById('ghdlg');
+  let ghState = null;
+  async function pollGithub() {
+    if (DEMO || EMBED) return;
+    try {
+      const r = await fetch('/api/cubicle/github', { cache: 'no-store' });
+      ghState = r.ok ? await r.json() : null;
+    } catch (_) { ghState = null; }
+    renderGhBtn(); if (ghDlg.open) renderGh();
+  }
+  function renderGhBtn() {
+    if (!ghState || !ghState.enabled) { ghBtn.hidden = true; return; }
+    const n = ghState.items.filter((it) => it.forYou).length;
+    const idle = n > 0 && ![...sprites.values()].some((s) => s.status === 'running');
+    ghBtn.hidden = false;
+    ghBtn.textContent = idle ? G.idle(n) : G.btn(n);
+    ghBtn.title = idle ? G.idleTip(n) : G.tip(n);
+    ghBtn.className = n ? (idle ? 'hot idle' : 'hot') : '';
+  }
+  function renderGh() {
+    const s = ghState || { items: [], errors: [] };
+    const ci = (p) => !p ? '' : p.mergeable === 'CONFLICTING' ? G.conflict : ({ green: G.ciGreen, red: G.ciRed, pending: G.ciPending, none: G.ciNone })[p.ci] || '';
+    const row = (it) => `<li><a href="${esc(it.url)}" target="_blank" rel="noopener"><b>${esc(it.repo.split('/')[1] || it.repo)}#${it.number}</b></a> ${esc(it.title)}`
+      + `<span class="ghmeta">${it.state === 'blocked' || it.state === 'failed' || it.state === 'review' ? `<span class="ghtag ${it.state}">${esc(G[it.state])}</span>` : ''}`
+      + (it.pr ? ` <a href="${esc(it.pr.url)}" target="_blank" rel="noopener">PR #${it.pr.number}</a> <span class="ghci ${it.pr.mergeable === 'CONFLICTING' ? 'red' : it.pr.ci}">${esc(ci(it.pr))}</span>` : '') + '</span></li>';
+    const group = (title, list) => list.length ? `<section><h3>${esc(title)} <small>${list.length}</small></h3><ul>${list.map(row).join('')}</ul></section>` : '';
+    const mine = s.items.filter((it) => it.forYou), ceo = s.items.filter((it) => it.state === 'review' && !it.forYou);
+    ghDlg.innerHTML = `<h2>📥 ${esc(G.title)} <button type="button" data-gh="close" aria-label="${esc(L.close)}">✕</button></h2>`
+      + (s.items.length ? group(G.forYou, mine) + group(G.ceo, ceo) + group(G.working, s.items.filter((it) => it.state === 'working')) + group(G.ready, s.items.filter((it) => it.state === 'ready')) : `<p>${esc(G.empty)}</p>`)
+      + `<p class="note">${esc(G.repos)}: ${esc((s.repos || []).join(', '))}${(s.errors || []).length ? ` · ${esc(G.errors)}: ${esc(s.errors.join('; '))}` : ''}</p>`;
+  }
+  ghBtn.addEventListener('click', () => { renderGh(); ghDlg.showModal(); pollGithub(); });
+  ghDlg.addEventListener('click', (e) => { if (e.target === ghDlg || e.target.closest('[data-gh="close"]')) ghDlg.close(); });
+  setInterval(pollGithub, 60000); setTimeout(pollGithub, 1500); setInterval(renderGhBtn, 5000);
 
   const gear = document.getElementById('gear');
   const panel = document.getElementById('settings');
