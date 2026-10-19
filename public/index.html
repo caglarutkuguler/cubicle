@@ -89,6 +89,8 @@
   #settings .sbtns { display:grid; grid-template-columns:1fr 1fr; gap:6px; }
   #settings .sbtns button, #settings button.mini { font-size:12px; padding:5px 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   #settings button.mini { width:auto; }
+  #settings .pets { display:flex; gap:4px; } #settings .pets button { flex:1; font-size:15px; line-height:1; padding:4px 0; filter:grayscale(1); opacity:.55; }
+  #settings .pets button[aria-pressed="true"] { filter:none; opacity:1; background:#3d4a86; border-color:#6f82d8; }
   #settings label { display:block; font-size:12px; color:var(--muted); margin:0 0 4px; }
   #settings select { width:100%; margin-bottom:10px; }
   #settings button { width:100%; background:#2f3552; color:var(--text); border:1px solid var(--line); border-radius:6px; padding:6px; font:inherit; cursor:pointer; }
@@ -387,7 +389,7 @@
       layout: 'Layout', layoutAuto: 'Automatic (fit the page)', layoutSide: 'Office and cards side by side', layoutStack: 'Cards below the office',
       openPaperclip: 'Open Paperclip in its own tab', kpiTitle: 'Progress of the tasks you gave', kpi: 'Tasks you gave', kpiOpen: 'Open', kpiAvg: 'Average progress', kpiDone7: 'Done in 7 days', kpiLead: 'Typical time to finish', kpiBlocked: 'Waiting on other tasks',
       waitsOn1: (id) => `waiting for ${id}`, waitsOnN: (n, id) => `waiting for ${n} tasks (${id}…)`, waitsSubs: (n) => `waiting for ${n} subtasks`, waitsYou: 'waiting for you', stalled: (n) => `${n} stalled`,
-      sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sHuman: 'Your desk', sNotify: 'Desktop notification',
+      sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sPets: "Pets", petsNote: "Animals that wander the office. Click one to say hello.", petName: {"cat": "Cat", "dog": "Dog", "rabbit": "Rabbit", "robot": "Robot vacuum"}, petSay: {"cat": "Meow!", "dog": "Woof!", "rabbit": "♥", "robot": "Beep boop"}, sHuman: 'Your desk', sNotify: 'Desktop notification',
       tgButton: '📨 Telegram…', tgIntro: 'Get a message on your phone when an agent needs you or a run fails, with links to the agent and the issue, and ask the office how it is doing.',
       tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text, /mute name, /alerts all|questions|failures',
       tg1: 'Create a bot', tg1Text: 'In Telegram, open @BotFather, go to My Bots and press “Create a New Bot”. Give it a name and a username ending in “bot”. BotFather then sends you a token, a long line like 123456789:AAH…; copy it.',
@@ -494,7 +496,7 @@
       layout: 'Yerleşim', layoutAuto: 'Otomatik (sayfaya sığdır)', layoutSide: 'Ofis ve kartlar yan yana', layoutStack: 'Kartlar ofisin altında',
       openPaperclip: 'Paperclip’i kendi sekmesinde aç', kpiTitle: 'Verdiğiniz görevlerin ilerlemesi', kpi: 'Verdiğiniz görevler', kpiOpen: 'Açık', kpiAvg: 'Ortalama ilerleme', kpiDone7: '7 günde biten', kpiLead: 'Tipik bitirme süresi', kpiBlocked: 'Başka görevi bekleyen',
       waitsOn1: (id) => `başka bir görevi bekliyor (${id})`, waitsOnN: (n, id) => `${n} görevin bitmesini bekliyor (${id}…)`, waitsSubs: (n) => `${n} alt görevin bitmesini bekliyor`, waitsYou: 'sizi bekliyor', stalled: (n) => `${n} tanesi takıldı`,
-      sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
+      sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sPets: "Evcil hayvan", petsNote: "Ofiste dolaşan hayvanlar. Selam vermek için üstüne tıklayın.", petName: {"cat": "Kedi", "dog": "Köpek", "rabbit": "Tavşan", "robot": "Robot süpürge"}, petSay: {"cat": "Miyav!", "dog": "Hav hav!", "rabbit": "♥", "robot": "Bip bop"}, sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
       tgButton: '📨 Telegram…', tgIntro: 'Bir ajan sizi beklediğinde ya da bir çalıştırma hata verdiğinde telefonunuza ajan ve iş bağlantılarıyla mesaj gelir; ofisin durumunu da oradan sorabilirsiniz.',
       tgCommands: 'Komutlar: /status, /waiting, /kpi, /office, /answer ID metin, /mute ad, /alerts all|questions|failures',
       tg1: 'Bot oluşturun', tg1Text: 'Telegram’da @BotFather’ı açın, My Bots menüsüne girip “Create a New Bot” düğmesine basın. Bota bir ad ve sonu “bot” ile biten bir kullanıcı adı verin. BotFather size 123456789:AAH… gibi uzun bir satır (token) gönderir; onu kopyalayın.',
@@ -601,7 +603,7 @@
       layout: 'Anordnung', layoutAuto: 'Automatisch (an die Seite anpassen)', layoutSide: 'Büro und Karten nebeneinander', layoutStack: 'Karten unter dem Büro',
       openPaperclip: 'Paperclip in eigenem Tab öffnen', kpiTitle: 'Fortschritt Ihrer Aufgaben', kpi: 'Ihre Aufgaben', kpiOpen: 'Offen', kpiAvg: 'Durchschnittlicher Fortschritt', kpiDone7: 'In 7 Tagen erledigt', kpiLead: 'Übliche Dauer', kpiBlocked: 'Wartet auf andere Aufgaben',
       waitsOn1: (id) => `wartet auf ${id}`, waitsOnN: (n, id) => `wartet auf ${n} Aufgaben (${id} …)`, waitsSubs: (n) => `wartet auf ${n} Teilaufgaben`, waitsYou: 'wartet auf Sie', stalled: (n) => `${n} hängen`,
-      sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
+      sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sPets: "Haustiere", petsNote: "Tiere, die durchs Büro streifen. Zum Begrüßen anklicken.", petName: {"cat": "Katze", "dog": "Hund", "rabbit": "Kaninchen", "robot": "Saugroboter"}, petSay: {"cat": "Miau!", "dog": "Wuff!", "rabbit": "♥", "robot": "Piep piep"}, sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
       tgButton: '📨 Telegram…', tgIntro: 'Eine Nachricht aufs Handy, wenn ein Agent Sie braucht oder ein Lauf fehlschlägt, mit Links zum Agenten und zur Aufgabe; und fragen Sie das Büro, wie es läuft.',
       tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text, /mute Name, /alerts all|questions|failures',
       tg1: 'Bot anlegen', tg1Text: 'Öffnen Sie in Telegram @BotFather, gehen Sie zu „My Bots“ und drücken Sie „Create a New Bot“. Geben Sie einen Namen und einen Benutzernamen, der auf „bot“ endet. BotFather schickt Ihnen ein Token, eine lange Zeile wie 123456789:AAH…; kopieren Sie es.',
@@ -708,7 +710,7 @@
       layout: 'Disposición', layoutAuto: 'Automática (ajustar a la página)', layoutSide: 'Oficina y tarjetas lado a lado', layoutStack: 'Tarjetas debajo de la oficina',
       openPaperclip: 'Abrir Paperclip en su propia pestaña', kpiTitle: 'Progreso de las tareas que diste', kpi: 'Tareas que diste', kpiOpen: 'Abiertas', kpiAvg: 'Progreso medio', kpiDone7: 'Terminadas en 7 días', kpiLead: 'Tiempo habitual', kpiBlocked: 'Esperan otras tareas',
       waitsOn1: (id) => `espera a ${id}`, waitsOnN: (n, id) => `espera ${n} tareas (${id}…)`, waitsSubs: (n) => `espera ${n} subtareas`, waitsYou: 'te espera', stalled: (n) => `${n} atascadas`,
-      sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
+      sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sPets: "Mascotas", petsNote: "Animales que pasean por la oficina. Haz clic en uno para saludarlo.", petName: {"cat": "Gato", "dog": "Perro", "rabbit": "Conejo", "robot": "Robot aspirador"}, petSay: {"cat": "¡Miau!", "dog": "¡Guau!", "rabbit": "♥", "robot": "Bip bup"}, sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
       tgButton: '📨 Telegram…', tgIntro: 'Recibe un mensaje en el móvil cuando un agente te necesita o una ejecución falla, con enlaces al agente y a la tarea, y pregunta a la oficina cómo va.',
       tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto, /mute nombre, /alerts all|questions|failures',
       tg1: 'Crea un bot', tg1Text: 'En Telegram, abre @BotFather, entra en My Bots y pulsa «Create a New Bot». Dale un nombre y un usuario que termine en «bot». BotFather te envía un token, una línea larga como 123456789:AAH…; cópiala.',
@@ -815,7 +817,7 @@
       layout: 'Disposition', layoutAuto: 'Automatique (adapter à la page)', layoutSide: 'Bureau et cartes côte à côte', layoutStack: 'Cartes sous le bureau',
       openPaperclip: 'Ouvrir Paperclip dans son propre onglet', kpiTitle: 'Avancement des tâches que vous avez données', kpi: 'Vos tâches', kpiOpen: 'Ouvertes', kpiAvg: 'Avancement moyen', kpiDone7: 'Terminées en 7 jours', kpiLead: 'Durée habituelle', kpiBlocked: 'En attente d’autres tâches',
       waitsOn1: (id) => `attend ${id}`, waitsOnN: (n, id) => `attend ${n} tâches (${id}…)`, waitsSubs: (n) => `attend ${n} sous-tâches`, waitsYou: 'vous attend', stalled: (n) => `${n} bloquées`,
-      sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
+      sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sPets: "Animaux", petsNote: "Des animaux qui se promènent dans le bureau. Cliquez sur l’un d’eux pour le saluer.", petName: {"cat": "Chat", "dog": "Chien", "rabbit": "Lapin", "robot": "Robot aspirateur"}, petSay: {"cat": "Miaou !", "dog": "Ouaf !", "rabbit": "♥", "robot": "Bip boup"}, sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
       tgButton: '📨 Telegram…', tgIntro: 'Recevez un message sur votre téléphone quand un agent a besoin de vous ou qu’une exécution échoue, avec des liens vers l’agent et la tâche, et demandez au bureau où il en est.',
       tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte, /mute nom, /alerts all|questions|failures',
       tg1: 'Créez un bot', tg1Text: 'Dans Telegram, ouvrez @BotFather, allez dans My Bots et appuyez sur « Create a New Bot ». Donnez-lui un nom et un nom d’utilisateur finissant par « bot ». BotFather vous envoie un jeton, une longue ligne comme 123456789:AAH… ; copiez-la.',
@@ -922,7 +924,7 @@
       layout: '布局', layoutAuto: '自动（适应页面）', layoutSide: '办公室和卡片并排', layoutStack: '卡片在办公室下方',
       openPaperclip: '在单独的标签页中打开 Paperclip', kpiTitle: '你分配的任务进度', kpi: '你分配的任务', kpiOpen: '进行中', kpiAvg: '平均进度', kpiDone7: '7 天内完成', kpiLead: '通常完成时间', kpiBlocked: '等待其他任务',
       waitsOn1: (id) => `等待 ${id}`, waitsOnN: (n, id) => `等待 ${n} 个任务（${id}…）`, waitsSubs: (n) => `等待 ${n} 个子任务`, waitsYou: '在等你', stalled: (n) => `${n} 个停滞`,
-      sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sHuman: '你的办公桌', sNotify: '桌面通知',
+      sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sPets: "宠物", petsNote: "在办公室里闲逛的小动物。点一下打个招呼。", petName: {"cat": "猫", "dog": "狗", "rabbit": "兔子", "robot": "扫地机器人"}, petSay: {"cat": "喵！", "dog": "汪！", "rabbit": "♥", "robot": "哔哔"}, sHuman: '你的办公桌', sNotify: '桌面通知',
       tgButton: '📨 Telegram…', tgIntro: '当代理需要你或运行失败时，手机上会收到带有代理和任务链接的消息，也可以随时询问办公室状态。',
       tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本、/mute 名称、/alerts all|questions|failures',
       tg1: '创建机器人', tg1Text: '在 Telegram 中打开 @BotFather，进入 My Bots 并点“Create a New Bot”。给它起个名字和以“bot”结尾的用户名。BotFather 会发给你一个 token，形如 123456789:AAH… 的长字符串，复制它。',
@@ -1029,7 +1031,7 @@
       layout: 'التخطيط', layoutAuto: 'تلقائي (ملاءمة الصفحة)', layoutSide: 'المكتب والبطاقات جنبًا إلى جنب', layoutStack: 'البطاقات أسفل المكتب',
       openPaperclip: 'افتح Paperclip في علامة تبويب مستقلة', kpiTitle: 'تقدم المهام التي أسندتها', kpi: 'المهام التي أسندتها', kpiOpen: 'مفتوحة', kpiAvg: 'متوسط التقدم', kpiDone7: 'أُنجزت خلال 7 أيام', kpiLead: 'المدة المعتادة', kpiBlocked: 'تنتظر مهام أخرى',
       waitsOn1: (id) => `ينتظر ${id}`, waitsOnN: (n, id) => `ينتظر ${n} مهام (${id}…)`, waitsSubs: (n) => `ينتظر ${n} مهام فرعية`, waitsYou: 'ينتظرك', stalled: (n) => `${n} متعثرة`,
-      sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
+      sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sPets: "حيوانات أليفة", petsNote: "حيوانات تتجول في المكتب. انقر على أحدها لتحيّيه.", petName: {"cat": "قطة", "dog": "كلب", "rabbit": "أرنب", "robot": "مكنسة روبوت"}, petSay: {"cat": "مياو!", "dog": "هاو!", "rabbit": "♥", "robot": "بيب بوب"}, sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
       tgButton: '📨 Telegram…', tgIntro: 'تصلك رسالة على هاتفك عندما يحتاجك وكيل أو يفشل تشغيل، مع روابط للوكيل والمهمة، ويمكنك سؤال المكتب عن حاله.',
       tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص ‎/mute اسم ‎/alerts all|questions|failures',
       tg1: 'أنشئ بوتًا', tg1Text: 'في Telegram افتح ‎@BotFather، وادخل My Bots واضغط «Create a New Bot». أعطه اسمًا واسم مستخدم ينتهي بـ «bot». سيرسل لك BotFather رمزًا (token) طويلًا مثل 123456789:AAH…؛ انسخه.',
@@ -2737,6 +2739,177 @@
     return out;
   }
 
+  // ---------- pets: optional animals that wander the office (⚙ → Pets, or ?pets=cat,dog) ----------
+  // Each chosen kind gets one animal. They walk the same grid as the agents, rest, visit agents
+  // (the dog sits by whoever needs you, the cat by someone working) and answer a click.
+  // Drawn in office pixels like everything else, so every theme gets them.
+  const PET_KINDS = ['cat', 'dog', 'rabbit', 'robot'];
+  const PET_ICON = { cat: '🐈', dog: '🐕', rabbit: '🐇', robot: '🤖' };
+  // walking speed (office px/s), how long it rests, and its colours
+  const PET_KIND = {
+    cat: { speed: 20, rest: [7, 22], coat: ['#e08a3c', '#b8652a', '#f4d2a8'] },
+    dog: { speed: 32, rest: [4, 11], coat: ['#c8955a', '#8d6236', '#3a2a1d'] },
+    rabbit: { speed: 26, rest: [3, 9], coat: ['#eeeae4', '#cfc8bf', '#f2a7b5'] },
+    robot: { speed: 13, rest: [2, 5], coat: ['#4b5063', '#2e3240', '#7ef0a6'] },
+  };
+  const petsWanted = () => (Array.isArray(settings.pets) ? settings.pets : []).filter((k) => PET_KINDS.includes(k));
+  let pets = [];
+  function syncPets() {
+    const want = petsWanted();
+    pets = pets.filter((p) => want.includes(p.kind));
+    for (const kind of want) if (!pets.some((p) => p.kind === kind)) {
+      const [x, y] = petSpot();
+      pets.push({ kind, x, y, dir: Math.random() < 0.5 ? -1 : 1, seed: Math.random() * 10, mode: 'rest', until: 0, path: null, goal: null, walking: false, say: null, hop: 0 });
+    }
+  }
+  // a random free spot on the floor (not in a wall, desk or piece of furniture)
+  let petFloor = null;
+  function petSpot() {
+    const w = walkGrid();
+    if (!petFloor || petFloor.key !== w.key) {
+      const cells = [];
+      for (let i = 0; i < w.solid.length; i++) {
+        const cx = i % w.cols, cy = (i / w.cols) | 0;
+        if (!w.solid[i] && cy * CELL > 2 * T + 6 && cy < w.rows - 1 && !w.solid[i + w.cols] && !w.solid[i - 1] && !w.solid[i + 1]) cells.push(i);
+      }
+      petFloor = { key: w.key, cells, cols: w.cols };
+    }
+    const i = petFloor.cells.length ? pick(petFloor.cells) : 0;
+    return [(i % petFloor.cols) * CELL + CELL / 2, ((i / petFloor.cols) | 0) * CELL + CELL / 2 + 2];
+  }
+  // where a pet goes next: mostly anywhere; sometimes to an agent
+  function petGoal(p, now, night) {
+    const all = [...sprites.values()];
+    const beside = (s) => [s.x + (s.seated ? 13 : 9), s.y + 1];
+    if (p.kind === 'dog') {
+      const waiting = all.filter((s) => s.status === 'waiting');
+      if (waiting.length && Math.random() < 0.7) return { at: beside(pick(waiting)), then: 'sit' };
+      const walking = all.filter((s) => s.walking);
+      if (walking.length && Math.random() < 0.4) return { follow: pick(walking), then: 'sit' };
+      if (all.length && Math.random() < 0.3) return { at: beside(pick(all)), then: 'sit' };
+    }
+    if (p.kind === 'cat') {
+      if (night || Math.random() < 0.35) return { at: petSpot(), then: 'sleep' };
+      const working = all.filter((s) => s.typing);
+      if (working.length && Math.random() < 0.45) return { at: beside(pick(working)), then: 'sit' };
+    }
+    if (p.kind === 'robot' && Math.random() < 0.15) return { at: petSpot(), then: 'charge' };
+    return { at: petSpot(), then: p.kind === 'rabbit' && Math.random() < 0.5 ? 'nibble' : 'sit' };
+  }
+  function stepPets(dt, now, night) {
+    for (const p of pets) {
+      const k = PET_KIND[p.kind];
+      if (p.mode !== 'walk' && now >= p.until) {
+        const g0 = petGoal(p, now, night);
+        p.goal = g0; p.mode = 'walk'; p.path = null; p.pathKey = '';
+        p.giveUp = now + 25;
+      }
+      if (p.mode === 'walk') {
+        const target = p.goal.follow ? (sprites.has(p.goal.follow.id) ? [p.goal.follow.x - 9 * (p.goal.follow.dir || 1), p.goal.follow.y + 1] : null) : p.goal.at;
+        if (!target || now > p.giveUp) { p.mode = 'rest'; p.until = now + 2; p.walking = false; continue; }
+        const key = `${Math.round(target[0] / CELL)},${Math.round(target[1] / CELL)}:${walkGrid().key}`;
+        if (p.pathKey !== key) { p.path = findPath(p.x, p.y, target[0], target[1]); p.pathKey = key; }
+        let [gx, gy] = p.path && p.path.length ? p.path[0] : target;
+        let dx = gx - p.x, dy = gy - p.y, d = Math.hypot(dx, dy);
+        if (d < 0.8 && p.path && p.path.length > 1) { p.path.shift(); [gx, gy] = p.path[0]; dx = gx - p.x; dy = gy - p.y; d = Math.hypot(dx, dy); }
+        // a rabbit hops: it moves only in the air
+        p.hop = p.kind === 'rabbit' ? (now * 2.6 + p.seed) % 1 : 0;
+        const speed = p.kind === 'rabbit' ? (p.hop < 0.55 ? k.speed * 1.8 : 0) : k.speed;
+        if (d > 0.8) {
+          const m = Math.min(d, speed * dt);
+          p.x += (dx / d) * m; p.y += (dy / d) * m; p.walking = true;
+          if (Math.abs(dx) > 0.3) p.dir = Math.sign(dx);
+        } else if (!p.goal.follow || Math.hypot(target[0] - p.x, target[1] - p.y) < 1.5) {
+          p.walking = false; p.hop = 0;
+          if (p.goal.follow) { const f = p.goal.follow; if (!f.walking) { p.mode = 'sit'; p.until = now + 3 + Math.random() * 5; p.dir = Math.sign(f.x - p.x) || p.dir; } }
+          else {
+            p.mode = p.goal.then;
+            const [a, b] = k.rest;
+            p.until = now + (p.mode === 'sleep' ? 25 + Math.random() * 35 : p.mode === 'charge' ? 15 + Math.random() * 15 : a + Math.random() * (b - a));
+            // face the agent it came to see
+            const near = [...sprites.values()].find((s) => Math.hypot(s.x - p.x, s.y - p.y) < 16);
+            if (near) p.dir = Math.sign(near.x - p.x) || p.dir;
+          }
+        }
+      }
+      if (p.say && now > p.say.until) p.say = null;
+    }
+  }
+  function petAt(ox, oy) {
+    return pets.find((p) => Math.abs(p.x - ox) <= 8 && oy >= p.y - 12 && oy <= p.y + 3) || null;
+  }
+  function pokePet(p, now) {
+    p.say = { text: L.petSay[p.kind], until: now + 2.2 };
+    if (p.mode === 'sleep') { p.mode = 'sit'; p.until = now + 3; }
+    if (p.kind === 'rabbit' && !p.walking) { p.mode = 'rest'; p.until = now; }       // hops away
+    if (p.kind === 'dog') { p.mode = 'sit'; p.until = now + 4; }
+  }
+  // Pixel art, facing p.dir; (x, y) is where the feet touch the floor.
+  function drawPet(p, t) {
+    const x = Math.round(p.x), y = Math.round(p.y - (p.kind === 'rabbit' && p.walking ? Math.sin(Math.min(p.hop, 0.55) / 0.55 * Math.PI) * 3 : 0));
+    const f = p.dir < 0 ? -1 : 1;
+    const px = (dx, dy, w, h, c) => rect(c, f > 0 ? x + dx : x - dx - w, y + dy, w, h);
+    const [c1, c2, c3] = PET_KIND[p.kind].coat;
+    const step = p.walking ? Math.floor(t * 9 + p.seed) % 2 : 0;
+    const blink = ((t + p.seed) % 5) < 0.15;
+    rect('rgba(0,0,0,.22)', Math.round(p.x) - 5, Math.round(p.y) - 1, 10, 2);
+    if (p.kind === 'cat') {
+      if (p.mode === 'sleep') {
+        px(-4, -3, 8, 3, c1); px(-3, -4, 6, 1, c1); px(-2, -3, 3, 1, c2);
+        px(2, -4, 3, 3, c1); px(2, -5, 1, 1, c1); px(4, -5, 1, 1, c1); px(-6, -2, 3, 1, c2);
+        const z = (t * 0.7 + p.seed) % 1;
+        g.save(); g.globalAlpha = 1 - z; px(4 + Math.round(z * 3), -8 - Math.round(z * 6), 2, 1, '#cfd6ff'); px(5 + Math.round(z * 3), -9 - Math.round(z * 6), 1, 1, '#cfd6ff'); px(4 + Math.round(z * 3), -10 - Math.round(z * 6), 2, 1, '#cfd6ff'); g.restore();
+      } else if (p.walking) {
+        px(-4, -5, 8, 3, c1); px(-2, -5, 1, 3, c2); px(1, -5, 1, 3, c2);
+        px(3, -8, 4, 4, c1); px(3, -9, 1, 1, c1); px(6, -9, 1, 1, c1); if (!blink) px(5, -7, 1, 1, '#1a1a1a'); px(6, -6, 1, 1, c3);
+        px(-3, -2, 1, 2 - step, c2); px(2, -2, 1, 1 + step, c2); px(-1, -2, 1, 1 + step, c1); px(0, -2, 1, 2 - step, c1);
+        const w = Math.floor(t * 4 + p.seed) % 2;
+        px(-6, -7 + w, 2, 1, c1); px(-5, -6 + w, 1, 2 - w, c1);
+      } else {
+        px(-2, -6, 5, 6, c1); px(-1, -5, 3, 4, c3); px(0, -10, 4, 4, c1); px(0, -11, 1, 1, c1); px(3, -11, 1, 1, c1);
+        if (!blink) { px(1, -9, 1, 1, '#1a1a1a'); px(3, -9, 1, 1, '#1a1a1a'); }
+        const w = Math.floor(t * 1.5 + p.seed) % 2;
+        px(-5, -1 - w, 3, 1, c2); px(-5, -2 - w, 1, 1, c2);
+      }
+    } else if (p.kind === 'dog') {
+      const wag = Math.floor(t * 10 + p.seed) % 2;
+      if (p.walking) {
+        px(-5, -7, 10, 4, c1); px(-1, -7, 3, 2, c2);
+        px(4, -10, 5, 4, c1); px(8, -8, 2, 2, c2); px(9, -8, 1, 1, c3); px(4, -10, 2, 4, c2); if (!blink) px(7, -9, 1, 1, '#1a1a1a');
+        px(-4, -3, 1, 3 - step, c2); px(-2, -3, 1, 2 + step, c1); px(2, -3, 1, 2 + step, c2); px(4, -3, 1, 3 - step, c1);
+        px(-7, -9 + wag, 2, 1, c1); px(-6, -8 + wag, 1, 1, c1);
+      } else {
+        px(-3, -8, 6, 8, c1); px(-2, -6, 4, 4, '#e7c48f'); px(1, -12, 5, 4, c1); px(5, -10, 2, 2, c2); px(6, -10, 1, 1, c3); px(1, -12, 2, 4, c2);
+        if (!blink) px(4, -11, 1, 1, '#1a1a1a');
+        px(-5, -2 - wag, 2, 1, c1); px(-4, -3 - wag, 1, 1, c1);
+        if (p.say) px(5, -8, 1, 2, '#e8697a');        // tongue out
+      }
+    } else if (p.kind === 'rabbit') {
+      px(-3, -4, 6, 4, c1); px(-3, -1, 2, 1, c2); px(2, -6, 3, 3, c1); px(3, -10, 1, 4, c1); px(4, -10, 1, 4, c2); px(3, -9, 1, 2, c3);
+      if (!blink) px(4, -5, 1, 1, '#1a1a1a'); px(5, -4, 1, 1, c3);
+      px(-5, -4, 2, 2, '#ffffff');
+      if (p.mode === 'nibble' && !p.walking && Math.floor(t * 6 + p.seed) % 2) px(5, -3, 1, 1, '#57b86b');
+    } else {
+      // robot vacuum: a disc with a blinking light; on charge, the light breathes
+      px(-5, -3, 10, 3, c1); px(-4, -4, 8, 1, c2); px(-5, -1, 10, 1, '#23262f');
+      const on = p.mode === 'charge' ? (Math.sin(t * 2 + p.seed) > 0) : Math.floor(t * 3 + p.seed) % 2;
+      px(1, -4, 2, 1, on ? c3 : '#2c6b47');
+      if (p.walking && Math.floor(t * 12) % 2) px(5, -1, 1, 1, '#9aa0b8');
+    }
+  }
+  // what a pet says when clicked: a small bubble drawn on the canvas
+  function drawPetBubbles() {
+    for (const p of pets) {
+      if (!p.say) continue;
+      g.save();
+      g.font = '600 5px system-ui, sans-serif';
+      const w = Math.ceil(g.measureText(p.say.text).width) + 5, bx = Math.round(p.x - w / 2), by = Math.round(p.y - 22);
+      g.fillStyle = 'rgba(255,255,255,.95)'; g.fillRect(bx, by, w, 8); g.fillRect(Math.round(p.x) - 1, by + 8, 2, 2);
+      g.fillStyle = '#1d2030'; g.textBaseline = 'middle'; g.fillText(p.say.text, bx + 2.5, by + 4.3);
+      g.restore();
+    }
+  }
+
   // ---------- envelopes: work passing from one agent to another ----------
   const envelopes = [];
   function sendEnvelope(from, to, color = '#fff6d8') {
@@ -3132,6 +3305,7 @@
       if (!wasClick || e.target.closest('#detail, #zoomui')) return;
       const [ox, oy] = officePoint(e.clientX, e.clientY);
       const hit = spriteAt(ox, oy);
+      if (!hit) { const pet = petAt(ox, oy); if (pet) { pokePet(pet, performance.now() / 1000); return; } }
       if (hit === human) {
         // Your desk: the first agent in line, or your own look when nobody is waiting.
         const first = [...sprites.values()].find((x) => x.queueIdx === 0);
@@ -3506,12 +3680,15 @@
     const deskCount = Math.max(4, Math.min(DESKS.length, Math.ceil((sprites.size + (hum ? 1 : 0)) / 4) * 4));
     DESKS.slice(0, deskCount).forEach((d) => list.push({ z: d[1] * T + 21, f: () => theme.drawDesk(c, d, byDesk.get(d)) }));
     for (const s of sprites.values()) list.push({ z: s.y, f: () => theme.drawChar(c, s) });
+    syncPets(); stepPets(dt, now, c.night);
+    for (const p of pets) list.push({ z: p.y - 0.5, f: () => drawPet(p, now) });
     const picked = cam.sel && sprites.get(cam.sel);
     if (picked) list.push({ z: picked.y - 0.01, f: () => {
       g.save(); g.strokeStyle = 'rgba(255,226,138,.9)'; g.lineWidth = 0.9;
       g.beginPath(); g.ellipse(picked.x, picked.y, 7, 2.4, 0, 0, Math.PI * 2); g.stroke(); g.restore();
     } });
     list.sort((a, b) => a.z - b.z).forEach((o) => o.f());
+    if (pets.length) drawPetBubbles();
     if (envelopes.length) drawEnvelopes(now);
     if (theme.overlay) theme.overlay({ ...c, CW });
     if (recording) burnLabels(now);
@@ -3900,6 +4077,7 @@
   if (['auto', '30', '15', '60'].includes(params.get('fps'))) settings.fps = params.get('fps');
   if (['auto', 'height', 'side', 'stack'].includes(params.get('layout'))) settings.layout = params.get('layout') === 'height' ? 'side' : params.get('layout');
   if (['0', '1'].includes(params.get('human'))) settings.human = params.get('human') === '1';
+  if (params.has('pets')) settings.pets = params.get('pets').split(',').map((x) => x.trim()).filter((x) => ['cat', 'dog', 'rabbit', 'robot'].includes(x));
   async function loadCatalog() {
     try {
       const list = await (await fetch('themes/index.json', { cache: 'no-store' })).json();
@@ -4194,6 +4372,7 @@
       own('fps', L.fps, [['auto', L.fpsAuto], ['30', L.fps30], ['15', L.fps15]], settings.fps || 'auto') +
       `<div class="checks">${check('set-anim', animOn(), L.anim, L.viewNote, !cardsOn())}${check('set-cards', cardsOn(), L.cardsToggle, L.viewNote, !animOn())}` +
       (animOn() ? check('set-human', humanOn(), L.sHuman, L.human) + (humanOn() ? `<button type="button" id="set-mylook" class="mini" title="${esc(L.myLook)}">✎ ${esc(L.myLook)}</button>` : '') : '') + '</div>' +
+      (animOn() ? `<div class="srow" title="${esc(L.petsNote)}"><label>${esc(L.sPets)}</label><div class="pets">${PET_KINDS.map((k) => `<button type="button" data-pet="${k}" aria-pressed="${petsWanted().includes(k)}" title="${esc(L.petName[k])}" aria-label="${esc(L.petName[k])}">${PET_ICON[k]}</button>`).join('')}</div></div>` : '') +
       `<div class="shead">${esc(L.sAlerts)}</div>` +
       `<div class="checks">${check('set-notify', settings.notify, L.sNotify, L.notify)}</div>` +
       own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
@@ -4242,6 +4421,11 @@
     panel.querySelector('#set-cfg').addEventListener('click', () => { panel.hidden = true; openConfig(); });
     const hb = panel.querySelector('#set-human');
     if (hb) hb.addEventListener('change', (e) => { settings.human = e.target.checked; save(); if (!settings.human) hideHuman(); renderSettings(); poll(); });
+    panel.querySelectorAll('[data-pet]').forEach((b) => b.addEventListener('click', () => {
+      const k = b.dataset.pet, cur = petsWanted();
+      settings.pets = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]; save();
+      b.setAttribute('aria-pressed', String(settings.pets.includes(k)));
+    }));
     const ml = panel.querySelector('#set-mylook');
     if (ml) ml.addEventListener('click', () => { panel.hidden = true; openLooks(human); });
     for (const key of ['anim', 'cards']) panel.querySelector(`#set-${key}`).addEventListener('change', (e) => {
@@ -4252,13 +4436,14 @@
       u.searchParams.set('theme', entry.id);
       for (const o of entry.options) u.searchParams.set(o.key, themeOpts[o.key]);
       if (settings.lang) u.searchParams.set('lang', settings.lang);
+      if (petsWanted().length) u.searchParams.set('pets', petsWanted().join(',')); else u.searchParams.delete('pets');
       try { await navigator.clipboard.writeText(u.toString()); e.target.textContent = L.copied; }
       catch (_) { prompt(L.copyLink, u.toString()); }
       setTimeout(() => { e.target.textContent = '🔗 ' + L.sCopy; }, 1500);
     });
   }
 
-  if (params.has('debug')) window.CubicleDebug = { sprites, findPath, walkGrid, cam, select, openAnswer, renderCards, startChat };   // for tests and theme authors
+  if (params.has('debug')) window.CubicleDebug = { sprites, findPath, walkGrid, cam, select, openAnswer, renderCards, startChat, pets: () => pets, pokePet };   // for tests and theme authors
   resizeCanvas();
   loadCatalog().then(applySettings).then(applyView);
   init();
