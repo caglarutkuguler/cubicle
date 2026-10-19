@@ -391,7 +391,7 @@
       waitsOn1: (id) => `waiting for ${id}`, waitsOnN: (n, id) => `waiting for ${n} tasks (${id}…)`, waitsSubs: (n) => `waiting for ${n} subtasks`, waitsYou: 'waiting for you', stalled: (n) => `${n} stalled`,
       sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sPets: "Pets", petsNote: "Animals that wander the office. Click one to say hello.", petName: {"cat": "Cat", "dog": "Dog", "rabbit": "Rabbit", "robot": "Robot vacuum"}, petSay: {"cat": "Meow!", "dog": "Woof!", "rabbit": "♥", "robot": "Beep boop"}, sVoice: 'Voice (agents speak)', voiceNote: 'The browser reads out what happens, in each agent’s own voice. Free and built into the browser; nothing is sent anywhere by Cubicle. Some browsers need one click on the page first.', voiceKinds: { wait: 'Needs me', start: 'Starts work', done: 'Work done', err: 'Errors', chat: 'Chats' }, voicePick: 'Speaking voice', voiceAuto: 'Automatic (one per agent)', voiceNone: 'This browser has no voice for this language. Edge has natural voices for it; on Windows, a language pack adds one.', voiceOn: 'Voice is on.',
       say: { wait: (n, w) => `${n} needs you${w ? ': ' + w : ''}.`, start: (n, w) => `${n} is starting work${w ? ': ' + w : ''}.`, done: (n, w) => `${n} finished${w ? ': ' + w : ''}.`, err: (n, w) => `${n} ran into an error${w ? ': ' + w : ''}.` },
-      voiceSex: "Voice", voiceSexAuto: "As drawn", female: "Female", male: "Male", sHuman: 'Your desk', sNotify: 'Desktop notification',
+      voiceSex: "Voice", voiceSexAuto: "As drawn", female: "Female", male: "Male", voiceSexMode: "Women / men", voiceSexLook: "As the office draws them", voiceSexMix: "Mixed (every other agent)", voiceSexF: "Everyone a woman", voiceSexM: "Everyone a man", voiceF: "Woman's voice", voiceM: "Man's voice", voiceNoF: "This browser has no woman’s voice for this language, so women speak with the man’s voice pitched up. Microsoft Edge has natural women’s voices (Turkish: Emel).", voiceNoM: "This browser has no man’s voice for this language, so men speak with the woman’s voice pitched down. Microsoft Edge has natural men’s voices (Turkish: Ahmet).", voiceTry: "Try", voiceTryF: "Hello, this is a woman’s voice.", voiceTryM: "Hello, this is a man’s voice.", sHuman: 'Your desk', sNotify: 'Desktop notification',
       tgButton: '📨 Telegram…', tgIntro: 'Get a message on your phone when an agent needs you or a run fails, with links to the agent and the issue, and ask the office how it is doing.',
       tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text, /mute name, /alerts all|questions|failures',
       tg1: 'Create a bot', tg1Text: 'In Telegram, open @BotFather, go to My Bots and press “Create a New Bot”. Give it a name and a username ending in “bot”. BotFather then sends you a token, a long line like 123456789:AAH…; copy it.',
@@ -500,7 +500,7 @@
       waitsOn1: (id) => `başka bir görevi bekliyor (${id})`, waitsOnN: (n, id) => `${n} görevin bitmesini bekliyor (${id}…)`, waitsSubs: (n) => `${n} alt görevin bitmesini bekliyor`, waitsYou: 'sizi bekliyor', stalled: (n) => `${n} tanesi takıldı`,
       sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sPets: "Evcil hayvan", petsNote: "Ofiste dolaşan hayvanlar. Selam vermek için üstüne tıklayın.", petName: {"cat": "Kedi", "dog": "Köpek", "rabbit": "Tavşan", "robot": "Robot süpürge"}, petSay: {"cat": "Miyav!", "dog": "Hav hav!", "rabbit": "♥", "robot": "Bip bop"}, sVoice: 'Seslendirme (ajanlar konuşsun)', voiceNote: 'Tarayıcı olanları her ajanın kendi sesiyle okur. Ücretsizdir, tarayıcıda yerleşiktir; Cubicle hiçbir yere bir şey göndermez. Bazı tarayıcılar önce sayfaya bir kez tıklanmasını ister.', voiceKinds: { wait: 'Bekleyenler', start: 'İşe başlayanlar', done: 'İşi bitenler', err: 'Hatalar', chat: 'Sohbetler' }, voicePick: 'Konuşan ses', voiceAuto: 'Otomatik (her ajana bir ses)', voiceNone: 'Bu tarayıcıda Türkçe ses yok. Edge’de doğal Türkçe sesler var; Windows’ta Türkçe dil paketi de bir ses ekler.', voiceOn: 'Seslendirme açık.',
       say: { wait: (n, w) => `${n} sizi bekliyor${w ? ': ' + w : ''}.`, start: (n, w) => `${n} işe başladı${w ? ': ' + w : ''}.`, done: (n, w) => `${n} işini bitirdi${w ? ': ' + w : ''}.`, err: (n, w) => `${n} hata aldı${w ? ': ' + w : ''}.` },
-      voiceSex: "Ses", voiceSexAuto: "Görünüşe göre", female: "Kadın", male: "Erkek", sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
+      voiceSex: "Ses", voiceSexAuto: "Görünüşe göre", female: "Kadın", male: "Erkek", voiceSexMode: "Kadın / erkek", voiceSexLook: "Ofisteki görünüşe göre", voiceSexMix: "Karışık (bir kadın, bir erkek)", voiceSexF: "Herkes kadın sesiyle", voiceSexM: "Herkes erkek sesiyle", voiceF: "Kadın sesi", voiceM: "Erkek sesi", voiceNoF: "Bu tarayıcıda Türkçe kadın sesi yok; kadın ajanlar erkek sesinin inceltilmiş hâliyle konuşur. Gerçek kadın sesi için Cubicle’ı Microsoft Edge’de açın (Emel).", voiceNoM: "Bu tarayıcıda Türkçe erkek sesi yok; erkek ajanlar kadın sesinin kalınlaştırılmış hâliyle konuşur. Microsoft Edge’de doğal erkek sesi var (Ahmet).", voiceTry: "Dene", voiceTryF: "Merhaba, ben kadın sesiyim.", voiceTryM: "Merhaba, ben erkek sesiyim.", sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
       tgButton: '📨 Telegram…', tgIntro: 'Bir ajan sizi beklediğinde ya da bir çalıştırma hata verdiğinde telefonunuza ajan ve iş bağlantılarıyla mesaj gelir; ofisin durumunu da oradan sorabilirsiniz.',
       tgCommands: 'Komutlar: /status, /waiting, /kpi, /office, /answer ID metin, /mute ad, /alerts all|questions|failures',
       tg1: 'Bot oluşturun', tg1Text: 'Telegram’da @BotFather’ı açın, My Bots menüsüne girip “Create a New Bot” düğmesine basın. Bota bir ad ve sonu “bot” ile biten bir kullanıcı adı verin. BotFather size 123456789:AAH… gibi uzun bir satır (token) gönderir; onu kopyalayın.',
@@ -609,7 +609,7 @@
       waitsOn1: (id) => `wartet auf ${id}`, waitsOnN: (n, id) => `wartet auf ${n} Aufgaben (${id} …)`, waitsSubs: (n) => `wartet auf ${n} Teilaufgaben`, waitsYou: 'wartet auf Sie', stalled: (n) => `${n} hängen`,
       sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sPets: "Haustiere", petsNote: "Tiere, die durchs Büro streifen. Zum Begrüßen anklicken.", petName: {"cat": "Katze", "dog": "Hund", "rabbit": "Kaninchen", "robot": "Saugroboter"}, petSay: {"cat": "Miau!", "dog": "Wuff!", "rabbit": "♥", "robot": "Piep piep"}, sVoice: 'Sprachausgabe (Agenten sprechen)', voiceNote: 'Der Browser liest vor, was passiert, mit eigener Stimme pro Agent. Kostenlos und im Browser eingebaut; Cubicle sendet nichts. Manche Browser brauchen erst einen Klick auf die Seite.', voiceKinds: { wait: 'Braucht mich', start: 'Beginnt', done: 'Fertig', err: 'Fehler', chat: 'Gespräche' }, voicePick: 'Stimme', voiceAuto: 'Automatisch (eine pro Agent)', voiceNone: 'Dieser Browser hat keine Stimme für diese Sprache. Edge hat natürliche Stimmen; unter Windows fügt ein Sprachpaket eine hinzu.', voiceOn: 'Sprachausgabe ist an.',
       say: { wait: (n, w) => `${n} braucht dich${w ? ': ' + w : ''}.`, start: (n, w) => `${n} beginnt mit der Arbeit${w ? ': ' + w : ''}.`, done: (n, w) => `${n} ist fertig${w ? ': ' + w : ''}.`, err: (n, w) => `${n} hat einen Fehler${w ? ': ' + w : ''}.` },
-      voiceSex: "Stimme", voiceSexAuto: "Wie gezeichnet", female: "Weiblich", male: "Männlich", sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
+      voiceSex: "Stimme", voiceSexAuto: "Wie gezeichnet", female: "Weiblich", male: "Männlich", voiceSexMode: "Frauen / Männer", voiceSexLook: "Wie das Büro sie zeigt", voiceSexMix: "Gemischt (abwechselnd)", voiceSexF: "Alle mit Frauenstimme", voiceSexM: "Alle mit Männerstimme", voiceF: "Frauenstimme", voiceM: "Männerstimme", voiceNoF: "Dieser Browser hat keine Frauenstimme für diese Sprache; Frauen sprechen mit der höher gestellten Männerstimme. Microsoft Edge hat natürliche Frauenstimmen.", voiceNoM: "Dieser Browser hat keine Männerstimme für diese Sprache; Männer sprechen mit der tiefer gestellten Frauenstimme. Microsoft Edge hat natürliche Männerstimmen.", voiceTry: "Testen", voiceTryF: "Hallo, das ist eine Frauenstimme.", voiceTryM: "Hallo, das ist eine Männerstimme.", sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
       tgButton: '📨 Telegram…', tgIntro: 'Eine Nachricht aufs Handy, wenn ein Agent Sie braucht oder ein Lauf fehlschlägt, mit Links zum Agenten und zur Aufgabe; und fragen Sie das Büro, wie es läuft.',
       tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text, /mute Name, /alerts all|questions|failures',
       tg1: 'Bot anlegen', tg1Text: 'Öffnen Sie in Telegram @BotFather, gehen Sie zu „My Bots“ und drücken Sie „Create a New Bot“. Geben Sie einen Namen und einen Benutzernamen, der auf „bot“ endet. BotFather schickt Ihnen ein Token, eine lange Zeile wie 123456789:AAH…; kopieren Sie es.',
@@ -718,7 +718,7 @@
       waitsOn1: (id) => `espera a ${id}`, waitsOnN: (n, id) => `espera ${n} tareas (${id}…)`, waitsSubs: (n) => `espera ${n} subtareas`, waitsYou: 'te espera', stalled: (n) => `${n} atascadas`,
       sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sPets: "Mascotas", petsNote: "Animales que pasean por la oficina. Haz clic en uno para saludarlo.", petName: {"cat": "Gato", "dog": "Perro", "rabbit": "Conejo", "robot": "Robot aspirador"}, petSay: {"cat": "¡Miau!", "dog": "¡Guau!", "rabbit": "♥", "robot": "Bip bup"}, sVoice: 'Voz (los agentes hablan)', voiceNote: 'El navegador lee en voz alta lo que pasa, con una voz para cada agente. Gratis e integrado en el navegador; Cubicle no envía nada. Algunos navegadores piden antes un clic en la página.', voiceKinds: { wait: 'Me necesitan', start: 'Empiezan', done: 'Terminan', err: 'Errores', chat: 'Charlas' }, voicePick: 'Voz', voiceAuto: 'Automática (una por agente)', voiceNone: 'Este navegador no tiene voz para este idioma. Edge tiene voces naturales; en Windows, un paquete de idioma añade una.', voiceOn: 'La voz está activada.',
       say: { wait: (n, w) => `${n} te necesita${w ? ': ' + w : ''}.`, start: (n, w) => `${n} empieza a trabajar${w ? ': ' + w : ''}.`, done: (n, w) => `${n} terminó${w ? ': ' + w : ''}.`, err: (n, w) => `${n} tuvo un error${w ? ': ' + w : ''}.` },
-      voiceSex: "Voz", voiceSexAuto: "Según el aspecto", female: "Femenina", male: "Masculina", sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
+      voiceSex: "Voz", voiceSexAuto: "Según el aspecto", female: "Femenina", male: "Masculina", voiceSexMode: "Mujeres / hombres", voiceSexLook: "Según cómo se ven", voiceSexMix: "Mixto (uno y uno)", voiceSexF: "Todos con voz de mujer", voiceSexM: "Todos con voz de hombre", voiceF: "Voz de mujer", voiceM: "Voz de hombre", voiceNoF: "Este navegador no tiene voz de mujer para este idioma; las mujeres hablan con la voz de hombre más aguda. Microsoft Edge tiene voces naturales de mujer.", voiceNoM: "Este navegador no tiene voz de hombre para este idioma; los hombres hablan con la voz de mujer más grave. Microsoft Edge tiene voces naturales de hombre.", voiceTry: "Probar", voiceTryF: "Hola, esta es una voz de mujer.", voiceTryM: "Hola, esta es una voz de hombre.", sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
       tgButton: '📨 Telegram…', tgIntro: 'Recibe un mensaje en el móvil cuando un agente te necesita o una ejecución falla, con enlaces al agente y a la tarea, y pregunta a la oficina cómo va.',
       tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto, /mute nombre, /alerts all|questions|failures',
       tg1: 'Crea un bot', tg1Text: 'En Telegram, abre @BotFather, entra en My Bots y pulsa «Create a New Bot». Dale un nombre y un usuario que termine en «bot». BotFather te envía un token, una línea larga como 123456789:AAH…; cópiala.',
@@ -827,7 +827,7 @@
       waitsOn1: (id) => `attend ${id}`, waitsOnN: (n, id) => `attend ${n} tâches (${id}…)`, waitsSubs: (n) => `attend ${n} sous-tâches`, waitsYou: 'vous attend', stalled: (n) => `${n} bloquées`,
       sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sPets: "Animaux", petsNote: "Des animaux qui se promènent dans le bureau. Cliquez sur l’un d’eux pour le saluer.", petName: {"cat": "Chat", "dog": "Chien", "rabbit": "Lapin", "robot": "Robot aspirateur"}, petSay: {"cat": "Miaou !", "dog": "Ouaf !", "rabbit": "♥", "robot": "Bip boup"}, sVoice: 'Voix (les agents parlent)', voiceNote: 'Le navigateur lit à voix haute ce qui se passe, avec une voix par agent. Gratuit et intégré au navigateur ; Cubicle n’envoie rien. Certains navigateurs demandent d’abord un clic sur la page.', voiceKinds: { wait: 'Besoin de moi', start: 'Commencent', done: 'Terminent', err: 'Erreurs', chat: 'Discussions' }, voicePick: 'Voix', voiceAuto: 'Automatique (une par agent)', voiceNone: 'Ce navigateur n’a pas de voix pour cette langue. Edge a des voix naturelles ; sous Windows, un module linguistique en ajoute une.', voiceOn: 'La voix est activée.',
       say: { wait: (n, w) => `${n} a besoin de vous${w ? ' : ' + w : ''}.`, start: (n, w) => `${n} se met au travail${w ? ' : ' + w : ''}.`, done: (n, w) => `${n} a terminé${w ? ' : ' + w : ''}.`, err: (n, w) => `${n} a rencontré une erreur${w ? ' : ' + w : ''}.` },
-      voiceSex: "Voix", voiceSexAuto: "Selon l’apparence", female: "Féminine", male: "Masculine", sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
+      voiceSex: "Voix", voiceSexAuto: "Selon l’apparence", female: "Féminine", male: "Masculine", voiceSexMode: "Femmes / hommes", voiceSexLook: "Selon leur apparence", voiceSexMix: "Mélangé (un sur deux)", voiceSexF: "Tout le monde en voix de femme", voiceSexM: "Tout le monde en voix d’homme", voiceF: "Voix de femme", voiceM: "Voix d’homme", voiceNoF: "Ce navigateur n’a pas de voix de femme pour cette langue ; les femmes parlent avec la voix d’homme plus aiguë. Microsoft Edge a des voix naturelles de femme.", voiceNoM: "Ce navigateur n’a pas de voix d’homme pour cette langue ; les hommes parlent avec la voix de femme plus grave. Microsoft Edge a des voix naturelles d’homme.", voiceTry: "Essayer", voiceTryF: "Bonjour, voici une voix de femme.", voiceTryM: "Bonjour, voici une voix d’homme.", sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
       tgButton: '📨 Telegram…', tgIntro: 'Recevez un message sur votre téléphone quand un agent a besoin de vous ou qu’une exécution échoue, avec des liens vers l’agent et la tâche, et demandez au bureau où il en est.',
       tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte, /mute nom, /alerts all|questions|failures',
       tg1: 'Créez un bot', tg1Text: 'Dans Telegram, ouvrez @BotFather, allez dans My Bots et appuyez sur « Create a New Bot ». Donnez-lui un nom et un nom d’utilisateur finissant par « bot ». BotFather vous envoie un jeton, une longue ligne comme 123456789:AAH… ; copiez-la.',
@@ -936,7 +936,7 @@
       waitsOn1: (id) => `等待 ${id}`, waitsOnN: (n, id) => `等待 ${n} 个任务（${id}…）`, waitsSubs: (n) => `等待 ${n} 个子任务`, waitsYou: '在等你', stalled: (n) => `${n} 个停滞`,
       sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sPets: "宠物", petsNote: "在办公室里闲逛的小动物。点一下打个招呼。", petName: {"cat": "猫", "dog": "狗", "rabbit": "兔子", "robot": "扫地机器人"}, petSay: {"cat": "喵！", "dog": "汪！", "rabbit": "♥", "robot": "哔哔"}, sVoice: '语音（代理说话）', voiceNote: '浏览器用每个代理自己的声音朗读发生的事情。免费，浏览器自带；Cubicle 不会发送任何内容。有些浏览器需要先点一下页面。', voiceKinds: { wait: '需要我', start: '开始工作', done: '完成工作', err: '出错', chat: '聊天' }, voicePick: '朗读声音', voiceAuto: '自动（每个代理一个）', voiceNone: '这个浏览器没有该语言的声音。Edge 有自然语音；在 Windows 上安装语言包也会添加。', voiceOn: '语音已开启。',
       say: { wait: (n, w) => `${n} 需要你${w ? '：' + w : ''}。`, start: (n, w) => `${n} 开始工作${w ? '：' + w : ''}。`, done: (n, w) => `${n} 完成了${w ? '：' + w : ''}。`, err: (n, w) => `${n} 出错了${w ? '：' + w : ''}。` },
-      voiceSex: "声音", voiceSexAuto: "按外观", female: "女声", male: "男声", sHuman: '你的办公桌', sNotify: '桌面通知',
+      voiceSex: "声音", voiceSexAuto: "按外观", female: "女声", male: "男声", voiceSexMode: "女声 / 男声", voiceSexLook: "按办公室里的外观", voiceSexMix: "混合（一男一女）", voiceSexF: "全部女声", voiceSexM: "全部男声", voiceF: "女声", voiceM: "男声", voiceNoF: "这个浏览器没有该语言的女声，女性代理会用调高的男声说话。Microsoft Edge 有自然女声。", voiceNoM: "这个浏览器没有该语言的男声，男性代理会用调低的女声说话。Microsoft Edge 有自然男声。", voiceTry: "试听", voiceTryF: "你好，这是女声。", voiceTryM: "你好，这是男声。", sHuman: '你的办公桌', sNotify: '桌面通知',
       tgButton: '📨 Telegram…', tgIntro: '当代理需要你或运行失败时，手机上会收到带有代理和任务链接的消息，也可以随时询问办公室状态。',
       tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本、/mute 名称、/alerts all|questions|failures',
       tg1: '创建机器人', tg1Text: '在 Telegram 中打开 @BotFather，进入 My Bots 并点“Create a New Bot”。给它起个名字和以“bot”结尾的用户名。BotFather 会发给你一个 token，形如 123456789:AAH… 的长字符串，复制它。',
@@ -1045,7 +1045,7 @@
       waitsOn1: (id) => `ينتظر ${id}`, waitsOnN: (n, id) => `ينتظر ${n} مهام (${id}…)`, waitsSubs: (n) => `ينتظر ${n} مهام فرعية`, waitsYou: 'ينتظرك', stalled: (n) => `${n} متعثرة`,
       sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sPets: "حيوانات أليفة", petsNote: "حيوانات تتجول في المكتب. انقر على أحدها لتحيّيه.", petName: {"cat": "قطة", "dog": "كلب", "rabbit": "أرنب", "robot": "مكنسة روبوت"}, petSay: {"cat": "مياو!", "dog": "هاو!", "rabbit": "♥", "robot": "بيب بوب"}, sVoice: 'الصوت (الوكلاء يتكلمون)', voiceNote: 'يقرأ المتصفح ما يحدث بصوت خاص لكل وكيل. مجاني ومدمج في المتصفح؛ لا يرسل Cubicle أي شيء. بعض المتصفحات تطلب نقرة على الصفحة أولًا.', voiceKinds: { wait: 'يحتاجونني', start: 'يبدؤون العمل', done: 'أنهوا العمل', err: 'الأخطاء', chat: 'المحادثات' }, voicePick: 'الصوت المتحدث', voiceAuto: 'تلقائي (صوت لكل وكيل)', voiceNone: 'لا يوجد في هذا المتصفح صوت لهذه اللغة. في Edge أصوات طبيعية؛ وفي Windows تضيف حزمة اللغة صوتًا.', voiceOn: 'الصوت مُفعّل.',
       say: { wait: (n, w) => `${n} يحتاجك${w ? ': ' + w : ''}.`, start: (n, w) => `${n} بدأ العمل${w ? ': ' + w : ''}.`, done: (n, w) => `${n} أنهى العمل${w ? ': ' + w : ''}.`, err: (n, w) => `${n} واجه خطأ${w ? ': ' + w : ''}.` },
-      voiceSex: "الصوت", voiceSexAuto: "حسب المظهر", female: "أنثى", male: "ذكر", sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
+      voiceSex: "الصوت", voiceSexAuto: "حسب المظهر", female: "أنثى", male: "ذكر", voiceSexMode: "نساء / رجال", voiceSexLook: "حسب مظهرهم في المكتب", voiceSexMix: "مختلط (واحد بواحد)", voiceSexF: "الجميع بصوت امرأة", voiceSexM: "الجميع بصوت رجل", voiceF: "صوت امرأة", voiceM: "صوت رجل", voiceNoF: "لا يوجد في هذا المتصفح صوت امرأة لهذه اللغة؛ تتحدث النساء بصوت الرجل بنبرة أعلى. في Microsoft Edge أصوات نسائية طبيعية.", voiceNoM: "لا يوجد في هذا المتصفح صوت رجل لهذه اللغة؛ يتحدث الرجال بصوت المرأة بنبرة أخفض. في Microsoft Edge أصوات رجالية طبيعية.", voiceTry: "جرّب", voiceTryF: "مرحبًا، هذا صوت امرأة.", voiceTryM: "مرحبًا، هذا صوت رجل.", sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
       tgButton: '📨 Telegram…', tgIntro: 'تصلك رسالة على هاتفك عندما يحتاجك وكيل أو يفشل تشغيل، مع روابط للوكيل والمهمة، ويمكنك سؤال المكتب عن حاله.',
       tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص ‎/mute اسم ‎/alerts all|questions|failures',
       tg1: 'أنشئ بوتًا', tg1Text: 'في Telegram افتح ‎@BotFather، وادخل My Bots واضغط «Create a New Bot». أعطه اسمًا واسم مستخدم ينتهي بـ «bot». سيرسل لك BotFather رمزًا (token) طويلًا مثل 123456789:AAH…؛ انسخه.',
@@ -4022,13 +4022,22 @@
   const voiceSex = (v) => (FEMALE_VOICE.test(v.name) ? 'f' : MALE_VOICE.test(v.name) ? 'm' : '');
   // An agent's sex for its voice: chosen in ✎ (Voice), else what the office draws (a skirt, long
   // hair, a bun or a ponytail), else male.
-  const agentSex = (s) => (s && s.look && (s.look.voice === 'f' || s.look.voice === 'm') ? s.look.voice : s && s.fem ? 'f' : 'm');
+  // ⚙ → Women / men: by what the office draws (default), mixed (every other agent, whatever it
+  // looks like), or everyone the same. ✎ → Voice on one agent wins over all of these.
+  const agentSex = (s) => {
+    if (s && s.look && (s.look.voice === 'f' || s.look.voice === 'm')) return s.look.voice;
+    if (s && s.testSex) return s.testSex;
+    const mode = settings.voiceSex;
+    if (mode === 'f' || mode === 'm') return mode;
+    if (mode === 'mix') return s && s.id && hash('sex:' + s.id) % 2 ? 'f' : 'm';
+    return s && s.fem ? 'f' : 'm';
+  };
   // Utterances queued or playing, kept until they end (Chrome drops the end event of an utterance
   // nobody holds on to); anything older than half a minute is counted as finished.
   const live = [];
   const plain = (t) => String(t || '').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}✓✋⚠⛔⏳🤝]/gu, '').replace(/[`*_#>]/g, '').replace(/\s+/g, ' ').trim();
   function say(s, text, kind) {
-    if (!voiceWanted(kind)) return;
+    if (kind !== 'test' && !voiceWanted(kind)) return;
     text = plain(text).slice(0, 220);
     if (!text) return;
     const nowMs = Date.now();
@@ -4038,15 +4047,17 @@
     const u = new SpeechSynthesisUtterance(text);
     u.lang = SPEECH_LANG[lang] || lang;
     const vs = langVoices(), h = s && s.id ? hash('voice:' + s.id) : 0, sex = agentSex(s);
-    const chosen = settings.voiceName && vs.find((v) => v.name === settings.voiceName);
+    const pickName = sex === 'f' ? settings.voiceF : settings.voiceM;
+    const chosen = pickName && vs.find((v) => v.name === pickName);
     // women speak with a woman's voice and men with a man's, when this browser has both
     const same = vs.filter((v) => voiceSex(v) === sex), neutral = vs.filter((v) => !voiceSex(v));
-    const pool = same.length ? same : neutral.length ? neutral : vs;
+    const natural = same.filter((v) => /natural|online/i.test(v.name));      // Edge's natural voices sound far better
+    const pool = natural.length ? natural : same.length ? same : neutral.length ? neutral : vs;
     const voice = chosen || (pool.length ? pool[h % pool.length] : null);
     try { if (voice) u.voice = voice; } catch (_) {}
     // pitch and pace from the agent's id; with no voice of its sex, the pitch moves it there
     const jitter = (((h >>> 4) % 9) - 4) * 0.03, fits = voice && voiceSex(voice) === sex;
-    u.pitch = Math.max(0.5, Math.min(1.8, (fits ? 1 : sex === 'f' ? 1.35 : 0.78) + jitter));
+    u.pitch = Math.max(0.5, Math.min(2, (fits ? 1 : sex === 'f' ? 1.6 : 0.75) + jitter));
     u.rate = 0.98 + ((h >>> 9) % 5) * 0.03;
     u.volume = 1;
     const entry = { u, at: nowMs };
@@ -4444,6 +4455,20 @@
     if (!panel.hidden && !panel.contains(e.target) && e.target !== gear) { panel.hidden = true; gear.setAttribute('aria-expanded', 'false'); }
   });
 
+  // The voice choices under ⚙ → Voice: women / men, which voice each gets, and a try button.
+  function voiceRows() {
+    const vs = langVoices();
+    if (!vs.length) return `<div class="note">${esc(L.voiceNone)}</div>`;
+    const short = (v) => v.name.replace(/^Microsoft |^Google /, '').replace(/ - .*$/, '').replace(/ Online \(Natural\)/, ' ✦');
+    const opts = (sex) => [['', L.voiceAuto], ...[...vs].sort((a, b) => (voiceSex(b) === sex) - (voiceSex(a) === sex)).map((v) => [v.name, short(v)])];
+    const own2 = (key, label, values, cur) => `<div class="srow"><label for="set-${key}">${esc(label)}</label><select id="set-${key}" data-key="${key}" data-own="1">` +
+      values.map(([v, n]) => `<option value="${esc(v)}"${v === cur ? ' selected' : ''}>${esc(n)}</option>`).join('') + '</select></div>';
+    const noF = !vs.some((v) => voiceSex(v) === 'f'), noM = !vs.some((v) => voiceSex(v) === 'm');
+    return own2('voiceSex', L.voiceSexMode, [['', L.voiceSexLook], ['mix', L.voiceSexMix], ['f', L.voiceSexF], ['m', L.voiceSexM]], settings.voiceSex || '') +
+      own2('voiceF', L.voiceF, opts('f'), settings.voiceF || '') + own2('voiceM', L.voiceM, opts('m'), settings.voiceM || '') +
+      (noF || noM ? `<div class="note">${esc(noF ? L.voiceNoF : L.voiceNoM)}</div>` : '') +
+      `<button type="button" id="set-voice-try" class="mini">▶ ${esc(L.voiceTry)}</button>`;
+  }
   function renderSettings() {
     const entry = CATALOG.find((c) => c.id === theme.id) || CATALOG[0];
     // Compact: label and control on one line, three short groups, notes as tooltips.
@@ -4465,7 +4490,7 @@
       `<div class="checks">${check('set-notify', settings.notify, L.sNotify, L.notify)}</div>` +
       own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
       (canSpeak ? `<label title="${esc(L.voiceNote)}">${esc(L.sVoice)}</label><div class="checks">${VOICE_KINDS.map((k) => check(`set-voice-${k}`, voiceWanted(k), L.voiceKinds[k], L.voiceNote)).join('')}</div>` +
-        (VOICE_KINDS.some(voiceWanted) ? (langVoices().length ? own('voiceName', L.voicePick, [['', L.voiceAuto], ...langVoices().map((x) => [x.name, x.name.replace(/^Microsoft |^Google /, '').replace(/ - .*$/, '')])], settings.voiceName || '') : `<div class="note">${esc(L.voiceNone)}</div>`) : '') : '') +
+        (VOICE_KINDS.some(voiceWanted) ? voiceRows() : '') : '') +
       `<div class="shead">${esc(L.sMore)}</div><div class="sbtns">` +
       btn('set-cfg', '🛠 ' + C.title) + btn('set-tg', L.tgButton) + btn('set-copy', '🔗 ' + L.sCopy, L.settingsNote) +
       btn('set-logo', '🖼 ' + L.sLogo, L.logoPick) + (looks.logo ? btn('set-nologo', '✕ ' + L.sNoLogo, L.logoRemove) : '') +
@@ -4523,6 +4548,8 @@
       if (el.checked && !was) say(null, L.voiceOn, k);           // a sample, while the click still counts as the user's
       renderSettings();
     }); }
+    const vt = panel.querySelector('#set-voice-try');
+    if (vt) vt.addEventListener('click', () => { say({ id: 'try-f', testSex: 'f' }, L.voiceTryF, 'test'); say({ id: 'try-m', testSex: 'm' }, L.voiceTryM, 'test'); });
     const ml = panel.querySelector('#set-mylook');
     if (ml) ml.addEventListener('click', () => { panel.hidden = true; openLooks(human); });
     for (const key of ['anim', 'cards']) panel.querySelector(`#set-${key}`).addEventListener('change', (e) => {
