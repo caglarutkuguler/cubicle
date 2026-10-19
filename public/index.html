@@ -389,7 +389,9 @@
       layout: 'Layout', layoutAuto: 'Automatic (fit the page)', layoutSide: 'Office and cards side by side', layoutStack: 'Cards below the office',
       openPaperclip: 'Open Paperclip in its own tab', kpiTitle: 'Progress of the tasks you gave', kpi: 'Tasks you gave', kpiOpen: 'Open', kpiAvg: 'Average progress', kpiDone7: 'Done in 7 days', kpiLead: 'Typical time to finish', kpiBlocked: 'Waiting on other tasks',
       waitsOn1: (id) => `waiting for ${id}`, waitsOnN: (n, id) => `waiting for ${n} tasks (${id}…)`, waitsSubs: (n) => `waiting for ${n} subtasks`, waitsYou: 'waiting for you', stalled: (n) => `${n} stalled`,
-      sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sPets: "Pets", petsNote: "Animals that wander the office. Click one to say hello.", petName: {"cat": "Cat", "dog": "Dog", "rabbit": "Rabbit", "robot": "Robot vacuum"}, petSay: {"cat": "Meow!", "dog": "Woof!", "rabbit": "♥", "robot": "Beep boop"}, sHuman: 'Your desk', sNotify: 'Desktop notification',
+      sView: 'View', sAlerts: 'Alerts', sMore: 'More', sCopy: 'Copy link', sLogo: 'Logo…', sNoLogo: 'Remove logo', sExport: 'Export looks', sImport: 'Import looks…', sRecord: 'Record 30 s', sPets: "Pets", petsNote: "Animals that wander the office. Click one to say hello.", petName: {"cat": "Cat", "dog": "Dog", "rabbit": "Rabbit", "robot": "Robot vacuum"}, petSay: {"cat": "Meow!", "dog": "Woof!", "rabbit": "♥", "robot": "Beep boop"}, sVoice: 'Voice (agents speak)', voiceNote: 'The browser reads out what happens, in each agent’s own voice. Free and built into the browser; nothing is sent anywhere by Cubicle. Some browsers need one click on the page first.', voiceKinds: { wait: 'Needs me', start: 'Starts work', done: 'Work done', err: 'Errors', chat: 'Chats' }, voicePick: 'Speaking voice', voiceAuto: 'Automatic (one per agent)', voiceNone: 'This browser has no voice for this language. Edge has natural voices for it; on Windows, a language pack adds one.', voiceOn: 'Voice is on.',
+      say: { wait: (n, w) => `${n} needs you${w ? ': ' + w : ''}.`, start: (n, w) => `${n} is starting work${w ? ': ' + w : ''}.`, done: (n, w) => `${n} finished${w ? ': ' + w : ''}.`, err: (n, w) => `${n} ran into an error${w ? ': ' + w : ''}.` },
+      sHuman: 'Your desk', sNotify: 'Desktop notification',
       tgButton: '📨 Telegram…', tgIntro: 'Get a message on your phone when an agent needs you or a run fails, with links to the agent and the issue, and ask the office how it is doing.',
       tgCommands: 'Commands: /status, /waiting, /kpi, /office, /answer ID text, /mute name, /alerts all|questions|failures',
       tg1: 'Create a bot', tg1Text: 'In Telegram, open @BotFather, go to My Bots and press “Create a New Bot”. Give it a name and a username ending in “bot”. BotFather then sends you a token, a long line like 123456789:AAH…; copy it.',
@@ -496,7 +498,9 @@
       layout: 'Yerleşim', layoutAuto: 'Otomatik (sayfaya sığdır)', layoutSide: 'Ofis ve kartlar yan yana', layoutStack: 'Kartlar ofisin altında',
       openPaperclip: 'Paperclip’i kendi sekmesinde aç', kpiTitle: 'Verdiğiniz görevlerin ilerlemesi', kpi: 'Verdiğiniz görevler', kpiOpen: 'Açık', kpiAvg: 'Ortalama ilerleme', kpiDone7: '7 günde biten', kpiLead: 'Tipik bitirme süresi', kpiBlocked: 'Başka görevi bekleyen',
       waitsOn1: (id) => `başka bir görevi bekliyor (${id})`, waitsOnN: (n, id) => `${n} görevin bitmesini bekliyor (${id}…)`, waitsSubs: (n) => `${n} alt görevin bitmesini bekliyor`, waitsYou: 'sizi bekliyor', stalled: (n) => `${n} tanesi takıldı`,
-      sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sPets: "Evcil hayvan", petsNote: "Ofiste dolaşan hayvanlar. Selam vermek için üstüne tıklayın.", petName: {"cat": "Kedi", "dog": "Köpek", "rabbit": "Tavşan", "robot": "Robot süpürge"}, petSay: {"cat": "Miyav!", "dog": "Hav hav!", "rabbit": "♥", "robot": "Bip bop"}, sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
+      sView: 'Görünüm', sAlerts: 'Uyarılar', sMore: 'Diğer', sCopy: 'Link kopyala', sLogo: 'Logo…', sNoLogo: 'Logoyu kaldır', sExport: 'Dışa aktar', sImport: 'İçe aktar…', sRecord: '30 sn video', sPets: "Evcil hayvan", petsNote: "Ofiste dolaşan hayvanlar. Selam vermek için üstüne tıklayın.", petName: {"cat": "Kedi", "dog": "Köpek", "rabbit": "Tavşan", "robot": "Robot süpürge"}, petSay: {"cat": "Miyav!", "dog": "Hav hav!", "rabbit": "♥", "robot": "Bip bop"}, sVoice: 'Seslendirme (ajanlar konuşsun)', voiceNote: 'Tarayıcı olanları her ajanın kendi sesiyle okur. Ücretsizdir, tarayıcıda yerleşiktir; Cubicle hiçbir yere bir şey göndermez. Bazı tarayıcılar önce sayfaya bir kez tıklanmasını ister.', voiceKinds: { wait: 'Bekleyenler', start: 'İşe başlayanlar', done: 'İşi bitenler', err: 'Hatalar', chat: 'Sohbetler' }, voicePick: 'Konuşan ses', voiceAuto: 'Otomatik (her ajana bir ses)', voiceNone: 'Bu tarayıcıda Türkçe ses yok. Edge’de doğal Türkçe sesler var; Windows’ta Türkçe dil paketi de bir ses ekler.', voiceOn: 'Seslendirme açık.',
+      say: { wait: (n, w) => `${n} sizi bekliyor${w ? ': ' + w : ''}.`, start: (n, w) => `${n} işe başladı${w ? ': ' + w : ''}.`, done: (n, w) => `${n} işini bitirdi${w ? ': ' + w : ''}.`, err: (n, w) => `${n} hata aldı${w ? ': ' + w : ''}.` },
+      sHuman: 'İnsan masası', sNotify: 'Masaüstü bildirimi',
       tgButton: '📨 Telegram…', tgIntro: 'Bir ajan sizi beklediğinde ya da bir çalıştırma hata verdiğinde telefonunuza ajan ve iş bağlantılarıyla mesaj gelir; ofisin durumunu da oradan sorabilirsiniz.',
       tgCommands: 'Komutlar: /status, /waiting, /kpi, /office, /answer ID metin, /mute ad, /alerts all|questions|failures',
       tg1: 'Bot oluşturun', tg1Text: 'Telegram’da @BotFather’ı açın, My Bots menüsüne girip “Create a New Bot” düğmesine basın. Bota bir ad ve sonu “bot” ile biten bir kullanıcı adı verin. BotFather size 123456789:AAH… gibi uzun bir satır (token) gönderir; onu kopyalayın.',
@@ -603,7 +607,9 @@
       layout: 'Anordnung', layoutAuto: 'Automatisch (an die Seite anpassen)', layoutSide: 'Büro und Karten nebeneinander', layoutStack: 'Karten unter dem Büro',
       openPaperclip: 'Paperclip in eigenem Tab öffnen', kpiTitle: 'Fortschritt Ihrer Aufgaben', kpi: 'Ihre Aufgaben', kpiOpen: 'Offen', kpiAvg: 'Durchschnittlicher Fortschritt', kpiDone7: 'In 7 Tagen erledigt', kpiLead: 'Übliche Dauer', kpiBlocked: 'Wartet auf andere Aufgaben',
       waitsOn1: (id) => `wartet auf ${id}`, waitsOnN: (n, id) => `wartet auf ${n} Aufgaben (${id} …)`, waitsSubs: (n) => `wartet auf ${n} Teilaufgaben`, waitsYou: 'wartet auf Sie', stalled: (n) => `${n} hängen`,
-      sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sPets: "Haustiere", petsNote: "Tiere, die durchs Büro streifen. Zum Begrüßen anklicken.", petName: {"cat": "Katze", "dog": "Hund", "rabbit": "Kaninchen", "robot": "Saugroboter"}, petSay: {"cat": "Miau!", "dog": "Wuff!", "rabbit": "♥", "robot": "Piep piep"}, sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
+      sView: 'Ansicht', sAlerts: 'Hinweise', sMore: 'Mehr', sCopy: 'Link kopieren', sLogo: 'Logo…', sNoLogo: 'Logo entfernen', sExport: 'Exportieren', sImport: 'Importieren…', sRecord: '30-s-Video', sPets: "Haustiere", petsNote: "Tiere, die durchs Büro streifen. Zum Begrüßen anklicken.", petName: {"cat": "Katze", "dog": "Hund", "rabbit": "Kaninchen", "robot": "Saugroboter"}, petSay: {"cat": "Miau!", "dog": "Wuff!", "rabbit": "♥", "robot": "Piep piep"}, sVoice: 'Sprachausgabe (Agenten sprechen)', voiceNote: 'Der Browser liest vor, was passiert, mit eigener Stimme pro Agent. Kostenlos und im Browser eingebaut; Cubicle sendet nichts. Manche Browser brauchen erst einen Klick auf die Seite.', voiceKinds: { wait: 'Braucht mich', start: 'Beginnt', done: 'Fertig', err: 'Fehler', chat: 'Gespräche' }, voicePick: 'Stimme', voiceAuto: 'Automatisch (eine pro Agent)', voiceNone: 'Dieser Browser hat keine Stimme für diese Sprache. Edge hat natürliche Stimmen; unter Windows fügt ein Sprachpaket eine hinzu.', voiceOn: 'Sprachausgabe ist an.',
+      say: { wait: (n, w) => `${n} braucht dich${w ? ': ' + w : ''}.`, start: (n, w) => `${n} beginnt mit der Arbeit${w ? ': ' + w : ''}.`, done: (n, w) => `${n} ist fertig${w ? ': ' + w : ''}.`, err: (n, w) => `${n} hat einen Fehler${w ? ': ' + w : ''}.` },
+      sHuman: 'Ihr Schreibtisch', sNotify: 'Desktop-Benachrichtigung',
       tgButton: '📨 Telegram…', tgIntro: 'Eine Nachricht aufs Handy, wenn ein Agent Sie braucht oder ein Lauf fehlschlägt, mit Links zum Agenten und zur Aufgabe; und fragen Sie das Büro, wie es läuft.',
       tgCommands: 'Befehle: /status, /waiting, /kpi, /office, /answer ID Text, /mute Name, /alerts all|questions|failures',
       tg1: 'Bot anlegen', tg1Text: 'Öffnen Sie in Telegram @BotFather, gehen Sie zu „My Bots“ und drücken Sie „Create a New Bot“. Geben Sie einen Namen und einen Benutzernamen, der auf „bot“ endet. BotFather schickt Ihnen ein Token, eine lange Zeile wie 123456789:AAH…; kopieren Sie es.',
@@ -710,7 +716,9 @@
       layout: 'Disposición', layoutAuto: 'Automática (ajustar a la página)', layoutSide: 'Oficina y tarjetas lado a lado', layoutStack: 'Tarjetas debajo de la oficina',
       openPaperclip: 'Abrir Paperclip en su propia pestaña', kpiTitle: 'Progreso de las tareas que diste', kpi: 'Tareas que diste', kpiOpen: 'Abiertas', kpiAvg: 'Progreso medio', kpiDone7: 'Terminadas en 7 días', kpiLead: 'Tiempo habitual', kpiBlocked: 'Esperan otras tareas',
       waitsOn1: (id) => `espera a ${id}`, waitsOnN: (n, id) => `espera ${n} tareas (${id}…)`, waitsSubs: (n) => `espera ${n} subtareas`, waitsYou: 'te espera', stalled: (n) => `${n} atascadas`,
-      sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sPets: "Mascotas", petsNote: "Animales que pasean por la oficina. Haz clic en uno para saludarlo.", petName: {"cat": "Gato", "dog": "Perro", "rabbit": "Conejo", "robot": "Robot aspirador"}, petSay: {"cat": "¡Miau!", "dog": "¡Guau!", "rabbit": "♥", "robot": "Bip bup"}, sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
+      sView: 'Vista', sAlerts: 'Avisos', sMore: 'Más', sCopy: 'Copiar enlace', sLogo: 'Logo…', sNoLogo: 'Quitar logo', sExport: 'Exportar', sImport: 'Importar…', sRecord: 'Vídeo de 30 s', sPets: "Mascotas", petsNote: "Animales que pasean por la oficina. Haz clic en uno para saludarlo.", petName: {"cat": "Gato", "dog": "Perro", "rabbit": "Conejo", "robot": "Robot aspirador"}, petSay: {"cat": "¡Miau!", "dog": "¡Guau!", "rabbit": "♥", "robot": "Bip bup"}, sVoice: 'Voz (los agentes hablan)', voiceNote: 'El navegador lee en voz alta lo que pasa, con una voz para cada agente. Gratis e integrado en el navegador; Cubicle no envía nada. Algunos navegadores piden antes un clic en la página.', voiceKinds: { wait: 'Me necesitan', start: 'Empiezan', done: 'Terminan', err: 'Errores', chat: 'Charlas' }, voicePick: 'Voz', voiceAuto: 'Automática (una por agente)', voiceNone: 'Este navegador no tiene voz para este idioma. Edge tiene voces naturales; en Windows, un paquete de idioma añade una.', voiceOn: 'La voz está activada.',
+      say: { wait: (n, w) => `${n} te necesita${w ? ': ' + w : ''}.`, start: (n, w) => `${n} empieza a trabajar${w ? ': ' + w : ''}.`, done: (n, w) => `${n} terminó${w ? ': ' + w : ''}.`, err: (n, w) => `${n} tuvo un error${w ? ': ' + w : ''}.` },
+      sHuman: 'Tu escritorio', sNotify: 'Notificación de escritorio',
       tgButton: '📨 Telegram…', tgIntro: 'Recibe un mensaje en el móvil cuando un agente te necesita o una ejecución falla, con enlaces al agente y a la tarea, y pregunta a la oficina cómo va.',
       tgCommands: 'Comandos: /status, /waiting, /kpi, /office, /answer ID texto, /mute nombre, /alerts all|questions|failures',
       tg1: 'Crea un bot', tg1Text: 'En Telegram, abre @BotFather, entra en My Bots y pulsa «Create a New Bot». Dale un nombre y un usuario que termine en «bot». BotFather te envía un token, una línea larga como 123456789:AAH…; cópiala.',
@@ -817,7 +825,9 @@
       layout: 'Disposition', layoutAuto: 'Automatique (adapter à la page)', layoutSide: 'Bureau et cartes côte à côte', layoutStack: 'Cartes sous le bureau',
       openPaperclip: 'Ouvrir Paperclip dans son propre onglet', kpiTitle: 'Avancement des tâches que vous avez données', kpi: 'Vos tâches', kpiOpen: 'Ouvertes', kpiAvg: 'Avancement moyen', kpiDone7: 'Terminées en 7 jours', kpiLead: 'Durée habituelle', kpiBlocked: 'En attente d’autres tâches',
       waitsOn1: (id) => `attend ${id}`, waitsOnN: (n, id) => `attend ${n} tâches (${id}…)`, waitsSubs: (n) => `attend ${n} sous-tâches`, waitsYou: 'vous attend', stalled: (n) => `${n} bloquées`,
-      sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sPets: "Animaux", petsNote: "Des animaux qui se promènent dans le bureau. Cliquez sur l’un d’eux pour le saluer.", petName: {"cat": "Chat", "dog": "Chien", "rabbit": "Lapin", "robot": "Robot aspirateur"}, petSay: {"cat": "Miaou !", "dog": "Ouaf !", "rabbit": "♥", "robot": "Bip boup"}, sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
+      sView: 'Affichage', sAlerts: 'Alertes', sMore: 'Plus', sCopy: 'Copier le lien', sLogo: 'Logo…', sNoLogo: 'Retirer le logo', sExport: 'Exporter', sImport: 'Importer…', sRecord: 'Vidéo de 30 s', sPets: "Animaux", petsNote: "Des animaux qui se promènent dans le bureau. Cliquez sur l’un d’eux pour le saluer.", petName: {"cat": "Chat", "dog": "Chien", "rabbit": "Lapin", "robot": "Robot aspirateur"}, petSay: {"cat": "Miaou !", "dog": "Ouaf !", "rabbit": "♥", "robot": "Bip boup"}, sVoice: 'Voix (les agents parlent)', voiceNote: 'Le navigateur lit à voix haute ce qui se passe, avec une voix par agent. Gratuit et intégré au navigateur ; Cubicle n’envoie rien. Certains navigateurs demandent d’abord un clic sur la page.', voiceKinds: { wait: 'Besoin de moi', start: 'Commencent', done: 'Terminent', err: 'Erreurs', chat: 'Discussions' }, voicePick: 'Voix', voiceAuto: 'Automatique (une par agent)', voiceNone: 'Ce navigateur n’a pas de voix pour cette langue. Edge a des voix naturelles ; sous Windows, un module linguistique en ajoute une.', voiceOn: 'La voix est activée.',
+      say: { wait: (n, w) => `${n} a besoin de vous${w ? ' : ' + w : ''}.`, start: (n, w) => `${n} se met au travail${w ? ' : ' + w : ''}.`, done: (n, w) => `${n} a terminé${w ? ' : ' + w : ''}.`, err: (n, w) => `${n} a rencontré une erreur${w ? ' : ' + w : ''}.` },
+      sHuman: 'Votre bureau', sNotify: 'Notification de bureau',
       tgButton: '📨 Telegram…', tgIntro: 'Recevez un message sur votre téléphone quand un agent a besoin de vous ou qu’une exécution échoue, avec des liens vers l’agent et la tâche, et demandez au bureau où il en est.',
       tgCommands: 'Commandes : /status, /waiting, /kpi, /office, /answer ID texte, /mute nom, /alerts all|questions|failures',
       tg1: 'Créez un bot', tg1Text: 'Dans Telegram, ouvrez @BotFather, allez dans My Bots et appuyez sur « Create a New Bot ». Donnez-lui un nom et un nom d’utilisateur finissant par « bot ». BotFather vous envoie un jeton, une longue ligne comme 123456789:AAH… ; copiez-la.',
@@ -924,7 +934,9 @@
       layout: '布局', layoutAuto: '自动（适应页面）', layoutSide: '办公室和卡片并排', layoutStack: '卡片在办公室下方',
       openPaperclip: '在单独的标签页中打开 Paperclip', kpiTitle: '你分配的任务进度', kpi: '你分配的任务', kpiOpen: '进行中', kpiAvg: '平均进度', kpiDone7: '7 天内完成', kpiLead: '通常完成时间', kpiBlocked: '等待其他任务',
       waitsOn1: (id) => `等待 ${id}`, waitsOnN: (n, id) => `等待 ${n} 个任务（${id}…）`, waitsSubs: (n) => `等待 ${n} 个子任务`, waitsYou: '在等你', stalled: (n) => `${n} 个停滞`,
-      sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sPets: "宠物", petsNote: "在办公室里闲逛的小动物。点一下打个招呼。", petName: {"cat": "猫", "dog": "狗", "rabbit": "兔子", "robot": "扫地机器人"}, petSay: {"cat": "喵！", "dog": "汪！", "rabbit": "♥", "robot": "哔哔"}, sHuman: '你的办公桌', sNotify: '桌面通知',
+      sView: '显示', sAlerts: '提醒', sMore: '更多', sCopy: '复制链接', sLogo: '标志…', sNoLogo: '移除标志', sExport: '导出', sImport: '导入…', sRecord: '录制 30 秒', sPets: "宠物", petsNote: "在办公室里闲逛的小动物。点一下打个招呼。", petName: {"cat": "猫", "dog": "狗", "rabbit": "兔子", "robot": "扫地机器人"}, petSay: {"cat": "喵！", "dog": "汪！", "rabbit": "♥", "robot": "哔哔"}, sVoice: '语音（代理说话）', voiceNote: '浏览器用每个代理自己的声音朗读发生的事情。免费，浏览器自带；Cubicle 不会发送任何内容。有些浏览器需要先点一下页面。', voiceKinds: { wait: '需要我', start: '开始工作', done: '完成工作', err: '出错', chat: '聊天' }, voicePick: '朗读声音', voiceAuto: '自动（每个代理一个）', voiceNone: '这个浏览器没有该语言的声音。Edge 有自然语音；在 Windows 上安装语言包也会添加。', voiceOn: '语音已开启。',
+      say: { wait: (n, w) => `${n} 需要你${w ? '：' + w : ''}。`, start: (n, w) => `${n} 开始工作${w ? '：' + w : ''}。`, done: (n, w) => `${n} 完成了${w ? '：' + w : ''}。`, err: (n, w) => `${n} 出错了${w ? '：' + w : ''}。` },
+      sHuman: '你的办公桌', sNotify: '桌面通知',
       tgButton: '📨 Telegram…', tgIntro: '当代理需要你或运行失败时，手机上会收到带有代理和任务链接的消息，也可以随时询问办公室状态。',
       tgCommands: '命令：/status、/waiting、/kpi、/office、/answer ID 文本、/mute 名称、/alerts all|questions|failures',
       tg1: '创建机器人', tg1Text: '在 Telegram 中打开 @BotFather，进入 My Bots 并点“Create a New Bot”。给它起个名字和以“bot”结尾的用户名。BotFather 会发给你一个 token，形如 123456789:AAH… 的长字符串，复制它。',
@@ -1031,7 +1043,9 @@
       layout: 'التخطيط', layoutAuto: 'تلقائي (ملاءمة الصفحة)', layoutSide: 'المكتب والبطاقات جنبًا إلى جنب', layoutStack: 'البطاقات أسفل المكتب',
       openPaperclip: 'افتح Paperclip في علامة تبويب مستقلة', kpiTitle: 'تقدم المهام التي أسندتها', kpi: 'المهام التي أسندتها', kpiOpen: 'مفتوحة', kpiAvg: 'متوسط التقدم', kpiDone7: 'أُنجزت خلال 7 أيام', kpiLead: 'المدة المعتادة', kpiBlocked: 'تنتظر مهام أخرى',
       waitsOn1: (id) => `ينتظر ${id}`, waitsOnN: (n, id) => `ينتظر ${n} مهام (${id}…)`, waitsSubs: (n) => `ينتظر ${n} مهام فرعية`, waitsYou: 'ينتظرك', stalled: (n) => `${n} متعثرة`,
-      sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sPets: "حيوانات أليفة", petsNote: "حيوانات تتجول في المكتب. انقر على أحدها لتحيّيه.", petName: {"cat": "قطة", "dog": "كلب", "rabbit": "أرنب", "robot": "مكنسة روبوت"}, petSay: {"cat": "مياو!", "dog": "هاو!", "rabbit": "♥", "robot": "بيب بوب"}, sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
+      sView: 'العرض', sAlerts: 'التنبيهات', sMore: 'المزيد', sCopy: 'انسخ الرابط', sLogo: 'الشعار…', sNoLogo: 'أزل الشعار', sExport: 'تصدير', sImport: 'استيراد…', sRecord: 'فيديو 30 ث', sPets: "حيوانات أليفة", petsNote: "حيوانات تتجول في المكتب. انقر على أحدها لتحيّيه.", petName: {"cat": "قطة", "dog": "كلب", "rabbit": "أرنب", "robot": "مكنسة روبوت"}, petSay: {"cat": "مياو!", "dog": "هاو!", "rabbit": "♥", "robot": "بيب بوب"}, sVoice: 'الصوت (الوكلاء يتكلمون)', voiceNote: 'يقرأ المتصفح ما يحدث بصوت خاص لكل وكيل. مجاني ومدمج في المتصفح؛ لا يرسل Cubicle أي شيء. بعض المتصفحات تطلب نقرة على الصفحة أولًا.', voiceKinds: { wait: 'يحتاجونني', start: 'يبدؤون العمل', done: 'أنهوا العمل', err: 'الأخطاء', chat: 'المحادثات' }, voicePick: 'الصوت المتحدث', voiceAuto: 'تلقائي (صوت لكل وكيل)', voiceNone: 'لا يوجد في هذا المتصفح صوت لهذه اللغة. في Edge أصوات طبيعية؛ وفي Windows تضيف حزمة اللغة صوتًا.', voiceOn: 'الصوت مُفعّل.',
+      say: { wait: (n, w) => `${n} يحتاجك${w ? ': ' + w : ''}.`, start: (n, w) => `${n} بدأ العمل${w ? ': ' + w : ''}.`, done: (n, w) => `${n} أنهى العمل${w ? ': ' + w : ''}.`, err: (n, w) => `${n} واجه خطأ${w ? ': ' + w : ''}.` },
+      sHuman: 'مكتبك', sNotify: 'إشعار سطح المكتب',
       tgButton: '📨 Telegram…', tgIntro: 'تصلك رسالة على هاتفك عندما يحتاجك وكيل أو يفشل تشغيل، مع روابط للوكيل والمهمة، ويمكنك سؤال المكتب عن حاله.',
       tgCommands: 'الأوامر: ‎/status ‎/waiting ‎/kpi ‎/office ‎/answer ID نص ‎/mute اسم ‎/alerts all|questions|failures',
       tg1: 'أنشئ بوتًا', tg1Text: 'في Telegram افتح ‎@BotFather، وادخل My Bots واضغط «Create a New Bot». أعطه اسمًا واسم مستخدم ينتهي بـ «bot». سيرسل لك BotFather رمزًا (token) طويلًا مثل 123456789:AAH…؛ انسخه.',
@@ -2455,11 +2469,12 @@
       s.ask = a.task === undefined && a.status !== 'error' ? askingBoard(a.id, issues) : null;
       if (s.ask && a.status === 'idle') { s.status = 'waiting'; s.task = s.ask.issue; s.waitReason = s.ask.reason; }
       if (s.prevStatus === 'running' && s.status === 'idle') {
-        setBubble(s, L.done, 'ok', 6); if (synced) chime('done');
+        setBubble(s, L.done, 'ok', 6); if (synced) { chime('done'); say(s, L.say.done(s.name, s.prevTask ? String(s.prevTask.title || s.prevTask.identifier || '').slice(0, 120) : ''), 'done'); }
         if (s.prevTask && s.prevTask.identifier) s.lastDone = { id: s.prevTask.identifier, at: Date.now() };
       }
       if (s.task) s.prevTask = s.task;
-      if (synced && s.status === 'error' && s.prevStatus !== 'error') chime('err');
+      if (synced && s.status === 'error' && s.prevStatus !== 'error') { chime('err'); say(s, L.say.err(s.name, String(s.error || '').slice(0, 120)), 'err'); }
+      if (synced && s.status === 'running' && s.prevStatus !== 'running' && s.prevStatus !== undefined) say(s, L.say.start(s.name, taskWords(s)), 'start');
       // Needs you: a hand up (waiting) or a board question on a busy agent. Alert once when it starts.
       const needs = s.status === 'waiting' || !!s.ask;
       if (synced && needs && !s.needed) alertNeed(s);
@@ -2657,7 +2672,7 @@
       const free = LOUNGE.map((_, i) => i).filter((i) => !used.has(i));
       if (free.length) s.lounge = free[Math.floor(Math.random() * free.length)];
       s.nextWander = now + 9 + Math.random() * 14;
-      if (!(Math.random() < 0.5 && startChat(s, now)) && Math.random() < 0.15) setBubble(s, pick(L.chatter), '', 3);
+      if (!(Math.random() < 0.5 && startChat(s, now)) && Math.random() < 0.15) { const line = pick(L.chatter); setBubble(s, line, '', 3); say(s, line, 'chat'); }
     }
     const p = LOUNGE[s.lounge % LOUNGE.length];
     return [p[0] * T, p[1] * T, false];
@@ -3047,7 +3062,7 @@
     if (now < c.next) return;
     if (c.i >= c.lines.length) { endChat(c, now); return; }
     const [who, text] = c.lines[c.i++];
-    setBubble(who ? b : a, text, 'talk', LINE_SECS - 0.2);
+    setBubble(who ? b : a, text, 'talk', LINE_SECS - 0.2); say(who ? b : a, text, 'chat');
     c.next = now + LINE_SECS;
   }
 
@@ -3971,6 +3986,43 @@
     const s = sprites.get(b.dataset.id); if (s) openLooks(s);
   });
 
+  // ---------- voice: agents say out loud what happens (⚙ → Voice, or ?voice=wait,start,done) ----------
+  // The browser's own speech (Web Speech API): free, nothing to install, nothing sent by Cubicle.
+  // Each kind is its own switch; with the automatic voice every agent keeps its own voice and pitch.
+  const VOICE_KINDS = ['wait', 'start', 'done', 'err', 'chat'];
+  const canSpeak = typeof window.speechSynthesis !== 'undefined' && typeof window.SpeechSynthesisUtterance !== 'undefined';
+  const voiceWanted = (k) => canSpeak && Array.isArray(settings.voice) && settings.voice.includes(k);
+  const SPEECH_LANG = { en: 'en-US', tr: 'tr-TR', de: 'de-DE', es: 'es-ES', fr: 'fr-FR', zh: 'zh-CN', ar: 'ar-SA' };
+  function langVoices() {
+    if (!canSpeak) return [];
+    const all = speechSynthesis.getVoices() || [];
+    const mine = all.filter((v) => String(v.lang || '').toLowerCase().replace('_', '-').startsWith(lang));
+    // natural (online) voices first: they sound far better (Edge's "Online (Natural)", Chrome's Google voices)
+    return mine.sort((a, b) => (/natural|online|google/i.test(b.name) - /natural|online|google/i.test(a.name)) || a.name.localeCompare(b.name));
+  }
+  let speaking = 0;                 // utterances queued or playing, to keep the queue short
+  const plain = (t) => String(t || '').replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}✓✋⚠⛔⏳🤝]/gu, '').replace(/[`*_#>]/g, '').replace(/\s+/g, ' ').trim();
+  function say(s, text, kind) {
+    if (!voiceWanted(kind)) return;
+    text = plain(text).slice(0, 220);
+    if (!text) return;
+    // a busy office: chats wait for silence, news at most a few deep
+    if ((kind === 'chat' && speaking > 0) || speaking > 4) return;
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = SPEECH_LANG[lang] || lang;
+    const vs = langVoices(), h = s && s.id ? hash('voice:' + s.id) : 0;
+    const chosen = settings.voiceName && vs.find((v) => v.name === settings.voiceName);
+    try { if (chosen) u.voice = chosen; else if (vs.length) u.voice = vs[h % vs.length]; } catch (_) {}
+    // the same voice still sounds like different people: pitch and pace from the agent's id
+    u.pitch = 0.8 + ((h >>> 4) % 9) * 0.06; u.rate = 0.98 + ((h >>> 9) % 5) * 0.03;
+    u.volume = 1;
+    speaking++;
+    u.onend = u.onerror = () => { speaking = Math.max(0, speaking - 1); };
+    try { speechSynthesis.speak(u); } catch (_) { speaking = Math.max(0, speaking - 1); }
+  }
+  const taskWords = (s) => (s.task && (s.task.title || s.task.identifier)) ? String(s.task.title || s.task.identifier).slice(0, 120) : '';
+  if (canSpeak) speechSynthesis.addEventListener && speechSynthesis.addEventListener('voiceschanged', () => { if (!panel.hidden) renderSettings(); });
+
   // ---------- alerts: notification and sound when an agent needs you ----------
   let audio = null;
   function chime(kind) {
@@ -3990,6 +4042,7 @@
   }
   function alertNeed(s) {
     chime('need');
+    say(s, L.say.wait(s.name, String(s.waitReason || taskWords(s)).slice(0, 140)), 'wait');
     if (!settings.notify || !('Notification' in window) || Notification.permission !== 'granted') return;
     if (!document.hidden && document.hasFocus()) return;           // the raised hand is enough
     const t = s.task ? [s.task.identifier, s.task.title].filter(Boolean).join(' ') : '';
@@ -4077,6 +4130,7 @@
   if (['auto', '30', '15', '60'].includes(params.get('fps'))) settings.fps = params.get('fps');
   if (['auto', 'height', 'side', 'stack'].includes(params.get('layout'))) settings.layout = params.get('layout') === 'height' ? 'side' : params.get('layout');
   if (['0', '1'].includes(params.get('human'))) settings.human = params.get('human') === '1';
+  if (params.has('voice')) settings.voice = params.get('voice') === 'all' ? ['wait', 'start', 'done', 'err', 'chat'] : params.get('voice').split(',').map((x) => x.trim()).filter((x) => ['wait', 'start', 'done', 'err', 'chat'].includes(x));
   if (params.has('pets')) settings.pets = params.get('pets').split(',').map((x) => x.trim()).filter((x) => ['cat', 'dog', 'rabbit', 'robot'].includes(x));
   async function loadCatalog() {
     try {
@@ -4376,6 +4430,8 @@
       `<div class="shead">${esc(L.sAlerts)}</div>` +
       `<div class="checks">${check('set-notify', settings.notify, L.sNotify, L.notify)}</div>` +
       own('sound', L.sound, [['off', L.soundOff], ['need', L.soundNeed], ['all', L.soundAll]], settings.sound || 'off') +
+      (canSpeak ? `<label title="${esc(L.voiceNote)}">${esc(L.sVoice)}</label><div class="checks">${VOICE_KINDS.map((k) => check(`set-voice-${k}`, voiceWanted(k), L.voiceKinds[k], L.voiceNote)).join('')}</div>` +
+        (VOICE_KINDS.some(voiceWanted) ? (langVoices().length ? own('voiceName', L.voicePick, [['', L.voiceAuto], ...langVoices().map((x) => [x.name, x.name.replace(/^Microsoft |^Google /, '').replace(/ - .*$/, '')])], settings.voiceName || '') : `<div class="note">${esc(L.voiceNone)}</div>`) : '') : '') +
       `<div class="shead">${esc(L.sMore)}</div><div class="sbtns">` +
       btn('set-cfg', '🛠 ' + C.title) + btn('set-tg', L.tgButton) + btn('set-copy', '🔗 ' + L.sCopy, L.settingsNote) +
       btn('set-logo', '🖼 ' + L.sLogo, L.logoPick) + (looks.logo ? btn('set-nologo', '✕ ' + L.sNoLogo, L.logoRemove) : '') +
@@ -4426,6 +4482,13 @@
       settings.pets = cur.includes(k) ? cur.filter((x) => x !== k) : [...cur, k]; save();
       b.setAttribute('aria-pressed', String(settings.pets.includes(k)));
     }));
+    for (const k of VOICE_KINDS) { const el = panel.querySelector(`#set-voice-${k}`); if (el) el.addEventListener('change', () => {
+      const cur = Array.isArray(settings.voice) ? settings.voice.filter((x) => VOICE_KINDS.includes(x)) : [];
+      const was = cur.length;
+      settings.voice = el.checked ? [...new Set([...cur, k])] : cur.filter((x) => x !== k); save();
+      if (el.checked && !was) say(null, L.voiceOn, k);           // a sample, while the click still counts as the user's
+      renderSettings();
+    }); }
     const ml = panel.querySelector('#set-mylook');
     if (ml) ml.addEventListener('click', () => { panel.hidden = true; openLooks(human); });
     for (const key of ['anim', 'cards']) panel.querySelector(`#set-${key}`).addEventListener('change', (e) => {
@@ -4436,6 +4499,7 @@
       u.searchParams.set('theme', entry.id);
       for (const o of entry.options) u.searchParams.set(o.key, themeOpts[o.key]);
       if (settings.lang) u.searchParams.set('lang', settings.lang);
+      if (VOICE_KINDS.some(voiceWanted)) u.searchParams.set('voice', VOICE_KINDS.filter(voiceWanted).join(',')); else u.searchParams.delete('voice');
       if (petsWanted().length) u.searchParams.set('pets', petsWanted().join(',')); else u.searchParams.delete('pets');
       try { await navigator.clipboard.writeText(u.toString()); e.target.textContent = L.copied; }
       catch (_) { prompt(L.copyLink, u.toString()); }
