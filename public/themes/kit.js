@@ -327,6 +327,8 @@
       if (my.hair) look = { ...look, hair: my.hair };
       if (my.bottom) look = { ...look, skirt: my.bottom === 'skirt' };
       if (my.shoes) look = { ...look, heels: my.shoes === 'heels' };
+      // what the office shows, for the agent's voice (a woman's or a man's)
+      s.fem = !!(look.skirt || look.heels || ['long', 'bun', 'pony'].includes(look.hair));
       const t = c.t, x = s.x, y = s.y;
       const top = look.top || '#4f6f9c', sleeve = look.sleeve || top, bottom = look.bottom || '#2f3440';
       const shoes = look.shoes || '#1d1f24';
