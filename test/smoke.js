@@ -470,7 +470,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
           dispatch: { enabled: true, model: 'opus', budget: 3.5, cwd: '~/work', tools: 'Read|Grep', prompt: 'Be brief.' } });
         assert.strictEqual(all.status, 200);
         assert.deepStrictEqual(all.data.values, { lang: 'tr', autostart: true, port: 3201, sources: 'paperclip,claude-code', paperclipAgents: false, createTasks: true,
-          dispatch: { enabled: true, model: 'opus', budget: 3.5, cwd: '~/work', tools: 'Read|Grep', prompt: 'Be brief.' }, github: {} });
+          dispatch: { enabled: true, model: 'opus', budget: 3.5, cwd: '~/work', tools: 'Read|Grep', prompt: 'Be brief.' }, github: {}, telegram: {} });
         assert.strictEqual(all.data.running.version, require('../package.json').version);
         assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { dispatch: { model: '', budget: null } })).data.values.dispatch.model, undefined, 'empty means the default');
         assert.strictEqual((await call(`${base}/api/cubicle/settings`, 'PUT', { dispatch: { budget: 1000 } })).data.values.dispatch.budget, 1000, 'a large budget is fine');

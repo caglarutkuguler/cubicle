@@ -32,6 +32,7 @@ node -e "const f=require('os').homedir()+'/.cubicle/settings.json',fs=require('f
 | Server texts in Turkish | `"lang": "tr"` | The page itself follows the browser or ⚙ → Language. |
 | A task box that hands tasks to a "CEO" Claude run | `"dispatch": { "enabled": true, "cwd": "~/agents" }` | Optional: `model`, `budget` (USD per run), `tools`, `prompt`, `fixFailures` (default on: a failed agent goes to the CEO first, and the user is asked only if it cannot fix it). Explain that it runs `claude -p` unattended with the listed tools before turning it on. |
 | Show the GitHub work queue (agent:* labels) and let the CEO merge green PRs | `"github": { "repos": "owner/repo, owner/other", "autoMerge": true }` | `repos` defaults to `~/agents/repos.conf`; `autoMerge` needs the task box. Uses the `gh` CLI signed in on this machine. |
+| Stop or resume Telegram notifications | `"telegram": { "notify": false }` | Off: the bot sends nothing by itself (waiting agents, failures, completed work, decisions, versions) but still answers commands. Read on every alert, so it applies at once; the linked chats are told only when it is changed on the page. |
 | Hide Paperclip shortcuts and agents | `"paperclipLinks": false`, `"paperclipAgents": false` | |
 
 The same settings can also be changed on the page, ⚙ → 🛠 Cubicle settings (on this computer). Restart Cubicle after a change only when the user asks to apply it now: stop the running process and open the office again as above (with `--auto-update` it also restarts by itself on updates).

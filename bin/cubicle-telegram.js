@@ -36,6 +36,7 @@ const TEXT = {
     paired: 'This chat is now linked to the office. You will get a message when an agent needs you, fails or finishes its work.',
     pairFirst: 'This chat is not linked yet. Send the 6-digit code shown in Cubicle (⚙ → Telegram), e.g. /start 123456',
     help: '/status – the office now\n/waiting – who needs you\n/kpi – the tasks you gave\n/office – open Cubicle\n/update – install a new Cubicle version\n/answer ID text – answer an issue\n/mute name, /unmute name – no alerts for one agent\n/alerts all | questions | failures – which alerts you get (or just /questions, /errors, /all)\n/skip – move on to the next one waiting\nAgents waiting for you come one at a time; just write your answer.',
+    notifyOff: '🔕 Notifications are off (Cubicle settings). Nothing comes by itself until they are turned back on; commands still work: /status, /waiting.', notifyOn: '🔔 Notifications are back on.', offLine: '🔕 Notifications are off (Cubicle settings).',
     muted: (n) => `🔕 No more alerts for <b>${n}</b>. /unmute ${n} turns them back on.`, unmuted: (n) => `🔔 Alerts for <b>${n}</b> are back on.`,
     mutedList: (l) => (l.length ? `🔕 Muted: ${l.join(', ')}` : '🔔 No agent is muted.'), noAgent: (q, l) => `No agent called “${q}”. Agents: ${l.join(', ')}`,
     alerts: { all: '🔔 You get every alert: questions and waiting agents, failed runs, and completed work.', questions: '🔔 You get only agents that need you (questions, approvals).', failures: '🔔 You get only failed runs and errors.' },
@@ -69,6 +70,7 @@ const TEXT = {
     paired: 'Bu sohbet ofise bağlandı. Bir ajan sizi beklediğinde, hata aldığında veya işini tamamladığında mesaj gelecek.',
     pairFirst: 'Bu sohbet henüz bağlı değil. Cubicle’da (⚙ → Telegram) görünen 6 haneli kodu gönderin, örneğin: /start 123456',
     help: '/status – ofisin şu anki hâli\n/waiting – sizi bekleyenler\n/kpi – verdiğiniz görevler\n/office – Cubicle’ı aç\n/update – yeni Cubicle sürümünü kur\n/answer ID metin – bir işi yanıtla\n/mute ad, /unmute ad – bir ajan için bildirim kapat / aç\n/alerts all | questions | failures – hangi bildirimler gelsin (kısaca /questions, /errors, /all)\n/skip – sıradakine geç\nSizi bekleyenler tek tek gelir; cevabınızı yazmanız yeterli.',
+    notifyOff: '🔕 Bildirimler kapatıldı (Cubicle ayarları). Yeniden açılana kadar kendiliğinden mesaj gelmez; komutlar çalışmaya devam eder: /status, /waiting.', notifyOn: '🔔 Bildirimler yeniden açık.', offLine: '🔕 Bildirimler kapalı (Cubicle ayarları).',
     muted: (n) => `🔕 <b>${n}</b> için bildirim gelmeyecek. Yeniden açmak için: /unmute ${n}`, unmuted: (n) => `🔔 <b>${n}</b> için bildirimler yeniden açık.`,
     mutedList: (l) => (l.length ? `🔕 Susturulan: ${l.join(', ')}` : '🔔 Susturulan ajan yok.'), noAgent: (q, l) => `“${q}” adında ajan yok. Ajanlar: ${l.join(', ')}`,
     alerts: { all: '🔔 Bütün bildirimler gelir: sizi bekleyen ajanlar, sorular, başarısız çalıştırmalar ve tamamlanan işler.', questions: '🔔 Yalnızca sizi bekleyen ajanlar (sorular, onaylar) bildirilir.', failures: '🔔 Yalnızca başarısız çalıştırmalar ve hatalar bildirilir.' },
@@ -231,6 +233,8 @@ function start(opts) {
   let allowEveryone = opts.allowEveryone !== false;
   let allowedUsers = new Set((opts.allowedUsers || []).filter(isUserId));
   const canSend = (chatId) => allowEveryone || allowedUsers.has(String(chatId));
+  // Notifications on or off (Cubicle settings): off, nothing is sent by itself; commands are still answered.
+  const pushOn = () => !opts.notifyOn || opts.notifyOn() !== false;
   let state = { chats: {}, offset: 0 };
   try { state = { ...state, ...JSON.parse(fs.readFileSync(stateFile, 'utf8')) }; } catch (_) {}
   for (const id of String(process.env.CUBICLE_TELEGRAM_CHAT || '').split(',').map((x) => x.trim()).filter(Boolean)) state.chats[id] = state.chats[id] || { lang: 'tr' };
@@ -384,6 +388,7 @@ function start(opts) {
     return true;
   }
   async function notifyNeeds(a) {
+    if (!pushOn()) return;
     for (const [chat, c] of Object.entries(state.chats)) {
       if (!wants(c, a, 'questions')) continue;
       if (!opts.replies) { await send(chat, needsText(a, c.lang, await questionsOf(a.issue), await approvalsOf(a))); continue; }
@@ -409,6 +414,7 @@ function start(opts) {
   }
   async function notifyFail(a) {
     // with the CEO as first responder, the failure goes to it first: the chat hears that it is on it
+    if (!pushOn()) return;
     const ceo = !!(opts.ceoTakes && opts.ceoTakes(a));
     for (const [chat, c] of Object.entries(state.chats)) {
       if (!wants(c, a, 'failures')) continue;
@@ -423,10 +429,10 @@ function start(opts) {
     if (!opts.version) return;
     if (state.version !== opts.version) {
       const was = state.version; state.version = opts.version; saveState();
-      if (was) for (const [chat, c] of Object.entries(state.chats)) await send(chat, `${tr(c.lang).updated(esc(opts.version))}\n${links([[tr(c.lang).notes, notesLink(opts.version)]])}`);
+      if (was && pushOn()) for (const [chat, c] of Object.entries(state.chats)) await send(chat, `${tr(c.lang).updated(esc(opts.version))}\n${links([[tr(c.lang).notes, notesLink(opts.version)]])}`);
     }
     const u = opts.update && opts.update();
-    if (!u || !u.latest || u.auto || state.offered === u.latest) return;
+    if (!u || !u.latest || u.auto || state.offered === u.latest || !pushOn()) return;   // off: offered once they are back on
     state.offered = u.latest; saveState();
     for (const [chat, c] of Object.entries(state.chats)) {
       const t = tr(c.lang);
@@ -475,6 +481,7 @@ function start(opts) {
     return out.join('\n').slice(0, 3900);
   }
   async function notifyCompleted(a, all = []) {
+    if (!pushOn()) return;
     for (const [chat, c] of Object.entries(state.chats)) {
       await send(chat, await completedText(a, all, c.lang), {}, { agent: a, kind: 'completed' });
     }
@@ -570,7 +577,7 @@ function start(opts) {
     if (command === 'status') {
       const { agents } = await snapshot(self);
       const n = agents.length, run = agents.filter((a) => a.status === 'running').length, wait = agents.filter((a) => a.needs).length, err = agents.filter((a) => a.status === 'error').length;
-      return send(chatId, `${esc(t.status(n, run, wait, err))}\n${links([[t.office, cubicleLink()]])}`);
+      return send(chatId, `${esc(t.status(n, run, wait, err))}${pushOn() ? '' : `\n${esc(t.offLine)}`}\n${links([[t.office, cubicleLink()]])}`);
     }
     if (command === 'waiting') {
       const { agents } = await snapshot(self);
@@ -663,8 +670,10 @@ function start(opts) {
     setReplies(v) { opts.replies = !!v; },
     // a plain message to every linked chat (used for "needs you" alerts from the task box)
     // html, or a function of the chat's language that returns it
-    async notify(html) { for (const id of Object.keys(state.chats).filter(canSend)) { try { await send(id, typeof html === 'function' ? html(state.chats[id].lang || 'en') : html); } catch (_) {} } },
+    async notify(html) { if (!pushOn()) return; for (const id of Object.keys(state.chats).filter(canSend)) { try { await send(id, typeof html === 'function' ? html(state.chats[id].lang || 'en') : html); } catch (_) {} } },
     setPublicUrl(u) { opts.publicUrl = u; },
+    // told once when notifications are turned off or on, even though off means nothing else is sent
+    async announceNotify(on) { for (const id of Object.keys(state.chats).filter(canSend)) { try { await send(id, esc(tr(state.chats[id].lang || 'en')[on ? 'notifyOn' : 'notifyOff'])); } catch (_) {} } },
     stop() { stopped = true; if (pending) pending.destroy(new Error('stopped')); },
     snapshot: () => snapshot(self),
   };

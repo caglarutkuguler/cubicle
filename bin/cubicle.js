@@ -822,6 +822,12 @@ const GITHUB_KEYS = {
   briefs: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   repos: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 1000 && /^[\w.\/\s,-]+$/.test(v) ? v.trim() : Symbol.for('bad'),
 };
+// Telegram: whether the bot sends anything by itself (alerts, decisions, versions). Off, it still
+// answers commands (/status, /waiting) in the linked chats.
+const TELEGRAM_KEYS = {
+  notify: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+};
+const tgNotify = () => ((cubicleSettings().telegram || {}).notify !== false);
 const DISPATCH_KEYS = {
   enabled: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   fixFailures: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
@@ -833,10 +839,10 @@ const DISPATCH_KEYS = {
 };
 function settingsStatus(req) {
   const local = fromThisMachine(req), c = cubicleSettings();
-  const out = { createTasks: canCreateTasks(), available: HAS_PAPERCLIP && !REDACT, canEdit: local, paperclip: HAS_PAPERCLIP };
+  const out = { createTasks: canCreateTasks(), available: HAS_PAPERCLIP && !REDACT, canEdit: local, paperclip: HAS_PAPERCLIP, telegram: { on: !!TELEGRAM, notify: tgNotify() } };
   if (!local) return out;
   const pick = (o, keys) => Object.fromEntries(Object.keys(keys).filter((k) => o && o[k] !== undefined).map((k) => [k, o[k]]));
-  return { ...out, file: CUBICLE_SETTINGS, values: { ...pick(c, SETTING_KEYS), dispatch: pick(c.dispatch, DISPATCH_KEYS), github: pick(c.github, GITHUB_KEYS) },
+  return { ...out, file: CUBICLE_SETTINGS, values: { ...pick(c, SETTING_KEYS), dispatch: pick(c.dispatch, DISPATCH_KEYS), github: pick(c.github, GITHUB_KEYS), telegram: pick(c.telegram, TELEGRAM_KEYS) },
     defaults: { port: 3200, sources: 'claude-code', dispatch: DISPATCH_DEFAULTS, github: { repos: GITHUB.reposFromConf().join(', ') } },
     running: { version: VERSION, host: HOST, port: PORT, sources: SOURCES.map((x) => x.kind === 'paperclip' ? `paperclip (${PAPERCLIP.origin})` : x.kind === 'file' ? x.file : x.kind === 'replay' ? 'replay' : x.url ? x.url.href : x.kind),
       autoUpdate: AUTO_UPDATE, updateCheck: UPDATE_CHECK, redact: REDACT, install: UPDATES.installKind(), lang: srvLang() } };
@@ -859,9 +865,10 @@ async function serveSettings(req, res) {
     }
     return null;
   };
-  const { dispatch, github, ...top } = data;
+  const { dispatch, github, telegram, ...top } = data;
+  const notifyWas = tgNotify();
   let err = apply(next, SETTING_KEYS, top, '');
-  for (const [name, val, keys] of [['dispatch', dispatch, DISPATCH_KEYS], ['github', github, GITHUB_KEYS]]) {
+  for (const [name, val, keys] of [['dispatch', dispatch, DISPATCH_KEYS], ['github', github, GITHUB_KEYS], ['telegram', telegram, TELEGRAM_KEYS]]) {
     if (err || val === undefined) continue;
     if (!val || typeof val !== 'object' || Array.isArray(val)) { err = `bad value for ${name}`; continue; }
     next[name] = { ...(next[name] && typeof next[name] === 'object' ? next[name] : {}) };
@@ -872,6 +879,8 @@ async function serveSettings(req, res) {
   try { fs.mkdirSync(path.dirname(CUBICLE_SETTINGS), { recursive: true }); require('./cubicle-telegram.js').writeFileAtomic(CUBICLE_SETTINGS, JSON.stringify(next, null, 2)); }
   catch (_) { return send(res, 500, JSON.stringify({ error: `cannot write ${CUBICLE_SETTINGS}` })); }
   if (changed.length) console.log(`Cubicle: settings changed from the page: ${changed.join(', ')}.`);
+  // the linked chats hear once that alerts stopped or started again (sent even while turned off)
+  if (tgNotify() !== notifyWas && TELEGRAM && TELEGRAM.announceNotify) TELEGRAM.announceNotify(tgNotify()).catch(() => {});
   send(res, 200, JSON.stringify(settingsStatus(req)));
 }
 // ---------- "Update now": from the page on this machine, or /update from a linked Telegram chat ----------
@@ -1375,7 +1384,7 @@ function serveTailscale(req, res) {
 
 function startTelegram(token) {
   const bot = require('./cubicle-telegram.js').start({
-    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(), version: VERSION, update: () => UPDATE, applyUpdate: () => applyUpdate('Telegram'), ceoTakes,
+    token, self, publicUrl: tgPublicUrl(), replies: tgReplies(), ...tgAccess(), notifyOn: tgNotify, version: VERSION, update: () => UPDATE, applyUpdate: () => applyUpdate('Telegram'), ceoTakes,
     paperclipPublicUrl: arg('paperclip-public-url') || process.env.CUBICLE_PAPERCLIP_PUBLIC_URL || (HAS_PAPERCLIP ? PAPERCLIP.origin : ''),
     stateFile: process.env.CUBICLE_TELEGRAM_STATE || path.join(os.homedir(), '.cubicle', 'telegram.json'),
     interval: Number(process.env.CUBICLE_TELEGRAM_INTERVAL || 10000),

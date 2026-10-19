@@ -76,7 +76,7 @@ test('completion alerts follow the existing per-chat filters, mutes and access p
   const start = async () => {
     child = spawn(process.execPath, [path.join(__dirname, '../bin/cubicle.js'), '--port', String(port), '--source', `paperclip,${feedFile}`, '--paperclip', mockUrl, '--appearance', path.join(dir, 'appearance.json')], {
       stdio: 'ignore', env: { ...process.env, CUBICLE_TELEGRAM_TOKEN: 'T0K', CUBICLE_TELEGRAM_TOKEN_FILE: '', CUBICLE_TELEGRAM_CHAT: '',
-        CUBICLE_TELEGRAM_SETTINGS: settingsFile, CUBICLE_TELEGRAM_STATE: stateFile, CUBICLE_TELEGRAM_API: mockUrl, CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_INTERVAL: '25' },
+        CUBICLE_TELEGRAM_SETTINGS: settingsFile, CUBICLE_SETTINGS: path.join(dir, 'cubicle-settings.json'), CUBICLE_TELEGRAM_STATE: stateFile, CUBICLE_TELEGRAM_API: mockUrl, CUBICLE_TELEGRAM_POLL: '0', CUBICLE_TELEGRAM_INTERVAL: '25' },
     });
     await until(async () => { try { return (await request(api)).data.polling === 'ok'; } catch (_) { return false; } });
   };
@@ -188,6 +188,25 @@ test('completion alerts follow the existing per-chat filters, mutes and access p
     for (const want of ['https://github.com/o/r/issues/7', 'Fix the card', 'Took 14 minutes.', 'Opened PR #160; tests pass.', 'Make it resilient', '1 of 3 pieces done, 1 working, 1 queued', 'repo #8 working', 'repo #9 queued']) {
       assert.ok(m.text.includes(want), `${want} in ${m.text}`);
     }
+  });
+
+  await t.test('turning notifications off in the settings stops everything sent by itself, not the commands', async () => {
+    const cfg = `${base}/api/cubicle/settings`;
+    let before = sent.length;
+    const r = await request(cfg, 'PUT', { telegram: { notify: false } });
+    assert.equal(r.status, 200); assert.equal(r.data.values.telegram.notify, false); assert.equal(r.data.telegram.notify, false);
+    await until(() => sent.slice(before).filter((m) => /Notifications are off|Bildirimler kapatıldı/.test(m.text)).length === allowedUsers.length);
+    before = sent.length;
+    await feed({ completedAt: 30000 }); await feed({ status: 'waiting' }); await feed({ status: 'error', error: 'Boom' });
+    assert.equal(sent.length, before, 'nothing sent by itself while off');
+    assert.match((await deliver(101, '/status'))[0].text, /Notifications are off/);
+    await feed({ status: 'idle', error: null });
+    before = sent.length;
+    assert.equal((await request(cfg, 'PUT', { telegram: { notify: true } })).status, 200);
+    await until(() => sent.slice(before).filter((m) => /back on|yeniden açık/.test(m.text)).length === allowedUsers.length);
+    before = sent.length; await settle(); assert.equal(sent.length, before, 'no replay when turned back on');
+    completion(await feed({ completedAt: 31000 }));
+    assert.equal((await request(cfg, 'PUT', { telegram: { notify: 'no' } })).status, 400);
   });
 });
 
