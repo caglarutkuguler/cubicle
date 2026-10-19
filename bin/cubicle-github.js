@@ -7,7 +7,17 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
-const GH = () => process.env.CUBICLE_GH || 'gh';
+// gh where a service (whose PATH is short) does not look: ~/.local/bin, Homebrew, /usr/local/bin
+let ghPath = null;
+const GH = () => {
+  if (process.env.CUBICLE_GH) return process.env.CUBICLE_GH;
+  if (ghPath) return ghPath;
+  const exe = process.platform === 'win32' ? 'gh.exe' : 'gh';
+  const dirs = [...String(process.env.PATH || '').split(path.delimiter), path.join(os.homedir(), '.local', 'bin'), path.join(os.homedir(), 'bin'), '/usr/local/bin', '/opt/homebrew/bin', '/home/linuxbrew/.linuxbrew/bin', '/usr/bin',
+    ...(process.platform === 'win32' ? [path.join(process.env.ProgramFiles || 'C:\\Program Files', 'GitHub CLI')] : [])];
+  for (const d of dirs) { try { const f = path.join(d, exe); fs.accessSync(f, fs.constants.X_OK); return (ghPath = f); } catch (_) {} }
+  return 'gh';
+};
 function gh(args, timeout = 30000) {
   return new Promise((resolve) => {
     execFile(GH(), args, { timeout, maxBuffer: 8 * 1024 * 1024, env: process.env }, (err, out) => {

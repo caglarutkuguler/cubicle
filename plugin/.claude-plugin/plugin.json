@@ -1,6 +1,6 @@
 {
   "name": "cubicle",
-  "version": "0.33.0",
+  "version": "0.33.1",
   "description": "Watch your Claude Code sessions, subagents and background tasks work in a live pixel office: they sit down and type, raise a hand when they need you, and go to the lounge when done. Read-only, local, zero dependencies.",
   "author": {
     "name": "Çağlar Utku Güler",
