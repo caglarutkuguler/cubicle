@@ -33,7 +33,7 @@ const get = (url) => new Promise((resolve, reject) => http.get(url, (r) => { let
   ];
   fs.writeFileSync(path.join(dir, 'issues.json'), JSON.stringify(issues)); fs.writeFileSync(path.join(dir, 'prs.json'), JSON.stringify(prs));
   fs.writeFileSync(path.join(bin, 'gh'), `#!${process.execPath}\nconst a = process.argv.slice(2); process.stdout.write(require('fs').readFileSync(${JSON.stringify(dir)} + (a[0] === 'issue' ? '/issues.json' : '/prs.json'), 'utf8'));\n`);
-  fs.writeFileSync(path.join(bin, 'claude'), `#!${process.execPath}\nconst a = process.argv.slice(2); require('fs').appendFileSync(${JSON.stringify(calls)}, JSON.stringify(a[a.indexOf('-p') + 1]) + '\\n'); console.log('DECISION: none');\n`);
+  fs.writeFileSync(path.join(bin, 'claude'), `#!${process.execPath}\nconst a = process.argv.slice(2); require('fs').appendFileSync(${JSON.stringify(calls)}, JSON.stringify(a[a.indexOf('-p') + 1]) + '\\n'); const t = a[a.indexOf('-p') + 1]; console.log(t.includes('[Prepare a decision]') ? 'It needs a staging DB.\\n1. Open the staging console\\n\\x60\\x60\\x60\\nnpm run seed\\n\\x60\\x60\\x60\\nDECISION: Reseed staging now?\\nOPTIONS: Yes, reseed | Wait until Friday' : 'DECISION: none');\n`);
   for (const f of ['gh', 'claude']) fs.chmodSync(path.join(bin, f), 0o755);
   const settings = path.join(dir, 'settings.json');
   fs.writeFileSync(settings, JSON.stringify({ dispatch: { enabled: true, cwd: work }, github: { repos: 'o/r', autoMerge: true } }));
@@ -52,8 +52,17 @@ const get = (url) => new Promise((resolve, reject) => http.get(url, (r) => { let
     assert.deepStrictEqual([by[1].pr.ci, by[2].pr.ci, by[4].pr.ci], ['green', 'red', 'none']);
     assert.deepStrictEqual(by[2].pr.failing, ['migrations']);
     await sleep(1500);   // more scans: each PR goes to the CEO once
+    await sleep(1500);
     const r = ran();
-    assert.strictEqual(r.length, 2, r.map((x) => x.slice(0, 40)).join(' | '));
+    assert.strictEqual(r.length, 3, r.map((x) => x.slice(0, 40)).join(' | '));
+    // the decision waiting on GitHub is prepared by the CEO and comes as a question here
+    assert.ok(r.some((x) => x.includes('[Prepare a decision] Issue #3 in o/r') && x.includes('gh issue view 3 --repo o/r --comments')));
+    const q2 = await get(`http://127.0.0.1:${port}/api/cubicle/github`);
+    const b3 = q2.items.find((it) => it.number === 3);
+    assert.strictEqual(b3.brief, 'ready'); assert.ok(b3.question);
+    const att = (await get(`http://127.0.0.1:${port}/api/cubicle/attention`)).find((x) => x.id === b3.question);
+    assert.ok(att && att.ref === 'o/r#3' && att.url === 'https://github.com/o/r/issues/3' && att.title === 'r#3: Needs a call', JSON.stringify(att));
+    assert.deepStrictEqual(att.options, ['Yes, reseed', 'Wait until Friday']); assert.ok(att.detail.includes('npm run seed'));
     assert.ok(r.some((x) => x.includes('[Review and merge] PR #11') && x.includes('gh pr merge 11 --repo o/r --squash --delete-branch')));
     assert.ok(r.some((x) => x.includes('[Fix the PR] PR #12') && x.includes('migrations')));
     assert.ok(JSON.parse(fs.readFileSync(path.join(dir, 'github-handed.json'), 'utf8')).includes('o/r#11@aaa'), 'remembered across restarts');

@@ -200,6 +200,8 @@
   #ghdlg ul { list-style:none; margin:0; padding:0; } #ghdlg li { font-size:12.5px; padding:5px 0; border-top:1px solid rgba(255,255,255,.05); line-height:1.45; } #ghdlg li:first-child { border-top:0; }
   #ghdlg a { color:#8ab4ff; } #ghdlg .ghmeta { display:inline-flex; gap:6px; align-items:center; margin-inline-start:6px; flex-wrap:wrap; }
   #ghdlg .ghtag, #ghdlg .ghci { font-size:11px; border-radius:8px; padding:0 6px; background:#2f3552; } #ghdlg .ghtag.blocked, #ghdlg .ghtag.failed, #ghdlg .ghci.red { background:#5a2323; color:#ffb3b3; }
+  #ghdlg .ghact { margin-inline-start:6px; background:#3d6fd9; color:#fff; border:0; border-radius:6px; padding:2px 10px; font:inherit; font-size:12px; cursor:pointer; } #ghdlg .ghact.alt { background:#2f3552; border:1px solid #4a5175; }
+  #ghdlg .ghwait { font-size:11.5px; color:var(--muted); font-style:italic; margin-inline-start:6px; } #ghdlg li.ghblk { cursor:pointer; } #ghdlg li.ghblk:hover { background:rgba(255,255,255,.04); }
   #ghdlg .ghtag.review { background:#4a3d12; color:#ffe08a; } #ghdlg .ghci.green { background:#1f4a2c; color:#a8f0c0; } #ghdlg .note { font-size:12px; color:var(--muted); }
   #cfgdlg h2 { font-size:15px; margin:0 0 8px; display:flex; } #cfgdlg h2 button { margin-inline-start:auto; background:none; border:0; color:var(--muted); font-size:16px; cursor:pointer; }
   #cfgdlg p { font-size:13px; margin:6px 0; } #cfgdlg .note { font-size:12px; color:var(--muted); margin:2px 0 6px; overflow-wrap:anywhere; }
@@ -4096,25 +4098,25 @@
   const GH_TEXT = {
     en: { title: 'Work on GitHub', forYou: 'Waiting for you', ceo: 'The CEO reviews and merges', ready: 'Queued for a worker', working: 'A worker is on it', empty: 'No open work with agent:* labels.',
       blocked: 'needs a decision', failed: 'failed', review: 'PR to review', ciGreen: 'CI passed', ciRed: 'CI failed', ciPending: 'CI running', ciNone: 'no CI', conflict: 'conflict',
-      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} waiting for you`, tip: (n) => `${n} open item(s) on GitHub wait for you`, idleTip: (n) => `No agent is working, and ${n} item(s) on GitHub wait for you`, repos: 'Repos', errors: 'Could not read' },
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} waiting for you`, tip: (n) => `${n} open item(s) on GitHub wait for you`, idleTip: (n) => `No agent is working, and ${n} item(s) on GitHub wait for you`, repos: 'Repos', errors: 'Could not read', decide: '✋ Decide', preparing: 'The CEO is preparing what to decide…', prepare: 'Prepare the decision', gh: 'GitHub ↗' },
     tr: { title: 'GitHub’daki işler', forYou: 'Sizi bekleyenler', ceo: 'CEO inceleyip birleştiriyor', ready: 'İşçi sırasında', working: 'Bir işçi çalışıyor', empty: 'agent:* etiketli açık iş yok.',
       blocked: 'karar bekliyor', failed: 'başarısız', review: 'PR incelemesi', ciGreen: 'CI geçti', ciRed: 'CI kırmızı', ciPending: 'CI çalışıyor', ciNone: 'CI yok', conflict: 'çakışma',
-      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} iş sizi bekliyor`, tip: (n) => `GitHub’da ${n} iş sizi bekliyor`, idleTip: (n) => `Çalışan ajan yok; GitHub’da ${n} iş sizi bekliyor`, repos: 'Depolar', errors: 'Okunamadı' },
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} iş sizi bekliyor`, tip: (n) => `GitHub’da ${n} iş sizi bekliyor`, idleTip: (n) => `Çalışan ajan yok; GitHub’da ${n} iş sizi bekliyor`, repos: 'Depolar', errors: 'Okunamadı', decide: '✋ Karar ver', preparing: 'CEO kararı hazırlıyor…', prepare: 'Kararı hazırlat', gh: 'GitHub ↗' },
     de: { title: 'Arbeit auf GitHub', forYou: 'Wartet auf dich', ceo: 'Der CEO prüft und führt zusammen', ready: 'Wartet auf einen Worker', working: 'Ein Worker ist dran', empty: 'Keine offene Arbeit mit agent:*-Labels.',
       blocked: 'braucht eine Entscheidung', failed: 'fehlgeschlagen', review: 'PR zu prüfen', ciGreen: 'CI bestanden', ciRed: 'CI fehlgeschlagen', ciPending: 'CI läuft', ciNone: 'kein CI', conflict: 'Konflikt',
-      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} warten auf dich`, tip: (n) => `${n} offene Punkte auf GitHub warten auf dich`, idleTip: (n) => `Kein Agent arbeitet, und ${n} Punkte auf GitHub warten auf dich`, repos: 'Repos', errors: 'Nicht lesbar' },
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} warten auf dich`, tip: (n) => `${n} offene Punkte auf GitHub warten auf dich`, idleTip: (n) => `Kein Agent arbeitet, und ${n} Punkte auf GitHub warten auf dich`, repos: 'Repos', errors: 'Nicht lesbar', decide: '✋ Entscheiden', preparing: 'Der CEO bereitet die Entscheidung vor…', prepare: 'Entscheidung vorbereiten', gh: 'GitHub ↗' },
     es: { title: 'Trabajo en GitHub', forYou: 'Te espera', ceo: 'El CEO revisa y fusiona', ready: 'En cola para un worker', working: 'Un worker está en ello', empty: 'No hay trabajo abierto con etiquetas agent:*.',
       blocked: 'necesita una decisión', failed: 'falló', review: 'PR por revisar', ciGreen: 'CI correcto', ciRed: 'CI fallido', ciPending: 'CI en curso', ciNone: 'sin CI', conflict: 'conflicto',
-      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} te esperan`, tip: (n) => `${n} elementos en GitHub te esperan`, idleTip: (n) => `Ningún agente trabaja y ${n} elementos en GitHub te esperan`, repos: 'Repos', errors: 'No se pudo leer' },
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} te esperan`, tip: (n) => `${n} elementos en GitHub te esperan`, idleTip: (n) => `Ningún agente trabaja y ${n} elementos en GitHub te esperan`, repos: 'Repos', errors: 'No se pudo leer', decide: '✋ Decidir', preparing: 'El CEO está preparando la decisión…', prepare: 'Preparar la decisión', gh: 'GitHub ↗' },
     fr: { title: 'Travail sur GitHub', forYou: 'Vous attend', ceo: 'Le CEO relit et fusionne', ready: 'En file pour un worker', working: 'Un worker s’en occupe', empty: 'Aucun travail ouvert avec des étiquettes agent:*.',
       blocked: 'attend une décision', failed: 'en échec', review: 'PR à relire', ciGreen: 'CI réussie', ciRed: 'CI en échec', ciPending: 'CI en cours', ciNone: 'pas de CI', conflict: 'conflit',
-      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} vous attendent`, tip: (n) => `${n} éléments sur GitHub vous attendent`, idleTip: (n) => `Aucun agent ne travaille et ${n} éléments sur GitHub vous attendent`, repos: 'Dépôts', errors: 'Illisible' },
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} vous attendent`, tip: (n) => `${n} éléments sur GitHub vous attendent`, idleTip: (n) => `Aucun agent ne travaille et ${n} éléments sur GitHub vous attendent`, repos: 'Dépôts', errors: 'Illisible', decide: '✋ Décider', preparing: 'Le CEO prépare la décision…', prepare: 'Préparer la décision', gh: 'GitHub ↗' },
     zh: { title: 'GitHub 上的工作', forYou: '等你处理', ceo: 'CEO 审查并合并', ready: '排队等待 worker', working: 'worker 正在处理', empty: '没有带 agent:* 标签的未完成工作。',
       blocked: '需要决定', failed: '失败', review: '待审 PR', ciGreen: 'CI 通过', ciRed: 'CI 失败', ciPending: 'CI 运行中', ciNone: '无 CI', conflict: '冲突',
-      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} 项等你`, tip: (n) => `GitHub 上有 ${n} 项等你处理`, idleTip: (n) => `没有代理在工作，GitHub 上有 ${n} 项等你处理`, repos: '仓库', errors: '无法读取' },
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} 项等你`, tip: (n) => `GitHub 上有 ${n} 项等你处理`, idleTip: (n) => `没有代理在工作，GitHub 上有 ${n} 项等你处理`, repos: '仓库', errors: '无法读取', decide: '✋ 做决定', preparing: 'CEO 正在准备这个决定…', prepare: '准备这个决定', gh: 'GitHub ↗' },
     ar: { title: 'العمل على GitHub', forYou: 'بانتظارك', ceo: 'الـ CEO يراجع ويدمج', ready: 'في الطابور لعامل', working: 'عامل يعمل عليه', empty: 'لا عمل مفتوح بوسوم agent:*.',
       blocked: 'يحتاج قرارًا', failed: 'فشل', review: 'PR للمراجعة', ciGreen: 'نجح CI', ciRed: 'فشل CI', ciPending: 'CI قيد التشغيل', ciNone: 'بلا CI', conflict: 'تعارض',
-      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} بانتظارك`, tip: (n) => `${n} عناصر على GitHub بانتظارك`, idleTip: (n) => `لا وكيل يعمل، و${n} عناصر على GitHub بانتظارك`, repos: 'المستودعات', errors: 'تعذّرت القراءة' },
+      btn: (n) => `📥 ${n}`, idle: (n) => `💤 ${n} بانتظارك`, tip: (n) => `${n} عناصر على GitHub بانتظارك`, idleTip: (n) => `لا وكيل يعمل، و${n} عناصر على GitHub بانتظارك`, repos: 'المستودعات', errors: 'تعذّرت القراءة', decide: '✋ قرّر', preparing: 'الـ CEO يُحضّر القرار…', prepare: 'حضّر القرار', gh: 'GitHub ↗' },
   };
   const G = { ...GH_TEXT.en, ...(GH_TEXT[lang] || {}) };
   const ghBtn = document.getElementById('ghq'), ghDlg = document.getElementById('ghdlg');
@@ -4139,7 +4141,11 @@
   function renderGh() {
     const s = ghState || { items: [], errors: [] };
     const ci = (p) => !p ? '' : p.mergeable === 'CONFLICTING' ? G.conflict : ({ green: G.ciGreen, red: G.ciRed, pending: G.ciPending, none: G.ciNone })[p.ci] || '';
-    const row = (it) => `<li><a href="${esc(it.url)}" target="_blank" rel="noopener"><b>${esc(it.repo.split('/')[1] || it.repo)}#${it.number}</b></a> ${esc(it.title)}`
+    const brief = (it) => it.state !== 'blocked' ? '' : it.brief === 'ready' ? ` <button type="button" class="ghact" data-ghq="${esc(it.question)}">${esc(G.decide)}</button>`
+      : it.brief === 'preparing' ? ` <span class="ghwait">${esc(G.preparing)}</span>` : s.briefs ? ` <button type="button" class="ghact alt" data-ghprep="${esc(it.repo)}#${it.number}">${esc(G.prepare)}</button>` : '';
+    const row = (it) => it.state === 'blocked' && it.brief === 'ready'
+      ? `<li class="ghblk" data-ghq="${esc(it.question)}"><b>${esc(it.repo.split('/')[1] || it.repo)}#${it.number}</b> ${esc(it.title)}<span class="ghmeta">${brief(it)} <a href="${esc(it.url)}" target="_blank" rel="noopener">${esc(G.gh)}</a></span></li>`
+      : `<li><a href="${esc(it.url)}" target="_blank" rel="noopener"><b>${esc(it.repo.split('/')[1] || it.repo)}#${it.number}</b></a> ${esc(it.title)}${brief(it)}`
       + `<span class="ghmeta">${it.state === 'blocked' || it.state === 'failed' || it.state === 'review' ? `<span class="ghtag ${it.state}">${esc(G[it.state])}</span>` : ''}`
       + (it.pr ? ` <a href="${esc(it.pr.url)}" target="_blank" rel="noopener">PR #${it.pr.number}</a> <span class="ghci ${it.pr.mergeable === 'CONFLICTING' ? 'red' : it.pr.ci}">${esc(ci(it.pr))}</span>` : '') + '</span></li>';
     const group = (title, list) => list.length ? `<section><h3>${esc(title)} <small>${list.length}</small></h3><ul>${list.map(row).join('')}</ul></section>` : '';
@@ -4149,7 +4155,14 @@
       + `<p class="note">${esc(G.repos)}: ${esc((s.repos || []).join(', '))}${(s.errors || []).length ? ` · ${esc(G.errors)}: ${esc(s.errors.join('; '))}` : ''}</p>`;
   }
   ghBtn.addEventListener('click', () => { renderGh(); ghDlg.showModal(); pollGithub(); });
-  ghDlg.addEventListener('click', (e) => { if (e.target === ghDlg || e.target.closest('[data-gh="close"]')) ghDlg.close(); });
+  ghDlg.addEventListener('click', async (e) => {
+    if (e.target === ghDlg || e.target.closest('[data-gh="close"]')) return ghDlg.close();
+    if (e.target.closest('a')) return;
+    const q = e.target.closest('[data-ghq]');
+    if (q) { await (window.CubicleAsk && window.CubicleAsk.refresh ? window.CubicleAsk.refresh() : null); if (window.CubicleAsk && window.CubicleAsk.open(q.dataset.ghq)) ghDlg.close(); return; }
+    const b = e.target.closest('[data-ghprep]');
+    if (b) { b.disabled = true; await fetch('/api/cubicle/github', { method: 'POST', headers: { 'content-type': 'application/json', 'x-cubicle': '1' }, body: JSON.stringify({ prepare: b.dataset.ghprep }) }).catch(() => null); pollGithub(); }
+  });
   setInterval(pollGithub, 60000); setTimeout(pollGithub, 1500); setInterval(renderGhBtn, 5000);
 
   const gear = document.getElementById('gear');
@@ -4386,7 +4399,7 @@
     s = String(s || '').trim(); adt.hidden = !s; if (!s) { adt.innerHTML = ''; return; }
     adt.innerHTML = s.split(/```[a-zA-Z0-9_-]*\n?/).map(function (part, i) {
       if (i % 2 === 0) return esc(part).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
-      return '<pre style="margin:6px 0 2px;padding:8px;border-radius:6px;background:rgba(128,128,128,.18);overflow:auto;white-space:pre"><code>' + esc(part.replace(/\n$/, '')) + '</code></pre><button type="button" class="ans-copy" style="margin-bottom:6px;cursor:pointer">' + COPY + '</button>';
+      return '<pre style="margin:6px 0 2px;padding:8px;border-radius:6px;background:rgba(128,128,128,.18);overflow:auto;white-space:pre"><code>' + esc(part.replace(/\n$/, '')) + '</code></pre><button type="button" class="ans-copy" style="display:block;margin-bottom:6px;cursor:pointer">' + COPY + '</button>';
     }).join('');
   }
   adt.addEventListener('click', function (e) {
@@ -4462,6 +4475,9 @@
       return false;
     },
     itemsFor: function (s) { return s ? itemsFor(s) : []; },
+    // a question by its id (a decision prepared for GitHub work, say)
+    open: function (id) { var its = (window.__attn || []).filter(function (x) { return x.id === id; }); if (its.length) { openAns(its); return true; } return false; },
+    refresh: function () { return pollAttn(); },
     label: function () { return D.answer; },
     // a link to an agent (e.g. from Telegram): open its question, if it has one, and nothing else
     ask: function (s) { firstAttn.then(function () { var its = s ? itemsFor(s) : []; if (its.length) openAns(its); }); }

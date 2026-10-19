@@ -426,7 +426,9 @@ const SRV_TEXT = {
     })[why] || '',
     ghIdle: (list) => `💤 <b>No agent is working, and ${list.length} ${list.length === 1 ? 'item waits' : 'items wait'} for you:</b>\n` + list.slice(0, 10).map((it) => `• <a href="${(it.state === 'review' && it.pr ? it.pr.url : it.url)}">${it.ref}</a> ${({ blocked: 'needs a decision', failed: 'failed', review: 'PR to review' })[it.state] || it.state}: ${it.title}`).join('\n'),
     mergeTask: (it) => `[Review and merge] PR #${it.pr.number} in ${it.repo} (${it.pr.url}) for issue #${it.number} "${it.title}" is labelled agent:review and its CI passed.\n\nReview it (use the code-reviewer and security-reviewer subagents). If it is sound, merge it: gh pr merge ${it.pr.number} --repo ${it.repo} --squash --delete-branch, then remove the agent:review label from issue #${it.number} (and close it if the merge did not). If it needs work, comment on the PR what must change and put issue #${it.number} back to agent:ready so a worker picks it up. Merge only what you would sign off yourself. If it needs a human call (risky, unclear, or outside the issue), leave it unmerged and end with DECISION: <one question> and OPTIONS: <2-4 options>. If you merged it or sent it back, end with DECISION: none.`,
-    sendBackTask: (it) => `[Fix the PR] PR #${it.pr.number} in ${it.repo} (${it.pr.url}) for issue #${it.number} "${it.title}" is labelled agent:review, but ${it.pr.mergeable === 'CONFLICTING' ? 'it conflicts with the base branch' : `its CI is red${it.pr.failing.length ? ` (${it.pr.failing.join('; ')})` : ''}`}.\n\nFind out why. If a worker can fix it, comment on the issue what to fix (the failing checks, or rebase on main) and put issue #${it.number} back to agent:ready. If the failure is not caused by this PR (main itself is broken, a flaky check), say so in a comment and fix or open what is needed. If it needs a human, end with DECISION: <one question> and OPTIONS: <2-4 options>; otherwise end with DECISION: none.`, },
+    sendBackTask: (it) => `[Fix the PR] PR #${it.pr.number} in ${it.repo} (${it.pr.url}) for issue #${it.number} "${it.title}" is labelled agent:review, but ${it.pr.mergeable === 'CONFLICTING' ? 'it conflicts with the base branch' : `its CI is red${it.pr.failing.length ? ` (${it.pr.failing.join('; ')})` : ''}`}.\n\nFind out why. If a worker can fix it, comment on the issue what to fix (the failing checks, or rebase on main) and put issue #${it.number} back to agent:ready. If the failure is not caused by this PR (main itself is broken, a flaky check), say so in a comment and fix or open what is needed. If it needs a human, end with DECISION: <one question> and OPTIONS: <2-4 options>; otherwise end with DECISION: none.`,
+    briefTitle: (it) => `${it.repo.split('/')[1] || it.repo}#${it.number}: ${it.title}`.slice(0, 150),
+    briefTask: (it) => `[Prepare a decision] Issue #${it.number} in ${it.repo} (${it.url}) "${it.title}" is labelled agent:blocked-human: it waits for the human.\n\nDo not change anything yet. Read the issue, its comments and anything it links (gh issue view ${it.number} --repo ${it.repo} --comments). Then write for the human, in their language, so they can decide without opening GitHub: first what this is about and why it is blocked (2-3 sentences); then what they need to do or check, as numbered steps (put any command or text they must run or paste in a code block); then your recommendation in one line. End with DECISION: <the one question they must answer> and OPTIONS: <2-4 concrete options, yours first>. When they answer, you will be asked to carry it out on GitHub.`, },
   tr: { working: '\u00e7al\u0131\u015f\u0131yor', queued: 's\u0131rada', done: 'tamamland\u0131', waiting: 'karar bekliyor', error: 'hata', decision: 'Karar', busy: 'CEO me\u015fgul; bu g\u00f6rev s\u0131raya al\u0131nd\u0131 (tek CEO, g\u00f6revler s\u0131rayla).',
     budgetTitle: (t) => `CEO bütçeye takıldı: ${t}`, budgetText: (b) => `Görev, tek çalıştırma bütçesini ($${b}) aştığı için yarıda kaldı. Açılan issue ve PR'lar yerinde duruyor; yeniden denerken kaldığı yerden devam eder.`,
     failTitle: (t) => `CEO görevi başarısız: ${t}`, failText: (t) => `Görev bir hatayla bitti: ${t}`,
@@ -441,7 +443,9 @@ const SRV_TEXT = {
     })[why] || '',
     ghIdle: (list) => `💤 <b>Çalışan ajan yok; ${list.length} iş sizi bekliyor:</b>\n` + list.slice(0, 10).map((it) => `• <a href="${(it.state === 'review' && it.pr ? it.pr.url : it.url)}">${it.ref}</a> ${({ blocked: 'karar bekliyor', failed: 'başarısız', review: 'PR incelemesi' })[it.state] || it.state}: ${it.title}`).join('\n'),
     mergeTask: (it) => `[İncele ve birleştir] ${it.repo} deposundaki PR #${it.pr.number} (${it.pr.url}), #${it.number} "${it.title}" işi için açıldı; agent:review etiketli ve CI'ı geçti.\n\nİncele (code-reviewer ve security-reviewer subagent'larını kullan). Sağlamsa birleştir: gh pr merge ${it.pr.number} --repo ${it.repo} --squash --delete-branch, ardından #${it.number} işinden agent:review etiketini kaldır (birleştirme kapatmadıysa işi kapat). Düzeltme gerekiyorsa PR'a neyin değişmesi gerektiğini yaz ve #${it.number} işini agent:ready'ye geri al ki bir işçi alsın. Yalnızca kendin onaylayacağın şeyi birleştir. İnsan kararı gerekiyorsa (riskli, belirsiz ya da işin kapsamı dışında) birleştirme ve DECISION: <tek soru> ile OPTIONS: <2-4 seçenek> satırlarıyla bitir. Birleştirdiysen ya da geri gönderdiysen DECISION: none ile bitir.`,
-    sendBackTask: (it) => `[PR'ı düzelt] ${it.repo} deposundaki PR #${it.pr.number} (${it.pr.url}), #${it.number} "${it.title}" işi için açıldı ve agent:review etiketli, ama ${it.pr.mergeable === 'CONFLICTING' ? 'ana dalla çakışıyor' : `CI'ı kırmızı${it.pr.failing.length ? ` (${it.pr.failing.join('; ')})` : ''}`}.\n\nNedenini bul. Bir işçi düzeltebilirse işe neyin düzeltileceğini yaz (kırmızı kontroller ya da main üzerine rebase) ve #${it.number} işini agent:ready'ye geri al. Hata bu PR'dan kaynaklanmıyorsa (main kırık, kararsız bir kontrol) bunu yorumla ve gerekeni düzelt ya da aç. İnsan gerekiyorsa DECISION: <tek soru> ile OPTIONS: <2-4 seçenek> ile bitir; değilse DECISION: none.`, },
+    sendBackTask: (it) => `[PR'ı düzelt] ${it.repo} deposundaki PR #${it.pr.number} (${it.pr.url}), #${it.number} "${it.title}" işi için açıldı ve agent:review etiketli, ama ${it.pr.mergeable === 'CONFLICTING' ? 'ana dalla çakışıyor' : `CI'ı kırmızı${it.pr.failing.length ? ` (${it.pr.failing.join('; ')})` : ''}`}.\n\nNedenini bul. Bir işçi düzeltebilirse işe neyin düzeltileceğini yaz (kırmızı kontroller ya da main üzerine rebase) ve #${it.number} işini agent:ready'ye geri al. Hata bu PR'dan kaynaklanmıyorsa (main kırık, kararsız bir kontrol) bunu yorumla ve gerekeni düzelt ya da aç. İnsan gerekiyorsa DECISION: <tek soru> ile OPTIONS: <2-4 seçenek> ile bitir; değilse DECISION: none.`,
+    briefTitle: (it) => `${it.repo.split('/')[1] || it.repo}#${it.number}: ${it.title}`.slice(0, 150),
+    briefTask: (it) => `[Karar hazırla] ${it.repo} deposundaki #${it.number} (${it.url}) "${it.title}" işi agent:blocked-human etiketli: insanı bekliyor.\n\nŞimdilik hiçbir şeyi değiştirme. İşi, yorumlarını ve bağlantı verdiği şeyleri oku (gh issue view ${it.number} --repo ${it.repo} --comments). Sonra insan GitHub'ı açmadan karar verebilsin diye, Türkçe yaz: önce işin ne olduğu ve neden takıldığı (2-3 cümle); sonra yapması ya da kontrol etmesi gerekenler, numaralı adımlar halinde (çalıştıracağı ya da yapıştıracağı komut veya metin varsa kod bloğu içinde); sonra tek satırda önerin. DECISION: <cevaplaması gereken tek soru> ve OPTIONS: <2-4 somut seçenek, önerin ilk sırada> satırlarıyla bitir. Cevap verdiğinde bunu GitHub'da uygulaman istenecek.`, },
 };
 const srvLang = () => { const l = String(cubicleSettings().lang || process.env.CUBICLE_LANG || process.env.LANG || '').slice(0, 2).toLowerCase(); return SRV_TEXT[l] ? l : 'en'; };
 const ST = (lang) => SRV_TEXT[lang || srvLang()] || SRV_TEXT.en;
@@ -815,6 +819,7 @@ const SETTING_KEYS = {
 const GITHUB_KEYS = {
   enabled: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   autoMerge: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
+  briefs: (v) => typeof v === 'boolean' ? v : Symbol.for('bad'),
   repos: (v) => v === '' || v === null ? undefined : typeof v === 'string' && v.length <= 1000 && /^[\w.\/\s,-]+$/.test(v) ? v.trim() : Symbol.for('bad'),
 };
 const DISPATCH_KEYS = {
@@ -1020,7 +1025,7 @@ function startRun(run) {
   const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); nextQueued(); };
   run.pid = child.pid || 0; run.orphan = false; saveRuns();
   child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
-  child.on('exit', (code, sig) => { setTimeout(() => { try { const full = fs.readFileSync(logFile, 'utf8').slice(-14000), tail = full.slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail), t = ST(), opts = bud ? t.budgetOpts : t.failOpts; attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: bud ? t.budgetTitle(text.slice(0, 70)) : t.failTitle(text.slice(0, 70)), text: bud ? t.budgetText(cfg.budget) : t.failText(tail.replace(/\s+/g, ' ').slice(-300)), options: opts, cancel: opts[opts.length - 1], detail: full.slice(-3000).trim() }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [], detail: ceoDetail(full) }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
+  child.on('exit', (code, sig) => { setTimeout(() => { try { const full = fs.readFileSync(logFile, 'utf8').slice(-14000), tail = full.slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail), t = ST(), opts = bud ? t.budgetOpts : t.failOpts; attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: bud ? t.budgetTitle(text.slice(0, 70)) : t.failTitle(text.slice(0, 70)), text: bud ? t.budgetText(cfg.budget) : t.failText(tail.replace(/\s+/g, ' ').slice(-300)), options: opts, cancel: opts[opts.length - 1], detail: full.slice(-3000).trim() }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: run.title || `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [], detail: ceoDetail(full), url: run.url || '', ref: run.forIssue || '' }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
   console.log(`Cubicle: CEO task ${id} started.`);
 }
 async function serveDispatch(req, res) {
@@ -1114,6 +1119,20 @@ function handReview(it) {
   queueCeo(merge ? t.mergeTask(it) : t.sendBackTask(it), { auto: true, forPr: key })
     .then((r) => console.log(`Cubicle: ${it.repo}#${it.number} (PR #${p.number}) ${merge ? 'to the CEO to review and merge' : 'back through the CEO: CI red or a conflict'}${r ? ` (${r.id})` : ', but the CEO queue is full'}.`)).catch(() => {});
 }
+// A decision that waits for you on GitHub is turned into a brief here: the CEO reads the issue and
+// writes what it is about, what to do step by step, and the question with its options. It comes as a
+// question in Cubicle; your answer goes back to the CEO, which carries it out on GitHub.
+const briefsOn = () => { const g = cubicleSettings().github || {}; return g.briefs !== false && !!dispatchCfg(); };
+function prepareBrief(it, force) {
+  const key = `${it.repo}#${it.number}@brief`;
+  if (GHQ.handed.has(key) && !force) return false;
+  if (!force && DISPATCH_RUNS.filter((r) => r.forIssue && (r.state === 'queued' || r.state === 'running')).length >= 2) return false;   // a couple at a time
+  GHQ.handed.add(key); saveHanded();
+  const t = ST();
+  queueCeo(t.briefTask(it), { auto: true, forIssue: `${it.repo}#${it.number}`, url: it.url, title: t.briefTitle(it) })
+    .then((r) => console.log(`Cubicle: ${it.repo}#${it.number} waits for a decision; the CEO prepares it${r ? ` (${r.id})` : ', but the CEO queue is full'}.`)).catch(() => {});
+  return true;
+}
 function saveHanded() { try { fs.writeFileSync(GH_HANDED_FILE, JSON.stringify([...GHQ.handed].slice(-300))); } catch (_) {} }
 const forYou = (it, cfg) => it.state === 'blocked' || it.state === 'failed' || (it.state === 'review' && (!ceoMerges(cfg) || (it.pr && it.pr.ci === 'none')));
 async function watchGithub() {
@@ -1128,6 +1147,8 @@ async function watchGithub() {
     GHQ.seen.set(key, it.state);
     if (it.state === 'review' && ceoMerges(cfg)) handReview(it);
     else if (!first && before !== it.state && forYou(it, cfg)) tellGithub(it);
+    if (it.state === 'blocked' && briefsOn()) prepareBrief(it);
+    else if (it.state !== 'blocked' && GHQ.handed.delete(`${key}@brief`)) saveHanded();   // blocked again later: a new brief
   }
   // nobody at work while work waits for you: say so (not more than every 4 hours)
   const waiting = r.items.filter((it) => forYou(it, cfg));
@@ -1140,10 +1161,24 @@ async function watchGithub() {
 }
 async function serveGithub(req, res) {
   if (!(await fromOwner(req))) return send(res, 403, '{"error":"only from this machine or your own devices"}');
-  if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"GET"}');
-  const cfg = githubCfg();
-  send(res, 200, JSON.stringify({ enabled: !!(cfg && cfg.repos.length), autoMerge: ceoMerges(cfg), repos: GHQ.repos, at: GHQ.at, errors: GHQ.errors,
-    items: GHQ.items.map((it) => ({ ...it, forYou: forYou(it, cfg), handed: !!(it.pr && GHQ.handed.has(`${it.repo}#${it.pr.number}@${it.pr.sha}`)) })) }));
+  if (req.method === 'POST') {
+    if (!pageRequest(req)) return send(res, 400, '{"error":"bad request"}');
+    const d = await readBody(req, 2000);
+    const it = d && typeof d.prepare === 'string' && GHQ.items.find((x) => `${x.repo}#${x.number}` === d.prepare && x.state === 'blocked');
+    if (!it) return send(res, 404, '{"error":"no such decision"}');
+    if (!dispatchCfg()) return send(res, 409, '{"error":"the task box is off"}');
+    prepareBrief(it, true);
+    return send(res, 200, '{"ok":true}');
+  }
+  if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"GET or POST"}');
+  const cfg = githubCfg(), open = attentionList();
+  const running = (ref) => DISPATCH_RUNS.some((r) => r.forIssue === ref && (r.state === 'queued' || r.state === 'running'));
+  send(res, 200, JSON.stringify({ enabled: !!(cfg && cfg.repos.length), autoMerge: ceoMerges(cfg), briefs: briefsOn(), repos: GHQ.repos, at: GHQ.at, errors: GHQ.errors,
+    items: GHQ.items.map((it) => {
+      const ref = `${it.repo}#${it.number}`, q = it.state === 'blocked' ? open.filter((x) => x.ref === ref).pop() : null;
+      return { ...it, forYou: forYou(it, cfg), handed: !!(it.pr && GHQ.handed.has(`${it.repo}#${it.pr.number}@${it.pr.sha}`)),
+        ...(it.state === 'blocked' ? { brief: q ? 'ready' : running(ref) ? 'preparing' : '', question: q ? q.id : '' } : {}) };
+    }) }));
 }
 let fixKnown = null;
 async function watchFailures() {
@@ -1170,6 +1205,7 @@ function attentionAdd(item) {
   const it = { id: Date.now().toString(36) + Math.random().toString(36).slice(2, 5), t: Date.now(), kind: item.kind === 'decision' ? 'decision' : 'error',
     title: String(item.title || '').slice(0, 160), text: String(item.text || '').slice(0, 1500), detail: String(item.detail || '').slice(-6000), url: /^https?:\/\//.test(item.url || '') ? String(item.url).slice(0, 300) : '', agent: String(item.agent || '').slice(0, 80), taskId: String(item.taskId || '').slice(0, 80),
     options: Array.isArray(item.options) ? item.options.map((x) => String(x).trim().slice(0, 160)).filter(Boolean).slice(0, 6) : [], multi: item.multi === true,
+    ...(typeof item.ref === 'string' && item.ref ? { ref: item.ref.slice(0, 120) } : {}),
     ...(typeof item.cancel === 'string' && item.cancel.trim() ? { cancel: item.cancel.trim().slice(0, 160) } : {}) };
   list.push(it);
   try { require('./cubicle-telegram.js').writeFileAtomic(ATTENTION_FILE, JSON.stringify(list.slice(-50))); } catch (_) {}
