@@ -173,7 +173,8 @@ function workFolder(ev) {
       // its own) is named after the project inside it that is being worked on
       if (isProject(cwd) || inside(cwd, os.homedir())) return null;      // a project, or home (or above)
       const rel = path.relative(cwd, p).split(path.sep).filter(Boolean);
-      if (rel.length < 2) return null;
+      const isDir = fs.existsSync(p) && fs.statSync(p).isDirectory();
+      if (rel.length < (isDir ? 1 : 2)) return null;                // a file of the folder itself
       return projectBelow(cwd) || rel[0];
     }
     const tmps = [os.tmpdir(), '/tmp', '/var/tmp', 'C:\\tmp', 'C:\\temp', 'C:\\Windows\\Temp'].map((x) => path.resolve(x));

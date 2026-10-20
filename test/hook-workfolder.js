@@ -30,6 +30,7 @@ try {
   assert.strictEqual(workFolder(evTop('Edit', { file_path: at('squaremeter/beta/squaremeter/squaremeter.php') })), 'squaremeter', 'module inside a folder of modules');
   assert.strictEqual(workFolder(evTop('Bash', { command: `cd "${at('plain/sub')}"` })), 'plain', 'first folder below, without a marker');
   assert.strictEqual(workFolder(evTop('Edit', { file_path: path.join(top, 'CLAUDE.md') })), null, 'a file of the folder itself');
+  assert.strictEqual(workFolder(evTop('Bash', { command: `cd "${at('onefee')}" && ls` })), 'onefee', 'cd straight into a project');
   assert.strictEqual(workFolder({ ...evTop('Edit', { file_path: at('onefee/src/Fee.php') }), cwd: at('onefee') }), null, 'a project window stays its own name');
 
   let feed = { agents: [] };
