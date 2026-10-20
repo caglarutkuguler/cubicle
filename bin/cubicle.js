@@ -1062,7 +1062,8 @@ async function serveDispatch(req, res) {
   return readBody(req, 8000).then(async (d) => {
     const text = d && typeof d.text === 'string' ? d.text.trim().slice(0, 4000) : '';
     if (!text) return send(res, 400, '{"error":"empty task"}');
-    const r = await queueCeo(text);
+    const answerTo = d && typeof d.answerTo === 'string' && /^CEO-\d+$/.test(d.answerTo) ? d.answerTo : '';
+    const r = await queueCeo(text, answerTo ? { answerTo } : {});
     if (!r) return send(res, 429, '{"error":"queue full (20)"}');
     send(res, 200, JSON.stringify({ ok: true, id: r.id, queued: r.queued }));
   });

@@ -4778,7 +4778,8 @@
     // the "give up" option closes the question; older items carry no marker, so Vazgeç still counts
     if ((cancel && parts.indexOf(cancel) >= 0) || (!cancel && /^Vazgeç/i.test(ans))) { dismiss(id).then(function () { next(id); }); return; }
     var task = D.task(item.title, item.text, ans, item.url);
-    jpost('/api/cubicle/dispatch', { text: task }).then(function (a) {
+    var to = /^CEO-\d+$/.test(String(item.taskId || '')) ? item.taskId : '';
+    jpost('/api/cubicle/dispatch', to ? { text: task, answerTo: to } : { text: task }).then(function (a) {
       if (!a[0]) { am.textContent = a[1].error || D.failed; return; }
       return dismiss(id).then(function () { next(id); });
     }).catch(function () { am.textContent = D.failed; });

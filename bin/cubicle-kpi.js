@@ -10,7 +10,7 @@ const ISSUE_URL = /https:\/\/github\.com\/([\w.-]+\/[\w.-]+)\/issues\/(\d+)/g;
 const DAY = 86400000;
 
 function create({ file, gh, readLog = (f) => { try { return fs.readFileSync(f, 'utf8'); } catch (_) { return ''; } }, now = () => Date.now() }) {
-  let db = { tasks: {}, issues: {}, imported: [] };
+  let db = { tasks: {}, issues: {}, imported: [], alias: {} };
   try { db = { ...db, ...JSON.parse(fs.readFileSync(file, 'utf8')) }; } catch (_) {}
   let dirty = false;
   const save = () => {
@@ -18,9 +18,30 @@ function create({ file, gh, readLog = (f) => { try { return fs.readFileSync(f, '
     try { fs.mkdirSync(path.dirname(file), { recursive: true }); const tmp = `${file}.${process.pid}.tmp`; fs.writeFileSync(tmp, JSON.stringify(db)); fs.renameSync(tmp, file); } catch (_) {}
   };
 
+  // Your answer to a CEO question is not a new task: what it does goes under the task that asked
+  // (answerTo), and older answers without that marker are recognized by their opening words.
+  const ANSWER = /^(You were asked for a decision earlier|Daha önce sana bir karar soruldu)/;
+  const issuesIn = (run) => { const out = new Set(); if (run.logFile && run.state !== 'queued') for (const m of readLog(run.logFile).matchAll(ISSUE_URL)) out.add(`${m[1]}#${m[2]}`); return out; };
+  const asksAgain = (run) => run.logFile && /DECISION:\s*(?!none\b|yok\b|-)\S/i.test(readLog(run.logFile).slice(-2500));
   // a CEO run you started (not one Cubicle started itself): keep its text, times, state and issues
   function record(run) {
     if (!run || !run.id || run.auto) return;
+    if (run.answerTo || ANSWER.test(String(run.fullText || run.text || ''))) {
+      // an answer to a question an answer raised still belongs to the first task
+      db.alias = db.alias || {};
+      const rootId = run.answerTo ? (db.alias[run.answerTo] || run.answerTo) : '';
+      if (rootId && db.tasks[rootId]) db.alias[run.id] = rootId;
+      const o = rootId && db.tasks[rootId];
+      if (o) {
+        o.issues = [...new Set([...(o.issues || []), ...issuesIn(run)])].slice(0, 40);
+        o.answered = true;
+        if (run.state === 'running' || run.state === 'queued') o.state = 'running';
+        else { o.state = run.state; o.endedAt = run.ended || o.endedAt; o.decision = !!asksAgain(run); }
+        dirty = true; save();
+      }
+      if (db.tasks[run.id]) { delete db.tasks[run.id]; dirty = true; save(); }
+      return;
+    }
     const t = db.tasks[run.id] || { id: run.id, createdAt: run.created || run.started || now(), issues: [] };
     const text = String(run.fullText || run.text || '').trim();
     t.title = (t.title || text.split('\n')[0]).slice(0, 200);
@@ -87,8 +108,12 @@ function create({ file, gh, readLog = (f) => { try { return fs.readFileSync(f, '
           createdAt: s.createdAt, startedAt: s.createdAt, completedAt: s.closed ? s.closedAt : null, ...(s.status === 'blocked' ? { asksYou: true } : {}) });
       }
     }
-    // the Paperclip history, without the CEO tasks that are kept here now
-    for (const i of db.imported || []) if (!pcIds.has(i.id)) out.push(i);
+    // the Paperclip history: finished work (open items there cannot move any more), without the CEO
+    // tasks that are kept here now
+    const imp = (db.imported || []).filter((i) => !pcIds.has(i.id));
+    const ids = new Map(imp.map((i) => [i.id, i]));
+    const rootOf = (i) => { let x = i, n = 0; while (x.parentId && ids.has(x.parentId) && n++ < 50) x = ids.get(x.parentId); return x; };
+    for (const i of imp) { const r = rootOf(i); if (r.status === 'done' || r.status === 'cancelled') out.push(i); }
     return out;
   }
 

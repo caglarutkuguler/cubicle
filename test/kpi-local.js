@@ -22,8 +22,9 @@ const req = (url, method = 'GET', body) => new Promise((resolve, reject) => {
   const k = create({ file: path.join(tmp, 'kpi.json'), gh: async () => ({ data: { title: 'Fix login', state: 'OPEN', labels: [{ name: 'agent:review' }], createdAt: '2026-10-19T10:00:00Z' } }) });
   const n = await k.importPaperclip('http://pc', async (u) => (u.endsWith('/api/companies') ? [{ id: 'c' }]
     : [{ id: 'p1', identifier: 'MEG-1', title: 'Old task', status: 'done', createdByUserId: 'u', createdAt: '2026-10-01T00:00:00Z', completedAt: '2026-10-02T00:00:00Z' },
-       { id: 'p2', identifier: 'MEG-2', title: '[CEO · done] Mirror', status: 'done', createdByUserId: 'u' }]));
-  assert.strictEqual(n, 2);
+       { id: 'p2', identifier: 'MEG-2', title: '[CEO · done] Mirror', status: 'done', createdByUserId: 'u' },
+       { id: 'p3', identifier: 'MEG-3', title: 'Still open there', status: 'in_progress', createdByUserId: 'u' }]));
+  assert.strictEqual(n, 3);
   fs.writeFileSync(path.join(tmp, 'CEO-001.log'), 'Opened https://github.com/o/r/issues/7 and started a worker.\nDECISION: none\n');
   k.record({ id: 'CEO-001', text: 'Fix the login page', state: 'done', started: Date.now() - 3600000, ended: Date.now() - 1800000, logFile: path.join(tmp, 'CEO-001.log'), pcId: 'p2' });
   await k.refresh();
@@ -32,7 +33,18 @@ const req = (url, method = 'GET', body) => new Promise((resolve, reject) => {
   assert.ok(root && root.human && root.status === 'in_progress', JSON.stringify(root));
   assert.ok(kid && kid.parentId === 'ceo:CEO-001' && kid.status === 'in_review' && kid.identifier === 'r#7', JSON.stringify(kid));
   assert.ok(rows.some((r) => r.id === 'p1' && r.imported), 'Paperclip history kept');
+  assert.ok(!rows.some((r) => r.id === 'p3'), 'work left open in Paperclip cannot move any more: not shown');
   assert.ok(!rows.some((r) => r.id === 'p2'), 'the CEO mirror is shown from here, not twice');
+  // an answer to its question adds what it opened to the same task, and a later answer too
+  fs.writeFileSync(path.join(tmp, 'CEO-002.log'), 'Relaunched https://github.com/o/r/issues/8\nDECISION: Merge now?\n');
+  k.record({ id: 'CEO-002', text: 'Daha önce sana bir karar soruldu. SORU/DURUM: x', answerTo: 'CEO-001', state: 'done', started: Date.now(), ended: Date.now(), logFile: path.join(tmp, 'CEO-002.log') });
+  fs.writeFileSync(path.join(tmp, 'CEO-003.log'), 'Merged https://github.com/o/r/issues/9\nDECISION: none\n');
+  k.record({ id: 'CEO-003', text: 'Daha önce sana bir karar soruldu. SORU/DURUM: y', answerTo: 'CEO-002', state: 'done', started: Date.now(), ended: Date.now(), logFile: path.join(tmp, 'CEO-003.log') });
+  k.record({ id: 'CEO-004', text: 'You were asked for a decision earlier. QUESTION/SITUATION: z', state: 'done', started: Date.now(), ended: Date.now() });
+  await k.refresh(0);
+  const rows3 = k.list(), roots3 = rows3.filter((r) => r.human && !r.parentId && !r.imported);
+  assert.deepStrictEqual(roots3.map((r) => r.identifier), ['CEO-001'], 'answers are not tasks of their own');
+  assert.deepStrictEqual(rows3.filter((r) => r.parentId === 'ceo:CEO-001').map((r) => r.identifier).sort(), ['r#7', 'r#8', 'r#9']);
 
   // through the server: no Paperclip, the task box on: the page gets kpiLocal and the rows
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'cubicle-kpis-'));
