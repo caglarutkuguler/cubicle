@@ -1229,7 +1229,7 @@
     if (KIOSK || !navEl) return;
     const framed = EMBED && window.top !== window;
     const pc = pcLink() && company && !DEMO && !framed;
-    const kpi = DEMO || (paperclipUrl && company);
+    const kpi = DEMO || (paperclipUrl && company) || kpiLocal;
     const html = (kpi ? `<button type="button" class="navb" data-nav="kpi" title="${esc(L.kpiTitle)}">📊 KPI</button>` : '')
       + (pc ? `<a class="navb" href="${esc(pcLink())}/${esc(company.issuePrefix)}/dashboard" target="cubicle-paperclip" rel="noopener" title="${esc(L.openPaperclip)}">Paperclip ↗</a>` : '');
     if (navEl.innerHTML !== html) navEl.innerHTML = html;
@@ -1361,7 +1361,7 @@
   };
   async function kpiData() {
     if (DEMO) return demoKpi();
-    if (!company) return [];
+    if (!company) return kpiLocal ? getJSON('/api/kpi/local') : [];
     if (EMBED) {
       const all = [];
       for (let page = 0; page < 20; page++) {
@@ -2116,6 +2116,7 @@
   const SKINS  = ['#f1c7a3','#d9a47a','#b87b52','#f5d5b8','#c68e62'];
 
   let paperclipUrl = '';
+  let kpiLocal = false;          // no Paperclip: the KPI board is the CEO tasks Cubicle keeps (/api/kpi/local)
   let pcHidden = false;   // settings.json paperclipLinks:false -> no Paperclip links and no "open on this machine" notes
   let pcLinkBase = null;   // where Paperclip links point for this browser ('' = Paperclip cannot be opened from here)
   const pcLink = () => (pcLinkBase === null ? paperclipUrl : pcLinkBase);
@@ -2289,7 +2290,7 @@
     } else if (!DEMO) {
       try {
         const cfg = await getJSON('/config.json');
-        redacted = !!cfg.redact;
+        redacted = !!cfg.redact; kpiLocal = !!cfg.kpiLocal;
         tgInfo = cfg.telegram || null;
         cfgVersion = cfg.version; whatsNew(cfg.version); showUpdate(cfg.update, cfg.version);
         if (cfg.replay) replayClock = { ...cfg.replay, loadedAt: Date.now() };

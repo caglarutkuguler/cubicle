@@ -35,6 +35,17 @@ if (process.argv[2] === 'install-hooks') {
   return;
 }
 
+// `cubicle kpi-import [paperclip url]` — copy Paperclip's tasks into ~/.cubicle/kpi.json once, so the
+// KPI board keeps its history after Paperclip is gone.
+if (process.argv[2] === 'kpi-import') {
+  const base = (process.argv[3] || process.env.PAPERCLIP_URL || 'http://127.0.0.1:3100').replace(/\/+$/, '');
+  const dir = path.dirname(process.env.CUBICLE_SETTINGS || path.join(os.homedir(), '.cubicle', 'settings.json'));
+  const kpi = require('./cubicle-kpi.js').create({ file: path.join(dir, 'kpi.json') });
+  kpi.importPaperclip(base, async (u) => { const r = await fetch(u, { headers: process.env.PAPERCLIP_TOKEN ? { authorization: `Bearer ${process.env.PAPERCLIP_TOKEN}` } : {} }); if (!r.ok) throw new Error(`${u}: ${r.status}`); return r.json(); })
+    .then((n) => console.log(`Imported ${n} Paperclip issues into ${path.join(dir, 'kpi.json')}.`), (e) => { console.error(`Could not read Paperclip at ${base}: ${e.message}`); process.exitCode = 1; });
+  return;
+}
+
 if (process.argv.includes('--version') || process.argv.includes('-v')) {
   console.log(require('../package.json').version);
   process.exit(0);
@@ -536,6 +547,7 @@ const server = http.createServer((req, res) => {
   if (url.pathname === '/api/cubicle/attention') return serveAttention(req, res);
   if (url.pathname === '/api/cubicle/update') return serveUpdate(req, res);
   if (url.pathname === '/api/cubicle/github') return serveGithub(req, res);
+  if (url.pathname === '/api/kpi/local') return serveKpiLocal(req, res);
   if (req.method !== 'GET' && req.method !== 'HEAD') return send(res, 405, '{"error":"read-only"}');
 
   if (REPLAY && serveReplay(req, res, url)) return;
@@ -554,7 +566,7 @@ const server = http.createServer((req, res) => {
     const pcOff = cubicleSettings().paperclipLinks === false;
     const pcLinks = !HAS_PAPERCLIP ? undefined : pcOff ? '' : (fromThisMachine(req) || !/^(127\.|localhost$|\[::1\]$)/.test(PAPERCLIP.hostname)) ? PAPERCLIP.origin : (PAPERCLIP_PHONE_URL() || '');
     return send(res, 200, JSON.stringify({ sources, source: first.kind, label: first.label, paperclipUrl: HAS_PAPERCLIP ? PAPERCLIP.origin : undefined,
-      paperclipLinks: pcLinks, ...(pcOff ? { paperclipLinksOff: true } : {}), redact: REDACT, version: VERSION, build: build(), telegram, ...(UPDATE ? { update: { ...UPDATE, canApply: fromThisMachine(req) && UPDATES.canApply(UPDATE.kind, UPDATE.auto) } } : {}) }));
+      paperclipLinks: pcLinks, ...(pcOff ? { paperclipLinksOff: true } : {}), redact: REDACT, version: VERSION, build: build(), telegram, ...(kpiLocalOn() ? { kpiLocal: true } : {}), ...(UPDATE ? { update: { ...UPDATE, canApply: fromThisMachine(req) && UPDATES.canApply(UPDATE.kind, UPDATE.auto) } } : {}) }));
   }
 
   const feedMatch = url.pathname.match(/^\/api\/feed(?:\/(\d+))?$/);
@@ -965,7 +977,7 @@ function nextRunId() {
 const taskRef = (id) => (/^CEO-\d+$/.test(id) ? id : `T-${id}`);
 setInterval(() => {   // pick up runs that ended while this server was down
   let changed = false;
-  for (const r of DISPATCH_RUNS) if (r.state === 'running' && r.orphan) { let alive = false; try { process.kill(r.pid, 0); alive = true; } catch (_) {} if (!alive) { r.state = 'done'; r.ended = Date.now(); try { r.tail = fs.readFileSync(r.logFile, 'utf8').slice(-1500); } catch (_) {} changed = true; } }
+  for (const r of DISPATCH_RUNS) if (r.state === 'running' && r.orphan) { let alive = false; try { process.kill(r.pid, 0); alive = true; } catch (_) {} if (!alive) { r.state = 'done'; r.ended = Date.now(); try { r.tail = fs.readFileSync(r.logFile, 'utf8').slice(-1500); } catch (_) {} changed = true; KPI.record(r); } }
   if (changed) saveRuns();
   nextQueued();
 }, 5000).unref();
@@ -1022,6 +1034,7 @@ function startRun(run) {
   const text = run.fullText || run.text;
   if (!cfg) { run.state = 'failed'; run.ended = Date.now(); saveRuns(); return nextQueued(); }
   run.state = 'running'; run.started = Date.now();
+  KPI.record(run);
   if (pcId) dispatchLabel(pcId, null, ST().working);
   const out = fs.openSync(logFile, 'a');
   const child = require('child_process').spawn(process.env.CUBICLE_CLAUDE || 'claude', ['-p', `${cfg.prompt}\n\nTASK:\n${text}`, '--model', cfg.model, '--max-budget-usd', String(MORE_BUDGET.test(text) ? Math.max(cfg.budget, Math.min(cfg.budget * 2, 30)) : cfg.budget),
@@ -1031,7 +1044,7 @@ function startRun(run) {
       // workers the CEO starts inherit these, so their alerts can say how far this task has come
       CUBICLE_MAIN_TASK_ID: taskRef(id), CUBICLE_MAIN_TASK: text.slice(0, 160), CUBICLE_LINGER: '1', ...(pcId ? { PC_PARENT: pcId } : {}) } });
   let finished = false;
-  const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); nextQueued(); };
+  const done = (state) => { if (finished) return; finished = true; run.state = state; run.ended = Date.now(); try { run.tail = fs.readFileSync(logFile, 'utf8').slice(-1500); } catch (_) {} dispatchFinish(pcId, state, run.tail); saveRuns(); KPI.record(run); nextQueued(); };
   run.pid = child.pid || 0; run.orphan = false; saveRuns();
   child.on('error', (e) => { try { fs.appendFileSync(logFile, `spawn error: ${e.message}\n`); } catch (_) {} done('failed'); });
   child.on('exit', (code, sig) => { setTimeout(() => { try { const full = fs.readFileSync(logFile, 'utf8').slice(-14000), tail = full.slice(-2500); const m = /DECISION:\s*([^\n]+(?:\n(?!\s*$)[^\n]*)*)/i.exec(tail); if (code !== 0) { const bud = /Exceeded USD budget/i.test(tail), t = ST(), opts = bud ? t.budgetOpts : t.failOpts; attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: bud ? t.budgetTitle(text.slice(0, 70)) : t.failTitle(text.slice(0, 70)), text: bud ? t.budgetText(cfg.budget) : t.failText(tail.replace(/\s+/g, ' ').slice(-300)), options: opts, cancel: opts[opts.length - 1], detail: full.slice(-3000).trim() }); } else if (m && !/^\s*(none|yok|-)\s*\.?\s*$/i.test(m[1].split('\n')[0])) { const om = /^\s*OPTIONS:\s*([^\n]+)/im.exec(tail); attentionAdd({ agent: 'CEO', taskId: taskRef(id), kind: 'decision', title: run.title || `CEO: ${text.slice(0, 80)}`, text: m[1].replace(/\n?\s*OPTIONS:[^\n]*/i, '').trim(), options: om ? om[1].split(/\s*\|\s*/) : [], detail: ceoDetail(full), url: run.url || '', ref: run.forIssue || '' }); } } catch (_) {} }, 300); if (code !== 0) { try { fs.appendFileSync(logFile, `exit code=${code} signal=${sig}\n`); } catch (_) {} } done(code === 0 ? 'done' : 'failed'); });
@@ -1064,6 +1077,7 @@ async function queueCeo(text, extra = {}) {
   const busy = DISPATCH_RUNS.some((r) => r.state === 'running');
   const run = { id, text: text.slice(0, 200), fullText: text, state: busy ? 'queued' : 'running', started: Date.now(), ended: 0, tail: '', logFile, pid: 0, pcId: '', ...extra };
   DISPATCH_RUNS.push(run);
+  KPI.record(run);
   run.pcId = await dispatchTrack(text);
   if (busy) { dispatchLabel(run.pcId, null, ST().queued, ST().busy); saveRuns(); console.log(`Cubicle: CEO task ${id} queued.`); }
   else startRun(run);
@@ -1102,6 +1116,15 @@ function ceoTakes(a) {
 // merges it, or sends a red or conflicting one back to a worker. When no agent works while work
 // waits for you, you are told so, at most every 4 hours.
 const GITHUB = require('./cubicle-github.js');
+// ---------- the KPI board without Paperclip: your CEO tasks and the GitHub issues they became ----------
+const KPI = require('./cubicle-kpi.js').create({ file: path.join(path.dirname(CUBICLE_SETTINGS), 'kpi.json'), gh: (args) => GITHUB.gh(args) });
+for (const r of DISPATCH_RUNS) KPI.record(r);
+const kpiLocalOn = () => !HAS_PAPERCLIP && (KPI.count() > 0 || !!dispatchCfg());
+async function serveKpiLocal(req, res) {
+  if (!kpiLocalOn()) return send(res, 404, '{"error":"no local KPI"}');
+  await Promise.race([KPI.refresh(), new Promise((r) => setTimeout(r, 8000))]);
+  send(res, 200, JSON.stringify(KPI.list()));
+}
 const GH_HANDED_FILE = path.join(path.dirname(CUBICLE_SETTINGS), 'github-handed.json');
 const GHQ = { items: [], at: 0, errors: [], repos: [], seen: new Map(), idleTold: 0, handed: new Set((() => { try { return JSON.parse(fs.readFileSync(GH_HANDED_FILE, 'utf8')); } catch (_) { return []; } })()) };
 function githubCfg() {
