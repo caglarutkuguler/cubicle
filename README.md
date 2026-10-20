@@ -60,7 +60,7 @@ npx @caglarutkuguler/cubicle install-hooks      # once; backs up ~/.claude/setti
 npx @caglarutkuguler/cubicle --source claude-code
 ```
 
-No Paperclip needed. Scripts that run Claude Code unattended (cron, CI, issue bots) can name their character and link it to a ticket with `CUBICLE_NAME`, `CUBICLE_TASK_URL` and `CUBICLE_LINGER`; see [Headless workers](examples/claude-code/README.md#headless-workers-cron-ci-issue-bots).
+Each session is named after its folder. When the editor is open on one project but the session edits files in (or `cd`s into) a sibling one, as with a portfolio of modules or packages under one folder, the card takes that project's name instead: the nearest folder with `.git`, `package.json`, `composer.json`, `config.xml` or a `<folder>.php`, else the first folder below the one they share. Reading another project, temporary folders and the home folder do not count, and work back in its own folder brings the name back. No Paperclip needed. Scripts that run Claude Code unattended (cron, CI, issue bots) can name their character and link it to a ticket with `CUBICLE_NAME`, `CUBICLE_TASK_URL` and `CUBICLE_LINGER`; see [Headless workers](examples/claude-code/README.md#headless-workers-cron-ci-issue-bots).
 
 **Both in one office** — Paperclip agents on the first rows, Claude Code sessions after them:
 

@@ -127,6 +127,59 @@ function summarize(ev) {
   return tool || 'working';
 }
 
+// What a session is really working on. One editor window is often opened on one project while
+// the work happens in a sibling folder (a portfolio of modules, packages or services): the card
+// then takes that folder's name, not the window's. Only edits and `cd` count (reading another
+// project for reference does not), temporary folders never do, and a folder inside the window's
+// own one keeps the window's name.
+const PROJECT_MARKS = ['.git', 'package.json', 'composer.json', 'config.xml', 'pyproject.toml', 'go.mod', 'Cargo.toml', 'pom.xml', 'build.gradle'];
+const EDIT_TOOLS = new Set(['Edit', 'Write', 'MultiEdit', 'NotebookEdit', 'apply_patch', 'write_file', 'replace']);
+function hostPath(p, cwd) {
+  p = String(p || '').trim();
+  if (!p) return '';
+  if (process.platform === 'win32') {
+    const m = /^\/(?:mnt\/)?([a-zA-Z])(\/.*)?$/.exec(p);           // /c/Users/… (Git Bash), /mnt/c/… (WSL)
+    if (m) p = `${m[1].toUpperCase()}:${m[2] || '/'}`;
+  }
+  if (p === '~' || p.startsWith('~/')) p = path.join(os.homedir(), p.slice(1));
+  return path.resolve(cwd || process.cwd(), p);
+}
+function workTarget(ev) {
+  const inp = ev.tool_input || {};
+  if (EDIT_TOOLS.has(ev.tool_name)) return inp.file_path || inp.notebook_path || inp.path || '';
+  if (ev.tool_name === 'Bash' || ev.tool_name === 'run_shell_command' || ev.tool_name === 'shell') {
+    const m = /(?:^|&&|;|\|\||\n)\s*cd\s+(?:"([^"]+)"|'([^']+)'|([^\s;&|]+))/.exec(String(inp.command || ''));
+    if (m) return m[1] || m[2] || m[3] || '';
+  }
+  return '';
+}
+function workFolder(ev) {
+  try {
+    const cwd = ev.cwd ? path.resolve(ev.cwd) : '';
+    const raw = workTarget(ev);
+    if (!cwd || !raw || /[$`*?]/.test(raw)) return undefined;
+    const p = hostPath(raw, cwd);
+    const low = (x) => (process.platform === 'win32' ? x.toLowerCase() : x);
+    const inside = (dir, x) => { const r = path.relative(low(dir), low(x)); return r === '' || (!r.startsWith('..') && !path.isAbsolute(r)); };
+    if (inside(cwd, p)) return null;                                  // the window's own project
+    const tmps = [os.tmpdir(), '/tmp', '/var/tmp', 'C:\\tmp', 'C:\\temp', 'C:\\Windows\\Temp'].map((x) => path.resolve(x));
+    if (tmps.some((t) => inside(t, p))) return undefined;
+    // the deepest folder the window and the target share; a project is looked for below it
+    const a = low(cwd).split(path.sep), b = low(p).split(path.sep);
+    let k = 0; while (k < a.length && k < b.length && a[k] === b[k]) k++;
+    const parts = p.split(path.sep), common = parts.slice(0, k).join(path.sep) || path.sep;
+    const home = os.homedir();
+    if (k === 0 || inside(common, home)) return undefined;            // nothing in common but the drive or home
+    let dir = fs.existsSync(p) && fs.statSync(p).isDirectory() ? p : path.dirname(p);
+    while (dir.length > common.length && inside(common, dir)) {
+      const base = path.basename(dir);
+      if (PROJECT_MARKS.some((f) => fs.existsSync(path.join(dir, f))) || fs.existsSync(path.join(dir, `${base}.php`))) return base;
+      dir = path.dirname(dir);
+    }
+    return parts[k] || undefined;                                      // the first folder below the shared one
+  } catch (_) { return undefined; }
+}
+
 // Subagents (Task/Agent tool) share the parent's session_id; Claude Code tells them
 // apart with agent_id / agent_type on their hook events. Each subagent gets its own
 // character, keyed "<session_id>:<agent_id>", and leaves when it stops.
@@ -244,7 +297,13 @@ function apply(feed, ev, runtime = 'claude', env = {}) {
   }
 
   let a = agents.find((x) => x.id === id);
-  const name = idn.name || path.basename(ev.cwd || '') || runtimeOf(runtime);
+  // a session working in another project's folder takes that project's name (see workFolder)
+  if (!idn.name && a && ev.hook_event_name === 'PreToolUse') {
+    const w = workFolder(ev);
+    if (w === null && a.work) { delete a.work; a.name = path.basename(ev.cwd || '') || a.name; }
+    else if (w && w !== a.work) { a.work = w; a.name = w; }
+  }
+  const name = idn.name || (a && a.work) || path.basename(ev.cwd || '') || runtimeOf(runtime);
   // one card per name: a new run under a CUBICLE_NAME replaces the idle/finished card of the earlier run
   // with that name (and its subagents), so a repeating worker is one character, not a row of copies.
   if (idn.name && ev.hook_event_name === 'SessionStart') {
@@ -479,4 +538,4 @@ function install({ uninstall = false, runtime: runtimeName = 'claude', settingsF
 }
 
 if (require.main === module) main();
-module.exports = { apply, summarize, main, install, stableScript, isEphemeral, autostart, EVENTS, RUNTIMES };
+module.exports = { apply, workFolder, summarize, main, install, stableScript, isEphemeral, autostart, EVENTS, RUNTIMES };
