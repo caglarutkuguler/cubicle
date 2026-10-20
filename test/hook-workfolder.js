@@ -24,6 +24,14 @@ try {
   assert.strictEqual(workFolder(ev('Bash', { command: `cd ${path.join(os.tmpdir(), 'ps16')} && ./run` })), undefined, 'temporary folders do not count');
   assert.strictEqual(workFolder(ev('Edit', { file_path: path.join(os.homedir(), 'Downloads', 'x.txt') })), undefined, 'nothing shared but home');
 
+  // a window opened on the folder of modules: named after the module being worked on
+  const top = path.join(root, 'Modules');
+  const evTop = (tool, input) => ({ hook_event_name: 'PreToolUse', session_id: 's2', cwd: top, tool_name: tool, tool_input: input });
+  assert.strictEqual(workFolder(evTop('Edit', { file_path: at('squaremeter/beta/squaremeter/squaremeter.php') })), 'squaremeter', 'module inside a folder of modules');
+  assert.strictEqual(workFolder(evTop('Bash', { command: `cd "${at('plain/sub')}"` })), 'plain', 'first folder below, without a marker');
+  assert.strictEqual(workFolder(evTop('Edit', { file_path: path.join(top, 'CLAUDE.md') })), null, 'a file of the folder itself');
+  assert.strictEqual(workFolder({ ...evTop('Edit', { file_path: at('onefee/src/Fee.php') }), cwd: at('onefee') }), null, 'a project window stays its own name');
+
   let feed = { agents: [] };
   feed = apply(feed, { hook_event_name: 'SessionStart', session_id: 's1', cwd });
   assert.strictEqual(feed.agents[0].name, 'accountactivation');

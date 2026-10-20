@@ -161,7 +161,21 @@ function workFolder(ev) {
     const p = hostPath(raw, cwd);
     const low = (x) => (process.platform === 'win32' ? x.toLowerCase() : x);
     const inside = (dir, x) => { const r = path.relative(low(dir), low(x)); return r === '' || (!r.startsWith('..') && !path.isAbsolute(r)); };
-    if (inside(cwd, p)) return null;                                  // the window's own project
+    const isProject = (dir) => PROJECT_MARKS.some((f) => fs.existsSync(path.join(dir, f))) || fs.existsSync(path.join(dir, `${path.basename(dir)}.php`));
+    // the project a path is in, looking up from it but not above `top`
+    const projectBelow = (top) => {
+      let dir = fs.existsSync(p) && fs.statSync(p).isDirectory() ? p : path.dirname(p);
+      while (dir.length > top.length && inside(top, dir)) { if (isProject(dir)) return path.basename(dir); dir = path.dirname(dir); }
+      return '';
+    };
+    if (inside(cwd, p)) {
+      // the window's own project; but a window opened on a folder of projects (no project file of
+      // its own) is named after the project inside it that is being worked on
+      if (isProject(cwd) || inside(cwd, os.homedir())) return null;      // a project, or home (or above)
+      const rel = path.relative(cwd, p).split(path.sep).filter(Boolean);
+      if (rel.length < 2) return null;
+      return projectBelow(cwd) || rel[0];
+    }
     const tmps = [os.tmpdir(), '/tmp', '/var/tmp', 'C:\\tmp', 'C:\\temp', 'C:\\Windows\\Temp'].map((x) => path.resolve(x));
     if (tmps.some((t) => inside(t, p))) return undefined;
     // the deepest folder the window and the target share; a project is looked for below it
@@ -170,13 +184,7 @@ function workFolder(ev) {
     const parts = p.split(path.sep), common = parts.slice(0, k).join(path.sep) || path.sep;
     const home = os.homedir();
     if (k === 0 || inside(common, home)) return undefined;            // nothing in common but the drive or home
-    let dir = fs.existsSync(p) && fs.statSync(p).isDirectory() ? p : path.dirname(p);
-    while (dir.length > common.length && inside(common, dir)) {
-      const base = path.basename(dir);
-      if (PROJECT_MARKS.some((f) => fs.existsSync(path.join(dir, f))) || fs.existsSync(path.join(dir, `${base}.php`))) return base;
-      dir = path.dirname(dir);
-    }
-    return parts[k] || undefined;                                      // the first folder below the shared one
+    return projectBelow(common) || parts[k] || undefined;                                      // the first folder below the shared one
   } catch (_) { return undefined; }
 }
 
