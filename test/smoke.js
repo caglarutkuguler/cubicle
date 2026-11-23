@@ -39,6 +39,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
 (async () => {
   await require('./grok.js')();
   await require('./headless-worker.js')();
+  await require('./subagent-identity.js')();
   // hook logic
   let feed = { company: 'Claude Code', agents: [] };
   feed = apply(feed, { session_id: 's1', cwd: '/x/repo', hook_event_name: 'PreToolUse', tool_name: 'Edit', tool_input: { file_path: '/x/repo/a.ts' } });
@@ -75,8 +76,8 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
     f = apply(f, { session_id: 's2', cwd: '/x/app', hook_event_name: 'SubagentStart', agent_id: 'a1', agent_type: 'Explore' });
     f = apply(f, { session_id: 's2', cwd: '/x/app', hook_event_name: 'SubagentStart', agent_id: 'a2', agent_type: 'Plan' });
     assert.strictEqual(f.agents.length, 3);
-    assert.strictEqual(find('s2:a1').name, 'app › Explore');
-    assert.strictEqual(find('s2:a1').role, 'Claude Code subagent');
+    assert.strictEqual(find('s2:a1').name, 'Explore');
+    assert.strictEqual(find('s2:a1').role, 'Explore · app');
     assert.strictEqual(find('s2').task, 'Agent: scan repo', 'the session keeps its own task');
     f = apply(f, { session_id: 's2', hook_event_name: 'PreToolUse', agent_id: 'a1', agent_type: 'Explore', tool_name: 'Read', tool_input: { file_path: '/x/app/b.ts' } });
     assert.strictEqual(find('s2:a1').task, 'Read b.ts');
@@ -98,7 +99,7 @@ setTimeout(() => { console.error('smoke test timed out'); process.exit(1); }, 90
     assert.ok(find('s2:a2'));
     // a subagent seen first mid-run (hooks installed while it was running) still gets a character
     f = apply(f, { session_id: 's2', cwd: '/x/app', hook_event_name: 'PostToolUse', agent_id: 'a3', tool_name: 'Grep', tool_input: { pattern: 'TODO' } });
-    assert.strictEqual(find('s2:a3').name, 'app › subagent');
+    assert.strictEqual(find('s2:a3').name, 'Subagent');
     // SubagentStop without an agent_id (older Claude Code) is a no-op
     f = apply(f, { session_id: 's2', hook_event_name: 'SubagentStop' });
     assert.strictEqual(f.agents.length, 3);
