@@ -36,7 +36,8 @@ module.exports = async function headlessWorker() {
 
   // a subagent is named after the worker, not after the directory
   f = run(f, { hook_event_name: 'SubagentStart', agent_id: 'a1', agent_type: 'tdd-guide' });
-  assert.strictEqual(f.agents.find((a) => a.id === 'w1:a1').name, 'ncu-pch #42 › tdd-guide');
+  assert.strictEqual(f.agents.find((a) => a.id === 'w1:a1').name, 'Tdd-guide');
+  assert.strictEqual(f.agents.find((a) => a.id === 'w1:a1').role, 'Tdd-guide · ncu-pch #42');
 
   // Stop -> idle, ticket title remains
   f = run(f, { hook_event_name: 'Stop' });

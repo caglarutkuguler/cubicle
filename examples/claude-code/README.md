@@ -29,7 +29,7 @@ To keep it running in the background next to a Paperclip office, see [`../system
 | `Stop` | Says "✓ done" and goes to the lounge |
 | `StopFailure` | Red screen, error on the card |
 | `SessionEnd` | Leaves the office, together with any of its subagents still at a desk |
-| `SubagentStart`, and tool, permission and permission-notification events carrying an `agent_id` | A separate character for that subagent, named `<directory> › <agent type>` (e.g. `app › Explore`); it types and raises its hand on its own |
+| `SubagentStart`, and tool, permission and permission-notification events carrying an `agent_id` | A separate character for that subagent, named after its type (e.g. `Explore`, with the session's name in its role: `Explore · app`); two of the same type at once are numbered (`Planner-1`, `Planner-2`); it types and raises its hand on its own |
 | `SubagentStop` | The subagent's character leaves the office |
 
 Other notifications — the "waiting for your input" reminder after a minute of idling, auth and quota messages — are ignored, so an idle session stays in the lounge.

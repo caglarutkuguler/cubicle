@@ -198,7 +198,25 @@ function applySubagent(feed, agents, ev, now) {
   const parent = agents.find((x) => x.id === sid);
   const base = (parent && parent.name) || path.basename(ev.cwd || '') || 'claude';
   let a = agents.find((x) => x.id === id);
-  const fresh = () => ({ id, since: now, parent: sid, name: `${base} › ${ev.agent_type || 'subagent'}`, role: `${feed.company || 'Claude Code'} subagent` });
+  // A subagent is named after its type ("planner" -> "Planner"); the role says whose it is. Concurrent
+  // siblings of one type under one session are numbered (Planner-1, Planner-2) from the ones still
+  // at their desks, so the numbers do not climb after earlier ones leave; a lone one stays unnumbered.
+  const fresh = () => {
+    const t = String(ev.agent_type || '').trim() || 'subagent';
+    const kind = t.charAt(0).toUpperCase() + t.slice(1);
+    const sibs = agents.filter((x) => x.parent === sid && x.kind === kind && !x.bg && x.id !== id && (x.status === 'running' || x.status === 'waiting'));
+    let name = kind;
+    if (sibs.length) {
+      const used = new Set();
+      for (const x of sibs) {
+        if (x.name === kind) x.name = `${kind}-1`;
+        const m = /-(\d+)$/.exec(x.name); if (m) used.add(+m[1]);
+      }
+      let n = 1; while (used.has(n)) n++;
+      name = `${kind}-${n}`;
+    }
+    return { id, since: now, parent: sid, kind, name, role: `${kind} · ${base}` };
+  };
 
   switch (ev.hook_event_name) {
     case 'SubagentStop':
@@ -313,10 +331,12 @@ function apply(feed, ev, runtime = 'claude', env = {}) {
     else if (w && w !== a.work) { a.work = w; a.name = w; }
   }
   const name = idn.name || (a && a.work) || path.basename(ev.cwd || '') || runtimeOf(runtime);
-  // one card per name: a new run under a CUBICLE_NAME replaces the idle/finished card of the earlier run
-  // with that name (and its subagents), so a repeating worker is one character, not a row of copies.
+  // one card per name: a new run under a CUBICLE_NAME replaces the earlier run's card with that name
+  // (and its subagents), whatever its state, so a repeating worker is one character, not a row of
+  // copies, and there is never more than one CEO. The newest SessionStart wins; an older session
+  // that is still alive comes back on its next event.
   if (idn.name && ev.hook_event_name === 'SessionStart') {
-    const old = agents.filter((x) => x.id !== id && !x.parent && x.name === name && x.status !== 'running' && x.status !== 'waiting').map((x) => x.id);
+    const old = agents.filter((x) => x.id !== id && !x.parent && x.name === name).map((x) => x.id);
     if (old.length) { const keep = agents.filter((x) => !old.includes(x.id) && !old.includes(x.parent)); agents.length = 0; agents.push(...keep); }
   }
 
